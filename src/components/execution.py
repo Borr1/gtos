@@ -521,7 +521,26 @@ class PendingLimitIntent:
     risk_reservation_scope: str | None = None
     risk_reservation_source: str | None = None
     risk_reservation_broker_namespace: str | None = None
+    allocation_cash_usd: float | None = None
+    min_lot_risk_usd: float | None = None
+    allocation_sleeve: str | None = None
     schema_version: int = 1
+
+
+def fill_cash_from_pending(intent) -> dict:
+    """Cash the allocation stored on a pending limit, for the fill's trade."""
+
+    out = {}
+    cash = getattr(intent, "allocation_cash_usd", None)
+    lot = getattr(intent, "min_lot_risk_usd", None)
+    sleeve = getattr(intent, "allocation_sleeve", None)
+    if cash not in (None, ""):
+        out["allocation_cash_usd"] = cash
+    if lot not in (None, ""):
+        out["min_lot_risk_usd"] = lot
+    if sleeve not in (None, ""):
+        out["sleeve"] = sleeve
+    return out
 
 
 @dataclass
@@ -1061,6 +1080,9 @@ class ExecutionEngine:
             "gtos_vnext_origin_family",
             "gtos_vnext_selector_row_id",
             "gtos_vnext_selector_proof_hash",
+            "allocation_cash_usd",
+            "min_lot_risk_usd",
+            "allocation_sleeve",
         ):
             if not hasattr(intent, attr):
                 if attr == "pending_order_mode":
@@ -3349,6 +3371,32 @@ class ExecutionEngine:
             return None
         return number
 
+    def _currency_digits(self):
+        """Digits of this account's currency, from account_info. Missing stays missing."""
+
+        raw = self._raw_mt5()
+        info_fn = getattr(raw, "account_info", None) if raw is not None else None
+        if not callable(info_fn):
+            return None
+        try:
+            info = info_fn()
+        except Exception:
+            return None
+        if info is None:
+            return None
+        value = self._account_attr(info, "currency_digits")
+        if isinstance(value, bool) or value is None:
+            return None
+        if isinstance(value, int):
+            return value if value >= 0 else None
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+        if number != number or number in (float("inf"), float("-inf")) or number < 0 or number != int(number):
+            return None
+        return int(number)
+
     def _raw_mt5(self):
         """The raw MetaTrader5 module behind the adapter (``self.mt5._mt5``)."""
         adapter = getattr(self, "mt5", None)
@@ -3576,6 +3624,9 @@ class ExecutionEngine:
             facts["pending_stop_risk_usd"] = pending_risk
         if open_risk is not None:
             facts["open_risk_usd"] = open_risk
+        digits = self._currency_digits()
+        if digits is not None:
+            facts["currency_digits"] = digits
         return facts
 
     def _stamp_size_room_facts(self, trade_params: dict, account_balance: float) -> None:
@@ -6021,6 +6072,11 @@ class ExecutionEngine:
             risk_reservation_broker_namespace=risk_reservation[
                 "risk_reservation_broker_namespace"
             ],
+            allocation_cash_usd=self._positive_fact(trade_params.get("allocation_cash_usd")),
+            min_lot_risk_usd=self._positive_fact(trade_params.get("min_lot_risk_usd")),
+            allocation_sleeve=(
+                str(trade_params.get("sleeve") or trade_params.get("tag") or "") or None
+            ),
         )
         v4_trade_params = {**trade_params, **telemetry_context}
         v4_trade_params.setdefault("pending_order_mode", intent.pending_order_mode)
@@ -7222,6 +7278,8 @@ class ExecutionEngine:
         fill_trade_params = {
                 "direction": intent.direction,
                 "entry_price": intent.limit_price,
+                **fill_cash_from_pending(intent),
+                "symbol": getattr(intent, "source_symbol", None) or self.symbol,
                 "stop_loss": intent.stop_loss,
                 "take_profit_1": intent.take_profit_1,
                 "take_profit_2": 0.0,
@@ -7693,6 +7751,9 @@ class ExecutionEngine:
             "last_bar_time": None,
             "symbol": self.symbol,
             "comment": request.get("comment"),
+            "allocation_cash_usd": trade_params.get("allocation_cash_usd"),
+            "min_lot_risk_usd": trade_params.get("min_lot_risk_usd"),
+            "sleeve": trade_params.get("sleeve"),
         }
         self._known_tickets.add(ticket)
         logger.info(

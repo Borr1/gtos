@@ -206,3 +206,106 @@ def test_anchor_levels_exclude_account_scale():
     assert LIVE["equity"] not in values
     assert LIVE["day_start_equity"] not in values
     assert LIVE["day_start_balance"] not in values
+
+
+def test_pending_inside_open_risk_is_not_taken_twice():
+    base, _read = binding_room_usd({**LIVE, "open_risk_usd": 0.0, "pending_orders_total": 0})
+    facts = {
+        **LIVE,
+        "open_risk_usd": 50.0,
+        "pending_orders_total": 1,
+        "pending_stop_risk_usd": 50.0,
+        "cycle_risk_usd": 100.0,
+    }
+    room, read = binding_room_usd(facts)
+    assert base is not None and room is not None
+    assert read == "bound"
+    assert abs(room - (base - 150.0)) < 1e-6
+
+
+def test_pending_orders_without_a_risk_leave_the_room_unset():
+    facts = {**LIVE, "pending_orders_total": 2}
+    room, read = binding_room_usd(facts)
+    assert room is None
+    assert read == "unset"
+
+
+def test_a_limit_fill_carries_the_allocation_cash(monkeypatch):
+    from src.components.execution import PendingLimitIntent, fill_cash_from_pending
+    from src.judgment.apply_size import CASH_CARRY
+
+    CASH_CARRY.clear()
+
+    intent = PendingLimitIntent(
+        direction="LONG",
+        limit_price=100.0,
+        stop_loss=99.0,
+        take_profit_1=102.0,
+        risk_pct=0.01,
+        allocation_cash_usd=180.0,
+        min_lot_risk_usd=40.0,
+        allocation_sleeve="metals_core",
+    )
+    carried = fill_cash_from_pending(intent)
+    assert carried == {
+        "allocation_cash_usd": 180.0,
+        "min_lot_risk_usd": 40.0,
+        "sleeve": "metals_core",
+    }
+    honored, stamp, posts = _honor(
+        monkeypatch,
+        {**LIVE, **carried, "symbol": "XAUUSD", "open_risk_usd": 0.0},
+        99999.0,
+    )
+    assert posts["persist"] == 0
+    assert posts["score"] == 0
+    assert honored == 180.0
+    assert stamp["f5_scaler_honor"] == "allocation_cash"
+    assert CASH_CARRY[-1]["allocation_cash_usd"] == 180.0
+    assert CASH_CARRY[-1]["final_check"] == "inside_room"
+
+
+def test_room_facts_come_from_the_size_room_read(monkeypatch):
+    from src.components.execution import ExecutionEngine
+    from src.judgment.apply_size import read_binding_room_facts
+
+    def fake(self, _balance):
+        assert self._runtime_namespace == "operator"
+        return {"open_risk_usd": 12.0, "pending_orders_total": 1, "pending_stop_risk_usd": 12.0}
+
+    monkeypatch.setattr(ExecutionEngine, "_size_room_facts", fake)
+    facts = read_binding_room_facts(object(), {}, namespace="operator")
+    assert facts["open_risk_usd"] == 12.0
+    assert facts["pending_stop_risk_usd"] == 12.0
+
+
+def test_carried_cash_is_not_asked_again(monkeypatch):
+    honored, stamp, posts = _honor(
+        monkeypatch,
+        {**LIVE, "allocation_cash_usd": 200.0, "min_lot_risk_usd": 40.0, "open_risk_usd": 0.0},
+        99999.0,
+    )
+    assert posts["persist"] == 0
+    assert posts["score"] == 0
+    assert honored == 200.0
+    assert stamp["f5_scaler_honor"] == "allocation_cash"
+    assert stamp["rounded_risk_usd"] == 200.0
+
+
+def test_carried_cash_above_the_room_after_the_minimum_lot_is_refused(monkeypatch):
+    room, _read = binding_room_usd({**LIVE, "open_risk_usd": 0.0})
+    honored, stamp, posts = _honor(
+        monkeypatch,
+        {
+            **LIVE,
+            "allocation_cash_usd": 10.0,
+            "min_lot_risk_usd": room + 50.0,
+            "open_risk_usd": 0.0,
+        },
+        99999.0,
+    )
+    assert posts["persist"] == 0
+    assert posts["score"] == 0
+    assert honored is None
+    assert stamp["f5_scaler_honor"] == "allocation_above_room"
+    assert stamp["rounded_risk_usd"] == room + 50.0

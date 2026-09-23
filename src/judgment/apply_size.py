@@ -688,6 +688,32 @@ def open_risk_read(params: Mapping[str, Any] | None) -> tuple[float | None, str]
     return None, "unset"
 
 
+def _nonnegative_usd_fact(facts: Mapping[str, Any], key: str) -> tuple[float | None, str]:
+    """A named USD amount that may be zero.
+
+    Absent means none. A present value that is not a finite amount leaves
+    the room unset.
+    """
+
+    if key not in facts or facts.get(key) in (None, ""):
+        return 0.0, "absent"
+    number = _float_or_none(facts.get(key))
+    if (
+        number is None
+        or number < 0
+        or number != number
+        or number in (float("inf"), float("-inf"))
+    ):
+        return None, "unset"
+    return number, "named"
+
+
+def _cycle_risk_usd(facts: Mapping[str, Any]) -> tuple[float | None, str]:
+    """Cash already sized for other candidates this cycle."""
+
+    return _nonnegative_usd_fact(facts, "cycle_risk_usd")
+
+
 def binding_room_usd(
     params: Mapping[str, Any] | None,
     equity: Any = None,
@@ -698,27 +724,121 @@ def binding_room_usd(
     has no daily rule and its floor is zero, so its room is its own equity
     less the stop risk already open. An account that declares nothing still
     needs its rules read; missing rules leave the room unset.
+
+    ``cycle_risk_usd``, when named, is cash this cycle has already sized.
+    Open risk is the figure ``_size_room_facts`` already computed: every
+    open position and every pending order. Pending stop risk is inside
+    that figure, so this function does not read the book again and does
+    not take it off a second time.
+    Admission and the execution size hop both call this function.
     """
 
     facts = params if isinstance(params, Mapping) else {}
     equity_n = equity if equity is not None else facts.get("equity")
     open_risk, _risk_read = open_risk_read(facts)
+    cycle, cycle_read = _cycle_risk_usd(facts)
+    if cycle_read == "unset" or cycle is None:
+        return None, "unset"
+    taken = open_risk
+    if taken is None:
+        return None, "unset"
+    taken = taken + cycle
     if no_firm_rules(facts):
         own = _positive_usd(equity_n)
-        if own is None or open_risk is None:
+        if own is None:
             return None, "unset"
-        room = own - open_risk
+        room = own - taken
         if room <= 0:
             return None, "empty"
         return room, "own_equity"
     floor_room = floor_room_usd(facts, equity_n)
     daily_room, _daily_read = daily_room_read(facts, equity_n)
-    if floor_room is None or daily_room is None or open_risk is None:
+    if floor_room is None or daily_room is None:
         return None, "unset"
-    room = min(floor_room, daily_room) - open_risk
+    room = min(floor_room, daily_room) - taken
     if room <= 0:
         return None, "empty"
     return room, "bound"
+
+
+CASH_CARRY: list[dict[str, Any]] = []
+
+
+def currency_digits(facts: Mapping[str, Any] | None) -> int | None:
+    """Digits of the account currency. A missing or non-integer fact stays missing."""
+
+    if not isinstance(facts, Mapping):
+        return None
+    value = facts.get("currency_digits")
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    number = _number(value)
+    if number is None or number < 0 or number != int(number):
+        return None
+    return int(number)
+
+
+def money_exceeds(amount: Any, ceiling: Any, facts: Mapping[str, Any] | None = None) -> bool:
+    """True when amount is above ceiling in the account currency.
+
+    Both sides round to ``currency_digits`` when the account states that fact.
+    A missing digit fact compares the two amounts exactly. A missing amount
+    does not exceed.
+    """
+
+    left = _number(amount)
+    right = _number(ceiling)
+    if left is None or right is None:
+        return False
+    digits = currency_digits(facts)
+    if digits is None:
+        return left > right
+    return round(left, digits) > round(right, digits)
+
+
+ROOM_FACT_KEYS = (
+    "equity",
+    "balance",
+    "positions_total",
+    "open_risk_usd",
+    "initial_balance",
+    "overall_loss_pct",
+    "daily_percent_external",
+    "day_start_balance",
+    "day_start_equity",
+    "day_start_equity_or_balance_baseline",
+    "account_rules",
+    "floor_room_usd",
+    "floor",
+    "daily_room_usd",
+    "pending_orders_total",
+    "pending_stop_risk_usd",
+    "currency_digits",
+)
+
+
+def read_binding_room_facts(mt5: Any, config: Mapping[str, Any] | None = None, namespace: str | None = None) -> dict[str, Any]:
+    """Facts for ``binding_room_usd``, from ``ExecutionEngine._size_room_facts``.
+
+    That read already counts pending orders inside open risk. This function
+    does not read positions or orders again.
+    """
+
+    from src.components.execution import ExecutionEngine
+
+    engine = object.__new__(ExecutionEngine)
+    engine.mt5 = mt5
+    engine.config = dict(config) if isinstance(config, Mapping) else {}
+    engine._runtime_namespace = namespace
+    try:
+        facts = engine._size_room_facts(0.0)
+    except Exception:
+        return {}
+    if not isinstance(facts, Mapping):
+        return {}
+    return dict(facts)
 
 
 def no_firm_rules(facts: Mapping[str, Any] | None) -> bool:
@@ -746,11 +866,47 @@ def cash_anchor_levels(
     room, _read = binding_room_usd(facts, equity if equity is not None else facts.get("equity"))
     if room is None or room <= 0:
         return []
+    open_risk, _risk_read = open_risk_read(facts)
+    floor = floor_room_usd(facts, equity if equity is not None else facts.get("equity"))
+    daily, _daily_read = daily_room_read(facts, equity if equity is not None else facts.get("equity"))
+    share: dict = {}
+    try:
+        from src.components.ultimate_book.admission import cycle_share_facts
+
+        share = cycle_share_facts()
+    except Exception:
+        share = {}
     pairs: list[tuple[str, float]] = []
+    min_lot = _positive_usd(facts.get("min_lot_risk_usd"))
+    if min_lot is None:
+        by_symbol = share.get("min_lot_usd") if isinstance(share, dict) else None
+        symbol = facts.get("symbol")
+        if isinstance(by_symbol, dict) and symbol not in (None, ""):
+            min_lot = _positive_usd(by_symbol.get(str(symbol)))
+    if min_lot is not None and min_lot <= room:
+        pairs.append(("the minimum lot's risk at this stop, in USD", min_lot))
     launcher = _positive_usd(target)
-    if launcher is not None and launcher < room:
+    if launcher is None and isinstance(share, dict):
+        launcher = _positive_usd(share.get("launcher_usd"))
+    if launcher is not None and launcher <= room:
         pairs.append(("the launcher cash, in USD", launcher))
-    pairs.append(("the binding room, in USD", room))
+    trades = facts.get("cycle_candidate_trades")
+    if not isinstance(trades, int) or isinstance(trades, bool):
+        trades = share.get("n") if isinstance(share, dict) else None
+    if isinstance(trades, int) and not isinstance(trades, bool) and trades > 0:
+        per_candidate = room / float(trades)
+        if per_candidate <= room:
+            pairs.append(("the room per candidate this cycle, in USD", per_candidate))
+    if open_risk is not None and daily is not None:
+        daily_left = daily - open_risk
+        if daily_left > 0 and daily_left <= room + 1e-6:
+            pairs.append(("the daily room, in USD", daily_left if daily_left <= room else room))
+    if open_risk is not None and floor is not None:
+        floor_left = floor - open_risk
+        if floor_left > 0 and floor_left <= room + 1e-6:
+            pairs.append(("the room to the floor, in USD", floor_left if floor_left <= room else room))
+    if not pairs or max(value for _label, value in pairs) < room - 1e-6:
+        pairs.append(("the binding room, in USD", room))
     kept: list[tuple[str, float]] = []
     seen: list[float] = []
     for label, number in pairs:
@@ -831,10 +987,34 @@ def honor_f5_scaler_risk(
     open_risk, risk_read = open_risk_read(params)
     binding_room, binding_read = binding_room_usd(params, params.get("equity"))
     anchors = cash_anchor_levels(params, target=target, equity=params.get("equity"))
-    if is_challenge_account(login=login, ns=ns):
+    carried = _positive_usd(params.get("allocation_cash_usd"))
+    rounded = None
+    if is_challenge_account(login=login, ns=ns) and carried is not None:
+        # The cycle allocation already decided this cash. Do not ask again.
+        # The lot rounds up to volume_min when the cash is below that risk,
+        # and that rounded risk is what the room has to hold.
+        rounded = carried
+        lot_risk = _positive_usd(params.get("min_lot_risk_usd"))
+        if lot_risk is not None and money_exceeds(lot_risk, carried, params):
+            rounded = lot_risk
+        if binding_room is None or money_exceeds(rounded, binding_room, params):
+            honored = None
+            used = "size_not_decided" if binding_room is None else "allocation_above_room"
+        else:
+            honored = carried
+            used = "allocation_cash"
+        choice_row = {
+            "size_decided": honored is not None,
+            "cash_usd": honored,
+            "returned_unit_usd": honored,
+        }
+    elif is_challenge_account(login=login, ns=ns):
         # The next unit's cash is the returned parameter. A miss stays unset.
         # The payload keys are the ones this hop already posts.
         # No room means no cash, and the hop is not asked.
+        # This ask is the path the cycle allocation did not cover.
+        # A Challenge limit fill carries allocation_cash_usd on the pending
+        # record and does not reach this ask.
         if binding_room is None:
             honored = None
             used = "size_not_decided"
@@ -917,7 +1097,27 @@ def honor_f5_scaler_risk(
         "printed_persist_weight": None if choice_row is None else choice_row.get("returned_weight"),
         "size_decided": False if choice_row is None else bool(choice_row.get("size_decided")),
         "persist_decided": False if choice_row is None else bool(choice_row.get("persist_decided")),
+        "allocation_cash_usd": carried,
+        "rounded_risk_usd": rounded,
+        "pending_stop_risk_usd": params.get("pending_stop_risk_usd"),
+        "symbol": params.get("symbol"),
     }
+    if carried is not None:
+        CASH_CARRY.append({
+            "symbol": params.get("symbol"),
+            "sleeve": params.get("sleeve") or params.get("tag"),
+            "allocation_cash_usd": carried,
+            "rounded_risk_usd": rounded,
+            "binding_room_usd": binding_room,
+            "open_risk_usd": open_risk,
+            "pending_stop_risk_usd": params.get("pending_stop_risk_usd"),
+            "f5_scaler_honor": used,
+            "final_check": (
+                "refused"
+                if honored is None
+                else "inside_room"
+            ),
+        })
     if scaler is not None:
         try:
             scaler.last = dict(stamp)

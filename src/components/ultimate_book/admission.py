@@ -1352,6 +1352,7 @@ _FRACTION_FACTS = (
     ("recorded_derisk_start_dd_pct", "the drawdown where size starts to shrink, as a fraction of equity"),
     ("recorded_gross_open_risk_cap_pct", "the firm's gross open-risk cap, as a fraction of equity"),
     ("recorded_profit_target_pct", "the firm's profit target, as a fraction of equity"),
+    ("contract_risk_pct", "risk of one minimum contract, as a fraction of equity"),
 )
 
 
@@ -1379,6 +1380,314 @@ def _push_anchor(levels: list, seen: list, label: str, number: float | None) -> 
         return
     seen.append(number)
     levels.append((text, number))
+
+
+_CYCLE_SHARE: dict[str, Any] = {"launcher_usd": None, "n": None, "min_lot_usd": {}}
+
+
+def note_launcher_usd(value: Any) -> None:
+    """The launcher cash this process was started with. A missing read stays unset."""
+
+    number = _finite_fact(value)
+    _CYCLE_SHARE["launcher_usd"] = number if number is not None and number > 0 else None
+
+
+def note_cycle_share(trades: int | None, min_lot_usd: Mapping[str, float] | None) -> None:
+    """The candidate count and each symbol's minimum-lot cash for this cycle."""
+
+    if isinstance(trades, int) and not isinstance(trades, bool) and trades > 0:
+        _CYCLE_SHARE["n"] = trades
+    else:
+        _CYCLE_SHARE["n"] = None
+    clean: dict[str, float] = {}
+    for symbol, raw in dict(min_lot_usd or {}).items():
+        number = _finite_fact(raw)
+        if number is not None and number > 0:
+            clean[str(symbol)] = number
+    _CYCLE_SHARE["min_lot_usd"] = clean
+
+
+def cycle_share_facts() -> dict[str, Any]:
+    """Facts the cash score reads so both layers use one cycle's levels."""
+
+    return {
+        "launcher_usd": _CYCLE_SHARE.get("launcher_usd"),
+        "n": _CYCLE_SHARE.get("n"),
+        "min_lot_usd": dict(_CYCLE_SHARE.get("min_lot_usd") or {}),
+    }
+
+
+def min_lot_risk(stop: Any, equity: Any, info: Any) -> tuple[float | None, float | None]:
+    """Minimum-lot risk at this stop, as a fraction of equity and as USD.
+
+    Unset when the stop, the equity, or the broker's contract geometry cannot be read.
+    """
+
+    equity_n = _finite_fact(equity)
+    distance = _finite_fact(stop)
+    if equity_n is None or equity_n <= 0 or distance is None or distance <= 0 or info is None:
+        return None, None
+
+    def _num(key: str) -> float | None:
+        raw = info.get(key) if isinstance(info, dict) else getattr(info, key, None)
+        return _finite_fact(raw)
+
+    contract = _num("trade_contract_size")
+    minimum = _num("volume_min")
+    if contract is None or minimum is None or contract <= 0 or minimum <= 0:
+        return None, None
+    usd = minimum * contract * distance
+    if usd <= 0:
+        return None, None
+    return usd / equity_n, usd
+
+
+def _passive_entry(module, intent, symbol=None) -> float | None:
+    """Bid for a long, ask for a short. The same side a limit uses when the intent has no level yet."""
+
+    symbol = symbol or getattr(intent, "symbol", None)
+    tick_fn = getattr(module, "symbol_info_tick", None) if module is not None else None
+    if not callable(tick_fn) or not symbol:
+        return None
+    try:
+        side = int(getattr(intent, "direction", None))
+    except (TypeError, ValueError):
+        return None
+    if side == 0:
+        return None
+    try:
+        tick = tick_fn(symbol)
+    except Exception:
+        return None
+    if tick is None:
+        return None
+    if isinstance(tick, dict):
+        raw = tick.get("bid") if side > 0 else tick.get("ask")
+    else:
+        raw = getattr(tick, "bid", None) if side > 0 else getattr(tick, "ask", None)
+    price = _finite_fact(raw)
+    if price is None or price <= 0:
+        return None
+    return price
+
+
+def min_lot_stop_risk_usd(intent, info, calc, *, buy: int = 0, sell: int = 1, module=None) -> float | None:
+    """USD lost if volume_min hits this stop, from order_calc_profit.
+
+    The open is the intent's entry when it has one, otherwise the live bid or ask.
+    Unset when that price, the stop, the minimum lot, or the broker call cannot be read.
+    """
+
+    usd, _why = _min_lot_stop_risk(intent, info, calc, buy=buy, sell=sell, module=module)
+    return usd
+
+
+def _min_lot_stop_risk(intent, info, calc, *, buy: int = 0, sell: int = 1, module=None, broker_symbol=None):
+    if not callable(calc):
+        return None, "no_calc"
+    if info is None:
+        return None, "no_symbol_info"
+    entry = _finite_fact(getattr(intent, "entry_price", None))
+    if entry is None or entry <= 0:
+        entry = _passive_entry(module, intent, broker_symbol)
+    distance = _finite_fact(getattr(intent, "stop_dist", None))
+    if entry is None or entry <= 0:
+        return None, "no_entry"
+    if distance is None or distance <= 0:
+        return None, "no_stop"
+
+    def _num(key: str) -> float | None:
+        raw = info.get(key) if isinstance(info, dict) else getattr(info, key, None)
+        return _finite_fact(raw)
+
+    volume = _num("volume_min")
+    if volume is None or volume <= 0:
+        return None, "no_volume"
+    try:
+        side = int(getattr(intent, "direction", None))
+    except (TypeError, ValueError):
+        return None, "no_side"
+    if side > 0:
+        order_type = buy
+        close = entry - distance
+    elif side < 0:
+        order_type = sell
+        close = entry + distance
+    else:
+        return None, "no_side"
+    if close <= 0:
+        return None, "stop_through_zero"
+    symbol = broker_symbol or getattr(intent, "symbol", None)
+    if not symbol:
+        return None, "no_symbol"
+    try:
+        profit = float(calc(order_type, symbol, float(volume), float(entry), float(close)))
+    except Exception:
+        return None, "calc_failed"
+    if profit != profit or profit in (float("inf"), float("-inf")) or profit >= 0:
+        return None, "calc_failed"
+    return -profit, "read"
+
+
+def _lot_symbol_info(symbol, info_for, module):
+    """Symbol facts for the minimum lot. Select the name when the terminal has not."""
+
+    info = info_for(symbol) if callable(info_for) else None
+    if info is not None or module is None or not symbol:
+        return info
+    getter = getattr(module, "symbol_info", None)
+    select = getattr(module, "symbol_select", None)
+
+    def _get():
+        if not callable(getter):
+            return None
+        try:
+            return getter(symbol)
+        except Exception:
+            return None
+
+    info = _get()
+    if info is not None or not callable(select):
+        return info
+    try:
+        select(symbol, True)
+    except Exception:
+        return None
+    return _get()
+
+
+def stamp_min_lot_risk(intents, equity: Any, info_for, calc=None, *, buy: int = 0, sell: int = 1, module=None, resolve=None) -> None:
+    """Write each intent's minimum-lot risk from order_calc_profit at the stop."""
+
+    for intent in intents:
+        canonical = getattr(intent, "symbol", None)
+        broker = canonical
+        if callable(resolve) and canonical:
+            try:
+                resolved = resolve(str(canonical))
+            except Exception:
+                resolved = None
+            if resolved:
+                broker = resolved
+        info = _lot_symbol_info(broker, info_for, module)
+        usd, why = _min_lot_stop_risk(
+            intent, info, calc, buy=buy, sell=sell, module=module, broker_symbol=broker,
+        )
+        details = _intent_details(intent)
+        if not isinstance(details, dict):
+            continue
+        details["min_lot_risk_read"] = why
+        if usd is None:
+            continue
+        equity_n = _finite_fact(equity)
+        fraction = (usd / equity_n) if equity_n is not None and equity_n > 0 else None
+        details["min_lot_risk_usd"] = usd
+        if fraction is not None:
+            details["min_lot_risk_pct"] = fraction
+
+
+_SHARE_ARITHMETIC = (
+    "Cash for a candidate equals the cycle's total risk times that candidate's weight "
+    "divided by the sum of the weights. "
+    "An unset total, or every weight at stays out, leaves every share unset. "
+    "Nothing is clipped. "
+    "The room binds because the top level of the total is the binding room. "
+    "When a candidate's cash is below its minimum-lot risk, the lot rounds up to the minimum lot, "
+    "and that candidate's risk in the running total is the minimum-lot risk. "
+    "When the sum of those rounded risks is above the room, every share stays unset. "
+    "When a minimum-lot risk cannot be read, the rounded total is unknown and every share stays unset."
+)
+
+LAST_CYCLE_SHARE: dict[str, Any] = {}
+
+_WEIGHT_ANCHORS = (("stays out", 0.0), ("full weight", 1.0))
+
+
+def _cycle_binding_room(card: Mapping[str, Any], cycle_taken: float | None) -> tuple[float | None, str, dict]:
+    """The account room from ``binding_room_usd``, less cash already sized this cycle.
+
+    The floor is measured on account equity. The governor notional is not that equity.
+    """
+
+    from src.judgment.apply_size import ROOM_FACT_KEYS, binding_room_usd, daily_room_read
+
+    facts: dict[str, Any] = {}
+    for key in ROOM_FACT_KEYS:
+        if card.get(key) not in (None, ""):
+            facts[key] = card.get(key)
+    account = _card_fact(dict(card), "account_equity")
+    if account is not None and account > 0:
+        facts["equity"] = account
+    equity = _finite_fact(facts.get("equity"))
+    if (
+        cycle_taken is not None
+        and not isinstance(cycle_taken, bool)
+        and equity is not None
+        and equity > 0
+    ):
+        taken = _finite_fact(cycle_taken)
+        if taken is not None and taken >= 0:
+            facts["cycle_risk_usd"] = taken * equity
+    daily, _daily_how = daily_room_read(facts, facts.get("equity"))
+    if daily is not None:
+        open_n = _finite_fact(facts.get("open_risk_usd"))
+        pending_orders = facts.get("pending_orders_total")
+        if (
+            open_n is None
+            and facts.get("positions_total") in (0, 0.0)
+            and pending_orders in (None, "", 0, 0.0)
+        ):
+            open_n = 0.0
+        cycle_n = _finite_fact(facts.get("cycle_risk_usd")) or 0.0
+        if open_n is not None:
+            left = daily - open_n - cycle_n
+            if left > 0:
+                facts["daily_room_left_usd"] = left
+    room, how = binding_room_usd(facts, facts.get("equity"))
+    return room, how, facts
+
+
+def _total_usd_anchors(facts: dict, *, trades: int | None, room: float) -> list:
+    """USD levels of the cycle total. The top level is the binding room."""
+
+    levels: list = []
+    seen: list = []
+
+    def _below(label: str, number: float | None) -> None:
+        if number is None or number <= 0 or number >= room - 1e-6:
+            return
+        _push_anchor(levels, seen, label, number)
+
+    launcher = _card_fact(facts, "launcher_usd")
+    if launcher is None or launcher <= 0:
+        launcher = _finite_fact(_CYCLE_SHARE.get("launcher_usd"))
+    _below("the launcher cash, in USD", launcher)
+    if isinstance(trades, int) and not isinstance(trades, bool) and trades > 0:
+        _below("the room per candidate this cycle, in USD", room / float(trades))
+    daily = _finite_fact(facts.get("daily_room_left_usd"))
+    _below("the daily room, in USD", daily)
+    _push_anchor(levels, seen, "the binding room, in USD", room)
+    levels.sort(key=lambda pair: pair[1])
+    return levels
+
+
+def _share_anchors(facts: dict, *, min_lot: float | None = None, trades: int | None = None) -> list:
+    """USD levels of the cycle total. Kept so a caller can read the same set."""
+
+    room, _how, room_facts = _cycle_binding_room(facts, _card_fact(facts, "cycle_risk_pct"))
+    if room is None or room <= 0:
+        return []
+    merged = dict(facts)
+    merged.update(room_facts)
+    return _total_usd_anchors(merged, trades=trades, room=room)
+
+
+def _unit_risk_anchors(facts: dict) -> list:
+    """The cycle total's levels. A weight is not this list."""
+
+    trades = facts.get("cycle_candidate_trades")
+    count = trades if isinstance(trades, int) and not isinstance(trades, bool) else None
+    return _share_anchors(facts, trades=count)
 
 
 def _fraction_anchors(facts: dict) -> list:
@@ -1469,7 +1778,10 @@ def _r_anchors(facts: dict) -> list:
 
 
 def _anchors_for(role: str, facts: dict) -> list:
-    unit = _SCORE_UNIT.get(str(role).split("|", 1)[0])
+    name = str(role).split("|", 1)[0]
+    if name == "unit_risk":
+        return _unit_risk_anchors(facts)
+    unit = _SCORE_UNIT.get(name)
     if unit == "fraction":
         return _fraction_anchors(facts)
     if unit == "multiplier":
@@ -2088,6 +2400,306 @@ def precount_intent_filter(
     return kept
 
 
+def sized_cycle_risk(units, *, skip_cluster: str | None = None) -> float | None:
+    """Risk already taken by sized units in this cycle.
+
+    A sized unit with no risk number makes the total unknown. Unknown is not zero.
+    ``skip_cluster`` is the cluster being re-sized, so its previous number is not counted twice.
+    """
+
+    total = 0.0
+    for unit in units or []:
+        if not isinstance(unit, dict) or not unit.get("sized"):
+            continue
+        if skip_cluster is not None and str(unit.get("cluster") or "") == str(skip_cluster):
+            continue
+        raw = unit.get("unit_risk_pct")
+        if raw is None:
+            per = unit.get("risk_pct_per_trade")
+            count = unit.get("n_trades")
+            if isinstance(per, bool) or isinstance(count, bool) or per is None or count is None:
+                return None
+            try:
+                raw = float(per) * float(count)
+            except (TypeError, ValueError):
+                return None
+        if isinstance(raw, bool) or raw is None:
+            return None
+        try:
+            total += float(raw)
+        except (TypeError, ValueError):
+            return None
+    return total
+
+
+def _outcome_store_rows() -> list[dict] | None:
+    """Closed outcomes for this sleeve. None when the store cannot be read.
+
+    A closed trade record contributes its realised R. The event stream is
+    that store when the record directory is absent. An empty store is an
+    empty list. A missing R is not a win, a loss, or zero.
+    """
+
+    from pathlib import Path
+
+    roots: list[Path] = []
+    named = os.environ.get("GTOS_BOOK_ROOT")
+    if named:
+        roots.append(Path(named))
+    roots.append(Path(__file__).resolve().parents[3])
+    seen: set[str] = set()
+    chosen: list[Path] = []
+    for root in roots:
+        key = str(root)
+        if key in seen:
+            continue
+        seen.add(key)
+        chosen.append(root)
+    cache = globals().setdefault("_OUTCOME_ROWS", {})
+    for root in chosen:
+        ns = root / "pipeline_state" / "ultimate_book" / "operator"
+        records = ns / "trade_records"
+        events = root / "shadow_logs" / "f5_minimal" / "operator" / "events.jsonl"
+        source = records if records.is_dir() else events if events.is_file() else None
+        if source is None:
+            continue
+        try:
+            stat = source.stat()
+            stamp = (str(source), int(getattr(stat, "st_mtime_ns", int(stat.st_mtime * 1e9))), int(stat.st_size))
+        except OSError:
+            continue
+        if cache.get("stamp") == stamp:
+            return cache.get("rows")
+        rows = _read_outcome_source(source)
+        cache["stamp"] = stamp
+        cache["rows"] = rows
+        return rows
+    return None
+
+
+def _read_outcome_source(source) -> list[dict]:
+    import json
+    from pathlib import Path
+
+    source = Path(source)
+    rows: list[dict] = []
+    if source.is_dir():
+        for path in sorted(source.glob("*.json")):
+            try:
+                doc = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if not isinstance(doc, dict) or not _record_closed(doc):
+                continue
+            number = _record_r(doc)
+            sleeve = _record_sleeve(doc)
+            if number is None or not sleeve:
+                continue
+            rows.append({"sleeve": sleeve, "r": number})
+        return rows
+    try:
+        lines = source.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            doc = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(doc, dict) or doc.get("event") != "f5_trade_closed":
+            continue
+        number = _finite_fact(doc.get("realised_r"))
+        sleeve = str(doc.get("sleeve") or "")
+        if number is None or not sleeve:
+            continue
+        rows.append({"sleeve": sleeve, "r": number})
+    return rows
+
+
+def _record_sleeve(doc: dict) -> str:
+    execution = doc.get("execution") if isinstance(doc.get("execution"), dict) else {}
+    for source in (doc, execution):
+        name = source.get("sleeve") if isinstance(source, dict) else None
+        if name not in (None, ""):
+            return str(name)
+    return ""
+
+
+def _record_closed(doc: dict) -> bool:
+    if str(doc.get("trade_lifecycle_status") or "").lower() == "closed":
+        return True
+    if doc.get("closed_at_utc") not in (None, ""):
+        return True
+    execution = doc.get("execution") if isinstance(doc.get("execution"), dict) else {}
+    close = execution.get("f5_close") if isinstance(execution.get("f5_close"), dict) else {}
+    return _finite_fact(close.get("realised_r")) is not None
+
+
+def _record_r(doc: dict) -> float | None:
+    execution = doc.get("execution") if isinstance(doc.get("execution"), dict) else {}
+    close = execution.get("f5_close") if isinstance(execution.get("f5_close"), dict) else {}
+    for source in (close, doc, execution):
+        if not isinstance(source, dict):
+            continue
+        number = _finite_fact(source.get("realised_r"))
+        if number is not None:
+            return number
+    return None
+
+
+def _sleeve_outcome_card(sleeves) -> dict | None:
+    """Wins, losses, and R for these sleeves. Unset when the store has none."""
+
+    rows = _outcome_store_rows()
+    if rows is None:
+        return None
+    wanted = {str(name) for name in sleeves if name}
+    grouped: dict[str, list[float]] = {name: [] for name in wanted}
+    for row in rows:
+        name = str(row.get("sleeve") or "")
+        if name not in grouped:
+            continue
+        number = _finite_fact(row.get("r"))
+        if number is None:
+            continue
+        grouped[name].append(number)
+    out: dict[str, dict] = {}
+    for name, values in grouped.items():
+        if not values:
+            continue
+        out[name] = {
+            "wins": sum(1 for value in values if value > 0),
+            "losses": sum(1 for value in values if value < 0),
+            "r": sum(values),
+        }
+    return out or None
+
+
+def _stamp_risk_stakes(card: dict, *, members, candidate_trades: int | None) -> None:
+    """Facts that say what the room is. They are not levels and not a cap.
+
+    Each one stays off the card when its live read is missing.
+    """
+
+    wall = _card_fact(card, "recorded_max_dd_limit_pct")
+    if wall is not None and wall > 0:
+        card["floor_ends_account"] = "crossing the floor ends the account"
+    reference = _card_fact(card, "max_dd_reference_equity")
+    equity = _card_fact(card, "account_equity")
+    if equity is None or equity <= 0:
+        equity = _card_fact(card, "equity")
+    target = _card_fact(card, "recorded_profit_target_pct")
+    if (
+        target is not None
+        and target > 0
+        and reference is not None
+        and reference > 0
+        and equity is not None
+        and equity > 0
+    ):
+        card["to_pass"] = reference * (1.0 + target) - equity
+    if isinstance(candidate_trades, int) and not isinstance(candidate_trades, bool) and candidate_trades >= 0:
+        card["cycle_candidate_trades"] = candidate_trades
+    outcomes = _sleeve_outcome_card(members)
+    if outcomes:
+        card["sleeve_outcomes"] = outcomes
+
+
+def broker_order_calc(mt5) -> tuple:
+    """``order_calc_profit`` and the buy and sell type codes on this terminal."""
+
+    raw = getattr(mt5, "_mt5", None) if mt5 is not None else None
+    module = raw if raw is not None else mt5
+    if module is None:
+        return None, 0, 1
+    calc = getattr(module, "order_calc_profit", None)
+    buy = getattr(module, "ORDER_TYPE_BUY", 0)
+    sell = getattr(module, "ORDER_TYPE_SELL", 1)
+    try:
+        buy_n = int(buy)
+        sell_n = int(sell)
+    except (TypeError, ValueError):
+        buy_n, sell_n = 0, 1
+    return calc, buy_n, sell_n
+
+
+def _intent_details(intent) -> dict | None:
+    """The mutable fact bag on an intent. A frozen intent still receives one."""
+
+    details = getattr(intent, "details", None)
+    if isinstance(details, dict):
+        return details
+    details = {}
+    try:
+        object.__setattr__(intent, "details", details)
+    except Exception:
+        return None
+    return details
+
+
+def _shares_from_scores(rows: list, *, total, room: float, equity, facts=None) -> str | None:
+    """Cash is total times weight over the sum of the positive weights.
+
+    Returns the unset reason, or None when the rounded shares fit.
+    A weight of zero stays out. An empty weight is not a share.
+    Nothing here clips a number down into the room.
+    Amounts are compared in the account currency's digits when that fact
+    is on the room. A missing digit fact compares the amounts exactly.
+    """
+
+    from src.judgment.apply_size import money_exceeds
+
+    positive = []
+    for row in rows:
+        weight = row.get("weight")
+        if weight is not None and weight > 0:
+            positive.append(weight)
+    room_n = _finite_fact(room)
+    equity_n = _finite_fact(equity)
+    total_n = _finite_fact(total)
+    if (
+        room_n is None
+        or room_n <= 0
+        or equity_n is None
+        or equity_n <= 0
+        or total_n is None
+        or total_n <= 0
+        or money_exceeds(total_n, room_n, facts)
+        or not positive
+    ):
+        for row in rows:
+            row["cash_usd"] = None
+            row["rounded_usd"] = None
+        return "risk_unset"
+    weight_sum = sum(positive)
+    unread = False
+    rounded_sum = 0.0
+    for row in rows:
+        weight = row.get("weight")
+        if weight is None or weight <= 0:
+            row["cash_usd"] = None
+            row["rounded_usd"] = None
+            continue
+        cash = total_n * weight / weight_sum
+        lot = _finite_fact(row.get("min_lot_risk_usd"))
+        row["cash_usd"] = cash
+        if lot is None or lot <= 0:
+            unread = True
+            row["rounded_usd"] = None
+            continue
+        rounded = lot if money_exceeds(lot, cash, facts) else cash
+        row["rounded_usd"] = rounded
+        rounded_sum += rounded
+    if unread:
+        return "risk_unset:min_lot_unread"
+    if money_exceeds(rounded_sum, room_n, facts):
+        return "risk_unset:rounded_above_room"
+    return None
+
+
 def _challenge_risk_units(
     pending: list[tuple],
     *,
@@ -2103,6 +2715,7 @@ def _challenge_risk_units(
     stress_state: "StressDeriskState | None",
     overlays: bool,
     learning_rerate: "Mapping[str, float] | None" = None,
+    cycle_taken: float | None = 0.0,
 ) -> list[SizedUnit]:
     """One pack: each unit's risk and its how_many_more side.
 
@@ -2110,6 +2723,7 @@ def _challenge_risk_units(
     An empty risk does not write zero and does not drop the unit.
     An empty side does not shed.
     """
+    LAST_CYCLE_SHARE.clear()
     card = dict(equity_card or {})
     card["recorded_base_risk"] = base_risk
     card["room_pct"] = room
@@ -2154,37 +2768,295 @@ def _challenge_risk_units(
             questions[f"how_many|{tag}"] = block
     pack = _pack(card, questions) if questions else {}
     out: list[SizedUnit] = []
+    prior_known = True
+    taken = 0.0
+    candidate_trades = 0
+    candidate_known = True
+    for _day, _cluster, _group, _members, n in pending:
+        if isinstance(n, bool):
+            candidate_known = False
+            break
+        try:
+            candidate_trades += int(n)
+        except (TypeError, ValueError):
+            candidate_known = False
+            break
+    if not candidate_known:
+        candidate_trades = None
+    if cycle_taken is None or isinstance(cycle_taken, bool):
+        prior_known = False
+    else:
+        try:
+            taken = float(cycle_taken)
+        except (TypeError, ValueError):
+            prior_known = False
+        if prior_known and taken < 0:
+            prior_known = False
+    room_usd = None
+    room_how = "binding_room"
+    room_facts: dict = {}
+    if prior_known:
+        room_usd, room_how, room_facts = _cycle_binding_room(card, taken)
+    slots: list = []
+    asking: list = []
     for day, cluster, group, members, n in pending:
         tag = f"{day}|{cluster}"
         if learning_rerate and any(_LEARNING_MULT.get(sleeve) is None for sleeve in members):
-            out.append(SizedUnit(cluster, members, n, None, None, None, False, "learning_unset"))
+            slots.append(SizedUnit(cluster, members, n, None, None, None, False, "learning_unset"))
             continue
-        risk = _admit_score(
-            f"unit_risk|{tag}",
-            "The score you return is this unit's worst-case open risk as a fraction of live equity. "
-            f"The unit is {tag}. "
-            "The profile base, the registry weights, the room, and the open risk are facts, not the risk. "
-            "An empty score leaves this unit's risk unset. Do not write zero. Do not send.",
-            card,
-        )
-        if risk is None:
-            unit = SizedUnit(cluster, members, n, None, None, None, False, "risk_unset")
+        if not prior_known:
+            unit = SizedUnit(
+                cluster, members, n, None, None, None, False, "risk_unset:cycle_risk_pct",
+            )
             if how is not None:
                 _note_side(unit, pack.get(f"how_many|{tag}"))
-            out.append(unit)
+            slots.append(unit)
             continue
-        unit_risk = float(risk)
-        per_trade = (unit_risk / n) if n else None
-        pool_reason: tuple[str, ...] = ()
-        if sqrt_n_pooling and n > 1:
-            pool_reason = (f"sqrtN_pool_n{n}",)
-        unit = SizedUnit(
-            cluster, members, n, None, per_trade, unit_risk, True, "sized", pool_reason,
+        unit_card = dict(card)
+        if _card_fact(unit_card, "launcher_usd") is None:
+            launcher = _finite_fact(_CYCLE_SHARE.get("launcher_usd"))
+            if launcher is not None and launcher > 0:
+                unit_card["launcher_usd"] = launcher
+        binding = None
+        min_lot = None
+        for item in group:
+            details = getattr(item, "details", None)
+            if not isinstance(details, dict):
+                continue
+            lot = _finite_fact(details.get("min_lot_risk_pct"))
+            if lot is not None and lot > 0 and (min_lot is None or lot < min_lot):
+                min_lot = lot
+            contract = _finite_fact(details.get("contract_risk_pct"))
+            if binding is None and contract is not None and contract > 0:
+                binding = contract
+        if binding is not None:
+            unit_card["contract_risk_pct"] = binding
+        if min_lot is not None:
+            unit_card["min_lot_risk_pct"] = min_lot
+        unit_card["cycle_risk_pct"] = taken
+        room_left = room_usd
+        missing = None if room_usd is not None and room_usd > 0 else (room_how or "binding_room")
+        if missing is not None or room_left is None or room_left <= 0:
+            unit = SizedUnit(
+                cluster, members, n, None, None, None, False,
+                "risk_unset:" + (missing or "binding_room"),
+            )
+            if how is not None:
+                _note_side(unit, pack.get(f"how_many|{tag}"))
+            slots.append(unit)
+            continue
+        unit_card["binding_room_usd"] = room_left
+        asking.append({
+            "tag": tag,
+            "day": day,
+            "cluster": cluster,
+            "group": group,
+            "members": members,
+            "n": n,
+            "card": unit_card,
+            "room": room_left,
+            "min_lot": min_lot,
+            "slot": len(slots),
+        })
+        slots.append(None)
+    if asking:
+        trades = 0
+        trade_known = True
+        members_all: list = []
+        candidates: list = []
+        min_lot_usd: dict[str, float] = {}
+        for row in asking:
+            if isinstance(row["n"], bool):
+                trade_known = False
+            else:
+                try:
+                    trades += int(row["n"])
+                except (TypeError, ValueError):
+                    trade_known = False
+            for sleeve in row["members"]:
+                if sleeve not in members_all:
+                    members_all.append(sleeve)
+            for item in row["group"]:
+                direction = getattr(item, "direction", None)
+                side = "long" if direction == 1 else "short" if direction == -1 else None
+                details = getattr(item, "details", None)
+                details = details if isinstance(details, dict) else {}
+                view = {
+                    "day": row["day"],
+                    "cluster": row["cluster"],
+                    "sleeve": getattr(item, "sleeve", None),
+                    "symbol": getattr(item, "symbol", None),
+                    "side": side,
+                    "stop_dist": getattr(item, "stop_dist", None),
+                }
+                fraction = _finite_fact(details.get("min_lot_risk_pct"))
+                if fraction is not None and fraction > 0:
+                    view["min_lot_risk_pct"] = fraction
+                usd = _finite_fact(details.get("min_lot_risk_usd"))
+                symbol = view.get("symbol")
+                if usd is not None and usd > 0:
+                    view["min_lot_risk_usd"] = usd
+                    if symbol not in (None, ""):
+                        min_lot_usd[str(symbol)] = usd
+                if details.get("min_lot_risk_read") not in (None, ""):
+                    view["min_lot_risk_read"] = details.get("min_lot_risk_read")
+                candidates.append(view)
+        if not trade_known or trades <= 0:
+            trades = None
+        state = dict(asking[0]["card"])
+        state.pop("min_lot_risk_pct", None)
+        state.pop("contract_risk_pct", None)
+        state["candidates"] = candidates
+        _stamp_risk_stakes(
+            state,
+            members=members_all,
+            candidate_trades=trades if trades is not None else candidate_trades,
         )
-        if how is not None:
-            _note_side(unit, pack.get(f"how_many|{tag}"))
-        out.append(unit)
-    return out
+        if isinstance(state.get("cycle_candidate_trades"), int):
+            trades = state["cycle_candidate_trades"]
+        note_cycle_share(trades if isinstance(trades, int) else None, min_lot_usd)
+        room = asking[0]["room"]
+        state["binding_room_usd"] = room
+        state["share_arithmetic"] = _SHARE_ARITHMETIC
+        anchor_facts = dict(room_facts)
+        if anchor_facts.get("launcher_usd") in (None, "") and state.get("launcher_usd") not in (None, ""):
+            anchor_facts["launcher_usd"] = state.get("launcher_usd")
+        total_anchors = _total_usd_anchors(
+            anchor_facts,
+            trades=trades if isinstance(trades, int) else None,
+            room=room,
+        )
+        scored: list = []
+        specs = []
+        if len(total_anchors) >= 2:
+            specs.append((
+                "unit_usd|cycle",
+                "The score you return is this cycle's total risk, in USD. "
+                + _SHARE_ARITHMETIC
+                + " The levels run from the launcher cash up to the binding room. "
+                "The top level is the binding room, so the total cannot exceed it. "
+                "The score may sit between the levels. "
+                "An empty score leaves the total unset. Do not write zero. Do not send.",
+                total_anchors,
+            ))
+            index = 0
+            for row in asking:
+                for item in row["group"]:
+                    symbol = getattr(item, "symbol", None)
+                    sleeve = getattr(item, "sleeve", None)
+                    side = "long" if getattr(item, "direction", None) == 1 else "short" if getattr(item, "direction", None) == -1 else "this side"
+                    named = str(symbol) if symbol not in (None, "") else row["tag"]
+                    question_id = f"unit_risk|{named}|{sleeve}|{index}"
+                    specs.append((
+                        question_id,
+                        f"The score you return is the weight for {named} ({side}), "
+                        "from stays out to full weight. "
+                        + _SHARE_ARITHMETIC
+                        + " A score at stays out leaves this candidate out. "
+                        "An empty score leaves this weight unset. Do not send.",
+                        list(_WEIGHT_ANCHORS),
+                    ))
+                    details = getattr(item, "details", None)
+                    details = details if isinstance(details, dict) else {}
+                    scored.append({
+                        "row": row,
+                        "item": item,
+                        "question_id": question_id,
+                        "symbol": None if symbol in (None, "") else str(symbol),
+                        "sleeve": None if sleeve in (None, "") else str(sleeve),
+                        "min_lot_risk_usd": _finite_fact(details.get("min_lot_risk_usd")),
+                        "min_lot_risk_read": details.get("min_lot_risk_read"),
+                        "weight": None,
+                        "cash_usd": None,
+                        "rounded_usd": None,
+                    })
+                    index += 1
+        answered: dict = {}
+        if specs:
+            try:
+                from src.judgment.nineteen import score_many
+                answered = score_many(state, specs)
+            except Exception:
+                answered = {}
+            if not isinstance(answered, dict):
+                answered = {}
+        total = _finite_fact(answered.get("unit_usd|cycle"))
+        for entry in scored:
+            entry["weight"] = _finite_fact(answered.get(entry["question_id"]))
+        equity = _finite_fact(room_facts.get("equity"))
+        reason = _shares_from_scores(scored, total=total, room=room, equity=equity, facts=room_facts)
+        rounded_values = [entry.get("rounded_usd") for entry in scored if entry.get("rounded_usd") is not None]
+        LAST_CYCLE_SHARE.update({
+            "binding_room_usd": room,
+            "total_usd": total,
+            "share_arithmetic": _SHARE_ARITHMETIC,
+            "reason": reason or "sized",
+            "rounded_sum_usd": None if reason == "risk_unset:min_lot_unread" or not rounded_values else sum(rounded_values),
+            "candidates": [
+                {
+                    "symbol": entry.get("symbol"),
+                    "sleeve": entry.get("sleeve"),
+                    "weight": entry.get("weight"),
+                    "cash_usd": entry.get("cash_usd"),
+                    "min_lot_risk_usd": entry.get("min_lot_risk_usd"),
+                    "min_lot_risk_read": entry.get("min_lot_risk_read"),
+                    "rounded_usd": entry.get("rounded_usd"),
+                }
+                for entry in scored
+            ],
+        })
+        by_row: dict = {}
+        for entry in scored:
+            by_row.setdefault(id(entry["row"]), []).append(entry)
+        for row in asking:
+            members = by_row.get(id(row), [])
+            if reason is not None or not members:
+                unit = SizedUnit(
+                    row["cluster"], row["members"], row["n"], None, None, None, False,
+                    reason or "risk_unset",
+                )
+            else:
+                rounded_sum = 0.0
+                any_sized = False
+                for entry in members:
+                    details = _intent_details(entry["item"])
+                    cash = entry.get("cash_usd")
+                    rounded = entry.get("rounded_usd")
+                    if not isinstance(details, dict):
+                        continue
+                    details["candidate_share"] = True
+                    if (
+                        cash is not None
+                        and cash > 0
+                        and rounded is not None
+                        and equity is not None
+                        and equity > 0
+                    ):
+                        details["allocation_cash_usd"] = cash
+                        details["candidate_risk_pct"] = cash / equity
+                        details["candidate_rounded_usd"] = rounded
+                        rounded_sum += rounded
+                        any_sized = True
+                    else:
+                        details["candidate_risk_pct"] = None
+                if not any_sized or equity is None or equity <= 0 or row["n"] in (None, 0):
+                    unit = SizedUnit(
+                        row["cluster"], row["members"], row["n"], None, None, None, False, "risk_unset",
+                    )
+                else:
+                    unit_risk = rounded_sum / equity
+                    per_trade = unit_risk / row["n"]
+                    pool_reason: tuple[str, ...] = ()
+                    if sqrt_n_pooling and row["n"] > 1:
+                        pool_reason = (f"sqrtN_pool_n{row['n']}",)
+                    unit = SizedUnit(
+                        row["cluster"], row["members"], row["n"], None, per_trade, unit_risk, True,
+                        "sized", pool_reason,
+                    )
+            if how is not None:
+                _note_side(unit, pack.get(f"how_many|{row['tag']}"))
+            slots[row["slot"]] = unit
+    return slots
 
 
 def size_correlated_units(
@@ -2215,6 +3087,7 @@ def size_correlated_units(
     candidate_refusal_sink: "list[dict[str, Any]] | None" = None,
     equity_card: "Mapping[str, Any] | None" = None,
     room_pct: float | None = None,
+    cycle_taken: float | None = 0.0,
 ) -> list[SizedUnit]:
     """Group same-day intents into correlated risk units and confidence-size each.
 
@@ -2471,6 +3344,7 @@ def size_correlated_units(
             stress_state=stress_state,
             overlays=overlays,
             learning_rerate=learning_rerate,
+            cycle_taken=cycle_taken,
         )
         step = 0
         filled: list[SizedUnit] = []
@@ -2979,6 +3853,12 @@ def admit_and_size(
     vol_level_tilt: bool = False,
     candidate_refusal_sink: "list[dict[str, Any]] | None" = None,
     admission_score: Any = None,
+    cycle_taken: float | None = 0.0,
+    book_open_risk_pct: float | None = None,
+    apply_book_open_risk: bool = False,
+    account_equity: float | None = None,
+    launcher_usd: float | None = None,
+    room_facts: "Mapping[str, Any] | None" = None,
 ) -> dict[str, Any]:
     """Top-level deployable decision: governor gate -> confidence-weighted correlated-unit sizing.
 
@@ -3108,7 +3988,17 @@ def admit_and_size(
             state, limits,
             recorded_base_risk=base_risk,
             recorded_size_cap=gov.size_cap_multiplier,
+            account_equity=account_equity,
+            launcher_usd=launcher_usd,
         )
+        if isinstance(room_facts, dict):
+            for key, value in room_facts.items():
+                if value in (None, "") or key == "equity":
+                    continue
+                if equity_card.get(key) in (None, ""):
+                    equity_card[key] = value
+        if apply_book_open_risk:
+            equity_card["open_risk_pct"] = book_open_risk_pct
     else:
         size_base = base_risk * gov.size_cap_multiplier
         effective_base = size_base
@@ -3130,7 +4020,8 @@ def admit_and_size(
                                   symbol_damage_metrics=symbol_damage_metrics,
                                   symbol_damage_guard=symbol_damage_guard,
                                   vol_level_tilt=vol_level_tilt,
-                                  candidate_refusal_sink=candidate_refusal_sink)
+                                  candidate_refusal_sink=candidate_refusal_sink,
+                                  cycle_taken=cycle_taken)
     out_units = _enforce_gross_open_risk_cap(units, gov.available_gross_risk_pct)
     # which sleeves the owner-armed learning actuator GATED out this cycle (mult 0.0), for the audit trail.
     if challenge and learning_rerate:
