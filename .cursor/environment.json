@@ -1,0 +1,4 @@
+{
+  "name": "GTOS (Gold Traders Operating System)",
+  "install": "sudo apt-get update -qq\nsudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3.12-venv\npython3 -m venv /workspace/.venv\n/workspace/.venv/bin/python -m pip install --upgrade pip setuptools wheel\n/workspace/.venv/bin/python -m pip install -r requirements.txt\necho 'export PATH=\"/workspace/.venv/bin:$PATH\"' | sudo tee /etc/profile.d/10-gtos-venv.sh > /dev/null\ngrep -qs gtos-venv \"$HOME/.bashrc\" || printf '# gtos-venv\\nexport PATH=\"/workspace/.venv/bin:$PATH\"\\n' >> \"$HOME/.bashrc\""
+}
