@@ -1283,6 +1283,20 @@ def build_book_trade_params(sized_unit, intent, geometry, account_state, *, prof
         trail_gap_r = _spine_score(order_facts, "trail_gap_r", _TRAIL_GAP_Q[1])
         pullback_r = _spine_score(order_facts, "pullback_r", _PULLBACK_Q[1])
         time_stop_bars = _spine_score(order_facts, "time_stop_bars", _TIME_STOP_BARS_Q[1])
+    if challenge and final_target_r is None and not no_broker_take_profit:
+        stop_n = _finite(native_stop)
+        target_n = _finite(native_target)
+        if (
+            stop_n is not None
+            and target_n is not None
+            and stop_n > 0
+            and target_n > 0
+        ):
+            final_target_r = target_n / stop_n
+    if challenge and time_stop_bars is None:
+        profile_bars = _finite(prof.get("time_stop_bars"))
+        if profile_bars is not None and profile_bars > 0:
+            time_stop_bars = int(profile_bars)
     if (
         stop_distance_multiplier is not None
         and stop_distance_multiplier > 0
@@ -1369,6 +1383,11 @@ def build_book_trade_params(sized_unit, intent, geometry, account_state, *, prof
         mgmt_params["gtos_vnext_dynamic_trail_gap_r"] = trail_gap_r
     if time_stop_bars is not None:
         mgmt_params["gtos_vnext_dynamic_time_stop_bars"] = time_stop_bars
+    mgmt_params["sleeve"] = getattr(intent, "sleeve", None)
+    if native_target is not None:
+        mgmt_params["target_dist"] = native_target
+    if native_stop is not None:
+        mgmt_params["stop_dist"] = native_stop
     mgmt_params["gtos_vnext_dynamic_broker_take_profit_mode"] = (
         "none" if no_broker_take_profit else "final_target"
     )

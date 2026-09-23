@@ -207,6 +207,8 @@ def target_price_from_r(
 def policy_geometry_defaults(
     config: Mapping[str, Any] | None,
     selected_policy: str | None,
+    *,
+    bind_scores: bool = True,
 ) -> dict[str, Any]:
     """Resolve configured policy R defaults without using outcome fields."""
     cfg = _runtime_cfg(config)
@@ -223,49 +225,45 @@ def policy_geometry_defaults(
         "partial_close_ratio": "float",
         "trail_gap_r": "float",
     }
+
+    def _one(key: str | None, default: Any, name: str, kind: str) -> Any:
+        return _resolve_configured_number(
+            cfg, key, default, name, kind, pending, bind_scores=bind_scores
+        )
+
     resolved = {
-        "trigger_r": _resolve_configured_number(
-            cfg, definition["trigger_key"], definition["default_trigger_r"], "trigger_r", "float", pending
+        "trigger_r": _one(
+            definition["trigger_key"], definition["default_trigger_r"], "trigger_r", "float"
         ),
-        "final_target_r": _resolve_configured_number(
-            cfg,
+        "final_target_r": _one(
             definition["final_key"],
             definition["default_final_target_r"],
             "final_target_r",
             "float",
-            pending,
         ),
-        "time_stop_bars": _resolve_configured_number(
-            cfg,
+        "time_stop_bars": _one(
             definition["time_stop_key"],
             definition.get("default_time_stop_bars"),
             "time_stop_bars",
             "int",
-            pending,
         ),
-        "momentum_pullback_r": _resolve_configured_number(
-            cfg,
+        "momentum_pullback_r": _one(
             definition.get("pullback_key"),
             definition.get("default_pullback_r"),
             "momentum_pullback_r",
             "float",
-            pending,
         ),
-        "partial_close_ratio": _resolve_configured_number(
-            cfg,
+        "partial_close_ratio": _one(
             definition.get("partial_ratio_key"),
             definition.get("default_partial_close_ratio"),
             "partial_close_ratio",
             "float",
-            pending,
         ),
-        "trail_gap_r": _resolve_configured_number(
-            cfg,
+        "trail_gap_r": _one(
             definition.get("trail_gap_key"),
             definition.get("default_trail_gap_r"),
             "trail_gap_r",
             "float",
-            pending,
         ),
     }
     unset = _fill_pending(
@@ -324,11 +322,14 @@ def _resolve_configured_number(
     name: str,
     kind: str,
     pending: list[tuple[str, str]],
+    *,
+    bind_scores: bool = True,
 ) -> Any:
     """Config value, else the historical constant off Challenge.
 
-    On the Challenge writer a missing config value is one Score. An empty
-    score stays None and is named later as a source gap.
+    On the Challenge writer a missing config value is one Score when the
+    caller asked for one. An empty score stays None. A caller that has no
+    source for the name does not plant the historical constant and does not ask.
     """
 
     if not key:
@@ -336,6 +337,8 @@ def _resolve_configured_number(
     if key in cfg and cfg.get(key) not in (None, ""):
         parsed = _safe_int(cfg.get(key)) if kind == "int" else _safe_float(cfg.get(key))
         return parsed
+    if _geometry_on_challenge() and not bind_scores:
+        return None
     if default is None or not _geometry_on_challenge():
         if kind == "int":
             return _safe_int(default)
@@ -386,6 +389,84 @@ def _collect_forbidden_future_field_paths(value: Any, prefix: str = "") -> list[
     return sorted(dict.fromkeys(found))
 
 
+_CHALLENGE_NOT_FATAL = {
+    "trigger_r",
+    "final_target_r",
+    "time_stop_bars",
+    "thesis_horizon_m15_bars",
+    "stale_review_m15_bars",
+}
+
+
+def _distance_ratio(numerator: Any, denominator: Any) -> float | None:
+    top = _safe_float(numerator)
+    bottom = _safe_float(denominator)
+    if top is None or bottom is None or top <= 0 or bottom <= 0:
+        return None
+    return top / bottom
+
+
+def _final_target_r_from_trade(
+    params: Mapping[str, Any],
+    *,
+    entry: Any,
+    stop: Any,
+    final_target_price: Any,
+) -> float | None:
+    """Target distance over stop distance. No number when either distance is absent."""
+
+    from_distances = _distance_ratio(
+        _first_present(params.get("target_dist"), params.get("target_distance")),
+        _first_present(
+            params.get("stop_dist"),
+            params.get("stop_distance"),
+            params.get("risk_distance"),
+        ),
+    )
+    if from_distances is not None:
+        return from_distances
+    target_price = _first_present(
+        final_target_price,
+        params.get("gtos_vnext_dynamic_final_target_price"),
+        params.get("take_profit_1"),
+        params.get("take_profit"),
+        params.get("target"),
+    )
+    entry_n = _safe_float(entry)
+    stop_n = _safe_float(stop)
+    target_n = _safe_float(target_price)
+    if entry_n is None or stop_n is None or target_n is None:
+        return None
+    return _distance_ratio(abs(target_n - entry_n), abs(entry_n - stop_n))
+
+
+def _profile_time_stop_bars(params: Mapping[str, Any]) -> int | None:
+    """Bar count already on the sleeve's exit profile. Absent stays unset."""
+
+    sleeve = params.get("sleeve")
+    if sleeve in (None, ""):
+        details = params.get("gtos_vnext_source_event_details")
+        if isinstance(details, Mapping):
+            sleeve = details.get("sleeve")
+    if sleeve in (None, ""):
+        return None
+    try:
+        from src.components.ultimate_book.execution_packets import resolve_exit_profile
+    except Exception:
+        return None
+    try:
+        frontier = params.get("frontier_exits") or ()
+        prof = resolve_exit_profile(sleeve, frontier_exits=frontier)
+    except Exception:
+        return None
+    if not isinstance(prof, Mapping):
+        return None
+    bars = _safe_int(prof.get("time_stop_bars"))
+    if bars is None or bars <= 0:
+        return None
+    return bars
+
+
 def build_target_stop_geometry_v4_contract(
     *,
     config: Mapping[str, Any] | None,
@@ -414,7 +495,10 @@ def build_target_stop_geometry_v4_contract(
     prior_source = prior.get("source_completeness") if prior else {}
     if not isinstance(prior_source, Mapping):
         prior_source = {}
-    policy_defaults = policy_geometry_defaults(config, selected_policy)
+    challenge = _geometry_on_challenge()
+    policy_defaults = policy_geometry_defaults(
+        config, selected_policy, bind_scores=not challenge
+    )
     policy = _lower_text(selected_policy) or policy_defaults["selected_policy"]
     no_broker_take_profit = _no_broker_take_profit(params)
     targetless_exit = no_broker_take_profit and policy in {"time_stop", "trailing_runner"}
@@ -455,34 +539,39 @@ def build_target_stop_geometry_v4_contract(
             policy_defaults["trail_gap_r"],
         )
     )
-    horizon_pending: list[tuple[str, str]] = []
-    horizon_resolved = {
-        "thesis_horizon_m15_bars": _resolve_configured_number(
-            cfg,
-            "moonshot_dynamic_target_stop_geometry_v4_default_thesis_horizon_m15_bars",
-            32,
-            "thesis_horizon_m15_bars",
-            "int",
+    if challenge:
+        thesis_horizon_m15_bars = None
+        stale_review_m15_bars = None
+        horizon_unset: tuple[str, ...] = ()
+    else:
+        horizon_pending: list[tuple[str, str]] = []
+        horizon_resolved = {
+            "thesis_horizon_m15_bars": _resolve_configured_number(
+                cfg,
+                "moonshot_dynamic_target_stop_geometry_v4_default_thesis_horizon_m15_bars",
+                32,
+                "thesis_horizon_m15_bars",
+                "int",
+                horizon_pending,
+            ),
+            "stale_review_m15_bars": _resolve_configured_number(
+                cfg,
+                "moonshot_dynamic_target_stop_geometry_v4_stale_review_m15_bars",
+                24,
+                "stale_review_m15_bars",
+                "int",
+                horizon_pending,
+            ),
+        }
+        horizon_unset = _fill_pending(
+            horizon_resolved,
             horizon_pending,
-        ),
-        "stale_review_m15_bars": _resolve_configured_number(
-            cfg,
-            "moonshot_dynamic_target_stop_geometry_v4_stale_review_m15_bars",
-            24,
-            "stale_review_m15_bars",
-            "int",
-            horizon_pending,
-        ),
-    }
-    horizon_unset = _fill_pending(
-        horizon_resolved,
-        horizon_pending,
-        {"thesis_horizon_m15_bars": "int", "stale_review_m15_bars": "int"},
-        "dynamic_target_stop.horizon",
-        {"selected_policy": policy},
-    )
-    thesis_horizon_m15_bars = horizon_resolved["thesis_horizon_m15_bars"]
-    stale_review_m15_bars = horizon_resolved["stale_review_m15_bars"]
+            {"thesis_horizon_m15_bars": "int", "stale_review_m15_bars": "int"},
+            "dynamic_target_stop.horizon",
+            {"selected_policy": policy},
+        )
+        thesis_horizon_m15_bars = horizon_resolved["thesis_horizon_m15_bars"]
+        stale_review_m15_bars = horizon_resolved["stale_review_m15_bars"]
 
     resolved_entry = _safe_float(
         _first_present(entry_price, params.get("entry_price"), source.get("entry_price"))
@@ -561,6 +650,24 @@ def build_target_stop_geometry_v4_contract(
     else:
         same_bar_ambiguous = _truthy(same_bar_ambiguous)
 
+    if (
+        challenge
+        and not targetless_exit
+        and (resolved_final_target_r is None or resolved_final_target_r <= 0)
+    ):
+        derived_final_target_r = _final_target_r_from_trade(
+            params,
+            entry=resolved_entry,
+            stop=resolved_stop,
+            final_target_price=final_target_price,
+        )
+        if derived_final_target_r is not None and derived_final_target_r > 0:
+            resolved_final_target_r = derived_final_target_r
+    if challenge and (resolved_time_stop_bars is None or resolved_time_stop_bars <= 0):
+        profile_bars = _profile_time_stop_bars(params)
+        if profile_bars is not None:
+            resolved_time_stop_bars = profile_bars
+
     missing_source_fields: list[str] = []
     if not source_status or "asof" not in source_status.lower():
         missing_source_fields.append("source_path_feature_status_asof")
@@ -577,7 +684,8 @@ def build_target_stop_geometry_v4_contract(
     if resolved_direction not in {"LONG", "SHORT"}:
         missing_source_fields.append("direction")
     if (
-        not targetless_exit
+        not challenge
+        and not targetless_exit
         and (resolved_final_target_r is None or resolved_final_target_r <= 0)
     ):
         missing_source_fields.append("positive_final_target_r")
@@ -596,6 +704,8 @@ def build_target_stop_geometry_v4_contract(
     ):
         missing_source_fields.append("trail_gap_r")
     for unset_name in tuple(policy_defaults.get("bounds_unset") or ()) + tuple(horizon_unset):
+        if challenge and unset_name in _CHALLENGE_NOT_FATAL:
+            continue
         missing_source_fields.append(unset_name)
 
     forbidden_paths = sorted(

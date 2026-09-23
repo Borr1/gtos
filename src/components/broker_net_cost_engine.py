@@ -16,7 +16,13 @@ import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 
-from src.costs.model import commission_usd_per_lot_for_packet, rollover_nights
+from src.costs.account_deals import fit_symbol_commission
+from src.costs.model import (
+    CostTruthError,
+    commission_usd_per_lot,
+    commission_usd_per_lot_for_packet,
+    rollover_nights,
+)
 from src.utils.broker_clock import UnknownBrokerClockError
 from src.utils.broker_profile import broker_account_namespace, sanitize_namespace
 
@@ -854,6 +860,7 @@ def _commission_cost_packet(
     entry_price: float | None,
     sl_distance: float | None,
     spec: dict[str, Any],
+    commission_deals: Any = None,
 ) -> dict[str, Any]:
     """Resolve round-turn broker commission and convert it into candidate R.
 
@@ -914,6 +921,39 @@ def _commission_cost_packet(
         namespace=profile.get("broker_account_namespace"),
         entry_price=entry_price,
     )
+    account_deal_commission = None
+    # A callable is the attached terminal's history reader. Call it only when
+    # the schedule lookup returned None. A list is an already-read deal set.
+    deals = None
+    if usd_per_lot is None and commission_deals is not None:
+        deals = commission_deals() if callable(commission_deals) else commission_deals
+    if deals:
+        contract_size = _as_float(fields.get("trade_contract_size"))
+        account_deal_commission = fit_symbol_commission(
+            deals,
+            broker_symbol,
+            contract_size,
+        )
+        if account_deal_commission.get("status") == "captured":
+            try:
+                usd_per_lot = commission_usd_per_lot(
+                    {
+                        "commission": account_deal_commission,
+                        "spec": {"trade_contract_size": contract_size},
+                    },
+                    entry_price,
+                )[0]
+            except CostTruthError:
+                usd_per_lot = None
+                account_deal_commission = {
+                    **account_deal_commission,
+                    "status": "required_entry_price",
+                }
+            else:
+                provenance = (
+                    "this terminal's closed round turns via history_deals_get; "
+                    "a position with no closing deal is excluded"
+                )
     if usd_per_lot is None:
         missing.append("broker_true_commission_schedule_or_required_entry_price")
 
@@ -934,11 +974,16 @@ def _commission_cost_packet(
         "broker_symbol": broker_symbol,
         "account_namespace": profile.get("broker_account_namespace"),
         "server": profile.get("server"),
-        "artifact": "BROKER_TRUE_COSTS_V1.json",
+        "artifact": (
+            "account_history_deals"
+            if account_deal_commission and account_deal_commission.get("status") == "captured"
+            else "BROKER_TRUE_COSTS_V1.json"
+        ),
         "provenance": provenance,
         "included_in_total_cost_r": cost_r is not None,
         "missing_fields": sorted(set(missing)),
         "comparator_only": False,
+        "account_deal_commission": account_deal_commission,
     }
 
 
@@ -956,6 +1001,7 @@ def build_pretrade_cost_packet(
     symbol_info: Any = None,
     asof_utc: str | None = None,
     commission_mode: str = BROKER_TRUE_COMMISSION_MODE,
+    commission_deals: Any = None,
 ) -> dict[str, Any]:
     cfg = _mapping(config)
     runtime_cfg = _mapping(cfg.get("gtos_vnext_runtime"))
@@ -1044,6 +1090,7 @@ def build_pretrade_cost_packet(
         entry_price=entry_price,
         sl_distance=sl_distance,
         spec=spec,
+        commission_deals=commission_deals,
     )
 
     cost_sleeve = _mapping(

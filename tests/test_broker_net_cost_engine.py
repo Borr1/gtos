@@ -358,6 +358,89 @@ def test_execution_cost_gate_uses_candidate_asof_for_rollover_and_is_f5_invarian
     assert packet["status"] == expected_status
 
 
+def test_resolved_schedule_does_not_call_history_deals_get(monkeypatch):
+    """A schedule that returns a rate must not pull the terminal's deal history."""
+
+    calls = []
+
+    def history_deals_get(*args, **kwargs):
+        calls.append((args, kwargs))
+        return []
+
+    monkeypatch.setattr(
+        "src.components.broker_net_cost_engine.commission_usd_per_lot_for_packet",
+        lambda *args, **kwargs: 5.0,
+    )
+    mt5 = MockMT5(balance=100_000.0)
+    mt5.connect()
+    symbol_info = _points_swap_symbol_info()
+    mt5._mt5 = SimpleNamespace(
+        symbol_info=lambda _symbol: symbol_info,
+        history_deals_get=history_deals_get,
+    )
+    engine = ExecutionEngine(mt5, _config())
+    packet, _reason = engine._vnext_pretrade_cost_model(
+        trade_params=_trade_params(),
+        tick=SimpleNamespace(bid=4459.5, ask=4460.0, spread_cents=50.0),
+        entry_price=4460.0,
+        sl_distance=10.0,
+        risk_pct=0.25,
+    )
+
+    assert calls == []
+    assert packet["commission_cost"]["usd_per_lot_round_turn"] == pytest.approx(5.0)
+    assert packet["commission_cost"]["artifact"] == "BROKER_TRUE_COSTS_V1.json"
+    assert packet["commission_cost"]["account_deal_commission"] is None
+
+
+def test_missing_schedule_calls_history_deals_get_once(monkeypatch):
+    """The reader runs once, and only once, when the schedule lookup returns None."""
+
+    calls = []
+    entry = SimpleNamespace(
+        symbol="XAUUSD", type=0, entry=0, volume=1.0, price=1000.0,
+        commission=-5.0, position_id=11,
+    )
+    exit_deal = SimpleNamespace(
+        symbol="XAUUSD", type=1, entry=1, volume=1.0, price=1000.0,
+        commission=-5.0, position_id=11,
+    )
+
+    def history_deals_get(*args, **kwargs):
+        calls.append((args, kwargs))
+        return [entry, exit_deal]
+
+    monkeypatch.setattr(
+        "src.components.broker_net_cost_engine.commission_usd_per_lot_for_packet",
+        lambda *args, **kwargs: None,
+    )
+    mt5 = MockMT5(balance=100_000.0)
+    mt5.connect()
+    symbol_info = _points_swap_symbol_info()
+    mt5._mt5 = SimpleNamespace(
+        symbol_info=lambda _symbol: symbol_info,
+        history_deals_get=history_deals_get,
+    )
+    engine = ExecutionEngine(mt5, _config(runtime_overrides={
+        "selected_cell_swap_model_required": False,
+        "selected_cell_swap_cost_model_required": False,
+        "selected_cell_slippage_model_required": False,
+        "selected_cell_default_expected_slippage_r": 0.0,
+    }))
+    packet, _reason = engine._vnext_pretrade_cost_model(
+        trade_params=_trade_params(entry_price=1000.0, stop_loss=990.0),
+        tick=SimpleNamespace(bid=1000.0, ask=1000.0),
+        entry_price=1000.0,
+        sl_distance=10.0,
+        risk_pct=0.25,
+    )
+
+    assert len(calls) == 1
+    assert packet["commission_cost"]["artifact"] == "account_history_deals"
+    assert packet["commission_cost"]["usd_per_lot_round_turn"] == pytest.approx(10.0)
+    assert packet["commission_cost"]["account_deal_commission"]["n_round_turns"] == 1
+
+
 def test_required_swap_cost_conversion_fails_closed_when_mode_missing():
     packet = build_pretrade_cost_packet(
         config=_config(runtime_overrides={"selected_cell_swap_cost_model_required": True}),
@@ -617,6 +700,153 @@ def test_broker_true_commission_gap_refuses_instead_of_becoming_zero():
     assert packet["commission_r"] is None
     assert packet["total_cost_r"] is None
     assert packet["status"] == "REFUSED"
+    assert any(
+        reason.startswith("missing_broker_true_commission_cost_r_conversion")
+        for reason in packet["refusal_reasons"]
+    )
+
+
+def _gbpusd_round_turn_deals():
+    """Login 11, position 19. Entry and exit both charged.
+
+    The third row is position 11, an entry with no closing deal, so it must not count.
+    """
+    entry = {
+        "symbol": "GBPUSD",
+        "type": 0,
+        "entry": 0,
+        "volume": 2.83,
+        "price": 1.33651,
+        "commission": -7.08,
+        "position_id": 19,
+    }
+    return [
+        entry,
+        {**entry, "entry": 1, "type": 1, "price": 1.33589},
+        {**entry, "position_id": 11},
+    ]
+
+
+def test_demo_server_prices_gbpusd_from_closed_round_turns_and_ignores_entry_only():
+    cfg = _config(namespace="friend_a_f5_minimal", runtime_overrides={
+        "selected_cell_swap_model_required": False,
+        "selected_cell_swap_cost_model_required": False,
+        "selected_cell_slippage_model_required": False,
+        "selected_cell_default_expected_slippage_r": 0.0,
+    })
+    cfg["broker_profile"]["server"] = "FTMO-Demo"
+    cfg["market"].update({
+        "symbol": "GBPUSD",
+        "mt5_symbol": "GBPUSD",
+        "point": 0.00001,
+        "trade_tick_size": 0.00001,
+        "trade_tick_value": 1.0,
+        "trade_contract_size": 100000.0,
+        "swap_long": 0.0,
+        "swap_short": 0.0,
+    })
+    entry_fill = 1.33651
+    exit_fill = 1.33589
+    distance = abs(entry_fill - exit_fill)
+    packet = build_pretrade_cost_packet(
+        config=cfg,
+        trade_params=_trade_params(entry_price=entry_fill, stop_loss=exit_fill),
+        tick=SimpleNamespace(bid=entry_fill, ask=entry_fill),
+        symbol="GBPUSD",
+        broker_symbol="GBPUSD",
+        entry_price=entry_fill,
+        stop_loss=exit_fill,
+        sl_distance=distance,
+        risk_pct=0.25,
+        commission_deals=_gbpusd_round_turn_deals(),
+    )
+    per_lot = 14.16 / 2.83
+    assert packet["commission_cost"]["usd_per_lot_round_turn"] == pytest.approx(per_lot)
+    assert packet["commission_cost"]["artifact"] == "account_history_deals"
+    assert packet["commission_cost"]["account_deal_commission"]["n_round_turns"] == 1
+    assert packet["commission_cost"]["account_deal_commission"]["charge_side"] == "both_sides"
+    assert packet["commission_r"] == pytest.approx(per_lot / (distance * (1.0 / 0.00001)))
+    assert not any(
+        reason.startswith("missing_broker_true_commission_cost_r_conversion")
+        for reason in packet["refusal_reasons"]
+    )
+    assert pretrade_cost_refusal_reason(packet) is None
+
+
+def _xauusd_round_turns():
+    """Two closed turns, positions 11 and 19. Prices differ, so notional bp is the tighter fit."""
+    turns = (
+        (11, 0.24, 4401.15, -0.74),
+        (19, 0.15, 4331.72, -0.45),
+    )
+    deals = []
+    for position_id, volume, price, commission in turns:
+        deals.append({
+            "symbol": "XAUUSD", "type": 0, "entry": 0, "volume": volume,
+            "price": price, "commission": commission, "position_id": position_id,
+        })
+        deals.append({
+            "symbol": "XAUUSD", "type": 1, "entry": 1, "volume": volume,
+            "price": price, "commission": commission, "position_id": position_id,
+        })
+    return deals
+
+
+def test_demo_server_prices_xauusd_from_closed_round_turns():
+    cfg = _config(namespace="ftmo_redacted_account_f5_minimal", runtime_overrides={
+        "selected_cell_swap_model_required": False,
+        "selected_cell_swap_cost_model_required": False,
+        "selected_cell_slippage_model_required": False,
+        "selected_cell_default_expected_slippage_r": 0.0,
+    })
+    cfg["broker_profile"]["server"] = "FTMO-Demo"
+    cfg["market"]["swap_long"] = 0.0
+    cfg["market"]["swap_short"] = 0.0
+    entry_fill = 4401.15
+    exit_fill = 4407.07
+    packet = build_pretrade_cost_packet(
+        config=cfg,
+        trade_params=_trade_params(entry_price=entry_fill, stop_loss=exit_fill),
+        tick=SimpleNamespace(bid=entry_fill, ask=entry_fill),
+        symbol="XAUUSD",
+        broker_symbol="XAUUSD",
+        entry_price=entry_fill,
+        stop_loss=exit_fill,
+        sl_distance=abs(entry_fill - exit_fill),
+        risk_pct=0.25,
+        commission_deals=_xauusd_round_turns(),
+    )
+    fitted = packet["commission_cost"]["account_deal_commission"]
+    assert fitted["kind"] == "notional_bp"
+    assert fitted["n_round_turns"] == 2
+    assert packet["commission_r"] is not None
+    assert packet["commission_r"] > 0
+    assert not any(
+        reason.startswith("missing_broker_true_commission_cost_r_conversion")
+        for reason in packet["refusal_reasons"]
+    )
+    assert pretrade_cost_refusal_reason(packet) is None
+
+
+def test_symbol_with_no_closed_round_turn_stays_unset():
+    cfg = _config(namespace="friend_a_f5_minimal")
+    cfg["broker_profile"]["server"] = "FTMO-Demo"
+    entry_fill = 4401.15
+    exit_fill = 4407.07
+    packet = build_pretrade_cost_packet(
+        config=cfg,
+        trade_params=_trade_params(entry_price=entry_fill, stop_loss=exit_fill),
+        tick=SimpleNamespace(bid=entry_fill, ask=entry_fill),
+        symbol="XAUUSD",
+        broker_symbol="XAUUSD",
+        entry_price=entry_fill,
+        stop_loss=exit_fill,
+        sl_distance=abs(entry_fill - exit_fill),
+        risk_pct=0.25,
+        commission_deals=_gbpusd_round_turn_deals(),
+    )
+    assert packet["commission_r"] is None
+    assert packet["commission_cost"]["account_deal_commission"]["status"] == "no_closed_round_turn"
     assert any(
         reason.startswith("missing_broker_true_commission_cost_r_conversion")
         for reason in packet["refusal_reasons"]

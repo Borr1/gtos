@@ -336,9 +336,11 @@ def _shown(value: Any) -> str:
 
 
 _CHOICE_TAIL: dict[tuple[str, str, str], str] = {}
+_CHOICE_PROB: dict[tuple[str, str, str], float] = {}
 _CHOICE_OFFSET = 0
 _CHOICE_PATH: str | None = None
 _STATE_MEMO: dict[str, str] = {}
+_STATE_RETURN: dict[str, dict[str, Any]] = {}
 _INFLIGHT: dict[str, "_Gate"] = {}
 _LOCK = threading.Lock()
 _OWNER = threading.local()
@@ -368,6 +370,7 @@ def _refresh_choice_tail() -> None:
         _CHOICE_PATH = key
         _CHOICE_OFFSET = 0
         _CHOICE_TAIL.clear()
+        _CHOICE_PROB.clear()
     try:
         size = path.stat().st_size
     except OSError:
@@ -375,6 +378,7 @@ def _refresh_choice_tail() -> None:
     if size < _CHOICE_OFFSET:
         _CHOICE_OFFSET = 0
         _CHOICE_TAIL.clear()
+        _CHOICE_PROB.clear()
     if size == _CHOICE_OFFSET:
         return
     try:
@@ -391,6 +395,7 @@ def _refresh_choice_tail() -> None:
     _CHOICE_OFFSET += len(blob)
     lines = blob.decode("utf-8", errors="replace").splitlines()
     found: dict[tuple[str, str, str], str] = {}
+    found_prob: dict[tuple[str, str, str], float] = {}
     for line in lines:
         try:
             row = json.loads(line)
@@ -414,7 +419,17 @@ def _refresh_choice_tail() -> None:
         bar_iso = parts[2] if len(parts) > 2 else ""
         found[(question, sleeve, symbol)] = f"{choice}\n{bar_iso}"
         found[(question, "", symbol)] = f"{choice}\n{bar_iso}"
+        probability = row.get("probability")
+        if not isinstance(probability, bool):
+            try:
+                number = float(probability)
+            except (TypeError, ValueError):
+                number = None
+            if number is not None and number == number and 0 < number <= 1:
+                found_prob[(question, sleeve, symbol)] = number
+                found_prob[(question, "", symbol)] = number
     _CHOICE_TAIL.update(found)
+    _CHOICE_PROB.update(found_prob)
 
 
 def latest_recorded_choice(
@@ -440,6 +455,25 @@ def latest_recorded_choice(
     if bar_iso not in (None, "") and recorded_iso and str(bar_iso) != recorded_iso:
         return None
     return choice or None
+
+
+def latest_recorded_probability(
+    question: str,
+    *,
+    symbol: Any,
+    sleeve: Any = None,
+) -> float | None:
+    """The probability already recorded for this choice. This does not ask again."""
+
+    if symbol in (None, ""):
+        return None
+    _refresh_choice_tail()
+    sleeve_s = "" if sleeve in (None, "") else str(sleeve)
+    symbol_s = str(symbol)
+    number = _CHOICE_PROB.get((question, sleeve_s, symbol_s))
+    if number is None and sleeve_s:
+        number = _CHOICE_PROB.get((question, "", symbol_s))
+    return number
 
 
 def last_bar_question_text(facts: Mapping[str, Any] | None = None) -> str:
@@ -617,6 +651,29 @@ def _append(row: Mapping[str, Any]) -> None:
             return
 
 
+def _stored_probability(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number <= 0 or number > 1:
+        return None
+    return number
+
+
+def remembered_return(question: str, facts: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
+    """The choice already returned for this card. This does not ask again."""
+
+    key = _state_key(question, facts)
+    with _LOCK:
+        found = _STATE_RETURN.get(key)
+    if not isinstance(found, dict):
+        return None
+    return dict(found)
+
+
 def spot(question: str, *, spot: str, facts: Mapping[str, Any] | None = None) -> str | None:
     """Return the unique highest alternative, or None when there is no decision.
 
@@ -720,8 +777,13 @@ def spot(question: str, *, spot: str, facts: Mapping[str, Any] | None = None) ->
     finally:
         owned.discard(key)
         if cache_it and winner in options:
+            stored = {"choice": winner}
+            probability = _stored_probability(row.get("probability") if isinstance(row, dict) else None)
+            if probability is not None:
+                stored["probability"] = probability
             with _LOCK:
                 _STATE_MEMO[key] = winner
+                _STATE_RETURN[key] = stored
         gate.value = winner
         gate.event.set()
         with _LOCK:

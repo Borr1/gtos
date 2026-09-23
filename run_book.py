@@ -213,14 +213,20 @@ def _open_launcher(owner, mt5, broker_symbol, tags, namespace, poll_seconds, kil
 def run_loop(launcher, max_ticks=None) -> None:
     """Wait, then run one cycle.
 
-    The poll flag stays a fact. A returned cycle_wait is the wait. Until that
-    score has returned, the cycle starts at the next print of the fastest bar
-    this book watches. An empty answer does not sleep a planted number.
+    The poll flag stays a fact. A returned cycle_wait is how many seconds
+    before the next print this cycle starts, and that answer belongs to that
+    print only. Until a score has returned, the cycle starts at the print.
+    An empty answer does not sleep a planted number.
     """
 
     import time
 
-    from src.components.ultimate_book.launcher_facts import next_cycle_wake
+    from src.components.ultimate_book.launcher_facts import (
+        next_cycle_wake,
+        note_cycle_served,
+        note_last_cycle_seconds,
+        wake_is_before_print,
+    )
 
     n = 0
     while max_ticks is None or n < max_ticks:
@@ -231,9 +237,19 @@ def run_loop(launcher, max_ticks=None) -> None:
                 launcher.poll_seconds = wait
             except Exception:
                 pass
-            logging.info("cycle_wait seconds=%s", wait)
+            logging.info(
+                "cycle_wait seconds=%s target=%s before_print=%s",
+                wait,
+                target.isoformat() if target is not None else None,
+                wake_is_before_print(),
+            )
             try:
                 launcher.note_wake_target(target)
+            except Exception:
+                pass
+            try:
+                if wake_is_before_print():
+                    launcher.arm_pre_print_wake()
             except Exception:
                 pass
             if wait > 0:
@@ -244,7 +260,11 @@ def run_loop(launcher, max_ticks=None) -> None:
                 launcher.note_wake_target(None)
             except Exception:
                 pass
-        launcher.tick()
+        started = time.perf_counter()
+        result = launcher.tick()
+        if isinstance(result, dict) and result.get("action") == "cycle":
+            note_cycle_served()
+            note_last_cycle_seconds(time.perf_counter() - started)
         n += 1
         if max_ticks is not None and n >= max_ticks:
             break

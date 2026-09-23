@@ -128,7 +128,7 @@ def _session_hour(bar_time) -> Optional[int]:
 
 
 def _generate(sleeve, on_surface, conds, geom, direction, *, need_hour, symbol, bars, decision_day,
-              bar_time) -> Optional[TradeIntent]:
+              bar_time, bar_times=None) -> Optional[TradeIntent]:
     """Latest closed bar. The engine's one pack is the warmup, the edges, the side, and the geometry.
 
     An empty score, a tie, or an error does not emit. This function does not ask again.
@@ -149,6 +149,7 @@ def _generate(sleeve, on_surface, conds, geom, direction, *, need_hour, symbol, 
         sleeve=sleeve,
         symbol=symbol,
         decision_day=decision_day,
+        bar_times=bar_times,
     )
     if st is None:
         return None
@@ -177,16 +178,16 @@ def _generate(sleeve, on_surface, conds, geom, direction, *, need_hour, symbol, 
 
 
 def generate_sub_xvol_pullback(symbol: str, bars, decision_day: str,
-                               *, bar_time=None, **_) -> Optional[TradeIntent]:
+                               *, bar_time=None, bar_times=None, **_) -> Optional[TradeIntent]:
     """sub_xvol_pullback (conf 0.45). Depth-4 cell — no session, ignores bar_time."""
     return _generate(XVOL_SLEEVE, XVOL_ON_SURFACE, XVOL_CONDS, XVOL_GEOM, XVOL_DIR,
                      need_hour=False, symbol=symbol, bars=bars, decision_day=decision_day,
-                     bar_time=bar_time)
+                     bar_time=bar_time, bar_times=bar_times)
 
 
 def generate_sub_mid_dn_revert(symbol: str, bars, decision_day: str,
-                               *, bar_time=None, **_) -> Optional[TradeIntent]:
+                               *, bar_time=None, bar_times=None, **_) -> Optional[TradeIntent]:
     """sub_mid_dn_revert (conf 0.20). Depth-7 cell — session=ny needs bar_time (fail-closed if None)."""
     return _generate(MIDDN_SLEEVE, MIDDN_ON_SURFACE, MIDDN_CONDS, MIDDN_GEOM, MIDDN_DIR,
                      need_hour=True, symbol=symbol, bars=bars, decision_day=decision_day,
-                     bar_time=bar_time)
+                     bar_time=bar_time, bar_times=bar_times)

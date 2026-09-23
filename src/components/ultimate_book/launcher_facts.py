@@ -1,8 +1,9 @@
-"""Launcher flags are facts on the ask. The cycle wait is the score for that state.
+"""Launcher flags are facts on the ask. The cycle wait is the score for one print.
 
 An empty answer, a tie, or an error does not copy an argv number back and does
-not invent a wait. Until ``cycle_wait`` has returned for this state, the next
-cycle starts at the next print of the fastest bar the book watches.
+not invent a wait. A score is how many seconds before that print the cycle
+starts, and it is not used for a later print. Until one has returned for the
+print ahead, the cycle starts at that print.
 """
 
 from __future__ import annotations
@@ -22,6 +23,13 @@ _INFLIGHT = False
 _PACK_KEY: str | None = None
 _ATTEMPT: tuple[str, str | None] | None = None
 _WATCHED: object = None
+_CYCLE_WAIT: float | None = None
+_CYCLE_WAIT_PRINT: str | None = None
+_AIMED_PRINT: float | None = None
+_SERVED_PRINT: float | None = None
+_DISPATCHED_PRINT: float | None = None
+_WAKE_BEFORE_PRINT = False
+_LAST_CYCLE_SECONDS: float | None = None
 
 _EMPTY = (
     "An empty score leaves it unset. "
@@ -33,9 +41,11 @@ _EMPTY = (
 _QUESTIONS: tuple[tuple[str, str], ...] = (
     (
         "cycle_wait",
-        "The score you return is how many seconds this writer waits before the next cycle. "
-        "The launcher flags, the watched bars, and the seconds until the next print are facts. "
-        "They are not the wait. "
+        "The score you return is how many seconds before the next print of the fastest "
+        "watched bar this cycle starts. The cycle calculates that bar's move and has to "
+        "finish before the print. A cycle takes minutes. "
+        "The seconds until each watched print, and the seconds the previous cycle took, "
+        "are facts on this card. They are not the wait. "
         + _EMPTY,
     ),
     (
@@ -485,6 +495,7 @@ def _anchors_for_unit(unit: str, payload: dict) -> list[tuple[str, float]]:
             (
                 "seconds_until_now",
                 "seconds_until_print_",
+                "seconds_last_cycle",
                 "seconds_until_friday_",
                 "seconds_until_weekend_",
             ),
@@ -536,6 +547,8 @@ def _stamp_clock(payload: dict, launcher: object) -> None:
         periods.append((code, period))
         payload[f"seconds_until_print_{code}"] = _seconds_until_period(period, now_ts)
         payload[f"period_seconds_{code}"] = period
+    if _LAST_CYCLE_SECONDS is not None:
+        payload["seconds_last_cycle"] = _LAST_CYCLE_SECONDS
     if periods:
         fastest = min(period for _code, period in periods)
         for code, period in periods:
@@ -700,32 +713,147 @@ def ask_deadline_seconds() -> float | None:
     return seconds_until_fastest_print(_WATCHED)
 
 
-def next_cycle_wake(launcher: object = None) -> tuple[float | None, datetime | None]:
-    """The wait, and the instant that wait was computed to end.
+def _print_at_or_after(now: float, period: float) -> float:
+    remainder = now % period
+    if remainder == 0.0:
+        return now
+    return now + (period - remainder)
 
-    A returned cycle_wait ends at this instant plus that score. Until one
-    returns, the instant is the next print of the fastest watched bar, from
-    the same sample as the wait.
+
+def _unserved_print(now: float, period: float) -> float:
+    """The next print this process has not already run a cycle for."""
+
+    candidate = _print_at_or_after(now, period)
+    served = _SERVED_PRINT
+    if served is None:
+        return candidate
+    while candidate <= served:
+        candidate += period
+    return candidate
+
+
+def _print_token(aimed: float) -> str:
+    return format(aimed, ".6f")
+
+
+def _cycle_wait_question() -> str:
+    for qid, text in _QUESTIONS:
+        if qid == "cycle_wait":
+            return text
+    return ""
+
+
+def _cycle_wait_for_print(launcher: object, aimed: float) -> float | None:
+    """The lead for this print. A score stored for another print is not returned."""
+
+    global _CYCLE_WAIT, _CYCLE_WAIT_PRINT
+    token = _print_token(aimed)
+    if _CYCLE_WAIT_PRINT == token:
+        return _CYCLE_WAIT
+    _CYCLE_WAIT = None
+    _CYCLE_WAIT_PRINT = None
+    try:
+        from src.judgment.nineteen import score
+    except Exception:
+        return None
+    card = _card(launcher)
+    anchors = _anchors_for_unit("seconds", card)
+    try:
+        number = score(
+            card,
+            question_id="cycle_wait",
+            instructions=_with_position(_cycle_wait_question()),
+            anchors=anchors,
+        )
+    except Exception:
+        return None
+    value = _finite(number)
+    if value is None or value < 0:
+        return None
+    _CYCLE_WAIT = float(value)
+    _CYCLE_WAIT_PRINT = token
+    return _CYCLE_WAIT
+
+
+def note_cycle_served() -> None:
+    """The cycle that just ran belongs to the print ``next_cycle_wake`` aimed at."""
+
+    global _SERVED_PRINT
+    if _AIMED_PRINT is not None:
+        _SERVED_PRINT = _AIMED_PRINT
+
+
+def note_last_cycle_seconds(seconds: float) -> None:
+    """How long the cycle that just ran took. A fact on the next wait's card."""
+
+    global _LAST_CYCLE_SECONDS
+    number = _finite(seconds)
+    if number is None or number < 0:
+        return
+    _LAST_CYCLE_SECONDS = float(number)
+
+
+def wake_is_before_print() -> bool:
+    """True when the wait just returned ends before the print it was aimed at."""
+
+    return bool(_WAKE_BEFORE_PRINT)
+
+
+def next_cycle_wake(launcher: object = None) -> tuple[float | None, datetime | None]:
+    """The wait, and the instant that wait ends.
+
+    A returned cycle_wait is how many seconds before the next unserved print
+    the cycle starts. The card it is scored from carries the seconds until
+    each watched print. That score is kept for that print only. Until one
+    returns, the instant is the print itself.
     """
 
-    global _WATCHED
+    global _WATCHED, _AIMED_PRINT, _DISPATCHED_PRINT, _WAKE_BEFORE_PRINT
+    _WAKE_BEFORE_PRINT = False
     if launcher is not None:
         _WATCHED = launcher
     watched = launcher if launcher is not None else _WATCHED
     ensure_ask(watched)
-    number = launcher_return("cycle_wait")
-    if number is not None and number >= 0:
-        seconds = float(number)
-        return seconds, datetime.now(timezone.utc) + timedelta(seconds=seconds)
     fastest = _fastest_period(watched)
     if fastest is None:
         return None, None
-    clock = time.time()
-    remainder = clock % fastest
-    if remainder == 0.0:
-        return 0.0, datetime.fromtimestamp(clock, tz=timezone.utc)
-    remain = fastest - remainder
-    return remain, datetime.fromtimestamp(clock + remain, tz=timezone.utc)
+    now = time.time()
+    aimed = _unserved_print(now, fastest)
+    _AIMED_PRINT = aimed
+    print_at = datetime.fromtimestamp(aimed, tz=timezone.utc)
+    dispatched = _DISPATCHED_PRINT
+    served = _SERVED_PRINT
+    if dispatched is not None and dispatched == aimed and (
+        served is None or served < aimed
+    ):
+        remain = aimed - now
+        if remain > 0:
+            return remain, print_at
+        nxt = aimed + fastest
+        wait = nxt - now
+        if wait > 0:
+            return wait, datetime.fromtimestamp(nxt, tz=timezone.utc)
+        return 0.0, datetime.fromtimestamp(nxt, tz=timezone.utc)
+    number = _cycle_wait_for_print(watched, aimed)
+    if number is not None and number >= 0:
+        start = aimed - float(number)
+        if start > now:
+            _DISPATCHED_PRINT = aimed
+            _WAKE_BEFORE_PRINT = True
+            return start - now, datetime.fromtimestamp(start, tz=timezone.utc)
+        if now < aimed:
+            _DISPATCHED_PRINT = aimed
+            _WAKE_BEFORE_PRINT = True
+            return 0.0, datetime.fromtimestamp(now, tz=timezone.utc)
+        _DISPATCHED_PRINT = aimed
+        remain = aimed - now
+        if remain > 0:
+            return remain, print_at
+        return 0.0, print_at
+    remain = aimed - now
+    if remain > 0:
+        return remain, print_at
+    return 0.0, print_at
 
 
 def _score_block(block: object) -> float | None:
@@ -836,6 +964,11 @@ def _ask_once(launcher: object) -> bool:
         return False
     accepted = False
     for qid, text in _QUESTIONS:
+        # cycle_wait is scored per print in ``_cycle_wait_for_print``. The pack
+        # key does not change between prints, so a score left here would be
+        # reused for a later print.
+        if qid == "cycle_wait":
+            continue
         anchors = _anchors_for_unit(_UNIT.get(qid, ""), card)
         try:
             number = score(
@@ -900,9 +1033,10 @@ def launcher_return(name: str) -> float | None:
 def next_cycle_wait(launcher: object = None) -> float | None:
     """Seconds before the next cycle.
 
-    A returned ``cycle_wait`` for this state is that wait. Until one returns,
-    the wait is the seconds until the fastest watched bar prints. An empty
-    answer, a tie, or an error does not restore a poll flag or any other number.
+    A returned ``cycle_wait`` for the print ahead is the lead before that
+    print. Until one returns, the wait is the seconds until that print. An
+    empty answer, a tie, or an error does not restore a poll flag or any
+    other number.
     """
 
     seconds, _when = next_cycle_wake(launcher)

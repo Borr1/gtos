@@ -2650,7 +2650,7 @@ def _shares_from_scores(rows: list, *, total, room: float, equity, facts=None) -
 
     positive = []
     for row in rows:
-        weight = row.get("weight")
+        weight = _finite_fact(row.get("weight"))
         if weight is not None and weight > 0:
             positive.append(weight)
     room_n = _finite_fact(room)
@@ -2674,7 +2674,7 @@ def _shares_from_scores(rows: list, *, total, room: float, equity, facts=None) -
     unread = False
     rounded_sum = 0.0
     for row in rows:
-        weight = row.get("weight")
+        weight = _finite_fact(row.get("weight"))
         if weight is None or weight <= 0:
             row["cash_usd"] = None
             row["rounded_usd"] = None
@@ -3033,6 +3033,13 @@ def _challenge_risk_units(
                         details["allocation_cash_usd"] = cash
                         details["candidate_risk_pct"] = cash / equity
                         details["candidate_rounded_usd"] = rounded
+                        weight = _finite_fact(entry.get("weight"))
+                        if weight is not None and weight > 0:
+                            details["allocation_weight"] = weight
+                        total_n = _finite_fact(total)
+                        if total_n is not None and total_n > 0:
+                            details["allocation_total_usd"] = total_n
+                        details["cash_source"] = "cycle_share"
                         rounded_sum += rounded
                         any_sized = True
                     else:

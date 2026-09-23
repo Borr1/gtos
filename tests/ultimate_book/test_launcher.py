@@ -47,6 +47,19 @@ def test_no_cycle_without_new_bar(tmp_path):
     assert r2["action"] == "no_new_bar" and len(owner.calls) == 1
 
 
+def test_pre_print_wake_runs_the_forming_bar(tmp_path):
+    """A lead wake has no new closed bar. The forming bar is still calculated."""
+    owner, mt5 = _FakeOwner(), _FakeMT5()
+    lc = _launcher(tmp_path, owner, mt5)
+    assert lc.tick()["action"] == "cycle"
+    lc.note_wake_target(datetime.now(timezone.utc))
+    lc.arm_pre_print_wake()
+    assert lc.tick()["action"] == "cycle"
+    assert len(owner.calls) == 2
+    assert lc.tick()["action"] == "no_new_bar"
+    assert len(owner.calls) == 2
+
+
 def test_launcher_timeframes_include_active_candidate_book(tmp_path):
     owner, mt5 = _FakeOwner(), _FakeMT5()
     owner.base_config = {

@@ -1526,6 +1526,36 @@ def answered_amount(spot: str, block: Any, anchors: Any) -> float | None:
     return value_at(returned_number(block), anchors)
 
 
+def amount_outcome(spot: str, block: Any, anchors: Any, *, posted: bool) -> tuple[float | None, str | None]:
+    """The amount, and why it is unset.
+
+    A spot left out of the post is not an empty answer. A tie among the card's
+    own criteria is a tie. Anything else that does not name an amount is empty.
+    The amount stays unset. Nothing here puts a number back.
+    """
+
+    if not posted:
+        return None, "not_asked"
+    if isinstance(block, Mapping) and block.get("tie") is True:
+        return None, "tie"
+    number = answered_amount(spot, block, anchors)
+    if number is not None:
+        return number, None
+    if _unit(str(spot)) in _WHOLE_UNITS and isinstance(block, Mapping):
+        probabilities = block.get("probabilities")
+        if isinstance(probabilities, Mapping) and probabilities:
+            from src.judgment.jev_questions import whole_levels
+
+            levels = whole_levels(anchors) or []
+            names: set[str] = set()
+            for label, value in levels:
+                names.add(label)
+                names.add(label + " (" + format(value, "g") + ")")
+            if any(str(key) in names for key in probabilities):
+                return None, "tie"
+    return None, "empty"
+
+
 def post_again(evaluate_once, questions: Mapping[str, Any], rebuild) -> Any:
     """Post once. If a refusal names a level cap, post the thinned whole levels once."""
 

@@ -954,6 +954,40 @@ def _score_cash(state: Mapping[str, Any], anchors: list[tuple[str, float]]) -> f
     return _positive_usd(number)
 
 
+def size_last_names_this_trade(last: Any, trade_params: Mapping[str, Any] | None) -> bool:
+    """True when this scaler stamp is the call for these trade params.
+
+    A candidate id on both sides has to match. Otherwise the symbol has to
+    match. A stamp that names neither is not this trade.
+    """
+
+    if not isinstance(last, dict) or not isinstance(trade_params, Mapping):
+        return False
+
+    def _text(value: Any) -> str:
+        if value in (None, ""):
+            return ""
+        return str(value).strip()
+
+    candidate = _text(
+        trade_params.get("candidate_id") or trade_params.get("gtos_vnext_candidate_id")
+    )
+    last_candidates = {
+        _text(last.get(key)) for key in ("candidate_id", "f5_candidate_id")
+    }
+    last_candidates.discard("")
+    if candidate and last_candidates:
+        return candidate in last_candidates
+    symbol = _text(trade_params.get("symbol") or trade_params.get("broker_symbol"))
+    last_symbols = {
+        _text(last.get(key)) for key in ("symbol", "f5_symbol", "broker_symbol")
+    }
+    last_symbols.discard("")
+    if symbol and last_symbols:
+        return symbol in last_symbols
+    return False
+
+
 def honor_f5_scaler_risk(
     nominal: Any,
     *,
@@ -1102,9 +1136,16 @@ def honor_f5_scaler_risk(
         "pending_stop_risk_usd": params.get("pending_stop_risk_usd"),
         "symbol": params.get("symbol"),
     }
+    symbol = params.get("symbol") or params.get("broker_symbol")
+    candidate = params.get("candidate_id") or params.get("gtos_vnext_candidate_id")
+    stamp["symbol"] = symbol
+    stamp["broker_symbol"] = params.get("broker_symbol") or symbol
+    stamp["candidate_id"] = candidate
+    stamp["f5_symbol"] = symbol
+    stamp["f5_candidate_id"] = candidate
     if carried is not None:
         CASH_CARRY.append({
-            "symbol": params.get("symbol"),
+            "symbol": symbol,
             "sleeve": params.get("sleeve") or params.get("tag"),
             "allocation_cash_usd": carried,
             "rounded_risk_usd": rounded,

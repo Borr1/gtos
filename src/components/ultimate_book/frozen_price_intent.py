@@ -553,41 +553,71 @@ def quoted_book_pips(
     return spread / pip
 
 
+def broker_stop_minimum(
+    *,
+    stops_level: Any = None,
+    point: Any = None,
+    tick_size: Any = None,
+    spread: Any = None,
+) -> float | None:
+    """Fill-to-stop distance required by this symbol's broker facts.
+
+    A market fill is the far side of the quote. The stop is checked from the
+    near side, so the live spread is part of the distance. ``trade_stops_level``
+    times ``point`` is the indentation. ``trade_tick_size`` raises that
+    indentation when the tick is wider. A present zero level is that fact.
+    A missing level, point, or spread leaves the minimum unset.
+    """
+    level = _as_float(stops_level)
+    point_n = _as_float(point)
+    spread_n = _as_float(spread)
+    if (
+        level is None
+        or point_n is None
+        or spread_n is None
+        or level < 0
+        or point_n <= 0
+        or spread_n < 0
+    ):
+        return None
+    indent = level * point_n
+    tick = _as_float(tick_size)
+    if tick is not None and tick > indent:
+        indent = tick
+    return indent + spread_n
+
+
 def is_market_stop(
     stop_dist: Any,
     *,
     digits: Any = None,
     point: Any = None,
     symbol: Any = "",
+    stops_level: Any = None,
+    tick_size: Any = None,
+    spread: Any = None,
 ) -> bool | None:
-    """Whether the returned pip minimum puts this stop inside the floor.
+    """Whether this stop reaches the broker minimum.
 
-    True means the distance is at least the returned minimum. False means it
-    is inside that minimum. None means the score was empty: the floor is
-    unset. A symbol with no FX pip size is not this class. A missing
-    distance does not invent one.
+    True means the distance is at least ``trade_stops_level * point``, raised
+    to the tick when the tick is wider, plus the live spread. False means the
+    distance is inside that minimum. None means those facts are not all
+    present. A pip count is not a minimum. A missing distance does not invent
+    one.
     """
-    pip = fx_pip_size(digits=digits, point=point, symbol=symbol)
-    if pip is None:
-        return True
+    del digits, symbol
     distance = _as_float(stop_dist)
     if distance is None or distance <= 0:
-        return True
-    stop_card = {
-        "symbol": str(symbol or ""),
-        "stop_dist": distance,
-        "digits": digits,
-        "point": point,
-    }
-    pips = _spine_score(
-        "market_stop_min_pips",
-        _STOP_TEXT,
-        stop_card,
-        _pip_anchors(distance, point, digits, symbol),
-    )
-    if pips is None:
         return None
-    return distance >= float(pips) * pip
+    minimum = broker_stop_minimum(
+        stops_level=stops_level,
+        point=point,
+        tick_size=tick_size,
+        spread=spread,
+    )
+    if minimum is None:
+        return None
+    return distance >= minimum
 
 
 def immutable_cost_r(packet: Mapping[str, Any] | None) -> Optional[float]:
@@ -744,14 +774,17 @@ def classify_cost_refusal(
     digits: Any = None,
     point: Any = None,
     symbol: Any = "",
+    stops_level: Any = None,
+    tick_size: Any = None,
+    spread: Any = None,
 ) -> str | None:
     """Return a packet class, or None when the ask that would name it is empty.
 
     ``screen_reason`` is the owner pre-send string from ``_spread_cost_screen``.
     A packet, when present, is the authority for mixed / total-cost cases.
-    An FX stop inside the returned pip minimum is model input. An empty
-    minimum leaves the class unset. An unnamed family is asked. An empty
-    family answer leaves the class unset. It does not kill and it does not send.
+    A stop inside the broker minimum is model input. Missing broker facts do
+    not make that class. An unnamed family is asked. An empty family answer
+    leaves the class unset. It does not kill and it does not send.
     """
     collected: list[str] = []
     if screen_reason not in (None, ""):
@@ -779,7 +812,13 @@ def classify_cost_refusal(
     unknown_set = set(unknown)
     jobs: dict[str, Callable[[], Any]] = {
         "market": lambda: is_market_stop(
-            stop_dist, digits=digits, point=point, symbol=symbol,
+            stop_dist,
+            digits=digits,
+            point=point,
+            symbol=symbol,
+            stops_level=stops_level,
+            tick_size=tick_size,
+            spread=spread,
         ),
     }
     if unknown:
@@ -813,8 +852,6 @@ def classify_cost_refusal(
             family if family not in unknown_set else "cost_screen_spread_r"
             for family in families
         ]
-    if market is None:
-        return None
     if _TOTAL_COST_FAMILY in families:
         if "tol" in got:
             clear = immutable_floor_clear(

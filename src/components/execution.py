@@ -2181,6 +2181,9 @@ class ExecutionEngine:
             sl_distance=sl_distance,
             risk_pct=risk_pct,
             symbol_info=self._mt5_symbol_info(),
+            # The schedule lookup decides. This reader runs only when that lookup
+            # returns None, so a resolved Challenge schedule never pulls history.
+            commission_deals=self._account_round_turn_deals,
             # Bind forecast swap to this candidate's already-recorded entry instant.  Omitting
             # it falls back to fractional holding days, which cannot distinguish an eight-hour
             # horizon that crosses broker rollover from one that does not.  Never substitute a
@@ -3403,6 +3406,36 @@ class ExecutionEngine:
         raw = getattr(adapter, "_mt5", None)
         return raw if raw is not None else adapter
 
+    def _account_round_turn_deals(self) -> list[dict] | None:
+        """Deals already on this attached terminal. No initialize, no login.
+
+        The range is every deal the terminal will return. It is not a lookback
+        chosen for the trade. A miss stays None, and the cost packet then keeps
+        an unresolved symbol unset.
+        """
+        raw = self._raw_mt5()
+        history = getattr(raw, "history_deals_get", None)
+        if not callable(history):
+            return None
+        try:
+            rows = history(datetime(1970, 1, 1, tzinfo=timezone.utc), datetime.now(timezone.utc))
+        except Exception:
+            return None
+        if not rows:
+            return None
+        deals: list[dict] = []
+        for deal in rows:
+            deals.append({
+                "symbol": getattr(deal, "symbol", None),
+                "type": getattr(deal, "type", None),
+                "entry": getattr(deal, "entry", None),
+                "volume": getattr(deal, "volume", None),
+                "price": getattr(deal, "price", None),
+                "commission": getattr(deal, "commission", None),
+                "position_id": getattr(deal, "position_id", None),
+            })
+        return deals
+
     def _open_stop_risk_usd(self, positions, orders) -> "tuple[float, float] | None":
         """USD lost if every open position and pending order hits its stop.
 
@@ -3981,22 +4014,7 @@ class ExecutionEngine:
             },
             trigger=trigger,
         )
-        if self._challenge_book():
-            reject_choice = self._exec_choice(
-                "reject",
-                reason="open_trade_execution_manager_v4",
-                facts={
-                    "should_block": bool(execution_manager_v4_decision.should_block),
-                    "fatal_reasons": list(execution_manager_v4_decision.fatal_reasons),
-                    "direction": direction,
-                },
-            )
-            if reject_choice != "continue":
-                self._last_open_trade_block_reason = (
-                    "exec_reject:" + (reject_choice or "no_decision")
-                )
-                return None
-        elif execution_manager_v4_decision.should_block:
+        if not self._challenge_book() and execution_manager_v4_decision.should_block:
             logger.error(
                 "Execution Manager V4 blocked order before broker request: %s",
                 ",".join(execution_manager_v4_decision.fatal_reasons),
@@ -4032,8 +4050,15 @@ class ExecutionEngine:
         if self._f5_scaler is not None:
             self._stamp_size_room_facts(trade_params, account_balance)
             risk_amount = self._f5_scaler.scaled_risk_amount(risk_amount, trade_params)
+            from src.judgment.apply_size import size_last_names_this_trade
+
             _room_last = getattr(self._f5_scaler, "last", None) or {}
-            if risk_amount is not None and _room_last.get("binding_room_usd") is not None:
+            if (
+                risk_amount is not None
+                and isinstance(_room_last, dict)
+                and size_last_names_this_trade(_room_last, trade_params)
+                and _room_last.get("binding_room_usd") is not None
+            ):
                 _room_equity = trade_params.get("equity")
                 try:
                     _room_pct = 100.0 * float(risk_amount) / float(_room_equity)
@@ -4058,9 +4083,68 @@ class ExecutionEngine:
             if refuse:
                 if self._stop_or_mark(str(refuse)):
                     return None
-            if risk_amount is None:
-                if not self._stop_or_mark("size_not_decided"):
-                    self._last_open_trade_block_reason = "exec_gate:" + str("size_not_decided")[:120]
+            if risk_amount is None and self._stop_or_mark("size_not_decided"):
+                return None
+        if self._challenge_book():
+            room = None
+            last = (
+                getattr(self._f5_scaler, "last", None)
+                if self._f5_scaler is not None
+                else None
+            )
+            from src.judgment.apply_size import size_last_names_this_trade
+
+            if (
+                isinstance(last, dict)
+                and size_last_names_this_trade(last, trade_params)
+                and last.get("binding_room_usd") not in (None, "")
+            ):
+                room = last.get("binding_room_usd")
+            if room is None:
+                self._stamp_size_room_facts(trade_params, account_balance)
+                try:
+                    from src.judgment.apply_size import binding_room_usd
+
+                    room, _room_read = binding_room_usd(
+                        trade_params, trade_params.get("equity")
+                    )
+                except Exception:
+                    room = None
+            spread = None
+            try:
+                spread = float(tick.ask) - float(tick.bid)
+            except (TypeError, ValueError, AttributeError):
+                spread = None
+            from src.judgment.execution_choices import open_trade_reject_facts
+
+            reject_facts = open_trade_reject_facts(
+                cash_usd=risk_amount,
+                binding_room_usd=room,
+                spread=spread,
+                stop_distance=sl_distance,
+                entry=entry_price,
+                stop=sl,
+                target=tp1,
+                side=direction,
+                sleeve=trade_params.get("sleeve") or trade_params.get("tag"),
+                unit_choice=trade_params.get("unit") or trade_params.get("unit_choice"),
+                unit_probability=trade_params.get("unit_probability"),
+                allocation_weight=trade_params.get("allocation_weight"),
+                allocation_total_usd=trade_params.get("allocation_total_usd"),
+                cash_source=trade_params.get("cash_source"),
+            )
+            reject_choice = self._exec_choice(
+                "reject",
+                reason="open_trade",
+                facts=reject_facts,
+            )
+            if reject_choice != "continue" or risk_amount is None:
+                if reject_choice != "continue":
+                    self._last_open_trade_block_reason = (
+                        "exec_reject:" + (reject_choice or "no_decision")
+                    )
+                else:
+                    self._last_open_trade_block_reason = "size_not_decided"
                 return None
         self._f5_last_round_up = None
         require_broker_geometry = self._vnext_requires_verified_broker_geometry(trade_params)
@@ -4132,15 +4216,20 @@ class ExecutionEngine:
                     _balance = float(account_balance)
             except (TypeError, ValueError):
                 _balance = None
-            _lots_fact = None
-            if lots is not None:
-                try:
-                    _lots_fact = float(lots)
-                except (TypeError, ValueError):
-                    _lots_fact = None
-                else:
-                    if not math.isfinite(_lots_fact):
-                        _lots_fact = None
+            from src.judgment.execution_choices import below_volume_min, lot_on_card
+
+            _lots_fact = lot_on_card(lots, volume_step, volume_min)
+            _min_lot_loss = None
+            if below_volume_min(lots, volume_min) and _lots_fact is not None:
+                _min_lot_loss = self._broker_cash_risk_amount(
+                    direction=direction,
+                    volume=_lots_fact,
+                    entry_price=entry_price,
+                    stop_loss=sl,
+                )
+            if _lots_fact is None:
+                self._last_open_trade_block_reason = "exec_lot:unset"
+                return None
             _spread_points = None
             _point = None
             _stops_level = None
@@ -4157,6 +4246,17 @@ class ExecutionEngine:
                 _freeze_level = getattr(sym_info, "trade_freeze_level", None)
                 _filling_mode = getattr(sym_info, "filling_mode", None)
                 _tick_size = getattr(sym_info, "trade_tick_size", None) or _point
+            _rounded = None
+            _lot_room = room
+            if (
+                isinstance(last, dict)
+                and size_last_names_this_trade(last, trade_params)
+            ):
+                _rounded = last.get("rounded_risk_usd")
+                if _lot_room in (None, ""):
+                    _lot_room = last.get("binding_room_usd")
+            if _rounded in (None, ""):
+                _rounded = trade_params.get("rounded_risk_usd")
             send_facts = {
                 "lots": _lots_fact,
                 "volume_min": volume_min,
@@ -4188,6 +4288,21 @@ class ExecutionEngine:
                 "decision_time_utc": trade_params.get("decision_time_utc"),
                 "pending_created_time_utc": trade_params.get("pending_created_time_utc"),
             }
+            from src.judgment.execution_choices import open_trade_lot_facts
+
+            send_facts.update(
+                open_trade_lot_facts(
+                    lots=_lots_fact,
+                    volume_min=volume_min,
+                    volume_max=volume_max,
+                    volume_step=volume_step,
+                    rounded_risk_usd=_rounded,
+                    binding_room_usd=_lot_room,
+                    stop_distance=sizing_sl_distance,
+                    cash_usd=_risk,
+                    min_lot_loss_usd=_min_lot_loss,
+                )
+            )
             send_rows = self._ask_send(
                 reason="open_trade",
                 proposed=_lots_fact,
@@ -4204,23 +4319,12 @@ class ExecutionEngine:
             )
             lot_row = send_rows.get("lot") if isinstance(send_rows, dict) else None
             challenge_lot = self._row_choice(lot_row)
-            lot_score = None
-            if challenge_lot == "place":
-                lot_score = self._spine_score(
-                    "lot",
-                    "The score you return is the volume in lots for this order. "
-                    "An empty score does not send.",
-                    send_facts,
-                    sym_info=sym_info,
-                )
-            if challenge_lot != "place" or lot_score is None or lot_score <= 0:
+            if challenge_lot != "place":
                 self._last_open_trade_block_reason = (
-                    "exec_lot:" + (
-                        "unset" if challenge_lot == "place" else (challenge_lot or "no_decision")
-                    )
+                    "exec_lot:" + (challenge_lot or "no_decision")
                 )
                 return None
-            lots = lot_score
+            lots = _lots_fact
         if lots is None:
             logger.error("Cannot calculate verified lot size -- aborting trade")
             if not self._stop_or_mark("lot_size_unverified"):

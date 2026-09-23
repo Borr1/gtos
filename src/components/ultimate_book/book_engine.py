@@ -800,6 +800,7 @@ class UltimateBookLiveEngine:
         self._hop_scores = {}
         self._hop_inflight = {}
         self._hop_flight_lock = threading.Lock()
+        self._unit_quote_lock = threading.Lock()
         self._bar_series_lock = threading.Lock()
         self._bar_inflight = {}
         self._offset_lock = threading.Lock()
@@ -1448,19 +1449,29 @@ class UltimateBookLiveEngine:
             self._unit_quotes = cache
         if symbol in cache:
             return cache[symbol]
-        bid = ask = None
-        try:
-            tick = self._mt5.get_tick(self._broker_symbol(symbol))
-            if isinstance(tick, Mapping):
-                bid = self._unit_number(tick.get("bid"))
-                ask = self._unit_number(tick.get("ask"))
-            elif tick is not None:
-                bid = self._unit_number(getattr(tick, "bid", None))
-                ask = self._unit_number(getattr(tick, "ask", None))
-        except Exception:
+        lock = getattr(self, "_unit_quote_lock", None)
+        if lock is None:
+            with _ENGINE_LOCK:
+                lock = getattr(self, "_unit_quote_lock", None)
+                if lock is None:
+                    lock = threading.Lock()
+                    self._unit_quote_lock = lock
+        with lock:
+            if symbol in cache:
+                return cache[symbol]
             bid = ask = None
-        cache[symbol] = (bid, ask)
-        return bid, ask
+            try:
+                tick = self._mt5.get_tick(self._broker_symbol(symbol))
+                if isinstance(tick, Mapping):
+                    bid = self._unit_number(tick.get("bid"))
+                    ask = self._unit_number(tick.get("ask"))
+                elif tick is not None:
+                    bid = self._unit_number(getattr(tick, "bid", None))
+                    ask = self._unit_number(getattr(tick, "ask", None))
+            except Exception:
+                bid = ask = None
+            cache[symbol] = (bid, ask)
+            return bid, ask
 
     @staticmethod
     def _direction_if_any(spec: Any, bar: Any) -> Any:
@@ -1956,7 +1967,7 @@ class UltimateBookLiveEngine:
             return None
         target_dist = target if target is not None and target > 0 else None
         try:
-            return TradeIntent(
+            intent = TradeIntent(
                 sleeve=spec.tag,
                 symbol=symbol,
                 direction=direction,
@@ -1968,6 +1979,19 @@ class UltimateBookLiveEngine:
             )
         except Exception:
             return None
+        try:
+            from src.judgment.book_engine_choices import remembered_return
+
+            remembered = remembered_return("unit", facts)
+        except Exception:
+            remembered = None
+        probability = None if not isinstance(remembered, dict) else remembered.get("probability")
+        if probability not in (None, ""):
+            try:
+                object.__setattr__(intent, "details", {"unit_probability": probability})
+            except Exception:
+                pass
+        return intent
 
     def _slot_generation(self) -> dict:
         """Counters for one slot. The join adds them to the cycle."""
@@ -2218,13 +2242,24 @@ class UltimateBookLiveEngine:
         """One closed series per symbol and timeframe, the longest a slot will read.
 
         A symbol the slot returns before the fetch is not read here. The forming
-        candle is the last candle of that series. The quote is read when a slot
-        asks. A friend book does not come through here.
+        candle is the last candle of that series. The quote is read once per
+        symbol here, before the slots run. A friend book does not come through here.
         """
 
         if str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS:
             return
         supports = getattr(self._broker_symbol, "supports", None)
+        quoted: set[str] = set()
+        for _spec, symbol in slots:
+            if symbol in quoted:
+                continue
+            if callable(supports) and not supports(symbol):
+                continue
+            quoted.add(symbol)
+            try:
+                self._unit_quote(symbol)
+            except Exception:
+                continue
         longest: dict[tuple, tuple] = {}
         for spec, symbol in slots:
             if callable(supports) and not supports(symbol):
