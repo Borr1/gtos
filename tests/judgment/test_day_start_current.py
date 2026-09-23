@@ -397,3 +397,223 @@ def test_a_friend_card_does_not_read_this_accounts_file(tmp_path, monkeypatch):
     assert baseline.read_text(encoding="utf-8") == json.dumps(
         {"balance": 93670.92, "reset_utc": stamp},
     )
+
+
+class _Market:
+    ORDER_TYPE_BUY = 0
+    ORDER_TYPE_SELL = 1
+    TIMEFRAME_M1 = 1
+    SYMBOL_SWAP_MODE_POINTS = 1
+
+    def __init__(self, deals, bars, info, positions):
+        self._deals = deals
+        self._bars = bars
+        self._info = info
+        self._positions = positions
+        self.prices = []
+
+    def positions_get(self):
+        return list(self._positions)
+
+    def history_deals_get(self, position=None):
+        return [deal for deal in self._deals if int(deal.position_id) == int(position)]
+
+    def copy_rates_range(self, _symbol, _timeframe, _start, _end):
+        return list(self._bars)
+
+    def symbol_info(self, _symbol):
+        return self._info
+
+    def order_calc_profit(self, order_type, _symbol, volume, price_open, price_close):
+        self.prices.append(price_close)
+        if order_type == self.ORDER_TYPE_BUY:
+            return (price_close - price_open) * volume
+        if order_type == self.ORDER_TYPE_SELL:
+            return (price_open - price_close) * volume
+        raise RuntimeError("pending type")
+
+
+def _held_book(balance, market):
+    book = _Book(balance, [], market._positions)
+    book._mt5 = market
+    book.get_broker_offset_seconds = lambda: 0
+    return book
+
+
+def _info(swap_long=0.0, swap_short=0.0, point=1.0):
+    return SimpleNamespace(
+        point=point,
+        swap_mode=1,
+        swap_long=swap_long,
+        swap_short=swap_short,
+        swap_rollover3days=3,
+        trade_contract_size=1.0,
+    )
+
+
+def test_a_missing_reset_bar_leaves_equity_unset(tmp_path, monkeypatch):
+    _paths(monkeypatch, tmp_path)
+    reset = datetime(2026, 9, 22, 22, 0, tzinfo=timezone.utc)
+    opened = reset - timedelta(hours=2)
+    deal = _deal(opened, entry=0, position_id=7)
+    deal.price = 10.0
+    deal.volume = 1.0
+    deal.type = 0
+    deal.symbol = "EURUSD"
+    market = _Market(
+        [deal],
+        [{"time": int(reset.timestamp()) + 120, "high": 12.0, "low": 9.0, "spread": 0.0}],
+        _info(),
+        [SimpleNamespace(time=opened, ticket=7, symbol="EURUSD")],
+    )
+    day = equity_frame.read_chair_day_start(
+        _held_book(1000.0, market),
+        NOW,
+        rule_name="Europe/Prague",
+        record=False,
+    )
+    assert day["day_start_balance"] == 1000.0
+    assert day["day_start_equity"] is None
+    assert binding_room_usd(_room(day)) == (None, "unset")
+
+
+def test_held_equity_uses_the_higher_side_of_the_reset_bar(tmp_path, monkeypatch):
+    _paths(monkeypatch, tmp_path)
+    reset = datetime(2026, 9, 22, 22, 0, tzinfo=timezone.utc)
+    opened = reset - timedelta(hours=2)
+    deal = _deal(opened, entry=0, position_id=7)
+    deal.price = 10.0
+    deal.volume = 2.0
+    deal.type = 0
+    deal.symbol = "EURUSD"
+    market = _Market(
+        [deal],
+        [
+            {"time": int(reset.timestamp()) - 60, "high": 99.0, "low": 1.0, "spread": 0.0},
+            {"time": int(reset.timestamp()), "high": 12.0, "low": 9.0, "spread": 0.0},
+        ],
+        _info(),
+        [SimpleNamespace(time=opened, ticket=7, symbol="EURUSD")],
+    )
+    day = equity_frame.read_chair_day_start(
+        _held_book(1000.0, market),
+        NOW,
+        rule_name="Europe/Prague",
+        record=False,
+    )
+    assert market.prices == [12.0]
+    assert day["day_start_equity"] == 1004.0
+    assert day["day_start_equity_source"] == "reset_bar"
+    room = {
+        "equity": 1004.0,
+        "balance": 1000.0,
+        "initial_balance": 1000.0,
+        "overall_loss_pct": 10.0,
+        "daily_percent_external": 5.0,
+        "day_start_balance": day["day_start_balance"],
+        "day_start_equity": day["day_start_equity"],
+        "positions_total": 0,
+        "open_risk_usd": 0.0,
+    }
+    assert binding_room_usd(room) == (50.0, "bound")
+
+
+def test_a_halted_minute_keeps_the_last_bar_and_a_short_uses_its_ask(tmp_path, monkeypatch):
+    _paths(monkeypatch, tmp_path)
+    reset = datetime(2026, 9, 22, 22, 0, tzinfo=timezone.utc)
+    opened = reset - timedelta(hours=2)
+    deal = _deal(opened, entry=0, position_id=8)
+    deal.price = 10.0
+    deal.volume = 1.0
+    deal.type = 1
+    deal.symbol = "EURUSD"
+    market = _Market(
+        [deal],
+        [{"time": int(reset.timestamp()) - 60, "high": 11.0, "low": 8.0, "spread": 5.0}],
+        _info(point=0.1),
+        [SimpleNamespace(time=opened, ticket=8, symbol="EURUSD")],
+    )
+    day = equity_frame.read_chair_day_start(
+        _held_book(1000.0, market),
+        NOW,
+        rule_name="Europe/Prague",
+        record=False,
+    )
+    assert market.prices == [8.5]
+    assert day["day_start_equity"] == 1001.5
+
+
+def test_swap_is_included_only_after_the_server_midnight(tmp_path, monkeypatch):
+    _paths(monkeypatch, tmp_path)
+    reset = datetime(2026, 9, 21, 22, 0, tzinfo=timezone.utc)
+    opened = datetime(2026, 9, 20, 10, 0, tzinfo=timezone.utc)
+    deal = _deal(opened, entry=0, position_id=7)
+    deal.price = 10.0
+    deal.volume = 1.0
+    deal.type = 0
+    deal.symbol = "XAUUSD"
+    market = _Market(
+        [deal],
+        [{"time": int(reset.timestamp()), "high": 10.0, "low": 10.0, "spread": 0.0}],
+        _info(swap_long=-2.0),
+        [SimpleNamespace(time=opened, ticket=7, symbol="XAUUSD")],
+    )
+    day = equity_frame.read_chair_day_start(
+        _held_book(1000.0, market),
+        reset + timedelta(hours=2),
+        rule_name="Europe/Prague",
+        server_offset_hours=0.0,
+        record=False,
+    )
+    assert day["day_start_equity"] == 998.0
+    later_reset = datetime(2026, 9, 22, 22, 0, tzinfo=timezone.utc)
+    deal.time = later_reset - timedelta(hours=2)
+    market._bars = [{"time": int(later_reset.timestamp()), "high": 10.0, "low": 10.0, "spread": 0.0}]
+    market._positions = [SimpleNamespace(time=deal.time, ticket=7, symbol="XAUUSD")]
+    later = equity_frame.read_chair_day_start(
+        _held_book(1000.0, market),
+        NOW,
+        rule_name="Europe/Prague",
+        record=False,
+    )
+    assert later["day_start_equity"] == 1000.0
+
+
+def test_an_awake_reset_records_live_equity_and_a_record_wins(tmp_path, monkeypatch):
+    baseline, equity = _paths(monkeypatch, tmp_path)
+    reset = datetime(2026, 9, 22, 22, 0, tzinfo=timezone.utc)
+    opened = reset - timedelta(hours=2)
+    deal = _deal(opened, entry=0, position_id=7)
+    deal.price = 10.0
+    deal.volume = 1.0
+    deal.type = 0
+    deal.symbol = "EURUSD"
+    market = _Market([deal], [], _info(), [SimpleNamespace(time=opened, ticket=7, symbol="EURUSD")])
+    book = _held_book(1000.0, market)
+    book.get_account_equity = lambda: 250.0
+    day = equity_frame.read_chair_day_start(
+        book,
+        reset + timedelta(seconds=20),
+        rule_name="Europe/Prague",
+        login=0,
+        record=True,
+    )
+    assert day["day_start_equity"] == 250.0
+    assert day["day_start_equity_source"] == "awake_at_reset"
+    assert json.loads(equity.read_text(encoding="utf-8"))["equity"] == 250.0
+    market.prices = []
+
+    def _refuse(*_args, **_kwargs):
+        raise AssertionError("derived")
+
+    market.copy_rates_range = _refuse
+    stored = equity_frame.read_chair_day_start(
+        SimpleNamespace(get_account_balance=lambda: (_ for _ in ()).throw(AssertionError("again"))),
+        NOW,
+        rule_name="Europe/Prague",
+        login=0,
+        record=False,
+    )
+    assert stored["day_start_source"] == "recorded"
+    assert stored["day_start_equity"] == 250.0
+    assert baseline.exists()

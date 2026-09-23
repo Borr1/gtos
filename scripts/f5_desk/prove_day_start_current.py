@@ -406,12 +406,41 @@ def main() -> int:
                 matched = False
             print("historical_expected", expect)
             print("historical_match", matched)
+            if stamp == datetime(2026, 9, 21, 22, 0, tzinfo=timezone.utc):
+                chair_equity = _chair_recorded_equity()
+                print("chair_recorded_equity", chair_equity)
+                held_equity = derived.get("day_start_equity")
+                held_balance = derived.get("day_start_balance")
+                held_room, held_read = apply_size.binding_room_usd({
+                    "equity": held_equity,
+                    "balance": held_balance,
+                    "initial_balance": initial,
+                    "overall_loss_pct": overall_pct,
+                    "daily_percent_external": daily_pct,
+                    "day_start_balance": held_balance,
+                    "day_start_equity": held_equity,
+                    "positions_total": 0,
+                    "open_risk_usd": 0.0,
+                })
+                print("historical_binding_room_usd", held_room)
+                print("historical_binding_room_read", held_read)
+                if held_equity is None:
+                    history_ok = False
             history_ok = history_ok and matched
         if not history_ok:
             return 3
         return 0
     finally:
         mt5.shutdown()
+
+
+def _chair_recorded_equity():
+    path = STATE / "chair_day_equity.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return payload.get("equity")
 
 
 def _window_cash(deals, reset, offset_seconds):
