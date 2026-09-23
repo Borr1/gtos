@@ -499,6 +499,50 @@ def _anchors_from_card(facts: Mapping[str, Any] | None) -> tuple[tuple[str, floa
     return _ordered_anchors(pairs)
 
 
+def _fraction_levels(pairs) -> list:
+    """(label, fraction) anchors. A repeated number is one level. Fewer than two does not post."""
+    levels = []
+    seen = []
+    for label, raw in pairs:
+        text = str(label or "").strip()
+        if isinstance(raw, bool) or raw is None or not text:
+            continue
+        try:
+            number = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if number != number or number in (float("inf"), float("-inf")) or number in seen:
+            continue
+        seen.append(number)
+        levels.append((text, number))
+    return levels
+
+
+def _fraction_score(question_id: str, instructions: str, facts: dict, anchors) -> float | None:
+    """One score in fractions of equity. Empty, tie, and error stay unset."""
+    if not isinstance(anchors, list) or len(anchors) < 2:
+        return None
+    try:
+        from src.judgment.nineteen import score
+        number = score(
+            dict(facts or {}),
+            question_id=str(question_id),
+            instructions=str(instructions),
+            anchors=anchors,
+        )
+    except Exception:
+        return None
+    if isinstance(number, bool) or number is None:
+        return None
+    try:
+        number = float(number)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
 def _bind_entry(facts: dict) -> None:
     """The open the move is measured from. A missing open stays absent."""
 
@@ -3093,6 +3137,33 @@ class UltimateBookLiveEngine:
                     config[key] = value
         return config
 
+    def _size_hop_room_facts(self) -> Optional[dict]:
+        """The size hop's room reads for this Challenge account.
+
+        Day start inside that hop is ``read_chair_day_start``. This does not
+        build another day start. Friends do not take this read.
+        """
+        if str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS:
+            return None
+        try:
+            from src.components.execution import ExecutionEngine
+            from .admission import _adapter_login
+
+            login = _adapter_login(getattr(self, "_mt5", None))
+            if login != 0:
+                return None
+            hop = object.__new__(ExecutionEngine)
+            hop.mt5 = getattr(self, "_mt5", None)
+            hop.config = self.config if isinstance(self.config, dict) else {}
+            hop._runtime_namespace = _CHALLENGE_NS
+            facts = hop._size_room_facts(0.0)
+        except Exception:
+            return None
+        if not isinstance(facts, dict):
+            return None
+        facts["login"] = login
+        return facts
+
     def _equity(self) -> Optional[float]:
         if self._f5_ledger is not None:
             # F5 N1: realized notional balance plus ticket-bound floating broker P&L, scaled
@@ -3145,35 +3216,53 @@ class UltimateBookLiveEngine:
         )
 
     def _joint_daily_limits(self, base, gs):
-        """Gross cap for this state. Challenge reads the score. An empty score leaves the cap."""
+        """Gross cap for this state.
+
+        Challenge reads the score. An empty score leaves the cap unset.
+        Other books still tighten the recorded cap as the day's loss grows.
+        """
 
         from dataclasses import replace
+        challenge = str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS
         try:
             realized_loss = max(0.0, -float(getattr(gs, "realized_today_pct", 0.0) or 0.0))
-            gross = float(base.gross_open_risk_cap_pct)
         except Exception:
+            if challenge:
+                return replace(base, gross_open_risk_cap_pct=None)
             return base
-        if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+        if challenge:
             hard = getattr(base, "hard_daily_limit_pct", None)
             try:
                 hard_n = None if hard is None else float(hard)
             except (TypeError, ValueError):
                 hard_n = None
-            number = self._hop_score(
+            open_risk = getattr(gs, "open_risk_pct", None)
+            try:
+                open_n = None if open_risk is None else float(open_risk)
+            except (TypeError, ValueError):
+                open_n = None
+            anchors = _fraction_levels((
+                ("realized loss today, as a fraction of equity", realized_loss),
+                ("the account's daily loss limit, as a fraction of the initial balance", hard_n),
+                ("open risk already on the book, as a fraction of equity", open_n),
+            ))
+            number = _fraction_score(
                 "joint_gross_cap",
                 "The score you return is the gross open-risk cap for this state, "
-                "a fraction of equity. An empty score leaves the cap unchanged. Do not send.",
+                "a fraction of equity. The account's daily loss limit is a fact, not the cap. "
+                "An empty score leaves the cap unset. Do not send.",
                 {
                     "realized_loss_pct": realized_loss,
                     "hard_daily_limit_pct": hard_n,
-                    "gross_open_risk_cap_pct": gross,
+                    "open_risk_pct": open_n,
                 },
-                cache_key=("joint_gross_cap", realized_loss, hard_n, gross),
+                anchors,
             )
             if number is None:
-                return base
+                return replace(base, gross_open_risk_cap_pct=None)
             return replace(base, gross_open_risk_cap_pct=float(number))
         try:
+            gross = float(base.gross_open_risk_cap_pct)
             hard = float(getattr(base, "hard_daily_limit_pct", 0.05) or 0.05)
             buffer = 0.005
             room = max(0.0, hard - realized_loss - buffer)
@@ -3225,16 +3314,14 @@ class UltimateBookLiveEngine:
         return number
 
     def _f5_day_start_balance(self, now: datetime) -> Optional[float]:
-        """The governor's day-start balance -- F5 N3.
+        """Day-start balance for the governor.
 
-        Production reconstructs it from realized broker deals. Under the experiment that number
-        is ~0 in notional terms (every deal is 1/200th size), so `realized_today_pct` would sit
-        at ~0 and the soft daily stop would never fire. The notional ledger supplies it instead,
-        keyed on `reset_window_date` -- already the broker-correct reset-window key -- so the
-        notional day rolls on the same clock the firm uses.
-
-        With no ledger the shared day start is preferred. Reconstruction remains when that
-        read cannot derive a balance."""
+        The Challenge uses the shared read only. An unset balance stays unset.
+        It is not reconstructed from deals and it is not the notional ledger.
+        Other books keep the ledger, then the shared read, then deal reconstruction.
+        """
+        if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+            return self._shared_day_start_balance(now)
         if self._f5_ledger is not None:
             return float(self._f5_ledger.day_start_balance(self._governor.reset_window_date(now)))
         shared = self._shared_day_start_balance(now)
@@ -3243,16 +3330,20 @@ class UltimateBookLiveEngine:
         return self._governor.reconstruct_day_start_balance(self._mt5, now)
 
     def broker_day_start_balance(self, now: datetime) -> Optional[float]:
-        """Broker-real daily baseline for the F5 real-vs-notional headroom minimum."""
+        """Broker day-start balance.
+
+        The Challenge uses the shared read only. An unset balance stays unset.
+        Other books prefer that same read, then reconstruct from deals, then
+        the current balance when the adapter has no deal history.
+        """
+        if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+            return self._shared_day_start_balance(now)
         shared = self._shared_day_start_balance(now)
         if shared is not None:
             return shared
         baseline = self._governor.reconstruct_day_start_balance(self._mt5, now)
         if baseline is not None:
             return float(baseline)
-        # Test/minimal adapters without deal history cannot reconstruct.  Their current balance
-        # is the only source-bound neutral baseline; live RealMT5 is deal-capable and never uses
-        # this fallback when history is unexpectedly unavailable.
         if not self._deal_capable():
             try:
                 value = self._mt5.get_account_balance()
@@ -3332,7 +3423,8 @@ class UltimateBookLiveEngine:
             if eq is None:
                 return None
             dsb = self._f5_day_start_balance(now)
-            if dsb is None and self._deal_capable():
+            challenge = str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS
+            if dsb is None and (challenge or self._deal_capable()):
                 return None
             return self._governor.build(
                 equity=eq, day_start_balance=dsb, open_risk_pct=self._open_risk_pct(eq), now_utc=now,
@@ -3349,9 +3441,8 @@ class UltimateBookLiveEngine:
         OPEN-position safety tier — the governor's soft/hard stops and de-risk band are ENTRY-side only.
 
         Default OFF (ultimate_book_flatten_on_breach) -> returns None, so existing configs/tests are
-        unchanged; the LIVE config enables it. Thresholds sit BELOW the account-fatal limits (daily flatten
-        at -4% vs the -5% prop limit; max-DD flatten at 9% vs the -10%/90k floor) so positions close with a
-        buffer for slippage, NOT at the wall. FAIL-SAFE: an unassessable state (gs None) returns None
+        unchanged; the LIVE config enables it. The flatten fractions are scores on this equity.
+        An empty score does not flatten. FAIL-SAFE: an unassessable state (gs None) returns None
         (never flatten on uncertain data). Uses the same governor primitives as evaluate() (no divergence).
         Returns {flatten, block_entries, reason, metrics} or None. NEVER raises."""
         try:
@@ -3361,23 +3452,48 @@ class UltimateBookLiveEngine:
             gs = self.compute_governor_state(now_utc)
             if gs is None:
                 return None
-            daily_thr = self._spine_score(
-                "flatten_daily_loss_pct",
-                "The score you return is the daily-loss fraction that flattens open risk. "
-                "An empty score does not flatten. Do not send.",
-                {},
-            )
-            maxdd_thr = self._spine_score(
-                "flatten_maxdd_pct",
-                "The score you return is the drawdown fraction that flattens open risk. "
-                "An empty score does not flatten. Do not send.",
-                {},
-            )
-            if daily_thr is None and maxdd_thr is None:
-                return None
             realized = float(getattr(gs, "realized_today_pct", 0.0) or 0.0)
             ref = float(getattr(gs, "max_dd_reference_equity", 0.0) or 0.0)
             dd = ((ref - gs.equity) / ref) if ref > 0 else 0.0
+            try:
+                limits = self._governor_limits()
+                hard = float(limits.hard_daily_limit_pct)
+                wall = float(limits.max_dd_limit_pct)
+            except (TypeError, ValueError):
+                hard = None
+                wall = None
+            flatten_facts = {
+                "realized_today_pct": realized,
+                "dd": dd,
+                "equity": gs.equity,
+                "max_dd_reference_equity": ref,
+                "hard_daily_limit_pct": hard,
+                "max_dd_limit_pct": wall,
+            }
+            anchors = _fraction_levels((
+                ("today's loss, as a fraction of the day start", abs(realized) if realized < 0 else None),
+                ("drawdown from the reference, as a fraction of equity", dd if dd > 0 else None),
+                ("the account's daily loss limit, as a fraction of the initial balance", hard),
+                ("the account's overall loss limit, as a fraction of the initial balance", wall),
+            ))
+            daily_thr = _fraction_score(
+                "flatten_daily_loss_pct",
+                "The score you return is the daily-loss fraction that flattens open risk. "
+                "The account's daily loss limit is a fact, not this fraction. "
+                "An empty score does not flatten. Do not send.",
+                flatten_facts,
+                anchors,
+            )
+            maxdd_thr = _fraction_score(
+                "flatten_maxdd_pct",
+                "The score you return is the drawdown fraction that flattens open risk. "
+                "The account's overall loss limit is a fact, not this fraction. "
+                "An empty score does not flatten. Do not send.",
+                flatten_facts,
+                anchors,
+            )
+            if daily_thr is None and maxdd_thr is None:
+                return None
             reasons = []
             if daily_thr is not None and realized <= -abs(float(daily_thr)):
                 reasons.append(f"daily {realized * 100:.2f}% <= -{abs(float(daily_thr)) * 100:.1f}%")
@@ -3453,13 +3569,13 @@ class UltimateBookLiveEngine:
             eq = self._equity()
             if eq is None:
                 return self._safe("equity_unavailable", intents=intents, meta=meta)
-            # broker-correct daily baseline: reconstruct the server-day start BALANCE from realized deals
-            # (excludes floating P&L; survives a mid-day restart). If the broker CAN supply deal history
-            # (live) but the reconstruction fails, FAIL CLOSED — a wrong baseline could let a -5% daily
-            # breach slip past the soft stop (the hard-halt failure class). Test/mock mt5 without deal
-            # history fall back to the legacy equity anchor (day_start_balance=None).
+            # Day start is the shared read on the Challenge. Unset stays unset:
+            # the cycle does not build a governor state and does not admit.
+            # Other books still reconstruct, and a mock without deal history
+            # may fall through to the equity anchor.
             dsb = self._f5_day_start_balance(now)
-            if dsb is None and self._deal_capable():
+            challenge = str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS
+            if dsb is None and (challenge or self._deal_capable()):
                 return self._safe("day_baseline_unavailable", intents=intents, meta=meta)
             # feed the LIVE open risk so the 4% gross cap actually binds (override only if a caller
             # passed an explicit open_risk_pct, e.g. a test); else compute it from open positions.
@@ -3493,6 +3609,7 @@ class UltimateBookLiveEngine:
                 config=self._admission_config(rt_cfg), intents=intents,
                 governor_state=gs, account=self._account,
                 limits=self._joint_daily_limits(self._governor_limits(), gs),
+                hop_facts=self._size_hop_room_facts(),
                 n_active_override=self._running_conviction_override(
                     intents,
                     learning_rerate=runtime_overrides.get("ultimate_book_learning_rerate"),
@@ -3749,10 +3866,14 @@ class UltimateBookLiveEngine:
             # This call reconstructs the un-shed unit. The owner applies the real remaining gross
             # headroom candidate-by-candidate after downstream refusals, so a future refused sibling
             # cannot consume capacity here either.
-            raw_limits = replace(
-                limits,
-                gross_open_risk_cap_pct=max(1.0, float(limits.gross_open_risk_cap_pct)),
-            )
+            cap = getattr(limits, "gross_open_risk_cap_pct", None)
+            if cap is None:
+                raw_limits = limits
+            else:
+                raw_limits = replace(
+                    limits,
+                    gross_open_risk_cap_pct=max(1.0, float(cap)),
+                )
             raw_state = replace(governor_state, open_risk_pct=0.0)
             preview = evaluate_vnext_ultimate_book_admission(
                 config=self._admission_config(rt_cfg),
@@ -3760,6 +3881,7 @@ class UltimateBookLiveEngine:
                 governor_state=raw_state,
                 account=self._account,
                 limits=raw_limits,
+                hop_facts=self._size_hop_room_facts(),
                 n_active_override={day: exact_na},
                 n_active_override_authoritative=True,
                 stress_state=self._stress_derisk_state(now_utc or datetime.now(timezone.utc)),

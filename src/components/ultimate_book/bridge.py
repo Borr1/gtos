@@ -360,6 +360,7 @@ def evaluate_vnext_ultimate_book_admission(
     cycle_taken: float | None = 0.0,
     book_open_risk_pct: float | None = None,
     apply_book_open_risk: bool = False,
+    hop_facts: "Mapping[str, Any] | None" = None,
 ) -> UltimateBookAdmissionDecision:
     """Evaluate the standalone deploy-book admission through the vNext runtime bridge (DEFAULT-OFF).
 
@@ -601,6 +602,8 @@ def evaluate_vnext_ultimate_book_admission(
         account_equity=root_config.get("account_equity"),
         launcher_usd=root_config.get("launcher_usd"),
         room_facts=room_facts,
+        rules=cfg,
+        hop_facts=hop_facts,
     )
 
     # 3. Replacement-invariant guard (belt-and-braces; the staged patch is the primary control).

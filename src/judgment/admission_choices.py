@@ -206,8 +206,9 @@ SPOTS: dict[str, dict[str, Any]] = {
             "pairing_is_a_fact": "The profile and defense mode are facts. This candidate can still be admitted.",
         },
         "instructions": (
-            "Admission question: base risk is at the 2 percent ceiling and defense is not smooth. "
-            "Pick one option. Refuse the book only when ceiling_refuses is the single highest. "
+            "Admission question: the profile base risk and the defense mode are on this card. "
+            "Pick one option. Refuse new entries only when ceiling_refuses is the single highest. "
+            "An empty answer does not refuse. "
         ),
     },
     "w7_dropped_symbol": {

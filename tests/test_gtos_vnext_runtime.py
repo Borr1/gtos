@@ -9338,7 +9338,7 @@ def test_vnext_prop_safe_selector_reduces_risk_instead_of_blocking_when_budget_e
     assert selector.after_risk_pct == 1.5
 
 
-def test_vnext_prop_safe_selector_defers_until_reset_when_daily_budget_too_small():
+def test_vnext_prop_safe_selector_small_daily_room_still_reduces():
     selector = evaluate_vnext_prop_safe_selector(
         decision=_prop_selector_decision(),
         config=_prop_selector_cfg(),
@@ -9351,8 +9351,8 @@ def test_vnext_prop_safe_selector_defers_until_reset_when_daily_budget_too_small
     )
 
     assert selector.external_rule_projection["remaining_daily_cushion"] == 200.0
-    assert selector.action == "DEFER_UNTIL_RESET"
-    assert selector.after_risk_pct == 0.0
+    assert selector.action == "REDUCE_RISK"
+    assert selector.after_risk_pct == 0.2
 
 
 def test_vnext_prop_safe_selector_blocks_only_when_projected_breach_exists():

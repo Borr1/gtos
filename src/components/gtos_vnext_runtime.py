@@ -15204,6 +15204,19 @@ def evaluate_vnext_selector_v4_admission(
     )
 
 
+def _stated_float(account_state, cfg, state_key, config_key):
+    """A number the account states, else the typed account rule. No third fallback."""
+    if state_key and isinstance(account_state, dict):
+        number = _to_float(account_state.get(state_key))
+        if number is not None:
+            return float(number), "account_state." + state_key
+    if config_key and isinstance(cfg, dict):
+        number = _to_float(cfg.get(config_key))
+        if number is not None:
+            return float(number), "account_rule_typed"
+    return None, None
+
+
 def evaluate_vnext_prop_safe_selector(
     *,
     decision: GTOSVNextRuntimeDecision,
@@ -15213,16 +15226,14 @@ def evaluate_vnext_prop_safe_selector(
     current_time_utc: Any = None,
     candidate_context: dict[str, Any] | None = None,
 ) -> GTOSVNextPropSafeSelectorDecision:
-    """Evaluate redacted_account-style budget governance before execution activation.
+    """Evaluate the account's loss budget before execution activation.
 
-    redacted_account external math is kept distinct from GTOS' internal 4% emergency
-    overlay. The external daily floor is reset-window based and uses:
-    day_start_baseline - initial_balance * 5%. The overall floor is static:
-    initial_balance * 90%. No trailing drawdown is modeled here.
+    The firm's daily and overall floors stay. An internal room is a score in
+    account currency. An empty score does not add that room. No trailing
+    drawdown is modeled here.
     """
     root_config = config or {}
     cfg = root_config.get("gtos_vnext_runtime", {}) or {}
-    risk_cfg = root_config.get("risk", {}) or {}
     account_state = account_state or {}
     candidate_context = candidate_context or {}
     enabled = bool(cfg.get("prop_safe_selector_enabled", False))
@@ -15273,9 +15284,12 @@ def evaluate_vnext_prop_safe_selector(
             after_risk_pct=before_risk_pct,
         )
 
-    initial_balance = _to_float(account_state.get("initial_balance"))
-    if initial_balance is None:
-        initial_balance = _configured_float(cfg, "prop_safe_selector_initial_balance", 100000.0)
+    initial_balance, initial_source = _stated_float(
+        account_state,
+        cfg,
+        "initial_balance",
+        "prop_safe_selector_initial_balance",
+    )
     current_equity = _to_float(account_state.get("current_equity"))
     if current_equity is None:
         current_equity = _to_float(account_state.get("equity"))
@@ -15363,9 +15377,6 @@ def evaluate_vnext_prop_safe_selector(
         amount_key="spread_slippage_commission_buffer_amount",
         pct_key="spread_slippage_commission_buffer_pct",
         base_amount=risk_base_amount,
-        default=risk_base_amount
-        * _configured_float(cfg, "prop_safe_selector_spread_slippage_commission_buffer_pct", 0.10)
-        / 100.0,
     )
     correlated_buffer = _money_from_state(
         account_state,
@@ -15405,24 +15416,64 @@ def evaluate_vnext_prop_safe_selector(
     projected_equity = current_equity - full_projected_risk
     projected_equity_before_new_trade = current_equity - existing_and_buffer_risk
 
-    external_daily_pct = _configured_float(
+    external_daily_pct, daily_source = _stated_float(
+        account_state,
         cfg,
+        "daily_loss_limit_pct",
         "prop_safe_selector_external_daily_loss_limit_pct",
-        5.0,
     )
-    external_overall_pct = _configured_float(
+    external_overall_pct, overall_source = _stated_float(
+        account_state,
         cfg,
+        "overall_loss_limit_pct",
         "prop_safe_selector_external_overall_max_loss_pct",
-        10.0,
     )
+    if external_daily_pct is None or external_overall_pct is None:
+        return _result(
+            would_action="BLOCK",
+            reason="prop_safe_selector_missing_account_rule",
+            after_risk_pct=0.0,
+            max_allowed_pct=0.0,
+            reset_window=reset_window,
+            external={
+                "initial_balance": initial_balance,
+                "initial_balance_source": initial_source,
+                "daily_loss_limit_pct": external_daily_pct,
+                "daily_loss_source": daily_source,
+                "overall_max_loss_pct": external_overall_pct,
+                "overall_loss_source": overall_source,
+                "rule_sources": {
+                    "initial_balance": initial_source,
+                    "daily_loss_limit_pct": daily_source,
+                    "overall_max_loss_pct": overall_source,
+                },
+            },
+            route_quality=_route_quality_summary(decision),
+        )
     daily_loss_amount = initial_balance * external_daily_pct / 100.0
     daily_floor = day_start_baseline - daily_loss_amount
     max_loss_floor = initial_balance * (1.0 - external_overall_pct / 100.0)
     external = {
         "account_model": "redacted_account_100k_static_overall_loss",
         "initial_balance": initial_balance,
-        "phase1_target_pct": _configured_float(cfg, "prop_safe_selector_phase1_target_pct", 8.0),
-        "phase2_target_pct": _configured_float(cfg, "prop_safe_selector_phase2_target_pct", 5.0),
+        "initial_balance_source": initial_source,
+        "phase1_target_pct": _to_float(cfg.get("prop_safe_selector_phase1_target_pct")),
+        "phase2_target_pct": _to_float(cfg.get("prop_safe_selector_phase2_target_pct")),
+        "rule_sources": {
+            "initial_balance": initial_source,
+            "daily_loss_limit_pct": daily_source,
+            "overall_max_loss_pct": overall_source,
+            "phase1_target_pct": (
+                "account_rule_typed"
+                if _to_float(cfg.get("prop_safe_selector_phase1_target_pct")) is not None
+                else None
+            ),
+            "phase2_target_pct": (
+                "account_rule_typed"
+                if _to_float(cfg.get("prop_safe_selector_phase2_target_pct")) is not None
+                else None
+            ),
+        },
         "daily_loss_limit_pct": external_daily_pct,
         "daily_loss_amount": daily_loss_amount,
         "day_start_equity_or_balance_baseline": day_start_baseline,
@@ -15443,39 +15494,37 @@ def evaluate_vnext_prop_safe_selector(
         "trailing_drawdown_modeled": False,
     }
 
-    internal_enabled = bool(cfg.get("prop_safe_selector_internal_daily_overlay_enabled", False))
-    internal_source = "gtos_vnext_runtime.prop_safe_selector_internal_daily_overlay_pct"
-    internal_pct = _to_float(cfg.get("prop_safe_selector_internal_daily_overlay_pct"))
-    if internal_pct is None:
-        internal_source = "risk.max_daily_loss_pct"
-        internal_pct = _to_float(risk_cfg.get("max_daily_loss_pct"))
-    internal_applies = bool(
-        internal_enabled
-        and internal_pct is not None
-        and cfg.get("prop_safe_selector_internal_overlay_applies_to_budget", True)
-    )
-    internal_floor = None
-    internal = {
-        "enabled": internal_enabled,
-        "applies_to_selector_budget": internal_applies,
-        "source": internal_source,
-        "daily_loss_limit_pct": internal_pct,
-        "distinct_from_redacted_account_external_daily_limit": True,
+    rules = account_state.get("account_rules")
+    if rules in (None, ""):
+        rules = cfg.get("account_rules")
+    binding_facts = {
+        "equity": current_equity,
+        "initial_balance": initial_balance,
+        "overall_loss_pct": external_overall_pct,
+        "daily_percent_external": external_daily_pct,
+        "day_start_equity_or_balance_baseline": day_start_baseline,
+        "open_risk_usd": open_risk,
     }
-    if internal_enabled and internal_pct is not None:
-        internal_loss_amount = initial_balance * float(internal_pct) / 100.0
-        internal_floor = day_start_baseline - internal_loss_amount
-        internal.update(
-            {
-                "daily_loss_amount": internal_loss_amount,
-                "daily_floor": internal_floor,
-                "remaining_daily_cushion": current_equity - internal_floor,
-                "projected_daily_cushion_before_new_trade": (
-                    projected_equity_before_new_trade - internal_floor
-                ),
-                "projected_daily_cushion_after_full_risk": projected_equity - internal_floor,
-            }
-        )
+    if rules not in (None, ""):
+        binding_facts["account_rules"] = str(rules)
+    try:
+        from src.judgment.apply_size import binding_room_usd
+
+        binding_room, binding_read = binding_room_usd(binding_facts, current_equity)
+    except Exception:
+        binding_room, binding_read = None, "unset"
+    external["binding_room_usd"] = binding_room
+    external["binding_room_read"] = binding_read
+    internal_applies = False
+    internal = {
+        "enabled": False,
+        "applies_to_selector_budget": False,
+        "source": "binding_room_usd" if binding_room is not None else "unset",
+        "daily_loss_limit_pct": None,
+        "distinct_from_redacted_account_external_daily_limit": True,
+        "binding_room_usd": binding_room,
+        "binding_room_read": binding_read,
+    }
 
     exposure = {
         "current_equity": current_equity,
@@ -15547,15 +15596,15 @@ def evaluate_vnext_prop_safe_selector(
     current_external_daily_breach = external["remaining_daily_cushion"] <= 0
     current_internal_breach = (
         internal_applies
-        and internal_floor is not None
-        and internal.get("remaining_daily_cushion", 1.0) <= 0
+        and _to_float(internal.get("remaining_daily_cushion")) is not None
+        and float(internal["remaining_daily_cushion"]) <= 0
     )
 
     budget_limits: list[tuple[str, float]] = [
         ("redacted_account_external_daily_5pct", external["remaining_daily_cushion"]),
         ("redacted_account_external_overall_10pct_static", external["remaining_overall_cushion"]),
     ]
-    if internal_applies and internal_floor is not None:
+    if internal_applies:
         budget_limits.append(("gtos_internal_daily_overlay", internal["remaining_daily_cushion"]))
     available_after_existing = [
         (name, cushion - existing_and_buffer_risk)
@@ -15565,6 +15614,10 @@ def evaluate_vnext_prop_safe_selector(
         available_after_existing,
         key=lambda item: item[1],
     )
+    binding_cap = 0.0 if binding_read == "empty" else binding_room
+    if binding_cap is not None and max_allowed_new_trade_amount > float(binding_cap):
+        max_allowed_new_trade_amount = float(binding_cap)
+        binding_name = "binding_room_usd"
     max_allowed_new_trade_risk_pct = _pct_from_amount(
         max_allowed_new_trade_amount,
         risk_base_amount,
@@ -15576,14 +15629,9 @@ def evaluate_vnext_prop_safe_selector(
     external["max_allowed_new_trade_risk_amount"] = max_allowed_new_trade_amount
     external["max_allowed_new_trade_risk_pct"] = max_allowed_new_trade_risk_pct
 
-    min_reduced_risk_pct = _configured_float(
-        cfg,
-        "prop_safe_selector_min_reduced_risk_pct",
-        0.25,
-    )
     overall_allows_after_reset = (
         external["remaining_overall_cushion"] - existing_and_buffer_risk
-    ) >= (risk_base_amount * min_reduced_risk_pct / 100.0)
+    ) > 0
     daily_binding = "daily" in binding_name
 
     if current_external_overall_breach:
@@ -15633,7 +15681,7 @@ def evaluate_vnext_prop_safe_selector(
             route_quality=route_quality,
         )
 
-    if max_allowed_new_trade_risk_pct >= min_reduced_risk_pct:
+    if max_allowed_new_trade_amount > 0:
         reduced = max(0.0, min(before_risk_pct, max_allowed_new_trade_risk_pct))
         return _result(
             would_action="REDUCE_RISK",
