@@ -16,6 +16,15 @@
 profile_name: myaccount
 profile_status: newcomer_example_not_a_live_book
 
+# A personal broker account. account_rules: none sizes from this
+# account's own equity: the room is its own equity less the open stop
+# risk, with no daily rule.
+# If the equity or the open stop risk cannot be read, the room stays
+# unset. Without this line the book expects the firm's daily and
+# overall loss percents and the initial balance, and the room stays
+# unset until it can read them.
+account_rules: none
+
 runtime:
   profile_namespace: myaccount
   broker_account_namespace: myaccount
