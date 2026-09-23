@@ -1,4 +1,4 @@
-"""Autonomous friend copy — Challenge fill → SH / redacted_account / redacted_account.
+"""Autonomous friend copy — Challenge fill → friend_a / redacted_account / redacted_account.
 
 Challenge ``0`` / ``operator`` is the only deciding writer.
 Friend FTMO demos copy that fill: **same lots and the same broker SL/TP**.

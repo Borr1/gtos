@@ -265,8 +265,8 @@ def collect_health(
     checklist = {
         "redacted_account_in_targets": "observer_redacted_account" in targets,
         "three_observers_registered": {row["id"] for row in rows}
-        >= {"observer_sh", "observer_redacted_account", "observer_redacted_account"},
-        "targets_cover_three": set(targets) >= {"observer_sh", "observer_redacted_account", "observer_redacted_account"},
+        >= {"observer_friend_a", "observer_redacted_account", "observer_redacted_account"},
+        "targets_cover_three": set(targets) >= {"observer_friend_a", "observer_redacted_account", "observer_redacted_account"},
         "relay_alive": relay["alive"],
         "workers_alive": all(
             row["worker_alive"] for row in rows if row["id"] in targets

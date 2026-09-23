@@ -1306,7 +1306,7 @@ def compose_page(
             or None,
         },
         "friends": {
-            "question": "did SH / redacted_account / redacted_account fill, without inventing demo passwords",
+            "question": "did friend_a / redacted_account / redacted_account fill, without inventing demo passwords",
             "filled": bool(friend_tickets),
             "micro_lot": micro_lot,
             "map": friends.get("map") or {},

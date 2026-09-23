@@ -3006,8 +3006,8 @@ judgment/fleet/mirror/logs/observer_redacted_account.log.bak_0933	0	vps-f5-live	
 judgment/fleet/mirror/logs/observer_redacted_account.log.err.bak_0933	1157	vps-f5-live	unknown-small	1789983203.9174793
 judgment/fleet/mirror/logs/observer_redacted_account.log.bak_0933	0	vps-f5-live	unknown-small	1789983202.8831272
 judgment/fleet/mirror/logs/observer_redacted_account.log.err.bak_0933	1157	vps-f5-live	unknown-small	1789983203.8443456
-judgment/fleet/mirror/logs/observer_sh.log.bak_0933	0	vps-f5-live	unknown-small	1789983202.8206422
-judgment/fleet/mirror/logs/observer_sh.log.err.bak_0933	1157	vps-f5-live	unknown-small	1789983203.812811
+judgment/fleet/mirror/logs/observer_friend_a.log.bak_0933	0	vps-f5-live	unknown-small	1789983202.8206422
+judgment/fleet/mirror/logs/observer_friend_a.log.err.bak_0933	1157	vps-f5-live	unknown-small	1789983203.812811
 judgment/fleet/mirror/mirror_fanout.py	1334	vps-f5-live	text	1789990937.5476265
 judgment/fleet/mirror/mirror_fanout.py.bak_friend_copy_20260921T1142Z	469	vps-f5-live	unknown-small	1789958318.5106444
 judgment/fleet/mirror/registry/observers.v0.json.bak_copy_path_20260921T111727Z	2428	vps-f5-live	unknown-small	1789988669.513632
@@ -3021,8 +3021,8 @@ judgment/fleet/mirror/run/observer_redacted_account.pid	7	vps-f5-live	unknown-sm
 judgment/fleet/mirror/run/observer_redacted_account.pid.bak_0933	6	vps-f5-live	unknown-small	1789983203.0706234
 judgment/fleet/mirror/run/observer_redacted_account.pid	6	vps-f5-live	unknown-small	1789992058.5432835
 judgment/fleet/mirror/run/observer_redacted_account.pid.bak_0933	6	vps-f5-live	unknown-small	1789983202.945649
-judgment/fleet/mirror/run/observer_sh.pid	7	vps-f5-live	unknown-small	1789992057.550589
-judgment/fleet/mirror/run/observer_sh.pid.bak_0933	7	vps-f5-live	unknown-small	1789983202.8674998
+judgment/fleet/mirror/run/observer_friend_a.pid	7	vps-f5-live	unknown-small	1789992057.550589
+judgment/fleet/mirror/run/observer_friend_a.pid.bak_0933	7	vps-f5-live	unknown-small	1789983202.8674998
 judgment/fleet/mirror/vps_relay_once.py	3868	vps-f5-live	text	1789816807.161488
 judgment/fleet/mirror/vps_start_workers.ps1	198	vps-f5-live	text	1789958318.5311172
 judgment/fleet/mirror_adapter.py	16731	vps-f5-live	text	1789989447.9017427
@@ -3129,7 +3129,7 @@ judgment/live/_find_slate.ps1	907	vps-f5-live	text	1788956293.7856567
 judgment/live/_fix_slate_ptr_182234822.ps1	1384	vps-f5-live	text	1788884089.8648603
 judgment/live/_fleet_observer_redacted_account.env	262	vps-f5-live	unknown-small	1789858459.6799736
 judgment/live/_fleet_observer_redacted_account.env	239	vps-f5-live	unknown-small	1789816808.9173377
-judgment/live/_fleet_observer_sh.env	233	vps-f5-live	unknown-small	1789816808.681676
+judgment/live/_fleet_observer_friend_a.env	233	vps-f5-live	unknown-small	1789816808.681676
 judgment/live/_fleet_password_boot.ps1	690	vps-f5-live	text	1789958409.2792578
 judgment/live/_fn_tasks.txt	44	vps-f5-live	text	1789800841.2205677
 judgment/live/_ger40_candidate_probe_175157234.py	4497	vps-f5-live	text	1788185784.8864627

@@ -13,5 +13,5 @@
     "path_allow_markers": ["_Trial", "_redacted_account", "demo"],
     "secrets": "password_env refs only; never git"
   },
-  "notes": "Schema lock file (empty). Live VPS registry is judgment/fleet/mirror/registry/observers.v0.json with observer_sh / observer_redacted_account / observer_redacted_account and mirror_fanout.targets."
+  "notes": "Schema lock file (empty). Live VPS registry is judgment/fleet/mirror/registry/observers.v0.json with observer_friend_a / observer_redacted_account / observer_redacted_account and mirror_fanout.targets."
 }

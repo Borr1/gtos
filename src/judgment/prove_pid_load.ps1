@@ -18,7 +18,7 @@ Get-CimInstance Win32_Process -Filter "Name='python.exe'" | Where-Object { $_.Co
   $ns = "other"
   if ($_.CommandLine -match 'operator') { $ns = "F5" }
   elseif ($_.CommandLine -match 'redacted_account') { $ns = "FN" }
-  elseif ($_.CommandLine -match 'FTMO_Trial') { $ns = "SH" }
+  elseif ($_.CommandLine -match 'FTMO_Trial') { $ns = "friend_a" }
   elseif ($_.CommandLine -match 'FTMO_redacted_account') { $ns = "redacted_account" }
   elseif ($_.CommandLine -match 'FTMO_redacted_account') { $ns = "redacted_account" }
   Write-Output ("{0} PID {1}" -f $ns, $_.ProcessId)

@@ -20,6 +20,6 @@ The live system has one source, the private Origin repository `borr/gtos`. The h
 
 ## Projection
 
-`ORIGIN_SHA` is the Origin commit this tree was projected from. After each Origin merge, the coordinator rebuilds this tree with `scripts/publish/export_public_projection.py` and a private scrub that is not in this repository. The scrub removes live identifiers before the push. The public commit message names the Origin sha.
+`ORIGIN_SHA` is the Origin commit this tree was projected from. After each Origin merge, the coordinator rebuilds this tree from the coordinator store. The exporter and the scrub stay in that store. They are not in this repository. The scrub removes live identifiers before the push. The public commit message names the Origin sha.
 
 If you are the coordinator: run the sync from the coordinator store, with Borr1's GitHub credential, from a machine we control. Do not point the live host at this remote.

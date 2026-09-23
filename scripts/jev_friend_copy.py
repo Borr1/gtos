@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Print the autonomous friend-copy plan. Never order_send.
 
-Challenge 0 is the writer. SH / redacted_account / redacted_account copy the same lots
+Challenge 0 is the writer. friend_a / redacted_account / redacted_account copy the same lots
 and the same Challenge broker SL/TP. Agents do not place, close, or resize.
 redacted_account idle. Verification quarantined.
 """

@@ -30,7 +30,7 @@ CHALLENGE_NS = "operator"
 
 NEWS_PROTOCOL_APPLIED: bool | float | None = None
 
-# Measured 2026-09-21 from host redacted_host via trader@0.0.0.0:22022.
+# Measured 2026-09-21 from host redacted_host via user@host:22.
 # Paths are host facts, not invented endpoints. Recorded stamps are facts
 # on the ask. They are not the decision.
 HOST_STREAM_HEALTH = {

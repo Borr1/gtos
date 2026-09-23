@@ -28,7 +28,7 @@ python3 judgment/fleet/mirror_fanout.py --observer-id friend_alex --once --dry-r
 Fixed `MICRO_LOT` default `0.01` (`GTOS_FLEET_MICRO_LOT`). Comment `fleet:{ticket}`.  
 Hard allowlist: `judgment/fleet/allowlist.py`. Runbook: `RUNBOOK.md`.
 
-Live registry: `mirror/registry/observers.v0.json` (`observer_sh` / `observer_redacted_account` / `observer_redacted_account` in `mirror_fanout.targets`).  
+Live registry: `mirror/registry/observers.v0.json` (`observer_friend_a` / `observer_redacted_account` / `observer_redacted_account` in `mirror_fanout.targets`).  
 Schema lock (empty): `schemas/observers.v0.json`. Secrets via `password_env`, never git.
 
 ```powershell

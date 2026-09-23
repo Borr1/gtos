@@ -3,7 +3,7 @@
   "source_login": 0,
   "ftmo_challenge_default": "VETO",
   "mirror_fanout": {
-    "targets": ["observer_sh", "observer_redacted_account", "observer_redacted_account"]
+    "targets": ["observer_friend_a", "observer_redacted_account", "observer_redacted_account"]
   },
   "observers": [
     {

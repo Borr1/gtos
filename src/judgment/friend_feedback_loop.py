@@ -2,7 +2,7 @@
 
 Unique file. Default-OFF. Recommendation-only. Fail-closed if missing.
 
-Challenge ``0`` is the printer. SH / redacted_account / redacted_account are an
+Challenge ``0`` is the printer. friend_a / redacted_account / redacted_account are an
 autonomous in-system copy of that printer (same lots, same SL, same TP) plus
 this feedback learning loop. They are **not** accounts a Cursor agent places
 into. redacted_account stays idle. Verification ``0`` is quarantined.

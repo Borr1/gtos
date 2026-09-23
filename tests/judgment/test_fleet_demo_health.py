@@ -44,11 +44,11 @@ MIRROR_PS1 = REPO / "judgment" / "fleet" / "mirror" / "vps_start_workers.ps1"
 def test_live_registry_includes_redacted_account_in_targets():
     payload = json.loads(LIVE_REGISTRY.read_text(encoding="utf-8"))
     targets = payload["mirror_fanout"]["targets"]
-    assert targets == ["observer_sh", "observer_redacted_account", "observer_redacted_account"]
+    assert targets == ["observer_friend_a", "observer_redacted_account", "observer_redacted_account"]
     by_id = {row["id"]: row for row in payload["observers"]}
     assert by_id["observer_redacted_account"]["demo_login"] == 1514684855
     assert "FTMO_redacted_account" in by_id["observer_redacted_account"]["terminal_dir"]
-    assert by_id["observer_sh"]["demo_login"] == 0
+    assert by_id["observer_friend_a"]["demo_login"] == 0
     assert by_id["observer_redacted_account"]["demo_login"] == 0
     for row in payload["observers"]:
         assert row["demo_login"] not in FORBIDDEN_LOGINS
@@ -95,11 +95,11 @@ def test_emit_refuses_quarantine_login(tmp_path):
 def test_worker_plan_starts_relay_and_three_observers():
     plan = build_plan(registry=LIVE_REGISTRY)
     assert plan["place_on_challenge"] is False
-    assert plan["targets"] == ["observer_sh", "observer_redacted_account", "observer_redacted_account"]
+    assert plan["targets"] == ["observer_friend_a", "observer_redacted_account", "observer_redacted_account"]
     assert plan["relay"]["id"] == "fleet_relay"
     assert "--follow" in plan["relay"]["argv"]
     ids = [row["id"] for row in plan["workers"]]
-    assert ids == ["observer_sh", "observer_redacted_account", "observer_redacted_account"]
+    assert ids == ["observer_friend_a", "observer_redacted_account", "observer_redacted_account"]
     for row in plan["workers"]:
         assert row["demo_login"] not in FORBIDDEN_LOGINS
         assert "FTMO\\" + "terminal" not in row["terminal_path"].replace("/", "\\")
@@ -134,7 +134,7 @@ def test_health_offline_reports_three_observers_and_redacted_account(tmp_path, m
     assert report["checklist"]["targets_cover_three"] is True
     assert report["checklist"]["no_challenge_login_in_observers"] is True
     ids = [row["id"] for row in report["observers"]]
-    assert ids == ["observer_sh", "observer_redacted_account", "observer_redacted_account"]
+    assert ids == ["observer_friend_a", "observer_redacted_account", "observer_redacted_account"]
     redacted_account = next(row for row in report["observers"] if row["id"] == "observer_redacted_account")
     assert redacted_account["login"] == 1514684855
     assert redacted_account["in_targets"] is True

@@ -2,7 +2,7 @@
 
 Unique file. No broker. No agent-place. No invented 0.01 lot floor.
 
-Challenge ``0`` is the printer. SH / redacted_account / redacted_account copy that fill
+Challenge ``0`` is the printer. friend_a / redacted_account / redacted_account copy that fill
 (same lots, same SL, same TP, same side, same symbol). redacted_account stays idle.
 Verification ``0`` is quarantined.
 
@@ -26,7 +26,7 @@ PRINTER_MAGIC = CHALLENGE_MAGIC
 
 FRIEND_BOOKS: dict[str, dict[str, str]] = {
     "0": {
-        "name": "SH",
+        "name": "friend_a",
         "ns": "redacted_account_f5_minimal",
         "terminal": r"C:\MT5\FTMO_Trial",
     },
