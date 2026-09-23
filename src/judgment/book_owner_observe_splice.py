@@ -1268,3 +1268,207 @@ def observe_before_continue(
         )
     except Exception:
         return None
+
+
+
+def _unset_skip() -> dict[str, Any]:
+    return {
+        "schema": SCHEMA,
+        "choice": None,
+        "order_send": False,
+        "broker_effect": False,
+        "agent_order_send": False,
+        "decision_emitted": False,
+        "never_place": True,
+        "asked": False,
+        "send": False,
+    }
+
+
+def _join_questions(pack: Mapping[str, Any], questions: dict[str, Any] | None, card: Any) -> None:
+    """Write this pack onto the card. Do not open a post."""
+
+    targets: list[dict[str, Any]] = []
+    if isinstance(questions, dict):
+        targets.append(questions)
+    if isinstance(card, dict):
+        found = card.get("questions")
+        if isinstance(found, dict) and found not in targets:
+            targets.append(found)
+    for target in targets:
+        for key, spec in pack.items():
+            if key not in target and isinstance(spec, dict):
+                target[key] = spec
+
+
+def _add_pack(pack: dict[str, Any], part: Mapping[str, Any] | None) -> None:
+    if not isinstance(part, Mapping):
+        return
+    for key, spec in part.items():
+        if isinstance(spec, dict) and spec.get("type") in {"noul", "choice", "score"}:
+            pack.setdefault(str(key), spec)
+
+
+def _skip_facts(
+    intent: Any,
+    state: Mapping[str, Any] | None,
+    occupancy: Mapping[str, Any] | None,
+    governor: Mapping[str, Any] | None,
+    skipped_row: Any,
+    cost_skip: str | None,
+) -> dict[str, Any]:
+    facts: dict[str, Any] = {}
+    if isinstance(state, Mapping):
+        for key, value in state.items():
+            name = str(key)
+            if name in {"questions", "answers", "prior_outcomes"}:
+                continue
+            facts[name] = value
+    for name, value in (
+        ("symbol", _field(intent, "symbol", "instrument")),
+        ("sleeve", _field(intent, "sleeve", "tag")),
+        ("side", _field(intent, "side", "direction")),
+        ("candidate_id", _field(intent, "candidate_id")),
+    ):
+        if value is not None and name not in facts:
+            facts[name] = value
+    if occupancy is not None and "occupancy" not in facts:
+        facts["occupancy"] = occupancy
+    if governor is not None and "governor" not in facts:
+        facts["governor"] = governor
+    if cost_skip is not None:
+        facts["cost_skip"] = _scrub_text(str(cost_skip))
+    if skipped_row is not None:
+        facts["skipped_row"] = _sanitize_skip(skipped_row, None)
+    facts["model"] = MODEL
+    return _scrub(facts)
+
+
+def _skip_pack(facts: Mapping[str, Any]) -> dict[str, Any]:
+    """Candidate and ticket, each life step, on one pack. No post."""
+
+    _bind_card(facts)
+    pack: dict[str, Any] = {}
+    try:
+        _add_pack(pack, _component_questions())
+    except Exception:
+        pass
+    try:
+        _add_pack(pack, _loop_question())
+    except Exception:
+        pass
+    for subject in SUBJECTS:
+        for stage in STAGES:
+            qid = f"{subject}_{stage}"
+            try:
+                _add_pack(pack, _step_questions(qid, subject, stage, None))
+            except Exception:
+                continue
+        for step in MANAGE_STEPS:
+            qid = f"{subject}_manage_{step}"
+            try:
+                _add_pack(pack, _step_questions(qid, subject, "manage", step))
+            except Exception:
+                continue
+    return pack
+
+
+def _step_from_answers(
+    answers: Mapping[str, Any] | None,
+    qid: str,
+    order: tuple[str, ...],
+) -> dict[str, Any]:
+    row = _blank(order)
+    if not isinstance(answers, Mapping) or not answers:
+        return row
+    probs = _probabilities(answers.get(qid), order)
+    choice = _unique(probs, order)
+    row["probabilities"] = probs
+    row["choice"] = choice
+    row["threshold"] = _score(answers.get(qid + "_threshold"), qid + "_threshold")
+    row["loop_bound"] = _score(answers.get(qid + "_loop"), qid + "_loop")
+    row["parameter"] = _score(answers.get(qid + "_parameter"), qid + "_parameter")
+    row["component_exists"] = _noul(answers.get(qid + "_component"))
+    row["decision_emitted"] = choice is not None
+    row["error"] = None
+    return row
+
+
+def _skip_from_answers(answers: Mapping[str, Any] | None) -> tuple[dict[str, Any], str | None]:
+    life: dict[str, Any] = {"candidate": {}, "ticket": {}}
+    for subject in SUBJECTS:
+        passed: dict[str, Any] = {}
+        for stage in STAGES:
+            qid = f"{subject}_{stage}"
+            order = tuple(_STAGE_CRITERIA[stage])
+            passed[stage] = _step_from_answers(answers, qid, order)
+        manage: dict[str, Any] = {}
+        order = tuple(_MANAGE_CRITERIA)
+        for step in MANAGE_STEPS:
+            qid = f"{subject}_manage_{step}"
+            manage[step] = _step_from_answers(answers, qid, order)
+        passed["manage"] = manage
+        life[subject] = passed
+    candidate = life.get("candidate") if isinstance(life.get("candidate"), dict) else {}
+    observe = candidate.get("observe") if isinstance(candidate.get("observe"), dict) else {}
+    choice = observe.get("choice")
+    if not isinstance(choice, str) or not choice:
+        choice = None
+    return life, choice
+
+
+def observe_skip_continue(
+    intent: Any = None,
+    *_args: Any,
+    state: Mapping[str, Any] | None = None,
+    questions: dict[str, Any] | None = None,
+    answers: Mapping[str, Any] | None = None,
+    card: Any = None,
+    tick: Any = None,
+    cost_skip: str | None = None,
+    skipped_row: Mapping[str, Any] | str | None = None,
+    occupancy: dict[str, Any] | None = None,
+    governor: dict[str, Any] | None = None,
+    **_ignored: Any,
+) -> dict[str, Any]:
+    """The skip-path life on the one card. The same questions, no second post.
+
+    Watch, observe, admit, place, and every manage step for the candidate and
+    the ticket are written onto ``questions``. This function does not call
+    ``evaluate`` and does not send. An empty answer leaves ``choice`` unset.
+    """
+
+    del tick
+    row = _unset_skip()
+    try:
+        if answers is None and isinstance(card, Mapping):
+            found = card.get("answers")
+            if isinstance(found, Mapping):
+                answers = found
+        facts = _skip_facts(intent, state, occupancy, governor, skipped_row, cost_skip)
+        pack = _skip_pack(facts)
+        _join_questions(pack, questions, card)
+        life, choice = _skip_from_answers(answers)
+        row["life"] = life
+        row["choice"] = choice
+        row["decision_emitted"] = choice is not None
+        row["questions"] = list(pack)
+        row["asked"] = bool(pack)
+        components: dict[str, Any] = {}
+        if isinstance(answers, Mapping):
+            for qid in _COMPONENTS:
+                components[qid] = _noul(answers.get(qid))
+        else:
+            for qid in _COMPONENTS:
+                components[qid] = None
+        row["components"] = components
+    except Exception as exc:
+        row["error"] = type(exc).__name__
+        row["choice"] = None
+        row["decision_emitted"] = False
+    row["order_send"] = False
+    row["broker_effect"] = False
+    row["agent_order_send"] = False
+    row["send"] = False
+    row["never_place"] = True
+    return row

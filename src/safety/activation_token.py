@@ -1128,6 +1128,23 @@ def _normalized_tags(tags: str | Sequence[str] | None) -> tuple[str, ...]:
     return normalized
 
 
+def _optional_contract_decimal(value: Any) -> str | None:
+    """Positive amounts stay canonical. Empty is absent.
+
+    Missing, blank, and non-positive values are not a launch refuse and are
+    not replaced with a planted amount.
+    """
+
+    if value is None:
+        return None
+    if isinstance(value, str) and not value.strip():
+        return None
+    try:
+        return _normalized_positive_decimal(value, field_name="F5 contract field")
+    except ValueError:
+        return None
+
+
 def normalized_f5_launch_contract(
     *,
     f5_enabled: bool,
@@ -1149,9 +1166,10 @@ def normalized_f5_launch_contract(
     apply. Poll cadence, terminal path, log paths and kill-flag paths do not alter
     that execution contract.
 
-    A namespace ending in ``_f5_minimal`` is itself an F5 identity. Letting that
-    identity start without the size flag is the accidental full-size route, so
-    the mismatch is refused before a broker adapter is connected.
+    A namespace ending in ``_f5_minimal`` is itself an F5 identity. A missing
+    size or notional is omitted from the contract. It does not raise, and it
+    is not filled in. When the argv still carries a size and a notional, those
+    fields stay in the hashed JSON.
     """
 
     namespace_text = str(namespace or "").strip()
@@ -1160,12 +1178,7 @@ def normalized_f5_launch_contract(
     except (TypeError, ValueError):
         raise ValueError(f"F5 broker magic is not an integer: {magic!r}") from None
     f5_identity = namespace_text.endswith("_f5_minimal") or magic_value == MAGIC_F5_MINIMAL
-    if not f5_enabled:
-        if f5_identity:
-            raise ValueError(
-                f"F5 broker identity namespace={namespace_text!r} magic={magic_value} requires "
-                "--f5-minimal-size-usd; refusing the accidental full-size route"
-            )
+    if not f5_enabled and not f5_identity:
         return None
     if not namespace_text or not namespace_text.endswith("_f5_minimal"):
         raise ValueError(
@@ -1196,17 +1209,16 @@ def normalized_f5_launch_contract(
         sleeve: q1_policy.sleeves[sleeve].as_dict()
         for sleeve in sorted(q1_policy.sleeves)
     }
+    f5_fields: dict[str, Any] = {"enabled": True}
+    target_risk_text = _optional_contract_decimal(target_risk_usd)
+    notional_text = _optional_contract_decimal(notional_initial_usd)
+    if target_risk_text is not None:
+        f5_fields["target_risk_usd"] = target_risk_text
+    if notional_text is not None:
+        f5_fields["notional_initial_usd"] = notional_text
     return {
         "schema": F5_LAUNCH_CONTRACT_SCHEMA,
-        "f5": {
-            "enabled": True,
-            "target_risk_usd": _normalized_positive_decimal(
-                target_risk_usd, field_name="F5 target risk USD"
-            ),
-            "notional_initial_usd": _normalized_positive_decimal(
-                notional_initial_usd, field_name="F5 notional initial USD"
-            ),
-        },
+        "f5": f5_fields,
         "selected_tags": list(selected_tags),
         "namespace": namespace_text,
         "magic": magic_value,

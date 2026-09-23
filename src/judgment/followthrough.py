@@ -11,8 +11,10 @@ answer, a tie, a missing score, or an error leaves that field unset.
 A floor and a baseline are not asked.
 
 This module does not flatten and does not send. Judge code stays unable
-to send. ``GTOS_JEV_FOLLOWTHROUGH`` stays an env gate. The Challenge
-login gate stays a gate.
+to send. ``GTOS_JEV_FOLLOWTHROUGH`` unset is on. Explicit 0/false/no/off
+leaves the overlay off. An empty score leaves the action unset. It does
+not restore a cooldown or a break-even distance. The Challenge login
+gate stays a gate.
 """
 
 from __future__ import annotations
@@ -1221,21 +1223,16 @@ def piece_questions(
     seats: Iterable[str] | None = None,
     branch: str = "leftover",
 ) -> dict[str, Any]:
-    """One pack for this piece. Seat questions plus the parameter questions."""
+    """One pack. The life of the ticket is this score.
+
+    The sibling catalog still names a cooldown window and a break-even
+    distance. This pack does not load that catalog. An empty score leaves
+    the action unset. The pack does not flatten or send.
+    """
 
     _bind_card(state)
     named = _seats_for_branch(branch, seats)
-    raw: Mapping[str, Any] | None = None
-    try:
-        from .followthrough_ifs import seat_subtree_questions
-
-        loaded = seat_subtree_questions(state, seats=named, branch=branch, standalone=True)
-        if isinstance(loaded, Mapping) and loaded:
-            raw = loaded
-    except Exception:
-        raw = None
-    if raw is None:
-        raw = _local_piece(named)
+    raw = _local_piece(named)
     pack: dict[str, Any] = {}
     for qid, spec in raw.items():
         if not isinstance(spec, Mapping):
@@ -1401,10 +1398,14 @@ class FollowthroughDecision:
     def as_dict(self) -> dict[str, Any]:
         return {
             **self.payload,
+            "action": self.disposition,
             "disposition": self.disposition,
             "reason": self.reason,
             "extra_pass": False,
             "leave_orig": self.leave_orig,
+            "order_send": False,
+            "agent_order_send": False,
+            "flatten": None,
             "extra_flatten": None,
             "extra_rebind": self.extra_rebind,
             "extra_cancel": self.extra_cancel,
@@ -1689,6 +1690,9 @@ def compose_followthrough(
         "paid_cluster_lesson": scores.get("paid_cluster_lesson"),
         "walk_depth": scores.get("followthrough_walk_depth"),
         "returns": parsed["returns"],
+        "order_send": False,
+        "agent_order_send": False,
+        "flatten": None,
     }
     return FollowthroughDecision(
         disposition=_disposition(choices),

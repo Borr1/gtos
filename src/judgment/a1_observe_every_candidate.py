@@ -1234,3 +1234,168 @@ def observe_every_candidate(
         row["logged"] = False
         row["log_error"] = type(exc).__name__
     return row
+
+
+
+def _unset_candidate() -> dict[str, Any]:
+    return {
+        "schema": SCHEMA,
+        "choice": None,
+        "order_send": False,
+        "broker_effect": False,
+        "agent_order_send": False,
+        "decision_emitted": False,
+        "never_place": True,
+        "asked": False,
+        "send": False,
+    }
+
+
+def _join_questions(pack: Mapping[str, Any], questions: dict[str, Any] | None, card: Any) -> None:
+    """Write this pack onto the card. Do not open a post."""
+
+    targets: list[dict[str, Any]] = []
+    if isinstance(questions, dict):
+        targets.append(questions)
+    if isinstance(card, dict):
+        found = card.get("questions")
+        if isinstance(found, dict) and found not in targets:
+            targets.append(found)
+    for target in targets:
+        for key, spec in pack.items():
+            if key not in target and isinstance(spec, dict):
+                target[key] = spec
+
+
+def _life_pack(facts: Mapping[str, Any]) -> dict[str, Any]:
+    """Every life step, one pack. The same questions ``_questions`` already builds."""
+
+    _bind_card(facts)
+    try:
+        levels = _price_levels(facts)
+    except Exception:
+        levels = None
+    pack: dict[str, Any] = {}
+    for stage in _PASS:
+        try:
+            part = _questions(stage, levels)
+        except Exception:
+            continue
+        if not part or _leaks_limit(part):
+            continue
+        for key, spec in part.items():
+            if isinstance(spec, dict) and spec.get("type") in {"noul", "choice", "score"}:
+                pack.setdefault(str(key), spec)
+    return pack
+
+
+def _facts_for_candidate(
+    intent: Any,
+    state: Mapping[str, Any] | None,
+    extra: Mapping[str, Any] | None,
+    occupancy: Mapping[str, Any] | None,
+    governor: Mapping[str, Any] | None,
+    writer_stage: str | None,
+    skip_reason: str | None,
+) -> dict[str, Any]:
+    facts: dict[str, Any] = {}
+    if isinstance(state, Mapping):
+        for key, value in state.items():
+            name = str(key)
+            if name in {"questions", "answers", "prior_outcomes"}:
+                continue
+            facts[name] = value
+    extra_map = dict(extra) if isinstance(extra, Mapping) else None
+    candidate = _candidate_facts(intent, extra_map)
+    ticket = _ticket_facts(intent, extra_map, occupancy if isinstance(occupancy, Mapping) else None)
+    if any(value is not None for value in candidate.values()):
+        facts["candidate"] = candidate
+    if any(value is not None for value in ticket.values()):
+        facts["ticket"] = ticket
+    if writer_stage is not None:
+        facts["writer_stage"] = writer_stage
+    if skip_reason is not None:
+        facts["skip_reason"] = skip_reason
+    if isinstance(occupancy, Mapping):
+        facts["occupancy"] = _strip_limits(dict(occupancy))
+    if isinstance(governor, Mapping):
+        facts["governor"] = _strip_limits(dict(governor))
+    return _strip_limits(facts)
+
+
+def _life_from_answers(answers: Mapping[str, Any] | None) -> tuple[dict[str, Any], str | None]:
+    payload = answers if isinstance(answers, Mapping) else {}
+    passed: dict[str, Any] = {}
+    for stage in _PASS:
+        order = tuple(_STEP_CRITERIA[stage])
+        block = payload.get(f"a1_{stage}")
+        choice = _choice_of(block, order)
+        passed[stage] = {
+            "choice": choice,
+            "threshold": _score_of(payload.get(f"a1_{stage}_threshold"), f"a1_{stage}_threshold"),
+            "parameter": _score_of(payload.get(f"a1_{stage}_parameter"), f"a1_{stage}_parameter"),
+            "loop_bound": _score_of(payload.get(f"a1_{stage}_loop"), f"a1_{stage}_loop"),
+        }
+    observe = passed.get("observe") if isinstance(passed.get("observe"), dict) else {}
+    choice = observe.get("choice")
+    if not isinstance(choice, str) or not choice:
+        choice = None
+    return passed, choice
+
+
+def observe_candidate(
+    intent: Any = None,
+    *_args: Any,
+    state: Mapping[str, Any] | None = None,
+    questions: dict[str, Any] | None = None,
+    answers: Mapping[str, Any] | None = None,
+    card: Any = None,
+    tick: Any = None,
+    skip_reason: str | None = None,
+    writer_stage: str | None = None,
+    occupancy: Mapping[str, Any] | None = None,
+    governor: Mapping[str, Any] | None = None,
+    extra: Mapping[str, Any] | None = None,
+    **_ignored: Any,
+) -> dict[str, Any]:
+    """Watch, observe, admit, place, and every manage step on the one card.
+
+    The questions already built for those steps are written onto ``questions``
+    when that dict is the pack the card will send. This function does not
+    call ``evaluate``. An empty answer leaves ``choice`` unset. It does not send.
+    """
+
+    del tick
+    row = _unset_candidate()
+    try:
+        if answers is None and isinstance(card, Mapping):
+            found = card.get("answers")
+            if isinstance(found, Mapping):
+                answers = found
+        facts = _facts_for_candidate(
+            intent,
+            state,
+            extra,
+            occupancy,
+            governor,
+            writer_stage,
+            skip_reason,
+        )
+        pack = _life_pack(facts)
+        _join_questions(pack, questions, card)
+        life, choice = _life_from_answers(answers)
+        row["life"] = life
+        row["choice"] = choice
+        row["decision_emitted"] = choice is not None
+        row["questions"] = list(pack)
+        row["asked"] = bool(pack)
+    except Exception as exc:
+        row["error"] = type(exc).__name__
+        row["choice"] = None
+        row["decision_emitted"] = False
+    row["order_send"] = False
+    row["broker_effect"] = False
+    row["agent_order_send"] = False
+    row["send"] = False
+    row["never_place"] = True
+    return row

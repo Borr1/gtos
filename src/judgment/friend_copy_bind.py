@@ -1,9 +1,10 @@
 """Bind autonomous friend_copy onto the fleet DemoMirrorAdapter.
 
 Unique file. The in-system copier (fleet observer) owns demo ``order_send``.
-Agents never place, close, or resize. Challenge / redacted_account stay off this
-path. Naked 0.0 SL/TP opens are refused; the Challenge trade_record supplies
-lots and protection when the fleet event omitted them.
+Agents never place, close, or resize. ``agent_order_send`` stays false.
+The copy is the lots and the SL/TP of the Challenge ticket that is already
+open. An empty ticket leaves that copy unset and does not send.
+Challenge / redacted_account stay off this path.
 
 Loaded by file path on the host so ``src.judgment.__init__`` is never imported
 into the observer process.
@@ -63,7 +64,7 @@ def _choice_for_open_copy(
             friend_ticket=int(demo_ticket),
             source_ticket=int(source_text),
             symbol=str(getattr(position, "symbol", "") or event.get("symbol") or ""),
-            volume=float(getattr(position, "volume", 0) or 0),
+            volume=_open_number(getattr(position, "volume", None)),
             side=_open_side_from_position(position),
             price_open=getattr(position, "price_open", None),
             sl=getattr(position, "sl", None),
@@ -182,6 +183,100 @@ def _is_friend_copy_position(position: Any) -> bool:
     return comment.startswith("fleet:") or magic == FRIEND_MAGIC
 
 
+def _open_number(value: Any) -> float | None:
+    """A ticket level. A missing value and zero stay unset."""
+
+    try:
+        if value is None or isinstance(value, bool):
+            return None
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number <= 0 or number == float("inf"):
+        return None
+    return number
+
+
+def _first_open_level(rows: Any) -> float | None:
+    if not isinstance(rows, list):
+        return None
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        number = _open_number(row.get("value"))
+        if number is not None:
+            return number
+    return None
+
+
+def bind(
+    ticket: Mapping[str, Any] | None = None,
+    trade_record: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Lots and SL/TP of the Challenge ticket that is already open.
+
+    An empty ticket leaves the copy unset. This function does not send.
+    """
+
+    lots = sl = tp = None
+    try:
+        event = ticket if isinstance(ticket, Mapping) else None
+        record = trade_record if isinstance(trade_record, Mapping) else None
+        facts = _fc._volume_facts(event, record)
+        legal = facts.get("legal") if isinstance(facts, Mapping) else None
+        lots = _first_open_level(legal)
+        sl = _first_open_level(_fc._protection_facts(event, record, _fc._PROTECT_SL_KEYS, "sl"))
+        tp = _first_open_level(_fc._protection_facts(event, record, _fc._PROTECT_TP_KEYS, "tp"))
+    except Exception:  # noqa: BLE001 — an empty ticket must not raise
+        lots = sl = tp = None
+    return {
+        "ok": lots is not None and sl is not None and tp is not None,
+        "lots": lots,
+        "sl": sl,
+        "tp": tp,
+        "volume": lots,
+        "order_send": False,
+        "agent_order_send": False,
+        "place_on_challenge": False,
+        "copier_owned": True,
+    }
+
+
+def _copy_from_ticket(event: Mapping[str, Any] | None) -> tuple[dict[str, Any], Any]:
+    row = event if isinstance(event, Mapping) else None
+    ticket = row.get("ticket") if row is not None else None
+    record = load_challenge_trade_record(ticket)
+    return bind(row, record), record
+
+
+def _unset_copy(
+    *,
+    action: str,
+    ticket: Any = None,
+    copied: Mapping[str, Any] | None = None,
+    **extra: Any,
+) -> dict[str, Any]:
+    """Empty copy. Lots stay unset. Nothing is sent."""
+
+    levels = copied or {}
+    row = {
+        "ok": False,
+        "reason": None,
+        "action": action,
+        "ticket": ticket,
+        "lots": levels.get("lots"),
+        "sl": levels.get("sl"),
+        "tp": levels.get("tp"),
+        "volume": levels.get("lots"),
+        "order_send": False,
+        "agent_order_send": False,
+        "place_on_challenge": False,
+        "copier_owned": True,
+    }
+    row.update(extra)
+    return row
+
+
 def friend_sync_close(
     adapter: Any,
     event: Mapping[str, Any],
@@ -253,6 +348,7 @@ def friend_sync_close(
             "ticket": ticket,
             "demo_ticket": demo_ticket,
             "order_send": False,
+            "agent_order_send": False,
             "place_on_challenge": False,
             "close_friend_only": True,
         }
@@ -292,14 +388,35 @@ def friend_sync_close(
     if tick is None:
         return _fail(adapter, "no_tick", event, action="sync_close")
     side = _open_side_from_position(position)
-    request = copy_close_request(
-        symbol=symbol,
-        side=side,
-        volume=float(getattr(position, "volume", 0) or 0),
-        position=demo_ticket,
-        price=_tick_price(tick, side, closing=True),
-        comment=f"fleet-close:{ticket}",
-    )
+    volume = _open_number(getattr(position, "volume", None))
+    try:
+        price = _open_number(_tick_price(tick, side, closing=True))
+    except Exception:  # noqa: BLE001 — an empty ticket must not raise
+        price = None
+    if volume is None or price is None:
+        return _unset_copy(
+            action="sync_close",
+            ticket=ticket,
+            demo_ticket=demo_ticket,
+            close_friend_only=True,
+        )
+    try:
+        request = copy_close_request(
+            symbol=symbol,
+            side=side,
+            volume=volume,
+            position=demo_ticket,
+            price=price,
+            comment=f"fleet-close:{ticket}",
+        )
+    except FriendCopyError:
+        return _unset_copy(
+            action="sync_close",
+            ticket=ticket,
+            copied={"lots": volume, "sl": None, "tp": None},
+            demo_ticket=demo_ticket,
+            close_friend_only=True,
+        )
     result = mt5.order_send(request)
     if not _result_ok(result):
         return _fail(
@@ -341,6 +458,11 @@ def friend_sync_fill(adapter: Any, event: Mapping[str, Any]) -> dict[str, Any]:
         return blocked
     ticket = event.get("ticket")
     key = _ticket_key(ticket)
+    copied, record = _copy_from_ticket(event)
+    if not copied["ok"]:
+        pending = _unset_copy(action="sync_fill", ticket=ticket, copied=copied)
+        pending["trade_record_loaded"] = record is not None
+        return pending
     contract, record = _contract_for(adapter, event)
     mapped = adapter.ticket_map.get(key) if hasattr(adapter, "ticket_map") else None
     if not contract.ok:
@@ -371,9 +493,9 @@ def friend_sync_fill(adapter: Any, event: Mapping[str, Any]) -> dict[str, Any]:
                 "challenge_source_closed",
                 event,
                 action="sync_fill",
-                lots=contract.lots,
-                sl=contract.sl,
-                tp=contract.tp,
+                lots=copied["lots"],
+                sl=copied["sl"],
+                tp=copied["tp"],
                 close_friend_only=True,
                 never_flatten_challenge=True,
             )
@@ -382,9 +504,9 @@ def friend_sync_fill(adapter: Any, event: Mapping[str, Any]) -> dict[str, Any]:
             contract.reason,
             event,
             action="sync_fill",
-            lots=contract.lots,
-            sl=contract.sl,
-            tp=contract.tp,
+            lots=copied["lots"],
+            sl=copied["sl"],
+            tp=copied["tp"],
             lots_source=contract.lots_source,
             sl_source=contract.sl_source,
             tp_source=contract.tp_source,
@@ -398,9 +520,9 @@ def friend_sync_fill(adapter: Any, event: Mapping[str, Any]) -> dict[str, Any]:
             "action": "sync_fill",
             "ticket": ticket,
             "demo_ticket": mapped,
-            "volume": contract.lots,
-            "sl": contract.sl,
-            "tp": contract.tp,
+            "volume": copied["lots"],
+            "sl": copied["sl"],
+            "tp": copied["tp"],
             "place_on_challenge": False,
             "order_send": False,
             "agent_order_send": False,
@@ -417,24 +539,30 @@ def friend_sync_fill(adapter: Any, event: Mapping[str, Any]) -> dict[str, Any]:
         adapter.ticket_map[key] = demo_ticket
         if hasattr(adapter, "persist"):
             adapter.persist()
-        request = copy_open_request(
-            symbol=symbol,
-            side=side,
-            volume=float(contract.lots or 0),
-            sl=float(contract.sl or 0),
-            tp=float(contract.tp or 0),
-            comment=comment,
-            price=float(event.get("price") or 0),
-        )
+        price = _open_number(event.get("price"))
+        request = None
+        if price is not None:
+            try:
+                request = copy_open_request(
+                    symbol=symbol,
+                    side=side,
+                    volume=copied["lots"],
+                    sl=copied["sl"],
+                    tp=copied["tp"],
+                    comment=comment,
+                    price=price,
+                )
+            except FriendCopyError:
+                request = None
         return {
             "ok": True,
             "reason": "dry_run",
             "action": "sync_fill",
             "ticket": ticket,
             "demo_ticket": demo_ticket,
-            "volume": contract.lots,
-            "sl": contract.sl,
-            "tp": contract.tp,
+            "volume": copied["lots"],
+            "sl": copied["sl"],
+            "tp": copied["tp"],
             "comment": comment,
             "symbol": symbol,
             "side": side,
@@ -454,17 +582,26 @@ def friend_sync_fill(adapter: Any, event: Mapping[str, Any]) -> dict[str, Any]:
     tick = mt5.symbol_info_tick(symbol)
     if tick is None:
         return _fail(adapter, "no_tick", event, action="sync_fill")
-    request = copy_open_request(
-        symbol=symbol,
-        side=side,
-        volume=float(contract.lots or 0),
-        sl=float(contract.sl or 0),
-        tp=float(contract.tp or 0),
-        comment=comment,
-        price=_tick_price(tick, side),
-    )
+    try:
+        price = _open_number(_tick_price(tick, side))
+    except Exception:  # noqa: BLE001 — an empty ticket must not raise
+        price = None
+    if price is None:
+        return _unset_copy(action="sync_fill", ticket=ticket, copied=copied)
+    try:
+        request = copy_open_request(
+            symbol=symbol,
+            side=side,
+            volume=copied["lots"],
+            sl=copied["sl"],
+            tp=copied["tp"],
+            comment=comment,
+            price=price,
+        )
+    except FriendCopyError:
+        return _unset_copy(action="sync_fill", ticket=ticket, copied=copied)
     if "sl" not in request or "tp" not in request:
-        return _fail(adapter, "missing_challenge_protection", event, action="sync_fill", request=request)
+        return _unset_copy(action="sync_fill", ticket=ticket, copied=copied)
     result = mt5.order_send(request)
     if not _result_ok(result):
         return _fail(
@@ -487,9 +624,9 @@ def friend_sync_fill(adapter: Any, event: Mapping[str, Any]) -> dict[str, Any]:
         "action": "sync_fill",
         "ticket": ticket,
         "demo_ticket": demo_ticket,
-        "volume": contract.lots,
-        "sl": contract.sl,
-        "tp": contract.tp,
+        "volume": copied["lots"],
+        "sl": copied["sl"],
+        "tp": copied["tp"],
         "comment": comment,
         "symbol": symbol,
         "side": side,
@@ -510,29 +647,29 @@ def friend_sync_levels(
 ) -> dict[str, Any]:
     """Observer TRADE_ACTION_SLTP from Challenge protection. Not an agent SSH place."""
 
+    copied, _record = _copy_from_ticket(event)
+    if not copied["ok"]:
+        return _unset_copy(action="sync_levels", ticket=event.get("ticket"), copied=copied)
     if contract is None:
         contract, _record = _contract_for(adapter, event)
     if not contract.ok:
         return {
             "ok": False,
             "reason": contract.reason,
+            "lots": copied["lots"],
+            "sl": copied["sl"],
+            "tp": copied["tp"],
             "order_send": False,
             "agent_order_send": False,
             "place_on_challenge": False,
         }
-    sl = float(contract.sl or 0)
-    tp = float(contract.tp or 0)
-    if sl == 0 or tp == 0:
-        return {
-            "ok": False,
-            "reason": "missing_challenge_protection",
-            "order_send": False,
-            "agent_order_send": False,
-        }
+    sl = copied["sl"]
+    tp = copied["tp"]
     if getattr(adapter, "dry_run", False) or (isinstance(mapped, str) and str(mapped).startswith("dry:")):
         return {
             "ok": True,
             "reason": "dry_run",
+            "lots": copied["lots"],
             "sl": sl,
             "tp": tp,
             "order_send": False,
@@ -541,41 +678,61 @@ def friend_sync_levels(
         }
     mt5 = getattr(adapter, "mt5", None)
     if mt5 is None:
-        return {"ok": False, "reason": "mt5_client_required", "order_send": False}
+        return {"ok": False, "reason": "mt5_client_required", "order_send": False, "agent_order_send": False}
     try:
         demo_ticket = int(mapped)
     except (TypeError, ValueError):
-        return {"ok": False, "reason": "invalid_mapped_ticket", "mapped": mapped, "order_send": False}
+        return {
+            "ok": False,
+            "reason": "invalid_mapped_ticket",
+            "mapped": mapped,
+            "order_send": False,
+            "agent_order_send": False,
+        }
     positions = mt5.positions_get(ticket=demo_ticket) or ()
     if not positions:
-        return {"ok": True, "reason": "demo_position_already_gone", "order_send": False}
+        return {
+            "ok": True,
+            "reason": "demo_position_already_gone",
+            "order_send": False,
+            "agent_order_send": False,
+        }
     position = positions[0]
     symbol = str(getattr(position, "symbol", None) or contract.symbol or event.get("symbol") or "")
-    cur_sl = float(getattr(position, "sl", 0) or 0)
-    cur_tp = float(getattr(position, "tp", 0) or 0)
-    if abs(sl - cur_sl) < 1e-9 and abs(tp - cur_tp) < 1e-9:
+    cur_sl = _open_number(getattr(position, "sl", None))
+    cur_tp = _open_number(getattr(position, "tp", None))
+    if cur_sl is not None and cur_tp is not None and abs(sl - cur_sl) < 1e-9 and abs(tp - cur_tp) < 1e-9:
         return {
             "ok": True,
             "reason": "levels_already",
             "sl": sl,
             "tp": tp,
+            "lots": copied["lots"],
             "order_send": False,
+            "agent_order_send": False,
             "copier_owned": True,
         }
-    request = copy_sltp_request(symbol=symbol, position=demo_ticket, sl=sl, tp=tp)
+    try:
+        request = copy_sltp_request(symbol=symbol, position=demo_ticket, sl=sl, tp=tp)
+    except FriendCopyError:
+        return _unset_copy(action="sync_levels", ticket=event.get("ticket"), copied=copied)
     result = mt5.order_send(request)
     if not _result_ok(result):
         return {
             "ok": False,
             "reason": "sltp_failed",
             "retcode": getattr(result, "retcode", None),
+            "lots": copied["lots"],
             "sl": sl,
             "tp": tp,
+            "order_send": False,
+            "agent_order_send": False,
             "copier_owned": True,
         }
     return {
         "ok": True,
         "reason": "levels_applied",
+        "lots": copied["lots"],
         "sl": sl,
         "tp": tp,
         "demo_ticket": demo_ticket,
@@ -615,13 +772,19 @@ def protect_open_copies(adapter: Any) -> list[dict[str, Any]]:
         record = load_challenge_trade_record(key)
         if record:
             event["symbol"] = str(record.get("symbol") or "")
-            event["side"] = str(record.get("side") or record.get("direction") or "sell")
+            side = record.get("side") or record.get("direction")
+            if side not in (None, ""):
+                event["side"] = str(side)
         closed, closed_from = challenge_source_is_closed(event, record)
         if closed:
             row = friend_sync_close(adapter, event, demo_ticket)
             row["ticket"] = key
             row["source_closed_from"] = closed_from
             outcomes.append(row)
+            continue
+        copied = bind(event, record)
+        if not copied["ok"]:
+            outcomes.append(_unset_copy(action="sync_levels", ticket=key, copied=copied))
             continue
         contract = resolve_copy_contract(
             event,
@@ -630,7 +793,18 @@ def protect_open_copies(adapter: Any) -> list[dict[str, Any]]:
             terminal_path=getattr(adapter, "terminal_path", None),
         )
         if not contract.ok:
-            outcomes.append({"ok": False, "reason": contract.reason, "ticket": key, "order_send": False})
+            outcomes.append(
+                {
+                    "ok": False,
+                    "reason": contract.reason,
+                    "ticket": key,
+                    "lots": copied["lots"],
+                    "sl": copied["sl"],
+                    "tp": copied["tp"],
+                    "order_send": False,
+                    "agent_order_send": False,
+                }
+            )
             continue
         row = friend_sync_levels(adapter, event, demo_ticket, contract=contract)
         row["ticket"] = key

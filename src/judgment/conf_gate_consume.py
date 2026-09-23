@@ -10,8 +10,10 @@ a Score. A Score may sit between levels. Prior outcomes are attached on
 every ask, and the return is stored for the next ask.
 
 An empty answer, a tie, a missing score, or an error leaves that return
-unset. Vendor cutoffs are not the consume decision. This module does not
-authorize ``GTOS_JEV_CONF_GATE_APPLY``. It does not invent news. It does
+unset. It does not restore a block. The band is not a permission gate.
+``GTOS_JEV_CONF_GATE_APPLY`` is not a refuse and not a send. A missing
+flag stays unset. Vendor cutoffs are not the consume decision. This
+module does not authorize that flag. It does not invent news. It does
 not send.
 """
 
@@ -27,7 +29,6 @@ CHALLENGE_LOGIN = 0
 CHALLENGE_NS = "operator"
 CONF_GATE_APPLY_ENV = "GTOS_JEV_CONF_GATE_APPLY"
 
-_TRUTHY = frozenset({"1", "true", "yes", "on"})
 _BAND_ORDER = ("LOW", "MED", "HIGH", "VETO")
 _PLACE_ORDER = ("PLACE", "STAND", "DELAY", "REMINT", "VETO")
 _DISPOSITION_ORDER = (
@@ -929,7 +930,7 @@ class ConfGateConsumeLog:
     component_exists: bool | float | None
     hashes_ok: bool | float | None
     vendor_0_85_forbidden_as_truth: bool
-    gtos_jev_conf_gate_apply: bool
+    gtos_jev_conf_gate_apply: bool | None
     broker_effect: bool
     news_invent: bool
     ask_error: str | None
@@ -955,8 +956,9 @@ class ConfGateConsumeLog:
             "component_exists": self.component_exists,
             "hashes_ok": self.hashes_ok,
             "vendor_0_85_forbidden_as_truth": True,
-            "gtos_jev_conf_gate_apply": False,
+            "gtos_jev_conf_gate_apply": None,
             "broker_effect": False,
+            "order_send": None,
             "news_invent": False,
             "ask_error": self.ask_error,
             "model": self.model or MODEL,
@@ -989,7 +991,7 @@ def _row(
         component_exists=card.get("component_exists"),
         hashes_ok=card.get("hashes_ok"),
         vendor_0_85_forbidden_as_truth=True,
-        gtos_jev_conf_gate_apply=False,
+        gtos_jev_conf_gate_apply=None,
         broker_effect=False,
         news_invent=False,
         ask_error=card.get("ask_error") if isinstance(card.get("ask_error"), str) else None,
@@ -998,12 +1000,41 @@ def _row(
     )
 
 
-def conf_gate_bands_apply_enabled(environ: Mapping[str, str] | None = None) -> bool:
-    """Env read of the apply flag. Consume does not authorize it."""
+def _score_card(score: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Read a supplied score. An empty score is an empty consume."""
+
+    if not isinstance(score, Mapping) or not score:
+        return _read({}, "empty")
+    body = dict(score)
+    if "answers" in body or "error" in body or "skipped" in body:
+        answers = body.get("answers") if isinstance(body.get("answers"), Mapping) else {}
+        error = body.get("error") or body.get("skipped")
+        if not answers and not error:
+            error = "empty"
+        return _read(answers, None if error in (None, "") else str(error))
+    return _read(body, None)
+
+
+def _consume_row(card: Mapping[str, Any]) -> dict[str, Any]:
+    action = card.get("place_action")
+    band = card.get("band")
+    return {
+        "choice": action if isinstance(action, str) else None,
+        "band": band if isinstance(band, str) else None,
+        "high_trust_blocked": card.get("high_trust_blocked"),
+        "order_send": None,
+    }
+
+
+def conf_gate_bands_apply_enabled(environ: Mapping[str, str] | None = None) -> None:
+    """The apply flag is not a permission and not a block.
+
+    Missing or set, the return stays unset. The band does not open a send.
+    """
 
     env = environ if environ is not None else os.environ
-    raw = str(env.get(CONF_GATE_APPLY_ENV, "")).strip().lower()
-    return raw in _TRUTHY
+    _ = env.get(CONF_GATE_APPLY_ENV, None)
+    return None
 
 
 def consume_high_trust_blocked(
@@ -1011,28 +1042,53 @@ def consume_high_trust_blocked(
     flip_rate: float | None = None,
     max_swing_pts: float | None = None,
     state_evidence_sufficiency_pass: bool | None = None,
-) -> bool | float | None:
-    """The high-trust block is the Noul on this ask. A miss stays unset."""
+    score: Mapping[str, Any] | None = None,
+    environ: Mapping[str, str] | None = None,
+    ask: Callable[..., Any] | None = None,
+) -> dict[str, Any]:
+    """The consume choice. An empty score leaves it unset.
 
-    card = _ask({
-        "flip_rate": flip_rate,
-        "max_swing_pts": max_swing_pts,
-        "state_evidence_sufficiency_pass": state_evidence_sufficiency_pass,
-    })
-    return card.get("high_trust_blocked")
+    The band does not open a send. A missing apply flag is not a block.
+    This does not send.
+    """
+
+    _ = conf_gate_bands_apply_enabled(environ)
+    if ask is None:
+        return _consume_row(_score_card(score))
+    card = _ask(
+        {
+            "flip_rate": flip_rate,
+            "max_swing_pts": max_swing_pts,
+            "state_evidence_sufficiency_pass": state_evidence_sufficiency_pass,
+        },
+        ask=ask,
+    )
+    return _consume_row(card)
 
 
 def place_action_after_consume(
     intended: str | None,
     *,
-    high_trust_blocked: bool,
+    high_trust_blocked: bool | None = None,
+    score: Mapping[str, Any] | None = None,
+    ask: Callable[..., Any] | None = None,
 ) -> str | None:
-    """The place action is the Choice on this ask. A miss stays unset."""
+    """The place action is the choice. A block fact does not rewrite it.
 
-    card = _ask({
-        "intended_place_action": intended,
-        "high_trust_blocked_fact": high_trust_blocked,
-    })
+    An empty score stays unset. It does not become a block and it does not send.
+    """
+
+    if ask is None:
+        card = _score_card(score)
+        action = card.get("place_action")
+        return action if isinstance(action, str) else None
+    card = _ask(
+        {
+            "intended_place_action": intended,
+            "high_trust_blocked_fact": high_trust_blocked,
+        },
+        ask=ask,
+    )
     action = card.get("place_action")
     return action if isinstance(action, str) else None
 
@@ -1157,11 +1213,12 @@ def smoke() -> dict[str, Any]:
     card = row.as_dict()
     assert row.broker_effect is False
     assert row.news_invent is False
-    assert row.gtos_jev_conf_gate_apply is False
+    assert row.gtos_jev_conf_gate_apply is None
     assert row.vendor_0_85_forbidden_as_truth is True
     assert card["broker_effect"] is False
     assert card["news_invent"] is False
-    assert card["gtos_jev_conf_gate_apply"] is False
+    assert card["gtos_jev_conf_gate_apply"] is None
+    assert card["order_send"] is None
     assert card["vendor_0_85_forbidden_as_truth"] is True
     assert card["band"] is None
     assert card["place_action"] is None

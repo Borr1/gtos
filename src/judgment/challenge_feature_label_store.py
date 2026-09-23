@@ -9,6 +9,7 @@ next ask.
 
 An empty answer, a tie, or an error leaves that field unset. A floor and
 a baseline are not a question. This module does not send and does not flatten.
+A called close is one label row. An empty deal writes nothing.
 """
 
 from __future__ import annotations
@@ -770,7 +771,12 @@ def _ordinal_read(block, qid: str):
         return None
 
 def store_enabled() -> bool:
-    return os.environ.get(STORE_ENV, "").strip().lower() in {"1", "true", "yes"}
+    """Unset is not a skip. A blank env is on; only an explicit off is off."""
+
+    raw = os.environ.get(STORE_ENV)
+    if raw is None or not str(raw).strip():
+        return True
+    return str(raw).strip().lower() in {"1", "true", "yes"}
 
 
 def default_store_path() -> Path:
@@ -1637,31 +1643,146 @@ def feature_row_from_challenge(deal_input: Mapping[str, Any]) -> dict[str, Any]:
     return state
 
 
-def label_row_from_challenge(deal: Mapping[str, Any]) -> dict[str, Any]:
+_LABEL_KEYS = (
+    "schema",
+    "feature_store_exclusion",
+    "labels_never_asof_features",
+    "grain",
+    "ticket",
+    "symbol",
+    "exit_class",
+    "close_reason",
+    "R",
+    "broker_net",
+    "hold_min",
+    "remint_of",
+    "admit_then",
+    "admit_now",
+    "close_label_exit_class",
+    "pre_cut",
+)
+_LABEL_FACTS = ("exit_class", "close_reason", "R", "broker_net", "hold_min")
+
+
+def _pick(inp: Mapping[str, Any], close: Mapping[str, Any], key: str) -> Any:
+    if inp.get(key) not in (None, ""):
+        return inp.get(key)
+    if close.get(key) not in (None, ""):
+        return close.get(key)
+    return None
+
+
+def _label_fields(deal: Mapping[str, Any]) -> dict[str, Any]:
     inp = deal.get("input") if isinstance(deal.get("input"), Mapping) else deal
     close = deal.get("close_label") if isinstance(deal.get("close_label"), Mapping) else {}
-    answers = (close.get("answers") or {}) if isinstance(close, Mapping) else {}
-    exit_choice = ((answers.get("exit_class") or {}) if isinstance(answers, Mapping) else {}).get("choice")
+    if not close and isinstance(deal.get("close"), Mapping):
+        close = deal.get("close") or {}
+    if not isinstance(inp, Mapping):
+        inp = {}
+    if not isinstance(close, Mapping):
+        close = {}
+    answers = close.get("answers") if isinstance(close.get("answers"), Mapping) else {}
+    exit_block = answers.get("exit_class") if isinstance(answers.get("exit_class"), Mapping) else {}
+    exit_choice = exit_block.get("choice")
     admit_then = ((deal.get("admit_then") or {}).get("answers") or {}).get("admit") or {}
     admit_now = ((deal.get("admit_now") or {}).get("answers") or {}).get("admit") or {}
+    if not isinstance(admit_then, Mapping):
+        admit_then = {}
+    if not isinstance(admit_now, Mapping):
+        admit_now = {}
     return {
         "schema": LABEL_SCHEMA,
         "feature_store_exclusion": FEATURE_STORE_EXCLUSION,
         "labels_never_asof_features": True,
         "grain": "challenge_ticket",
-        "ticket": inp.get("ticket"),
-        "symbol": inp.get("symbol"),
-        "exit_class": inp.get("exit_class") or exit_choice,
-        "close_reason": inp.get("close_reason"),
-        "R": _f(inp.get("R")),
-        "broker_net": _f(inp.get("broker_net")),
-        "hold_min": _f(inp.get("hold_min")),
-        "remint_of": inp.get("remint_of"),
-        "admit_then": admit_then.get("choice") if isinstance(admit_then, Mapping) else None,
-        "admit_now": admit_now.get("choice") if isinstance(admit_now, Mapping) else None,
+        "ticket": _pick(inp, close, "ticket"),
+        "symbol": _pick(inp, close, "symbol"),
+        "exit_class": _pick(inp, close, "exit_class") or exit_choice,
+        "close_reason": _pick(inp, close, "close_reason"),
+        "R": _f(_pick(inp, close, "R")),
+        "broker_net": _f(_pick(inp, close, "broker_net")),
+        "hold_min": _f(_pick(inp, close, "hold_min")),
+        "remint_of": _pick(inp, close, "remint_of"),
+        "admit_then": admit_then.get("choice"),
+        "admit_now": admit_now.get("choice"),
         "close_label_exit_class": exit_choice,
-        "pre_cut": inp.get("pre_cut"),
+        "pre_cut": _pick(inp, close, "pre_cut"),
     }
+
+
+def _close_present(row: Mapping[str, Any]) -> bool:
+    """A close is a ticket plus one label fact. Empty stays unstored."""
+
+    if row.get("ticket") in (None, ""):
+        return False
+    return any(row.get(key) not in (None, "") for key in _LABEL_FACTS)
+
+
+def _label_identity(row: Mapping[str, Any]) -> tuple[Any, ...]:
+    return tuple(row.get(key) for key in ("ticket", "symbol", *_LABEL_FACTS))
+
+
+def _label_public(row: Mapping[str, Any], *, accepted: bool, path: Path | None) -> dict[str, Any]:
+    out = {key: row.get(key) for key in _LABEL_KEYS}
+    out.update(
+        {
+            "accepted": accepted,
+            "invented": False,
+            "n_rows": 1 if accepted else 0,
+            "order_send": False,
+            "agent_order_send": False,
+            "never_place": True,
+            "never_flatten": True,
+            "never_remint": True,
+            "skipped": None,
+        }
+    )
+    if accepted and path is not None:
+        out["path"] = str(path)
+    return out
+
+
+def accept_label_row(row: Mapping[str, Any], path: Path | None = None) -> dict[str, Any]:
+    """Append one close. The same close is one line. Empty input writes nothing."""
+
+    if not _close_present(row):
+        return _label_public(row, accepted=False, path=None)
+    target = Path(path) if path is not None else default_store_path()
+    try:
+        existing = load_jsonl(target)
+    except Exception:
+        return {**_label_public(row, accepted=False, path=None), "reason": "store_read_error"}
+    ident = _label_identity(row)
+    for old in existing:
+        if isinstance(old, Mapping) and _label_identity(old) == ident:
+            return _label_public(row, accepted=True, path=target)
+    line = {key: row.get(key) for key in _LABEL_KEYS}
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(line, sort_keys=True) + "\n")
+    except Exception:
+        return {**_label_public(row, accepted=False, path=None), "reason": "store_write_error"}
+    return _label_public(row, accepted=True, path=target)
+
+
+def label_row_from_challenge(
+    deal: Mapping[str, Any] | None = None,
+    path: Path | None = None,
+) -> dict[str, Any]:
+    """Write the close's labels. An empty deal returns unset and does not raise."""
+
+    if not isinstance(deal, Mapping):
+        deal = {}
+    try:
+        row = _label_fields(deal)
+    except Exception:
+        row = {key: None for key in _LABEL_KEYS}
+        row["schema"] = LABEL_SCHEMA
+        row["feature_store_exclusion"] = FEATURE_STORE_EXCLUSION
+        row["labels_never_asof_features"] = True
+        row["grain"] = "challenge_ticket"
+    return accept_label_row(row, path=path)
 
 
 def _walk_feature_from(
@@ -2441,7 +2562,7 @@ def build_slice(
     screening_path: Path | None = None,
     enabled: bool | None = None,
 ) -> dict[str, Any]:
-    """Observer ingest. The env gate skips before an ask."""
+    """Observer ingest. A call does not skip on an unset env."""
 
     on = store_enabled() if enabled is None else enabled
     base = {
@@ -2453,9 +2574,13 @@ def build_slice(
         "do_not_flatten_tickets": list(NEVER_FLATTEN_TICKETS),
         "feature_paths": list(FEATURE_PATHS),
         "feature_store_exclusion": FEATURE_STORE_EXCLUSION,
+        "store_env_on": bool(on),
+        "order_send": False,
+        "agent_order_send": False,
+        "never_place": True,
+        "never_flatten": True,
+        "never_remint": True,
     }
-    if not on:
-        return {**base, "skipped": True, "skip_reason": "GTOS_JEV_FEATURE_LABEL_STORE_off"}
     gate = _gate_ask(login=CHALLENGE_LOGIN, ns=CHALLENGE_NS)
     flagged = _slice_flags(gate)
     if not _is_true(gate.get("reaches")):

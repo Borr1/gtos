@@ -1,0 +1,45 @@
+# Newcomer overlay. Copy to myaccount.yaml and replace every placeholder.
+# This is not the owner's book. Do not copy operator_profile.yaml or ftmo.yaml.
+#
+# The profile deep-merges over config/agent_config.yaml. The four gates below
+# are false. That is the owner's arming switch, not a risk limit. The base
+# file ships them true. Leaving them unset would inherit that arming.
+#
+# Size is not set here. The book asks Jev for this unit's worst-case open
+# risk from the account's own facts. An empty score leaves the size unset.
+# This file does not set risk.risk_per_trade_pct.
+#
+# Once this file has an instruments map, only the canonical names you list
+# are supported. Add one block per symbol your broker actually offers.
+# mt5_symbol is the broker's name when it differs from the canonical name.
+
+profile_name: myaccount
+profile_status: newcomer_example_not_a_live_book
+
+runtime:
+  profile_namespace: myaccount
+  broker_account_namespace: myaccount
+
+mt5:
+  terminal_path: 'C:\Path\To\terminal64.exe'
+  terminal_data_path: 'C:\Path\To\TerminalData'
+  portable: false
+
+broker_profile:
+  expected_account:
+    login_sha256: "REPLACE-ME"
+    server: "YOUR-BROKER-SERVER"
+    currency: USD
+    terminal_path: 'C:\Path\To\terminal64.exe'
+    terminal_data_path: 'C:\Path\To\TerminalData'
+
+gtos_vnext_runtime:
+  ultimate_book_enabled: false
+  ultimate_book_apply_to_execution: false
+  ultimate_book_live_activation_allowed: false
+  ultimate_book_live_broker_authority: false
+
+instruments:
+  XAUUSD:
+    market:
+      mt5_symbol: XAUUSD

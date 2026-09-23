@@ -1,8 +1,14 @@
-"""Geometry-bound gold exits — one System One ask.
+"""Geometry-bound metal exits — one System One ask.
+
+Gold, silver, platinum, and every other metal on the card use this same
+geometry. The entry is a limit order. Cost and spread are not a reason to
+skip a metal. An empty score leaves the geometry unset and does not restore
+a distance. This module does not send. An exit joins the manage path only
+as move_sl, move_tp, or close, and only as the act that ticket already uses.
 
 Challenge **0** / ``operator`` / magic **0**.
 
-This pack enumerates every way an open XAU ticket can leave. It is **not**
+This pack enumerates every way an open metal ticket can leave. It is **not**
 PR #67 ``size_exit.py``. One hop is ``jev_client.evaluate`` with model
 ``jev-1.13.0`` and ``merge_sleeve=False`` (POST
 https://api.typesafe.ai/v1/systemone). The return is a Noul, a Choice, or
@@ -90,7 +96,7 @@ SNIPPETS: dict[str, str] = {
     "event_proximity": "Named HIGH on this as-of?",
     "geometry_vs_tape": "Does this open stop/target still fit named tape?",
     "include_depth": "How deep this open object's schema is included.",
-    "exit_threshold": "Threshold on this open gold exit.",
+    "exit_threshold": "Threshold on this open ticket.",
     "take_target_parameter": "Parameter of the take-target write.",
     "time_stop_parameter": "Parameter of the time-stop write.",
     "move_sl_parameter": "Parameter of the stop modify.",
@@ -135,7 +141,7 @@ LEAVE_ORIG_CRITERIA = {
 GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     "exit_state_sufficient": _noul_block(
         (
-            "Is this OPEN gold object complete enough to name a write as-of "
+            "Is this open ticket complete enough to name a write as-of "
             "clock.as_of_utc? Need identity.side, geometry.stop, geometry.target "
             "or orig_sl/orig_tp, occupancy, sessions.named. Nulls stay null. "
             "The noul you return is that completeness. An empty noul leaves it unset. "
@@ -177,7 +183,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "time_stop": _choice_block(
         (
-            "Should the writer time-stop this open gold ticket? "
+            "Should the writer time-stop this open ticket? "
             "Naming time_stop is that close when the option is the unique highest. "
             "The parameter is the score on time_stop_parameter. "
             "An empty answer or a tie leaves the choice unset. This question does not send."
@@ -189,7 +195,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "move_sl": _choice_block(
         (
-            "Should the writer move the stop on this open gold ticket? "
+            "Should the writer move the stop on this open ticket? "
             "The stop parameter is the score on move_sl_parameter. "
             "The option with the single highest probability is the decision. "
             "An empty answer or a tie leaves it unset. This question does not send."
@@ -202,7 +208,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "scale_out": _choice_block(
         (
-            "Should the writer scale out of this open gold ticket? "
+            "Should the writer scale out of this open ticket? "
             "The fraction is the score on scale_out_parameter. "
             "The option with the single highest probability is the decision. "
             "An empty answer or a tie leaves it unset. This question does not send."
@@ -229,7 +235,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "session_death": _choice_block(
         (
-            "Did the named session die on this occupied gold ticket? "
+            "Did the named session die on this occupied ticket? "
             "Clock facts on the card stay facts. "
             "The parameter is the score on session_death_parameter. "
             "The option with the single highest probability is the decision. "
@@ -278,7 +284,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "include_depth": _score_block(
         (
-            "The score you return is how deep this open gold object's schema is included. "
+            "The score you return is how deep this open ticket's schema is included. "
             "It may sit between the levels. An empty score leaves the depth unset. "
             "This question does not send."
         ),
@@ -286,7 +292,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "exit_threshold": _score_block(
         (
-            "The score you return is the threshold on this open gold exit. "
+            "The score you return is the threshold on this open ticket. "
             "It may sit between the levels. An empty score leaves the threshold unset. "
             "This question does not send."
         ),
@@ -294,7 +300,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "take_target_parameter": _score_block(
         (
-            "The score you return is the parameter of take_target on this open gold ticket. "
+            "The score you return is the parameter of take_target on this open ticket. "
             "It may sit between the levels. An empty score leaves the parameter unset. "
             "This question does not send."
         ),
@@ -302,7 +308,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "time_stop_parameter": _score_block(
         (
-            "The score you return is the parameter of time_stop on this open gold ticket. "
+            "The score you return is the parameter of time_stop on this open ticket. "
             "It may sit between the levels. An empty score leaves the parameter unset. "
             "This question does not send."
         ),
@@ -310,7 +316,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "move_sl_parameter": _score_block(
         (
-            "The score you return is the parameter of move_sl on this open gold ticket. "
+            "The score you return is the parameter of move_sl on this open ticket. "
             "It may sit between the levels. An empty score leaves the parameter unset. "
             "This question does not send."
         ),
@@ -318,7 +324,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "scale_out_parameter": _score_block(
         (
-            "The score you return is the parameter of scale_out on this open gold ticket. "
+            "The score you return is the parameter of scale_out on this open ticket. "
             "It may sit between the levels. An empty score leaves the parameter unset. "
             "This question does not send."
         ),
@@ -326,7 +332,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "opposite_displacement_parameter": _score_block(
         (
-            "The score you return is the parameter of opposite_displacement on this open gold ticket. "
+            "The score you return is the parameter of opposite_displacement on this open ticket. "
             "It may sit between the levels. An empty score leaves the parameter unset. "
             "This question does not send."
         ),
@@ -334,7 +340,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "session_death_parameter": _score_block(
         (
-            "The score you return is the parameter of session_death on this open gold ticket. "
+            "The score you return is the parameter of session_death on this open ticket. "
             "It may sit between the levels. An empty score leaves the parameter unset. "
             "This question does not send."
         ),
@@ -342,7 +348,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "news_exit_parameter": _score_block(
         (
-            "The score you return is the parameter of news_exit on this open gold ticket. "
+            "The score you return is the parameter of news_exit on this open ticket. "
             "It may sit between the levels. An empty score leaves the parameter unset. "
             "This question does not send."
         ),
@@ -350,7 +356,7 @@ GOLD_EXIT_QUESTIONS: dict[str, dict[str, Any]] = {
     ),
     "broker_effect": _noul_block(
         (
-            "Is a broker effect open on this gold exit? "
+            "Is a broker effect open on this open ticket? "
             "The noul you return is that answer. An empty noul leaves it unset. "
             "This question does not send."
         ),
@@ -426,9 +432,14 @@ def gold_exit_labels(
         "ticket": ticket,
         "as_of": as_of,
         "subgoal": "gold_exit",
+        "order_kind": "limit",
     }
     if extra:
         labels.update(dict(extra))
+    labels["order_kind"] = "limit"
+    labels["order_send"] = False
+    labels["agent_order_send"] = False
+    labels["send"] = False
     return labels
 
 
@@ -494,7 +505,7 @@ def gold_exit_label_pack(*, include_depth: str = "full") -> dict[str, dict[str, 
 
 def gold_exit_state(
     *,
-    symbol: Any = "XAUUSD",
+    symbol: Any = None,
     sleeve: Any = None,
     side: Any = None,
     ticket: Any = None,
@@ -729,6 +740,13 @@ def _score_value(block: Any) -> float | None:
     return None
 
 
+_SURFACE = (
+    " Gold, silver, platinum, and every other metal on this card use this same geometry."
+    " The entry is a limit order. Cost and spread are not a reason to skip."
+    " This hop does not send."
+)
+
+
 def _ask_pack() -> dict[str, dict[str, Any]]:
     """One hierarchical pack. Types stay Noul, Choice, or Score."""
 
@@ -737,7 +755,7 @@ def _ask_pack() -> dict[str, dict[str, Any]]:
         kind = str(block.get("type") or "")
         if kind not in {"noul", "choice", "score"}:
             continue
-        instructions = _scrub_text(str(block.get("instructions") or ""))
+        instructions = _scrub_text(str(block.get("instructions") or "")) + _SURFACE
         if kind == "score":
             instructions = instructions.replace("open gold object", "open ticket").replace(
                 "open gold", "this open ticket"
@@ -1010,6 +1028,12 @@ class GoldExitDecision:
             "source": self.source,
             "skipped": self.skipped,
             "allow": self.as_allow(),
+            "order_kind": "limit",
+            "action": _manage_act(self),
+            "order_send": False,
+            "agent_order_send": False,
+            "send": False,
+            "may_send": False,
         }
 
 
@@ -1088,6 +1112,97 @@ def decide_gold_exit(
         skipped=skipped,
         state=dict(state or {}),
     )
+
+
+_MANAGE_ACTS = ("move_sl", "move_tp", "close")
+
+
+def _manage_act(decision: GoldExitDecision) -> str | None:
+    """One manage act, or unset. move_tp stays unset until the score names it."""
+
+    named: list[str] = []
+    if decision.move_sl in {"move_be", "trail"}:
+        named.append("move_sl")
+    if any((
+        decision.take_target == "take_target",
+        decision.time_stop == "time_stop",
+        decision.opposite_displacement == "flatten_opposite",
+        decision.session_death == "flatten_session",
+        decision.news_exit == "flatten_news",
+    )):
+        named.append("close")
+    if len(named) != 1:
+        return None
+    act = named[0]
+    if act not in _MANAGE_ACTS:
+        return None
+    return act
+
+
+def exit_on_manage(
+    *,
+    symbol: Any = None,
+    sleeve: Any = None,
+    side: Any = None,
+    ticket: Any = None,
+    as_of: Any = None,
+    state: Mapping[str, Any] | None = None,
+    environ: Mapping[str, str] | None = None,
+    ask: Callable[..., Any] | None = None,
+) -> dict[str, Any]:
+    """Record the geometry as move_sl, move_tp, or close. This function does not send.
+
+    unique_loader keeps the act only when it equals the act that loop already
+    asked for this ticket. A miss stays unset. Cost and spread do not skip the metal.
+    """
+
+    built = dict(state) if isinstance(state, Mapping) else {}
+    ident = dict(built.get("identity")) if isinstance(built.get("identity"), Mapping) else {}
+    if symbol is not None or "symbol" not in ident:
+        ident["symbol"] = symbol
+    if sleeve is not None:
+        ident["sleeve"] = sleeve
+    if side is not None:
+        ident["side"] = side
+    if ticket is not None:
+        ident["ticket"] = ticket
+    built["identity"] = ident
+    built["order_kind"] = "limit"
+    decision = decide_gold_exit(state=built, environ=environ, ask=ask)
+    act = _manage_act(decision)
+    params = decision.parameters if isinstance(decision.parameters, dict) else {}
+    distance = None
+    if act == "move_sl":
+        distance = params.get("move_sl_parameter")
+    elif act == "move_tp":
+        distance = params.get("take_target_parameter")
+    elif act == "close":
+        distance = params.get("time_stop_parameter")
+    labels = gold_exit_labels(
+        symbol=ident.get("symbol"),
+        sleeve=ident.get("sleeve"),
+        side=ident.get("side"),
+        ticket=ident.get("ticket"),
+        as_of=as_of,
+    )
+    return {
+        "schema": SCHEMA,
+        "labels": labels,
+        "symbol": ident.get("symbol"),
+        "sleeve": ident.get("sleeve"),
+        "side": ident.get("side"),
+        "ticket": ident.get("ticket"),
+        "order_kind": "limit",
+        "action": act,
+        "disposition": act,
+        "decision_emitted": act in _MANAGE_ACTS,
+        "order_send": False,
+        "agent_order_send": False,
+        "send": False,
+        "may_send": False,
+        "distance": distance,
+        "source": decision.source,
+    }
 
 
 def exit_class_lists_time_stop(pack: Mapping[str, Any] | None = None) -> bool:
