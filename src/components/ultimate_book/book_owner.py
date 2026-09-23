@@ -4495,7 +4495,84 @@ class UltimateBookOwner:
             ))
         self._append_runtime_learning_packets(summary, packets)
 
-    def run_cycle(self, *, now_utc: Optional[datetime] = None, tags=None, place: bool = True) -> dict:
+    def _join_inflight_manage(self) -> None:
+        """Wait for this tick's manage thread, if the launcher started one.
+
+        The join is the happens-before for the breach latch and for any send.
+        A book with no in-flight manage returns immediately.
+        """
+        thread = getattr(self, "_manage_inflight", None)
+        if thread is None:
+            return
+        try:
+            if getattr(thread, "is_alive", None) and thread.is_alive():
+                thread.join()
+        except Exception:
+            return
+        self._manage_inflight = None
+
+    def _news_request_from_manage(self) -> Optional[dict]:
+        """The T+60 request manage stored, once that thread has been joined."""
+        box = getattr(self, "_manage_box", None)
+        if not isinstance(box, dict):
+            return None
+        result = box.get("result")
+        if not isinstance(result, dict):
+            return None
+        block = result.get("news_t60_expiry_reeval")
+        if not isinstance(block, dict):
+            return None
+        request = block.get("request")
+        if not isinstance(request, dict) or not request.get("request_keys"):
+            return None
+        return request
+
+    def _with_reeval_tags(self, request: dict) -> dict:
+        """Tags for timeframes that did not advance are re-evaluation only."""
+        prepared = dict(request)
+        if prepared.get("reevaluation_only_tags"):
+            return prepared
+        advanced = set(getattr(self, "_tick_advanced", []) or [])
+        tf_tags = getattr(self, "_tick_tf_tags", None) or {}
+        if not isinstance(tf_tags, dict):
+            return prepared
+        prepared["reevaluation_only_tags"] = [
+            tag
+            for tf, tags in tf_tags.items()
+            if tf not in advanced
+            for tag in (tags or ())
+        ]
+        return prepared
+
+    def _news_t15_t60_cycle(self, now, summary: dict) -> None:
+        """Enqueue a T+60 re-evaluation. This does not place.
+
+        The launcher applies the request after it joins this thread.
+        """
+        if str(getattr(self, "_namespace", "") or "") != "operator":
+            return
+        try:
+            import sys as _sys
+            from pathlib import Path as _Path
+
+            desk = _Path(self._repo_root) / "scripts" / "f5_desk"
+            desk_s = str(desk)
+            if desk_s not in _sys.path:
+                _sys.path.insert(0, desk_s)
+            try:
+                import news_t60_expiry_reeval as _t60
+
+                receipt = _t60.run_from_book(self, now)
+                if isinstance(receipt, dict):
+                    summary.setdefault("news_t60_expiry_reeval", receipt)
+            except Exception as exc:  # noqa: BLE001 — a missing registry retries next tick
+                summary.setdefault("news_t60_expiry_reeval", {
+                    "fail_open": True, "error": type(exc).__name__, "applied": False, "remint": False, "place": False,
+                })
+        except Exception as exc:  # noqa: BLE001
+            _log.warning("book[%s]: news t60 cycle fail-open (%s)", self._namespace, type(exc).__name__)
+
+    def run_cycle(self, *, now_utc: Optional[datetime] = None, tags=None, place: bool = True, news_reevaluation=None) -> dict:
         """One book cycle. Returns a summary; NEVER raises and NEVER places while gated off/halted.
 
         place=False forces observe-only (evaluate + log would_units, never send) — the launcher passes
@@ -4513,7 +4590,29 @@ class UltimateBookOwner:
         # bar's measurement -- a wrong number wearing a "measured" label is worse than no number.
         self._spread_observations.clear()
         self._spread_quote_series.clear()
-        res = self.engine.evaluate(now_utc=now, tags=tags)
+        # Generation overlaps management. The join is before a re-evaluation
+        # and before any send. A request passed in was already read after a join.
+        if news_reevaluation is None:
+            res = self.engine.evaluate(now_utc=now, tags=tags)
+            self._join_inflight_manage()
+            if getattr(self, "_breach_block", False):
+                place = False
+            found = self._news_request_from_manage()
+            if isinstance(found, dict):
+                news_reevaluation = self._with_reeval_tags(found)
+                extra = tuple(news_reevaluation.get("reevaluation_only_tags") or ())
+                base = tuple(tags or ())
+                merged = base + tuple(tag for tag in extra if tag not in base)
+                res = self.engine.evaluate(
+                    now_utc=now,
+                    tags=merged or tags,
+                    news_reevaluation=news_reevaluation,
+                )
+        else:
+            self._join_inflight_manage()
+            if getattr(self, "_breach_block", False):
+                place = False
+            res = self.engine.evaluate(now_utc=now, tags=tags, news_reevaluation=news_reevaluation)
         # Operator reason must name generation terminals. Admission still
         # keeps decision_status == "no_candidates_this_bar"; launcher prints
         # summary["reason"], so rewrite here if the engine result is still the
@@ -4532,6 +4631,19 @@ class UltimateBookOwner:
         summary = {"ok": res["ok"], "reason": reason, "n_intents": res["n_intents"],
                    "runtime_effect_now": res["runtime_effect_now"], "placed": [], "shadow": 0,
                    "skipped": [], "bar_consumable": True}
+        if isinstance(news_reevaluation, dict) and news_reevaluation.get("request_keys"):
+            summary["news_t60_reevaluation"] = {
+                "request_keys": list(news_reevaluation["request_keys"]),
+                "generator_returned": True,
+                "effective_place": bool(place),
+                "route_iteration_completed": False,
+                "route_errors": [],
+                "engine_evaluate_at_utc": now.isoformat(),
+                "affected_symbols": list(news_reevaluation.get("affected_symbols") or []),
+                "reevaluation_only_tags": list(news_reevaluation.get("reevaluation_only_tags") or []),
+                "applied": False,
+                "place": False,
+            }
         summary["lane_weights"] = dict(res.get("lane_weights") or {})
         generation = res.get("generation") or {}
         summary["generation"] = dict(generation)
@@ -6382,6 +6494,7 @@ class UltimateBookOwner:
         self._f5_duplicate_stack_dedup(summary)
         self._f5_auto_breakeven(summary, now)
         self._apply_breach_flatten(now, summary)
+        self._news_t15_t60_cycle(now, summary)
         self._emit_management_runtime_learning(summary, now)
         # Chair 2026-09-21: remint/flatten LABEL consume observe (never broker-mutates)
         try:
@@ -9060,9 +9173,16 @@ class UltimateBookOwner:
             self._parse_utc(record.get("closed_at_utc")),
             self._parse_utc(closed_at_utc),
         ]
-        start = min([dt for dt in starts if dt is not None], default=datetime.now(timezone.utc))
-        end = max(self._parse_utc(closed_at_utc) or datetime.now(timezone.utc), datetime.now(timezone.utc))
-        return start - timedelta(minutes=10), end + timedelta(minutes=15)
+        known = [dt for dt in starts if dt is not None]
+        deal_time = self._parse_utc(execution.get("broker_exit_time_utc"))
+        if deal_time is not None:
+            known.append(deal_time)
+        if not known:
+            moment = datetime.now(timezone.utc)
+            return moment, moment
+        # The fetch ends on the latest broker stamp already on the record.
+        # Extending it through now makes a month-old close scan the whole account.
+        return min(known) - timedelta(minutes=10), max(known) + timedelta(minutes=15)
 
     def _lookup_exit_deal_accounting(
         self,
@@ -9331,12 +9451,6 @@ class UltimateBookOwner:
                         "exit_reconciliation_source_status": "broker_real_account_history_checked",
                         "exit_reconciliation_attempt_count": attempt,
                     }
-                if attempt < self._broker_exit_history_lookup_attempts and self._broker_exit_history_lookup_sleep_seconds > 0:
-                    try:
-                        import time
-                        time.sleep(self._broker_exit_history_lookup_sleep_seconds)
-                    except Exception:
-                        pass
             return result
 
         get_symbol_deals = getattr(self._mt5, "get_history_deals", None)
@@ -9374,12 +9488,6 @@ class UltimateBookOwner:
                         "exit_reconciliation_source_status": "broker_real_symbol_history_checked",
                         "exit_reconciliation_attempt_count": attempt,
                     }
-                if attempt < self._broker_exit_history_lookup_attempts and self._broker_exit_history_lookup_sleep_seconds > 0:
-                    try:
-                        import time
-                        time.sleep(self._broker_exit_history_lookup_sleep_seconds)
-                    except Exception:
-                        pass
             return result
 
         return base

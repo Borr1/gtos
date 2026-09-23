@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -425,6 +426,109 @@ class BookLauncher:
             else:
                 self._notify("W7 BOOK: placement RESUMED (kill+halt clear) — live")
 
+    def _install_terminal_lock(self) -> None:
+        """One lock for every public terminal call. Held only for that call.
+
+        Manage and the bar clock share the terminal. The raw module is
+        wrapped deny-by-default, so ``symbol_info`` (close_position via
+        ``execution._mt5_symbol_info``, and any other raw read the manage
+        thread reaches, including a later import of this same module) takes
+        the lock. The adapter is wrapped the same way, so
+        ``get_symbol_value_per_point`` (the manage reconcile) takes it before
+        it calls ``symbol_info``. A manage thread does not hold the lock
+        while it asks or while it is between calls.
+        """
+        mt5 = getattr(self, "_mt5", None)
+        if mt5 is None:
+            return
+        lock = getattr(mt5, "_gtos_terminal_lock", None)
+        if lock is None:
+            lock = threading.RLock()
+            try:
+                mt5._gtos_terminal_lock = lock
+            except Exception:
+                return
+
+        def _wrap(obj, name: str) -> None:
+            if not name or name.startswith("_"):
+                return
+            try:
+                fn = getattr(obj, name, None)
+            except Exception:
+                return
+            if not callable(fn) or isinstance(fn, type) or getattr(fn, "_gtos_locked", False):
+                return
+
+            def wrapped(*args, **kwargs):
+                with lock:
+                    return fn(*args, **kwargs)
+
+            wrapped._gtos_locked = True
+            try:
+                setattr(obj, name, wrapped)
+            except Exception:
+                return
+
+        for name in dir(mt5):
+            _wrap(mt5, name)
+        raw = getattr(mt5, "_mt5", None)
+        if raw is None or raw is mt5:
+            return
+        for name in dir(raw):
+            _wrap(raw, name)
+
+    def _begin_manage(self, now: datetime) -> None:
+        """Start open-position management beside the bar clock and generation."""
+        self._install_terminal_lock()
+        box: dict = {}
+
+        def run() -> None:
+            try:
+                box["result"] = self.owner.manage_open_positions(now_utc=now)
+            except Exception as exc:
+                box["error"] = exc
+
+        thread = threading.Thread(target=run, name="book-manage", daemon=True)
+        self._manage_box = box
+        self._manage_inflight = thread
+        try:
+            self.owner._manage_inflight = thread
+            self.owner._manage_box = box
+        except Exception:
+            pass
+        thread.start()
+
+    def _end_manage(self) -> dict:
+        """Join management. A second call is the result already collected."""
+        thread = getattr(self, "_manage_inflight", None)
+        if thread is not None:
+            thread.join()
+            self._manage_inflight = None
+        try:
+            self.owner._manage_inflight = None
+        except Exception:
+            pass
+        box = getattr(self, "_manage_box", None) or {}
+        error = box.get("error")
+        if error is not None:
+            box["error"] = None
+            raise error
+        result = box.get("result")
+        if not isinstance(result, dict):
+            result = {"managed": [], "adopted": [], "closed": [], "errors": []}
+        return result
+
+    @staticmethod
+    def _news_request(result: dict):
+        """The T+60 request on a joined manage result. An empty result has none."""
+        block = result.get("news_t60_expiry_reeval") if isinstance(result, dict) else None
+        if not isinstance(block, dict):
+            return None
+        request = block.get("request")
+        if not isinstance(request, dict) or not request.get("request_keys"):
+            return None
+        return request
+
     # ---- one iteration (testable) ----
     def tick(self, now_utc: Optional[datetime] = None) -> dict:
         """Run a cycle for any timeframe whose closed bar advanced. NEVER raises."""
@@ -473,12 +577,10 @@ class BookLauncher:
                 self._last_link_healthy = bool(healthy)   # stamped into the next heartbeat for the monitor
             except Exception:
                 pass
-            # MANAGEMENT — every tick, halt-independent (halt blocks new sends, not exit management).
-            # Rehydrates/adopts any open book position and applies its exit policy off the live tick.
-            mres = self.owner.manage_open_positions(now_utc=now)
-            if mres.get("closed") or mres.get("adopted") or mres.get("errors"):
-                self._log({"ts": now.isoformat(), "action": "manage", **mres})
-
+            # Management runs beside the bar clock. The join is before any new
+            # order: run_cycle waits for this thread after generation, and the
+            # no-bar path waits here after the clock read.
+            self._begin_manage(now)
             advanced = []
             latest = {}
             for tf in self._tf_tags:
@@ -486,24 +588,46 @@ class BookLauncher:
                 latest[tf] = iso
                 if iso is not None and iso != self._last_bar_by_tf.get(tf):
                     advanced.append(tf)
-            news_request = (mres.get("news_t60_expiry_reeval") or {}).get("request")
+            if not advanced:
+                mres = self._end_manage()
+            else:
+                mres = None
+            if isinstance(mres, dict) and (mres.get("closed") or mres.get("adopted") or mres.get("errors")):
+                self._log({"ts": now.isoformat(), "action": "manage", **mres})
+            # A bar tick has not joined yet. Reading the news request here
+            # would see an empty manage result and drop the re-evaluation.
+            news_request = self._news_request(mres) if isinstance(mres, dict) else None
             if not advanced and news_request is None:
                 return {"action": "no_new_bar", "killed": killed, "halted": halted,
                         "ts": now.isoformat()}
+            try:
+                self.owner._tick_advanced = list(advanced)
+                self.owner._tick_tf_tags = self._tf_tags
+            except Exception:
+                pass
             cycle_tfs = list(self._tf_tags) if news_request is not None else advanced
             tags = tuple(t for tf in cycle_tfs for t in self._tf_tags[tf])
             if news_request is not None:
                 news_request = dict(news_request)
                 news_request["reevaluation_only_tags"] = [t for tf in cycle_tfs if tf not in advanced for t in self._tf_tags[tf]]
                 summary = self.owner.run_cycle(now_utc=now, tags=tags, place=place, news_reevaluation=news_request)
+            else:
+                # Generation overlaps management. run_cycle joins, then
+                # re-evaluates if manage returned a T+60 request, then places.
+                summary = self.owner.run_cycle(now_utc=now, tags=tags, place=place)
+            if mres is None:
+                mres = self._end_manage()
+                if mres.get("closed") or mres.get("adopted") or mres.get("errors"):
+                    self._log({"ts": now.isoformat(), "action": "manage", **mres})
+                if news_request is None:
+                    news_request = self._news_request(mres)
+            if news_request is not None and isinstance(summary, dict):
                 try:
                     import news_t60_expiry_reeval as _news_t60
                     summary["news_t60_completion"] = _news_t60.complete_from_cycle(
                         self.owner, news_request, summary, now=now, place=place)
                 except Exception as exc:
-                    summary["news_t60_completion"] = {"status": "UNKNOWN_RETRY", "error": repr(exc), "applied": False}
-            else:
-                summary = self.owner.run_cycle(now_utc=now, tags=tags, place=place)
+                    summary["news_t60_completion"] = {"status": "UNKNOWN_RETRY", "error": type(exc).__name__, "applied": False}
             # Only CONSUME the bar (advance last-seen) when the cycle actually evaluated. A transient
             # pre-placement failure (equity / day-baseline / account-state read hiccup at the bar-close
             # tick) returns bar_consumable=False -> leave the bar so the NEXT tick retries it, instead of
@@ -536,6 +660,10 @@ class BookLauncher:
                 log.info("BOOK PLACED %d order(s): %s", len(summary["placed"]), summary["placed"])
             return record
         except Exception as e:   # the loop must survive any cycle error
+            try:
+                self._end_manage()
+            except Exception:
+                pass
             log.exception("book launcher tick error")
             rec = {"ts": now.isoformat(), "action": "error", "error": repr(e)}
             self._log(rec)
