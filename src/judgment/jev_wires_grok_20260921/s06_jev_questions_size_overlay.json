@@ -1,0 +1,34 @@
+{
+  "schema": "gtos.judgment.jev_questions.size_overlay.v0",
+  "note": "Append to symbol_fanout_questions(). Do not remove existing questions. APPLY=0 this session.",
+  "questions": {
+    "size_mult": {
+      "type": "score",
+      "instructions": "How strong is the living size case for this ALREADY-ADMITTED fire? Use identity, HTF flow, cost.spread_r_of_stop, world CA blocks, occupancy, session, news (empty spine is not 'no HIGH'), policy_c.size_trim if named, and geometry only when named. Do not invent ATR. Do not invent NEWS_PROTOCOL. You do not send. You do not refuse. 0 = haircut toward 0.70; 1 = ordinary 1.0; 2 = aligned toward 1.15. Cost/CA veto-class still cannot add size — code clamps those axes to 1.00.",
+      "criteria": [
+        "Haircut case versus named flow/cost/CA/occupancy",
+        "Ordinary house size",
+        "Aligned and cheap on named fields"
+      ]
+    },
+    "size_posture": {
+      "type": "choice",
+      "instructions": "Pick a size posture for this already-admitted fire. SIZE_TRIM consumes size_mult. SIZE_HOLD and STAND keep 1.0 this cycle. SIZE_FULL keeps flow at 1.0; cost/CA may still haircut. You cannot refuse, skip, place, remint, or flatten.",
+      "criteria": {
+        "SIZE_FULL": "Ordinary full flow size; cost/CA veto may still haircut",
+        "SIZE_TRIM": "Apply size_mult Score",
+        "SIZE_HOLD": "Keep 1.0 this cycle (thin/mixed/leave-orig cousin)",
+        "STAND": "Do not change size this cycle"
+      }
+    },
+    "ca_size_mult": {
+      "type": "score",
+      "instructions": "Joint cross-asset size case from named world.* only (occupancy_book, session_liquidity, event_join, usd_proxy, gold_vs_usd, risk_on, gold_vs_index). Unassembled blocks are not votes. Empty news spine abstains the event component — not 'no HIGH'. Range later APPLY is [0.70, 1.00] veto-class. Cannot add size. Cannot refuse. Do not invent DXY or NEWS_PROTOCOL.",
+      "criteria": [
+        "Several assembled CA vetoes argue haircut toward 0.70",
+        "Ordinary / mixed / thin world",
+        "Named world does not argue a haircut"
+      ]
+    }
+  }
+}

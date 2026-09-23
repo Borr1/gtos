@@ -1,0 +1,38 @@
+{
+  "id": "state_sufficient",
+  "type": "noul",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "never",
+  "include_depth": {
+    "identity": "full",
+    "clock": "full",
+    "geometry": "full",
+    "timeframes.m15": "full"
+  },
+  "instructions": "Is the named object complete enough to judge this fire as-of clock.as_of_utc? Yes means named tape, geometry, and identity are present. No means a required block is missing or family_class is unknown. Use only named fields. Empty news spine is not 'no HIGH'. Ask even when incomplete \u2014 expect ~low. Challenge ticket 292427064 (family_class unknown) is the live shape of this miss. Historical M15 first and second pass both had state_sufficient_for_live=false until levels assembled; news spine is still empty on 2024-04..2026-03.",
+  "criteria": {
+    "true": "Named blocks are present enough to judge the fire",
+    "false": "A required named block is missing or unknown"
+  },
+  "compose": "if Noul low \u2192 assemble_or_escalate. Do not let other answers fire.",
+  "measured": {
+    "G-FULL_n": 47080,
+    "news_spine": "empty_on_this_M15"
+  }
+}

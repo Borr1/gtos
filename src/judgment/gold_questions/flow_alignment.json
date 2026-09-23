@@ -1,0 +1,39 @@
+{
+  "id": "flow_alignment",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "state_sufficient low",
+  "compose_weight": 0.1,
+  "include_depth": {
+    "timeframes.h4": "long",
+    "sessions": "full",
+    "identity": "full"
+  },
+  "instructions": "How aligned is identity.side with named HTF/session flow? Legend 0 fighting, 1 mixed/rotating, 2 aligned. G-FULL with/against long split is ~4.1 pp (0.235 vs 0.194). Pin compose weight w_flow=0.10 from the G-FULL L1-norm (qualitative start was 0.20). Unassembled Chair/PACK fields are not a vote.",
+  "criteria": [
+    "Fighting named HTF/session flow",
+    "Mixed or rotating flow",
+    "Aligned with named HTF/session flow"
+  ],
+  "measured": {
+    "delta_long_h4_up_minus_dn": 0.04118549119424242,
+    "n_up": 25793,
+    "n_dn": 10169
+  }
+}

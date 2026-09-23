@@ -1,0 +1,20 @@
+{
+  "id": "yield_us10y_up",
+  "as_of_utc": "2026-09-17T11:00:00Z",
+  "focus": {"symbol": "XAUUSD", "side": "short"},
+  "expect": {
+    "rates_impulse": true,
+    "challenge_true": false
+  },
+  "yield_books": {
+    "US10Y": {
+      "d1": {
+        "n": 12,
+        "start": "2026-09-06T00:00:00Z",
+        "step_hours": 24,
+        "start_close": 4.00,
+        "step_close": 0.02
+      }
+    }
+  }
+}

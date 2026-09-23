@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "FTMO": {
+      "path": "config/profiles/operator_profile.yaml",
+      "sha256": "fd9fe307700aa1821ddab777ba12e4b1f444ae1a5868328370cd35dcbfb83652"
+    },
+    "redacted_account": {
+      "path": "config/profiles/redacted_account.yaml",
+      "sha256": "b856f0ee7f13c59dd407949c6937275da57c3e797ab2bae256755560bbd21305"
+    }
+  },
+  "schema": "gtos.costs.symbol_authority.v1"
+}

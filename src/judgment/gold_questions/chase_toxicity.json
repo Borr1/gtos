@@ -1,0 +1,33 @@
+{
+  "id": "chase_toxicity",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "size"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "bars-since-decision unassembled",
+  "include_depth": {
+    "sessions": "full",
+    "occupancy": "long",
+    "clock": "full"
+  },
+  "instructions": "Is this still the same setup, or a restart chase? State: bars since decision, pending age, sessions.named. Restart-chase default skip on missing bar/tf (fail-open integer). This Score rides the candidate POST \u2014 do not Noul it every manage tick.",
+  "criteria": [
+    "Restart chase / too late versus named decision",
+    "Ordinary continuation of the named setup",
+    "Same setup, clean versus named age"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "id": "admit",
+  "type": "choice",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "state_sufficient low (compose assemble_or_escalate)",
+  "include_depth": {
+    "identity": "full",
+    "geometry": "full",
+    "sessions": "full",
+    "timeframes.h4": "long"
+  },
+  "instructions": "Given remaining intelligence \u2014 not house integers \u2014 would this fire still be scored admit? Not 'will it profit'. hard_refuse only when named state says the fire fights tape or is cost-dominated. Digest bit, named surface, 2-stop COUNT, prop wall stay computed facts beside this Choice. Challenge XAU n=21: admit_then hard_refuse 13/21 (blocked 2 of 5 winners); admit_now admit 20/21. Live place asks as-of-open complete state, not a close-reconstruct echo. Missing Jev \u2192 fail-closed abstain (no extra PASS).",
+  "criteria": {
+    "admit": "Named tape and geometry still support taking the fire",
+    "abstain": "State is thin or mixed; do not steer",
+    "hard_refuse": "Named tape or cost argues against the fire"
+  },
+  "measured": {
+    "challenge_xau": {
+      "n": 21,
+      "net_usd": -814.94,
+      "winners": 5,
+      "winners_exit": "time_stop",
+      "losers": 16,
+      "losers_exit": "orig_stop",
+      "admit_then_hard_refuse": "13/21",
+      "admit_now_admit": "20/21"
+    }
+  }
+}

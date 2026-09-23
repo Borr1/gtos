@@ -1,0 +1,197 @@
+{
+  "schema": "gtos.jev.train_row_harvest.complete_state.v1",
+  "as_of_ict": "2026-09-21T06:04:19+07:00",
+  "session": "18_jev_train_row_harvest",
+  "place": false,
+  "apply": false,
+  "never_merge_R": true,
+  "news_protocol_invent": false,
+  "note": "Harvest COMPLETE_STATE. Entry-legal fields vs EXPOST split is law. Policy C / strike / TypeSafe live questions MUST NOT read outcome_only.",
+  "clocks": {
+    "entry": "as_of_open_study",
+    "close_expost": "as_of_close_illegal_for_live",
+    "live": "live_intent — EXPOST keys raise"
+  },
+  "entry_legal_fields": {
+    "identity": {
+      "symbol": "str REQ",
+      "broker_symbol": "str REQ",
+      "login": "0 REQ",
+      "ns": "operator REQ",
+      "magic": 0,
+      "sleeve": "str REQ",
+      "sleeve_family": "str REQ",
+      "side": "long|short REQ",
+      "ticket": "str|int REQ",
+      "origin_organism": "f5_challenge",
+      "family_class": "house_keep|house_hard_off|study|a_plus_study|unknown",
+      "keep_surface": "bool — family.keep_family(sleeve) integer, not Jev",
+      "route_id": "sleeve|symbol|tf_route",
+      "tf_route": "M15|H4|D1|multi_m15_h4|unknown",
+      "route_class": "metal|fx_major|fx_cross|index|unknown — Chair table; UK100/BTC/ETH unknown_until_landed"
+    },
+    "clock": {
+      "as_of_utc": "ISO REQ",
+      "decision_bar_iso": "ISO REQ",
+      "session_day": "date REQ",
+      "weekday_name": "str",
+      "is_friday": "bool",
+      "session_bucket": "asia|london|ny|overlap|off REQ",
+      "session_ict": "tape session if present — do not invent Lon+NY cage"
+    },
+    "alive": {
+      "alive_sleeves": "list[str] REQ — PENDING ok",
+      "alive_menu": "list[{tag,phi,keep_prior,affinity}] REQ",
+      "selected_sleeve_candidate": "str|null",
+      "conflict_set": "list[{a,b,relation,side}] REQ"
+    },
+    "voters": {
+      "regime_tag": "str|PENDING|null — null_ok; NEVER invent S14",
+      "conf_band": "str|PENDING",
+      "session_fit": "str|PENDING — NOT Lon+NY cage",
+      "phi": "float|null",
+      "phi_by_sleeve": "map[str,float]"
+    },
+    "cost": {
+      "spread_r": "float|null",
+      "spread_r_of_stop": "float|null",
+      "total_cost_r": "float|null",
+      "commission_r": "float|null",
+      "max_total_cost_r": "float|null",
+      "cost_complete": "bool",
+      "source": "tick|bar_close|next_open|unassembled"
+    },
+    "geometry": {
+      "entry": "float|null",
+      "stop": "float|null",
+      "target": "float|null",
+      "stop_dist": "float|null",
+      "plan_r": "float|null",
+      "atr14_from_bars": "float|null — from landed M15/H4 via bars.atr14; STATE_MISSING if tape dark",
+      "module_atr_exit_shape": "null on Challenge_book rows; Module_ATR rows may stamp stop0.75_tgt6.0 WITHOUT copying into Challenge R"
+    },
+    "occupancy": {
+      "sleeve_holds_symbol": "bool|STATE_MISSING",
+      "broker_open_symbols": "list|STATE_MISSING",
+      "same_cycle_placed": "bool|STATE_MISSING",
+      "n_open_book": "int|STATE_MISSING",
+      "same_sleeve_orig_stops_utc_day": "int|STATE_MISSING",
+      "two_stop_exhausted": "bool|STATE_MISSING",
+      "note": "learning_scoreboard_60 has no concurrent occupancy — stamp STATE_MISSING, do not invent 0"
+    },
+    "account": {
+      "login": 0,
+      "ns": "operator",
+      "equity_r": "float|STATE_MISSING",
+      "dd_wall_r": "float|STATE_MISSING",
+      "soft_daily_stop": "float|STATE_MISSING",
+      "quarantine_login": 0
+    },
+    "hard_off_hit": "str|null — envelope integer; harvest does not soften",
+    "remint": {
+      "orig_stops_today": "int|STATE_MISSING",
+      "last_exit_class": "str|null",
+      "minutes_since_exit": "float|null",
+      "two_stop_armed": "bool|STATE_MISSING"
+    },
+    "news_join": "object|STATE_MISSING — honest missing OK; NEVER invent NEWS_PROTOCOL / HIGH",
+    "completeness": {
+      "full_state_dark": "bool REQ",
+      "n_incomplete": "int REQ",
+      "missing_fields": "list[str]",
+      "state_sufficient_for_live": "bool",
+      "timeframes_m15_h4": "bool",
+      "pit_honest": "bool|null",
+      "tape_present": "bool"
+    },
+    "harvest_extras": {
+      "route": "RouteIdentity",
+      "pit": "PitFeatureContract",
+      "protection": "list[ProtectionAtom]",
+      "envelope": "ChallengeEnvelopeSnapshot",
+      "fill": "FillRealism",
+      "fill_realism_score": "0 bar-fantasy .. 2 tick-true; unknown abstains",
+      "route_class_choice": "Chair table SHADOW"
+    },
+    "place_context": {
+      "writer_ready": "bool|STATE_MISSING",
+      "authority": "bool|STATE_MISSING",
+      "last_refusal_class": "str|null",
+      "ticket_draft_fp": "str|null",
+      "note": "LABEL only this session; Choice PLACE|STAND|DELAY is harvest_place_would_have, apply=false"
+    }
+  },
+  "expost_fields_close_clock_only": {
+    "exit_class": "orig_stop|orig_tp|time_stop|breach_flatten|other",
+    "close_label_inventory": "orig_stop|broker_tp|time_stop|breach_flatten|other",
+    "miss_type": "false_structure|event_gap|ok_win|unlabeled — ORACLE; forbidden as live Policy C input",
+    "R_Challenge_book": "float|null — Challenge deal/sit realized R",
+    "R_Module_ATR": "float|null — Module_ATR blotter only",
+    "R_Dig_3R": "float|null — Dig blotter only",
+    "R_Edge_ATR": "float|null — Edge blotter only",
+    "r_source": "broker_exit|geometry_implied_orig_sl|geometry_implied_orig_tp|sit_backstop|unassembled|module_atr_blotter",
+    "held_min": "float|null",
+    "mfe_r": "float|null",
+    "mae_r": "float|null",
+    "close_utc": "ISO|null",
+    "close_session": "named from close clock — do not wear open session",
+    "why_lost_or_won_text": "str — human lesson, not a live voter"
+  },
+  "lens_law": {
+    "allowed_lenses": ["Challenge_book", "Module_ATR", "Dig_3R", "Edge_ATR"],
+    "never_sum_across_lenses": true,
+    "module_atr": {
+      "exit_shape": "stop0.75_tgt6.0 ATR",
+      "who_decided": "geometry_proxy+Module_ATR",
+      "honesty": "APPROXIMATION of Module_ATR fills — geometry proxy != live module TradeIntent (no stay_timing / peer_panel / admission)",
+      "not_Edge_ATR": true,
+      "not_PROXY_ATR_as_Module": true,
+      "does_not_prove_live_sub_mid_dn_revert": true
+    },
+    "xagusd": "HONEST EMPTY — n_pairs=0; refuse invented year twins",
+    "btcusd": "research-only / banned_for_aplus"
+  },
+  "pair_record": {
+    "pair_id": "str REQ",
+    "pair_kind": "ticket_twin|sleeve_twin_asset_split|year_twin_module_atr|module_keep_vs_challenge_stand|unpaired",
+    "similarity_keys": ["symbol", "sleeve_family", "session_bucket", "side", "keep_surface", "lens"],
+    "win_ref": "ticket or year",
+    "lose_ref": "ticket or year",
+    "loser_reused": "bool — stamp honestly when a loser serves two pairs",
+    "deltas_win_vs_lose": "object {win_had, lose_had, shared, law?}",
+    "R_win": "float in THIS lens only",
+    "R_lose": "float in THIS lens only",
+    "same_lens": "bool — pair refused if lenses differ unless pair_kind=module_keep_vs_challenge_stand (cite, never merge R)"
+  },
+  "typed_questions_harvest": {
+    "harvest_strike": {
+      "type": "choice",
+      "options": ["A_STAND_DOWN", "B_SIZE_HALF", "C_SIZE_TRIM", "D_FULL", "E_KEEP_CAP"]
+    },
+    "harvest_pair_role": {
+      "type": "choice",
+      "options": ["WIN_LIKE", "LOSE_LIKE", "RELATIVE_WEAK", "UNPAIRED", "ABSTAIN"]
+    },
+    "harvest_pair_quality": {
+      "type": "score",
+      "levels": ["unmatched_or_cross_lens", "weak_similarity", "structural_twin"]
+    },
+    "harvest_lens_honest": {"type": "noul"},
+    "harvest_entry_state_sufficient": {"type": "noul"},
+    "harvest_geometry_alone_neq_strike": {"type": "noul"},
+    "harvest_alive_before_keep": {"type": "noul"},
+    "harvest_regime_null_ok": {"type": "noul"},
+    "close_label": {"type": "choice", "reuse": "jev_questions.close_label"},
+    "hold_too_late": {"type": "noul", "reuse": "jev_questions.hold_too_late"},
+    "event_proximity": {"type": "noul", "reuse": "jev_questions.event_proximity"},
+    "cost_hurtful": {"type": "noul", "reuse": "jev_questions.cost_hurtful"},
+    "flow_stance": {"type": "choice", "reuse": "jev_questions.flow_stance"},
+    "admit": {"type": "choice", "reuse": "jev_questions.admit", "note": "entry-legal state only"},
+    "harvest_place_would_have": {
+      "type": "choice",
+      "options": ["PLACE", "STAND", "DELAY"],
+      "apply": false,
+      "note": "LABEL only; owner place path OPEN after Challenge hist-prove — not this harvest APPLY"
+    }
+  }
+}

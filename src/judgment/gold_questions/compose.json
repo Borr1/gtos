@@ -1,0 +1,143 @@
+{
+  "schema": "gtos.judgment.gold_priors.compose.v1",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "model": "jev-1.13.0",
+  "gold_only": true,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "noul_every_tick": false,
+  "do_not_dump_catalog": true,
+  "catalog_ids_on_swarm_land": 49,
+  "gold_ids": 19,
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "receipt": "context/jev_alive/scripts/out/second_pass.json",
+  "receipt_generated_utc": "2026-09-21T04:35:27.545003+00:00",
+  "pins": {
+    "atr": "primitives.atr14 SMA-14 TR (live metals, not Wilder)",
+    "ac60": "primitives.autocorr n=60",
+    "geometry": "stop 1.0 ATR14, target 2.0 ATR14, horizon 8 M15, stop-first",
+    "h4_flow": "slope50/ATR14, up>1.5 dn<-1.5",
+    "clock": "new_york_plus_7 via zoneinfo",
+    "m15_file_n": 47142,
+    "m15_span_broker": "2024-04-01T01:00:00 \u2192 2026-03-30T18:00:00"
+  },
+  "G-FULL": {
+    "n": 47080,
+    "p_up": 0.5149745114698385,
+    "long_p_target": 0.21618521665250637,
+    "long_p_stop": 0.5129991503823279,
+    "short_p_target": 0.21136363636363636,
+    "splits": {
+      "geometry_lo_minus_xhi": 0.17974541336101663,
+      "session_london_ny_minus_ny": 0.14470551614914404,
+      "level_inside_minus_below_pdl": 0.04889204258495411,
+      "flow_h4_up_minus_dn_long": 0.04118549119424242,
+      "persist_core_minus_softband": 0.0007446500578626725
+    },
+    "l1_raw": {
+      "geometry_vs_tape": 0.43283662626799335,
+      "session_fitness": 0.34845866852004037,
+      "level_respect": 0.11773466909733281,
+      "flow_alignment": 0.09917687871067694,
+      "persistence": 0.0017931574039565924
+    }
+  },
+  "gate_composite_weights": {
+    "geometry_vs_tape": 0.43,
+    "session_fitness": 0.35,
+    "level_respect": 0.12,
+    "flow_alignment": 0.1,
+    "persistence": 0.0
+  },
+  "weights_sum": 1.0,
+  "weights_source": "G-FULL long_p_target L1-norm of max-minus-min splits; 2-decimal pin sums to 1.00. persistence stays on the POST (must sit with flow_stance); weight 0.00 means it does not move the diagnostic composite.",
+  "qualitative_start_jev_everywhere": {
+    "geometry_vs_tape": 0.3,
+    "session_fitness": 0.25,
+    "flow_alignment": 0.2,
+    "level_respect": 0.15,
+    "persistence": 0.1
+  },
+  "G-2M_test_not_retune": {
+    "n": 3923,
+    "long_p_target": 0.18582717308182514,
+    "short_p_target": 0.2515931684934999,
+    "deltas": {
+      "geometry_lo_minus_xhi": 0.15505964680276607,
+      "session_london_ny_minus_ny": 0.12185077519379846,
+      "level_inside_minus_below_pdl": 0.05804064107364562,
+      "persist_core_minus_softband": 0.02486354604220639,
+      "flow_h4_up_minus_dn_long": 0.0021362282865738103
+    },
+    "rank": [
+      "geometry_vs_tape",
+      "session_fitness",
+      "level_respect",
+      "persistence",
+      "flow_alignment"
+    ],
+    "note": "Rank geo>session>level>persist>flow. Do not retune the pin."
+  },
+  "G-2W_not_used": {
+    "n": 916,
+    "long_p_target": 0.18340611353711792,
+    "short_p_target": 0.29366812227074235,
+    "used_to_retune": false
+  },
+  "include_depth": {
+    "identity": "full",
+    "clock": "full",
+    "geometry": "full",
+    "sessions": "full",
+    "timeframes.m15": "full",
+    "timeframes.h4": "long",
+    "sleeve_features.ac60": "long",
+    "levels.prior_day": "long",
+    "levels.fvg": "short",
+    "news": "short",
+    "cost": "short",
+    "a8": "short",
+    "occupancy_default": "hide",
+    "occupancy_gate": "long"
+  },
+  "missing_jev": "no extra PASS",
+  "close_is_second_object": true,
+  "ac60_size_alias": "persistence",
+  "do_not_remint": true,
+  "do_not_leftover_ship_onto_main": true,
+  "challenge_xau": {
+    "n": 21,
+    "net_usd": -814.94,
+    "winners": 5,
+    "winners_exit": "time_stop",
+    "losers": 16,
+    "losers_exit": "orig_stop",
+    "admit_then_hard_refuse": "13/21",
+    "admit_now_admit": "20/21",
+    "remint_child": {
+      "parent": 291072108,
+      "child": 291096187,
+      "parent_net_usd": -143.56,
+      "child_net_usd": -155.14,
+      "sleeve": "dsp_walked_hi",
+      "both_exit": "orig_stop"
+    },
+    "cost_f5_jev_004": {
+      "n_closes": 46,
+      "spread_r_gt_0_10_vetoed": 8,
+      "pnl_usd": -1355.54,
+      "winners_lost": 0,
+      "same_sample_mde_r_per_trade": 0.5
+    }
+  },
+  "prior_fine_tune": {
+    "what": "Challenge-45 V1 tuned KEEP policy",
+    "n": 45,
+    "scope": "sample-of-one, shadow-only",
+    "this_slice": "G-FULL n=47080 hierarchical gold-only unique files + one-POST loader"
+  }
+}

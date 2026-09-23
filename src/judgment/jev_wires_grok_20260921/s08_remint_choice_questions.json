@@ -1,0 +1,60 @@
+{
+  "schema": "gtos.jev.remint_choice_questions.v0",
+  "model": "jev-1.13.0",
+  "api": "https://api.typesafe.ai/v1/systemone",
+  "note": "IDs are for code; instructions carry meaning. Ask with symbol_fanout_questions() in the same evaluate() call.",
+  "questions": {
+    "remint_action": {
+      "type": "choice",
+      "instructions": {
+        "question": "Given named remint, occupancy COUNT, alive_menu, affinity, cost, session, and last exit class, choose one action for this candidate.",
+        "focus": "Action after same-symbol same-sleeve orig_stops on this session day.",
+        "not_the_counter": "You are not the orig_stop counter. remint.orig_stops_today and occupancy.same_sleeve_orig_stops_utc_day stay integers from closed[].",
+        "reprint_vs_remint": "A legal 15-minute isolated reprint of a different sleeve, or a KEEP-family spring reprint, is not a remint.",
+        "news": "If news_join is STATE_MISSING you do not know events. Do not invent HIGH or NEWS_PROTOCOL.",
+        "unknown_count": "If remint.two_stop_source is closed_absent and remint.family_in_wmb_scope is true, prefer STAND.",
+        "hard_off": "If hard_off_hit is named, STAND. Hard-offs are not yours to soften."
+      },
+      "criteria": {
+        "STAND": {
+          "what": "Refuse this remint. Same-sleeve orig_stop budget is spent for the session day, COUNT is unknown in-scope, or named state says the setup is spent.",
+          "not_for": "A legal isolated reprint of another sleeve (that is SWITCH_SLEEVE) or a KEEP spring reprint.",
+          "examples": [
+            "XAU dsp_two_bar_thrust_into_20high_continues already has 2 orig_stops today",
+            "closed[] absent and sleeve contains isolated_spike"
+          ]
+        },
+        "REMINT_OK": {
+          "what": "Named state says this same-sleeve fire is still a new +EV fire, not a spent remint.",
+          "not_for": "WMB bleed families after 2 orig_stops unless Challenge hist later proves an exception. Not an other-sleeve reprint.",
+          "examples": [
+            "Rare: same sleeve, n>=2, but named structure/session/cost say a fresh fire — only after hist-prove APPLY"
+          ]
+        },
+        "SWITCH_SLEEVE": {
+          "what": "This sleeve is spent. Another named alive_menu sleeve on this symbol is the fire. LABEL that sleeve. Do not auto-place.",
+          "not_for": "Reminting the spent sleeve. Not a global sleeve_select APPLY flip.",
+          "examples": [
+            "two_bar spent; spring or three_fresh named on alive_menu for XAU"
+          ]
+        },
+        "FLATTEN_SIBLING": {
+          "what": "An open sibling on this symbol or cluster is the problem. LABEL flatten candidate. Do not send flatten.",
+          "not_for": "A flat book (keep-one already flat). Do not invent an open sibling.",
+          "examples": [
+            "occupancy.symbol_open true and remint.sibling_open true"
+          ]
+        }
+      }
+    },
+    "remint_continuation_quality": {
+      "type": "score",
+      "instructions": "Score whether named state looks like a spent same-setup remint, mixed/unknown, or a fresh other-sleeve reprint. Use only named fields. regime_tag PENDING or null is unknown — do not invent ATR/regime. Score does not refuse.",
+      "criteria": [
+        "Spent same setup — third orig_stop likely",
+        "Mixed or unknown named state",
+        "Fresh structure / other-sleeve reprint"
+      ]
+    }
+  }
+}

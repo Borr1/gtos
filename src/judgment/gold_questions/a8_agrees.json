@@ -1,0 +1,29 @@
+{
+  "id": "a8_agrees",
+  "type": "noul",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "admission"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "not metals",
+  "include_depth": {
+    "sleeve_features.a8": "short"
+  },
+  "instructions": "Does a8_k_of_4_pass agree with the named A8 fields (consistency, not a re-vote)? Ignore when this is not a metals sleeve. Integer K stays a fact.",
+  "criteria": {
+    "true": "Named A8 fields agree with the integer pass bit",
+    "false": "Named A8 fields disagree or are missing"
+  }
+}

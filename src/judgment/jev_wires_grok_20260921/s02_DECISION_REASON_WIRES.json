@@ -1,0 +1,739 @@
+{
+  "schema": "gtos.jev_everywhere.decision_reason_wires.v1",
+  "session_id_label": "02_admission_circuit_score",
+  "session_id": "c94b51e7-7f8b-41e3-a87c-09623d9901cc",
+  "as_of_ict": "2026-09-21T06:05:25+07:00",
+  "target_wire_family": "Score size / DERISK; hard circuit ENVELOPE",
+  "authority": "close_loop/war_room_20260920/_pr41_land/.../ultimate_book/admission.py",
+  "never_broker_place": true,
+  "handoff": {
+    "06_apply_size_ca_size": "post-admit flow/cost/CA tilts on already-admitted units; do not double-apply governor Score",
+    "17_residual_static_admission_governor": "precount DROP filters (vp/A8/learning GATE/symbol_damage) and FFD shed policy deepen",
+    "05_policy_c_admit_ablation": "pre-entry STAND/TRIM/FULL over COMPLETE_STATE; compose AFTER governor Score",
+    "01_book_owner_lifecycle_place": "breach_flatten_block / occupancy / place Choice"
+  },
+  "complete_state_governor_block_draft": {
+    "allow_new": "bool|null",
+    "cap_mult_static": "float",
+    "reason_static": "str",
+    "realized_today_pct": "float",
+    "open_risk_pct": "float",
+    "available_gross_risk_pct": "float",
+    "equity": "float",
+    "high_water": "float",
+    "dd_ref": "float",
+    "dd_frac": "float",
+    "operator_circuit_breaker": "bool",
+    "derisk_mode": "band|smooth",
+    "profile": "str",
+    "base_risk_per_unit": "float",
+    "soft_daily_stop_pct": "float",
+    "hard_daily_limit_pct": "float",
+    "max_dd_limit_pct": "float",
+    "max_dd_entry_block_pct": "float",
+    "derisk_start_dd_pct": "float",
+    "profit_target_pct": "float",
+    "profit_target_gain": "float",
+    "profit_target_derisk_mult": "float",
+    "consecutive_loss_days": "int",
+    "trailing_neg_frac": "float",
+    "n_active_sleeves_today": "int|null",
+    "overlays_enabled": "bool",
+    "ll_impulse": "str|null",
+    "decision_hour": "int|null",
+    "vr": "float|null",
+    "joint_daily_gross_cap_pct": "float"
+  },
+  "wires": [
+    {
+      "reason": "circuit_breaker_open",
+      "module": "admission.evaluate_governor",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "governor.operator_circuit_breaker",
+        "account.login",
+        "account.ns",
+        "place_context.writer_ready"
+      ],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK new entries (size 0). Existing managed by structural stops.",
+      "fail_closed": "stay BLOCK",
+      "notes": "Operator kill switch (GovernorState.operator_circuit_breaker / ultimate_book_operator_circuit_breaker). config_safety_flag: unparseable value ARMS the breaker. Integer envelope. Optional LABEL Noul operator_circuit_named may observe; Jev must not clear an armed breaker. Soft exception would be HARD_OFF_EXCEPTION family (session 09) + hist — not a size Score."
+    },
+    {
+      "reason": "soft_daily_stop_reached",
+      "module": "admission.evaluate_governor",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_soft_daily_size",
+        "type": "score",
+        "criteria": [
+          "Named realized_today_pct is at/through the -3% soft stop AND remaining session + open_risk would threaten the -5% hard daily wall — keep integer BLOCK",
+          "Named daily loss is real but occupancy/phi/session argue a trimmed new unit still fits inside the joint daily cap (code maps toward 0.25 size_mult)",
+          "Named realized is near the soft stop but COMPLETE_STATE shows headroom vs the -5% wall and a clean sleeve hour (code maps toward 0.50 size_mult). Never full size after the soft stop without a later hist receipt"
+        ],
+        "code_map": {
+          "score_0": 0.0,
+          "score_1": 0.25,
+          "score_2": 0.50,
+          "clamp": [0.0, 0.50],
+          "never_widen_vs_hard_daily": true
+        }
+      },
+      "complete_state_fields": [
+        "governor.realized_today_pct",
+        "governor.open_risk_pct",
+        "governor.available_gross_risk_pct",
+        "governor.soft_daily_stop_pct",
+        "governor.hard_daily_limit_pct",
+        "governor.joint_daily_gross_cap_pct",
+        "account.equity",
+        "account.dd_wall_r",
+        "occupancy",
+        "phi",
+        "session_bucket",
+        "selected_sleeve_candidate",
+        "cost",
+        "news_join"
+      ],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_SOFT_DAILY_SHADOW=1; GTOS_JEV_ADMISSION_SOFT_DAILY_APPLY=0 until hist",
+      "live_effect_now": "BINARY BLOCK at realized_today_pct <= -3%. Hard -5% never approached by this gate.",
+      "fail_closed": "Jev dark / low confidence / STATE_MISSING → keep integer BLOCK (size 0)",
+      "notes": "PRIMARY wire. Soft of the prop daily wall. Score may TRIM instead of BLOCK only after Challenge hist shows missed +EV fires inside joint-daily headroom. Cannot override -5% hard. Cannot place. Compose AFTER _joint_daily_limits so worst-case realized+new-open cannot exceed -5%."
+    },
+    {
+      "reason": "derisking_into_maxdd_wall",
+      "module": "admission.evaluate_governor",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_dd_derisk_size",
+        "type": "score",
+        "criteria": [
+          "Named dd_frac is in the derisk band AND remaining intelligence (occupancy, consecutive_loss_days, phi, session) says DEEP_DERISK — size_mult at or below the static band/smooth formula",
+          "Named dd_frac matches the static formula (band linear from derisk_start_dd to wall, or smooth 1-dd/maxdd) — keep static cap_mult",
+          "Named dd_frac is in the band but COMPLETE_STATE (phi, session_fit, n_active, cost) argues the static formula over-derisks — restore toward 1.0 but NEVER above 1.0 and NEVER when dd_frac >= max_dd_entry_block"
+        ],
+        "code_map": {
+          "static_cap_mult": "evaluate_governor current formula",
+          "jev_cap_mult": "lerp Score 0→min(static,0.25) ; 1→static ; 2→min(1.0, max(static, static+(1-static)*0.5)) during SHADOW; APPLY clamp TBD by hist",
+          "envelope": "dd_frac >= max_dd_entry_block_pct stays BLOCK"
+        }
+      },
+      "complete_state_fields": [
+        "governor.dd_frac",
+        "governor.dd_ref",
+        "governor.derisk_mode",
+        "governor.derisk_start_dd_pct",
+        "governor.max_dd_limit_pct",
+        "governor.max_dd_entry_block_pct",
+        "governor.cap_mult_static",
+        "governor.consecutive_loss_days",
+        "governor.trailing_neg_frac",
+        "account.equity",
+        "phi",
+        "occupancy",
+        "session_bucket",
+        "alive_sleeves",
+        "cost"
+      ],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_DD_DERISK_SHADOW=1; GTOS_JEV_ADMISSION_DD_DERISK_APPLY=0 until hist",
+      "live_effect_now": "size_cap_multiplier in (0,1) via band or smooth. Live Challenge uses smooth because ceiling profile 2.00% requires it.",
+      "fail_closed": "Jev dark → keep static cap_mult. Never widen past 1.0. Prop walls stay BLOCK.",
+      "notes": "PRIMARY wire. Static formula is thin (equity/dd only). Jev sees occupancy, stress_derisk state, phi, session. APPLY must not silent-flip derisk_mode band↔smooth; that pairing is the ceiling interlock. First APPLY candidate is Score haircut-only (never above static). Widen-vs-static only after hist shows static over-derisk."
+    },
+    {
+      "reason": "profit_target_protect_derisk",
+      "module": "admission.evaluate_governor",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_target_protect_size",
+        "type": "score",
+        "criteria": [
+          "Named gain vs static initial-balance already meets profit_target_pct AND remaining intelligence says LOCK_IN_HARD (code ~0.10–0.25)",
+          "Named target is met — keep the integer protect mult (default 0.25)",
+          "Named target is met but COMPLETE_STATE (smooth DD, low occupancy, clean session) argues a milder lock-in (code up to 0.50). Never 1.0 after target without a later hist receipt"
+        ],
+        "code_map": {
+          "static": "cap_mult *= profit_target_derisk_mult (default 0.25)",
+          "clamp_apply": [0.10, 0.50],
+          "never_size_up_after_target": true
+        }
+      },
+      "complete_state_fields": [
+        "governor.profit_target_pct",
+        "governor.profit_target_gain",
+        "governor.profit_target_derisk_mult",
+        "governor.dd_ref",
+        "governor.equity",
+        "governor.derisk_mode",
+        "governor.cap_mult_static",
+        "occupancy",
+        "session_bucket",
+        "phi"
+      ],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_TARGET_PROTECT_SHADOW=1; GTOS_JEV_ADMISSION_TARGET_PROTECT_APPLY=0 until hist",
+      "live_effect_now": "When profit_target_pct>0 and gain>=target, cap_mult *= 0.25 (multiplies with max-DD derisk). 0 disables.",
+      "fail_closed": "Jev dark → keep 0.25 (or configured profit_target_derisk_mult). Cannot disable protect. Cannot size-up after target.",
+      "notes": "OPS-03: de-risk hard, keep trading once challenge target hits. YAML ultimate_book_profit_target_pct (FN docs cite 0.08; FTMO challenge +8%/+10% — use named config, do not invent). Combines multiplicatively with dd derisk."
+    },
+    {
+      "reason": "ceiling_profile_requires_smooth_ddefense",
+      "module": "admission.admit_and_size",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": {
+        "optional_observe_noul": {
+          "id": "ceiling_smooth_pairing_named",
+          "type": "noul",
+          "criteria": {
+            "true": "Named profile base_risk>=0.02 and derisk_mode is smooth — certified pairing",
+            "false": "Named pairing is missing/uncertified — integer already refused"
+          }
+        }
+      },
+      "complete_state_fields": [
+        "governor.profile",
+        "governor.base_risk_per_unit",
+        "governor.derisk_mode"
+      ],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_CEILING_LABEL=1 (observe only; no APPLY path)",
+      "live_effect_now": "If base_risk>=2.0% and derisk_mode!='smooth' → new_entries_allowed=False, governor=None, units=[]. Live Challenge runs clean3_w7_ceiling_nom2p00 + smooth so this does not fire.",
+      "fail_closed": "Keep refuse. Never run 2.00% on band.",
+      "notes": "Research c59/c61: 2.00% + band leaks total-DD failures on real W7 fat left tail. Safety interlock, not a size Score. Exception would be session-09 Choice KEEP_INTERLOCK|SCOPED_EXCEPTION after Challenge hist — never a silent YAML flip. D11 sizing_reason carries this when a gate also blocks."
+    },
+    {
+      "reason": "leader_impulse_veto",
+      "module": "admission.overlay_sizeup_for",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_leader_impulse_sizeup",
+        "type": "score",
+        "criteria": [
+          "Named leader is impulsing against this sub_xvol_pullback long, or ll_impulse is unassembled — no size-up (1.0)",
+          "Named ll_impulse is mixed / not the 'none' tag — ordinary size (1.0)",
+          "Named ll_impulse is the 'none' tag on sub_xvol_pullback AND overlays_enabled — size-up toward 1.5×, still capped by OVERLAY_SIZEUP_MAX 1.75"
+        ]
+      },
+      "complete_state_fields": [
+        "selected_sleeve_candidate",
+        "governor.overlays_enabled",
+        "governor.ll_impulse",
+        "governor.decision_hour",
+        "governor.vr",
+        "phi",
+        "session_bucket",
+        "conflict_set",
+        "news_join"
+      ],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_LEADER_IMPULSE_SHADOW=1; GTOS_JEV_ADMISSION_LEADER_IMPULSE_APPLY=0 until hist AND generator populates ll_impulse",
+      "live_effect_now": "LATENT. overlays default false. sub_xvol_pullback generator does not set ll_impulse. session_leadlag sets ll_impulse to a firing-leg string, not 'none'. Size-up never binds on live Challenge.",
+      "fail_closed": "Jev dark / unassembled ll_impulse → 1.0 (no size-up). Never invent a leader z-score. ATR/z from named substrate vr only; else STATE_MISSING.",
+      "notes": "Misnamed 'veto' — it is a confluence SIZE-UP (KB5: none-cell +1.53R vs opposed −0.35R). Wire Score, not BLOCK. Do not enable overlays by silent config flip. Hist must use Module_ATR honesty on sub_xvol blotter; never merge Dig_3R R. Companion Noul leader_impulse_named: is the tag actually assembled?"
+    },
+    {
+      "reason": "fail_closed:nan_state",
+      "module": "admission.evaluate_governor",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.equity", "governor.high_water", "governor.realized_today_pct", "governor.open_risk_pct"],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK size 0",
+      "fail_closed": "stay BLOCK",
+      "notes": "Contradictory/NaN state. Identity of fail-closed governor. Not a Score."
+    },
+    {
+      "reason": "fail_closed:nonpositive_equity",
+      "module": "admission.evaluate_governor",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.equity", "governor.high_water"],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK size 0",
+      "fail_closed": "stay BLOCK",
+      "notes": "equity<=0 or high_water<=0."
+    },
+    {
+      "reason": "fail_closed:high_water_below_equity",
+      "module": "admission.evaluate_governor",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.equity", "governor.high_water"],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK size 0",
+      "fail_closed": "stay BLOCK",
+      "notes": "Sanity invariant broken. high_water is peak-equity sanity only; max-DD wall uses static initial-balance ref."
+    },
+    {
+      "reason": "fail_closed:negative_open_risk",
+      "module": "admission.evaluate_governor",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.open_risk_pct"],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK size 0",
+      "fail_closed": "stay BLOCK",
+      "notes": "open_risk_pct < 0 is contradictory."
+    },
+    {
+      "reason": "max_dd_limit_reached",
+      "module": "admission.evaluate_governor",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.dd_frac", "governor.max_dd_limit_pct", "governor.dd_ref", "account.equity"],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK new entries at FTMO -10% static floor",
+      "fail_closed": "stay BLOCK",
+      "notes": "Prop max-DD wall. Soft exception only via session-09 Jev+hist — never this Score family. dd measured from static initial-balance, not trailing peak."
+    },
+    {
+      "reason": "max_dd_entry_buffer_reached",
+      "module": "admission.evaluate_governor",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.dd_frac", "governor.max_dd_entry_block_pct", "governor.max_dd_limit_pct"],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK new entries at configured buffer (live often 0.09 vs 0.10 wall) before breach-flatten territory",
+      "fail_closed": "stay BLOCK",
+      "notes": "Entry-side buffer before prop-fatal wall / flatten. Integer. Related flatten is book_engine.breach_flatten_check (session 01)."
+    },
+    {
+      "reason": "gross_risk_cap_exhausted",
+      "module": "admission.evaluate_governor",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.open_risk_pct", "governor.available_gross_risk_pct", "governor.joint_daily_gross_cap_pct"],
+      "env_flag_draft": null,
+      "live_effect_now": "BLOCK when available gross <= 0",
+      "fail_closed": "stay BLOCK",
+      "notes": "Mechanical remaining-headroom. Coupled to _joint_daily_limits so realized+new-open cannot breach -5%. Not a Score. Shed-which-unit is gross_risk_cap_would_exceed."
+    },
+    {
+      "reason": "ok",
+      "module": "admission.evaluate_governor",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_ok_observe_size",
+        "type": "score",
+        "note": "SHADOW observe only while reason_static==ok; must not change fire rate until a named APPLY receipt. Maps onto existing combined_size / session_size rather than a new refuse."
+      },
+      "complete_state_fields": ["governor.reason_static", "governor.cap_mult_static", "phi", "occupancy", "session_bucket"],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_SHADOW=1 (observe evaluate on every admit including ok)",
+      "live_effect_now": "allow_new_entries=True, cap_mult=1.0",
+      "fail_closed": "passthrough",
+      "notes": "Passthrough. Shadow Score still POSTs evaluate() for usage-ramp / train-row harvest (sessions 18/19). APPLY=0 on ok path this pass — that is apply_size/ca_size territory."
+    },
+    {
+      "reason": "unknown_profile",
+      "module": "admission.admit_and_size / bridge",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.profile"],
+      "env_flag_draft": null,
+      "live_effect_now": "ok=False, units=[] before governor runs",
+      "fail_closed": "stay refuse",
+      "notes": "Unknown allocation profile. Identity."
+    },
+    {
+      "reason": "session_active_stack",
+      "module": "admission.overlay_sizeup_for",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_session_active_sizeup",
+        "type": "score",
+        "criteria": [
+          "Named decision_hour is dead/Friday/unassembled — no size-up",
+          "Ordinary session, not in {8,12,16} H4 hours — 1.0",
+          "Named decision_hour in London-open..NY set {8,12,16} on an overlay base sleeve — size-up toward 1.15×"
+        ]
+      },
+      "complete_state_fields": ["governor.decision_hour", "governor.overlays_enabled", "session_bucket", "clock.is_friday", "selected_sleeve_candidate"],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_SESSION_STACK_SHADOW=1; APPLY=0",
+      "live_effect_now": "LATENT with overlays=false and generator not populating decision_hour on sub_xvol / sub_mid.",
+      "fail_closed": "unassembled hour → 1.0. Do not invent volume. Clock stays writer integer.",
+      "notes": "Sibling overlay to leader_impulse_veto in the same function. Same latency. Score, not BLOCK. Compounds then caps at OVERLAY_SIZEUP_MAX."
+    },
+    {
+      "reason": "ladder_step",
+      "module": "admission.stress_derisk_multiplier",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_stress_ladder_size",
+        "type": "score",
+        "criteria": [
+          "Named consecutive_loss_days >= 2 — keep/deeper than ladder x0.60",
+          "Named consecutive_loss_days == 1 — keep ladder x0.80",
+          "Named streak exists but COMPLETE_STATE (today n_active, session, phi) argues the integer ladder over-derisks — restore toward 1.0 still <=1.0 and >= STRESS_DERISK_MIN_MULT"
+        ]
+      },
+      "complete_state_fields": [
+        "governor.consecutive_loss_days",
+        "governor.trailing_neg_frac",
+        "governor.n_active_sleeves_today",
+        "phi",
+        "occupancy",
+        "session_bucket"
+      ],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_STRESS_DERISK_SHADOW=1; GTOS_JEV_ADMISSION_STRESS_DERISK_APPLY=0",
+      "live_effect_now": "When ultimate_book_stress_derisk true: step 1 → ×0.80, step 2+ → ×0.60. Shrink-only. Leak-free prior days only.",
+      "fail_closed": "Jev dark → keep integer ladder. Never widen above 1.0. Floor 0.60 stays envelope.",
+      "notes": "W6 TIER-1 reactive (forward-positive). Overlay reasons recorded as ladder_stepK on SizedUnit.overlays_applied. Do not arm TIER-2 regime stack from this session (forward-flat alone)."
+    },
+    {
+      "reason": "coloss_breaker",
+      "module": "admission.stress_derisk_multiplier",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_coloss_size",
+        "type": "score",
+        "criteria": [
+          "Named trailing_neg_frac >= 0.57 — keep/deeper than ×0.60",
+          "Named frac near the trigger — keep integer trip",
+          "Named frac trips but today's independent sleeves + session argue a milder shrink still >= 0.60"
+        ]
+      },
+      "complete_state_fields": ["governor.trailing_neg_frac", "governor.consecutive_loss_days", "alive_sleeves", "occupancy"],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_STRESS_DERISK_SHADOW=1; APPLY=0",
+      "live_effect_now": "trailing-5d cross-sleeve neg-firing fraction >= 0.57 → ×0.60, compounds with ladder, floor 0.60",
+      "fail_closed": "Jev dark → keep trip. Floor envelope.",
+      "notes": "Same TIER-1 overlay as ladder. Compounding product. Score may only reshape inside [0.60, 1.0] after hist."
+    },
+    {
+      "reason": "gross_risk_cap_would_exceed",
+      "module": "admission._enforce_gross_open_risk_cap",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": {
+        "id": "admission_gross_cap_shed",
+        "type": "choice",
+        "criteria": {
+          "KEEP_FFD": "Keep first-fit-descending (highest-confidence first; sheds by FIT not conviction)",
+          "SHED_UNIT": "This unit does not fit remaining headroom — size 0",
+          "SCALE_PROPORTIONAL": "Scale all remaining units proportionally (D1 owner decision; hist required)"
+        }
+      },
+      "complete_state_fields": ["governor.available_gross_risk_pct", "units[].confidence", "units[].unit_risk_pct", "units[].cluster", "phi_by_sleeve"],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_GROSS_CAP_SHADOW=1; APPLY=0 — deepen in session 17",
+      "live_effect_now": "FFD greedy. Latent: W7 fortnight never bound. Can shed 2nd/3rd-strongest while admitting weakest.",
+      "fail_closed": "Jev dark → keep FFD. Never exceed available headroom.",
+      "notes": "D1 defect register: docstring used to claim 'shed lowest-conviction first' — false. Choice SCALE_PROPORTIONAL is owner-gated. Classified here so not orphan; session 17 residual may own APPLY plan."
+    },
+    {
+      "reason": "fail_closed:unknown_sleeve",
+      "module": "admission.size_correlated_units",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["selected_sleeve_candidate", "alive_sleeves"],
+      "env_flag_draft": null,
+      "live_effect_now": "whole cluster-day unit size 0",
+      "fail_closed": "stay 0",
+      "notes": "Unknown vs active registry (clean3/4 off → those names unknown)."
+    },
+    {
+      "reason": "fail_closed:bad_direction",
+      "module": "admission.size_correlated_units",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["identity.side"],
+      "env_flag_draft": null,
+      "live_effect_now": "unit size 0",
+      "fail_closed": "stay 0",
+      "notes": "direction not in {+1,-1}."
+    },
+    {
+      "reason": "fail_closed:nonpositive_stop",
+      "module": "admission.size_correlated_units",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["geometry.stop_dist"],
+      "env_flag_draft": null,
+      "live_effect_now": "unit size 0",
+      "fail_closed": "stay 0",
+      "notes": "stop_dist missing or <=0. Do not invent ATR stop."
+    },
+    {
+      "reason": "fail_closed:bad_intra_size",
+      "module": "admission.size_correlated_units",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["TradeIntent.intra_size"],
+      "env_flag_draft": null,
+      "live_effect_now": "unit size 0",
+      "fail_closed": "stay 0",
+      "notes": "intra_size < 0."
+    },
+    {
+      "reason": "sized",
+      "module": "admission.size_correlated_units",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["units[].reason", "units[].overlays_applied"],
+      "env_flag_draft": null,
+      "live_effect_now": "unit carries risk_pct_per_trade",
+      "fail_closed": "passthrough",
+      "notes": "Success tag. Overlay/kelly/ladder reasons live on overlays_applied, not this string."
+    },
+    {
+      "reason": "kelly_lite_conviction",
+      "module": "admission.kelly_lite_conviction_multiplier",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_kelly_lite_size",
+        "type": "score",
+        "criteria": [
+          "Named n_active_sleeves_today == 1 — keep half-Kelly/handset bottom bin (0.748/0.85)",
+          "Named n_active in 2–3 — keep mid bin",
+          "Named n_active >= 4 — keep/dampen top bin (train-thin honesty: only 3 such days <=2024)"
+        ]
+      },
+      "complete_state_fields": ["governor.n_active_sleeves_today", "governor.kelly_conservative", "alive_sleeves", "phi_by_sleeve"],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_KELLY_SHADOW=1; APPLY=0. Do not collide with GTOS_JEV_APPLY_LIVE post-admit tilts.",
+      "live_effect_now": "W7 kelly_lite=true, kelly_conservative=true (half-Kelly bins). Recorded as kelly_lite_naN_xM.",
+      "fail_closed": "Jev dark → keep locked bins. Combined size-up still capped at OVERLAY_SIZEUP_MAX.",
+      "notes": "Admission-layer day tilt (not apply_size). Session 06 must not double-map combined_size onto this. Top bin train-thin — Score may damp, not enlarge, until a 3rd forward year."
+    },
+    {
+      "reason": "vol_level_tilt",
+      "module": "admission.vol_level_tilt_for",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_vol_level_size",
+        "type": "score",
+        "criteria": [
+          "Named vr missing/non-finite — no-op 1.0 (do not invent ATR)",
+          "Named vr in the xhi band near centre 2.0 — keep clamp(vr/2.0, 0.80, 1.20)",
+          "Named vr assembled and COMPLETE_STATE argues extra damp on the high side (never above 1.20)"
+        ]
+      },
+      "complete_state_fields": ["governor.vr", "selected_sleeve_candidate", "sleeve_features.atr_ratio"],
+      "env_flag_draft": "GTOS_JEV_ADMISSION_VOL_LEVEL_SHADOW=1; APPLY=0. Live arming is run_book.py --vol-level-tilt, never a YAML byte.",
+      "live_effect_now": "Default-OFF. Scoped to sub_xvol_pullback. Net ~7.5% de-risk. Fail-open-to-no-op if vr absent.",
+      "fail_closed": "vr STATE_MISSING → 1.0. NEVER invent Module_ATR / regime vr.",
+      "notes": "Module_ATR honesty: vr is substrate ATR(14)/100-bar mean already on the intent when the generator fired. Do not substitute blotter ATR-R. Shrink half applies AFTER overlay cap so it cannot be discarded."
+    },
+    {
+      "reason": "overlay_sizeup_max",
+      "module": "admission.overlay_sizeup_for / size_correlated_units",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.overlays_enabled"],
+      "env_flag_draft": null,
+      "live_effect_now": "combined size-up capped at 1.75",
+      "fail_closed": "keep cap",
+      "notes": "Governor-safe ceiling on confluence × kelly × vol-up. Integer."
+    },
+    {
+      "reason": "w7_dropped_symbols",
+      "module": "admission.filter_w7_dropped_symbols",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["identity.symbol"],
+      "env_flag_draft": null,
+      "live_effect_now": "Drop HEATOIL_c / NATGAS_cash intents",
+      "fail_closed": "keep drop",
+      "notes": "Tick-true illiquid energy. Not a Score. FX+metals Challenge path rarely hits this."
+    },
+    {
+      "reason": "sqrtN_pool_convention",
+      "module": "admission.size_correlated_units",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["units[].n_trades"],
+      "env_flag_draft": null,
+      "live_effect_now": "Default-OFF; records sqrtN_pool_nN on multi-trade units. Worst-case-stop risk UNCHANGED.",
+      "fail_closed": "keep mean pooling (locked W7 MC)",
+      "notes": "EV-credit convention, not a size Score. Owner opts in separately."
+    },
+    {
+      "reason": "vp_acceptance_drop",
+      "module": "admission.precount_intent_filter",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {
+        "id": "admission_vp_acceptance_keep",
+        "type": "noul",
+        "criteria": {
+          "true": "Named vp_loc is above_va on sub_mid_dn_revert — keep",
+          "false": "Named vp_loc is not above_va — integer drop when vp_acceptance armed"
+        }
+      },
+      "complete_state_fields": ["TradeIntent.vp_loc", "selected_sleeve_candidate"],
+      "env_flag_draft": "handoff 17; GTOS_JEV_ADMISSION_VP_SHADOW=1 APPLY=0",
+      "live_effect_now": "Default-OFF. When on, drops non-above_va sub_mid_dn_revert before Kelly count.",
+      "fail_closed": "unassembled vp_loc + armed gate → integer drop (noise-cut). Do not invent volume profile.",
+      "notes": "Admit DROP not size. Classified so not orphan. Session 17 residual / 05 Policy C may own APPLY."
+    },
+    {
+      "reason": "learning_rerate_GATE",
+      "module": "admission.precount_intent_filter",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": {
+        "id": "admission_learning_rerate",
+        "type": "choice",
+        "criteria": {
+          "GATE": "Named learning mult 0.0 — drop sleeve",
+          "DOWN_WEIGHT": "Named mult 0.5",
+          "KEEP": "Named mult 1.0",
+          "SIZE_UP": "Named mult <= LEARNING_RERATE_MAX 1.25"
+        }
+      },
+      "complete_state_fields": ["alive_sleeves", "phi_by_sleeve", "learning_rerate"],
+      "env_flag_draft": "handoff 06/17; default-off map",
+      "live_effect_now": "Empty {} no-op unless lane_weights inject a map",
+      "fail_closed": "malformed map skipped; never silent size-up",
+      "notes": "L5 actuator. GATE is DROP; other values are tilts. Envelope clamp [0, 1.25]."
+    },
+    {
+      "reason": "metals_confluence_gate",
+      "module": "admission._metals_confluence_pass",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {
+        "id": "admission_a8_confluence",
+        "type": "noul",
+        "criteria": {
+          "true": "Named A8 K=3-of-4 pass agrees — admit",
+          "false": "Named features fail K=3-of-4 — integer drop when gate armed"
+        }
+      },
+      "complete_state_fields": ["sleeve_features.htf_slope_norm", "sleeve_features.mom_20_atr", "sleeve_features.fvg_freshness_bars", "sleeve_features.atr_ratio", "session_hour"],
+      "env_flag_draft": "handoff 07_conf_gate_regime; observe already a8_agrees in symbol_fanout_questions",
+      "live_effect_now": "Featureless intents ADMIT (fail-open-to-today). Armed live on metals_core/softband when config true.",
+      "fail_closed": "missing features → admit-as-today (existing convention). Do not invent ATR.",
+      "notes": "Existing fanout Noul a8_agrees is consistency, not a re-vote. APPLY of drop stays integer until 07 hist."
+    },
+    {
+      "reason": "symbol_damage_quarantine",
+      "module": "admission.precount_intent_filter / symbol_damage_guard",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": {
+        "id": "admission_symbol_damage_size",
+        "type": "score",
+        "criteria": [
+          "Named symbol damage QUARANTINE (mult 0.0) — drop",
+          "Named RISK_REDUCE 0.5 — tilt",
+          "Named clean — 1.0"
+        ]
+      },
+      "complete_state_fields": ["identity.symbol", "symbol_damage_metrics"],
+      "env_flag_draft": "handoff 17; default-off",
+      "live_effect_now": "Default-OFF",
+      "fail_closed": "unarmed → 1.0",
+      "notes": "S1 damage memory. QUARANTINE is DROP; RISK_REDUCE is tilt. Residual session 17."
+    },
+    {
+      "reason": "joint_daily_gross_cap_tighten",
+      "module": "book_engine._joint_daily_limits",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.realized_today_pct", "governor.hard_daily_limit_pct", "governor.gross_open_risk_cap_pct"],
+      "env_flag_draft": null,
+      "live_effect_now": "Shrinks gross_open_risk_cap so realized_loss + new open cannot exceed -5% minus 0.5pp buffer. NEVER widens.",
+      "fail_closed": "keep tighten",
+      "notes": "Closes the -3% soft + -4% gross = -7% prop-breach path. Soft-daily Score MUST compose after this. Integer envelope."
+    },
+    {
+      "reason": "equity_unavailable",
+      "module": "book_engine.evaluate",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account.equity"],
+      "env_flag_draft": null,
+      "live_effect_now": "safe no-op decision",
+      "fail_closed": "stay skip",
+      "notes": "Unreadable equity. Feeds governor; not a Score."
+    },
+    {
+      "reason": "day_baseline_unavailable",
+      "module": "book_engine.evaluate",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account.equity", "governor.realized_today_pct"],
+      "env_flag_draft": null,
+      "live_effect_now": "FAIL CLOSED on deal-capable broker when day-start BALANCE cannot be reconstructed",
+      "fail_closed": "stay skip",
+      "notes": "Wrong baseline could let -5% daily slip past the -3% soft stop. Integer."
+    },
+    {
+      "reason": "STRESS_DERISK_MIN_MULT",
+      "module": "admission.stress_derisk_multiplier",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["governor.consecutive_loss_days", "governor.trailing_neg_frac"],
+      "env_flag_draft": null,
+      "live_effect_now": "Floor 0.60 on ladder×coloss product",
+      "fail_closed": "keep floor",
+      "notes": "Shrink-only overlay never goes below 0.60. Envelope under any Jev Score reshape."
+    }
+  ]
+}

@@ -1,0 +1,575 @@
+{
+  "schema": "gtos.jev_everywhere.decision_reason_wires.v1",
+  "session_id": "13_instrument_affinity_sleeves",
+  "as_of_ict": "2026-09-21T06:03:39+07:00",
+  "place": false,
+  "never_broker_place": true,
+  "global_GTOS_JEV_SLEEVE_SELECT_APPLY": 0,
+  "n_reasons": 55,
+  "n_jev_wires": 27,
+  "n_envelope_keep": 28,
+  "wires": [
+    {
+      "reason": "jev_sleeve_select_shadow",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["sleeve:<tag>", "HOLD", "ABSTAIN", "ESCALATE_CHAIR", "BLOCKED"],
+      "complete_state_fields": ["symbol", "alive_sleeves", "alive_menu", "selected_sleeve_candidate", "phi_by_sleeve", "full_state_dark"],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_SHADOW=1 (keep); APPLY stays 0",
+      "notes": "Menu is built locally; payload jsonl SHADOW. Does not POST evaluate() today. Wire: same Choice over COMPLETE_STATE via jev_client.evaluate. Fail-closed if Jev dark → keep alive_sleeves union F5 priors, no admit filter."
+    },
+    {
+      "reason": "scoped_xau_three_fresh_x_spring",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PICK_SPRING", "STAND_THREE_FRESH", "HOLD", "KEEP_ALL"],
+      "complete_state_fields": ["symbol", "alive_menu[].affinity", "conflict_set", "phi_by_sleeve", "regime_tag", "session_bucket"],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_XAU_CONFLICT=1 (Chair land; this session does not flip)",
+      "notes": "APPLY candidate #1. Hist V2 PASS n_conflicts=2353 sumR_select=+235.36 vs keep_all=-74.72. Coded resolve_scoped_conflict_choice is static hist rule — promote to Jev Choice with those labels as criteria, hist prior in state. Global APPLY remains 0. Lens=LIVE_FILE Module_ATR 0.75/6.0 not Edge_ATR."
+    },
+    {
+      "reason": "scoped_gbpjpy_vss_x_sub_mid_side_aware",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PICK_VSS_LONG", "PICK_SUB_MID_SHORT", "HOLD", "LABEL_SIDES_UNRESOLVED"],
+      "complete_state_fields": ["symbol", "alive_menu[].affinity", "conflict_set", "sleeve_sides", "session_bucket", "phi_by_sleeve"],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_GBPJPY_CONFLICT=1 (Chair land; this session does not flip)",
+      "notes": "APPLY candidate #2. Opp vss LONG×sub_mid SHORT: select 222.35 vs keep_all 127.61 n_days=420 PASS. Same SHORT×SHORT: select 341.33 vs 177.94 n=272 PASS. Need sleeve_sides in COMPLETE_STATE. v4 KEEP_ALL on mixed calendar SUPERSEDED — do not re-wire KEEP_ALL for this cell."
+    },
+    {
+      "reason": "gbpjpy_conflict_sides_unresolved_label",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["LABEL_ONLY", "HOLD", "ESCALATE_CHAIR"],
+      "complete_state_fields": ["symbol", "conflict_set", "sleeve_sides", "n_incomplete"],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_GBPJPY_CONFLICT (place_when_apply=false unless sides resolved)",
+      "notes": "Coded GBPJPY_CONFLICT_LABEL when sides missing. Fail-closed: no pick, no place. Jev Choice HOLD until sides typed."
+    },
+    {
+      "reason": "eurusd_keep_all_dual_pos",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["KEEP_ALL_DUAL_POS", "C_SIZE_TRIM_BOTH", "HOLD"],
+      "complete_state_fields": ["symbol", "alive_menu[].affinity", "conflict_set", "n_incomplete", "full_state_dark", "phi_by_sleeve"],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_EURUSD_KEEP_ALL=1 (draft; Chair; not global)",
+      "notes": "asian_fade × Package B. Pick-one FAILS (926 vs 2350). signs-disagree n=0. Identity KEEP_ALL is the Choice. Incomplete voters → trim membership still both. Never alias Package B to live sub_mid_dn_revert."
+    },
+    {
+      "reason": "xag_single_keep_menu_phi",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "SLEEVE_AFFINITY_PHI 0-2 (metal_session KEEP; siblings NARROW)",
+      "complete_state_fields": ["symbol", "alive_menu[].affinity", "phi_by_sleeve", "phi"],
+      "env_flag_draft": "no scoped APPLY; optional GTOS_JEV_SLEEVE_SELECT_XAG_MENU_PHI=1 SHADOW",
+      "notes": "metal_session_reversion KEEP n=782 sumR=+168.08 yf=1.0 φ=2.8506. Conflict hist SKIPPED n_KEEP=1. Menu φ only. Do not invent XAG conflict APPLY."
+    },
+    {
+      "reason": "nzdusd_sub_mid_keep_single",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["SINGLE_KEEP_SUB_MID_SHORT", "HOLD", "STAND_NARROW_SIBLING"],
+      "complete_state_fields": ["symbol", "alive_menu[].affinity", "phi_by_sleeve", "session_bucket"],
+      "env_flag_draft": "no NZDUSD conflict APPLY; SHADOW menu inject already in F5_AFFINITY_KEEP_PRIORS",
+      "notes": "KEEP n=1786 sumR=+476.70 avg_R=0.2669 yf=1.0 consec=5. Tag sub_mid_dn_re_proxy_nzdusd_short_m15_atr. NEVER port AUDUSD. NEVER reuse EURUSD Package B tag. Resolver currently returns None for NZDUSD."
+    },
+    {
+      "reason": "alive_menu_affinity_field_missing",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "typed affinity object on each alive_menu row (not a chat field)",
+      "complete_state_fields": [
+        "alive_menu[].tag",
+        "alive_menu[].phi",
+        "alive_menu[].keep_prior",
+        "alive_menu[].affinity.instrument",
+        "alive_menu[].affinity.sleeve",
+        "alive_menu[].affinity.cell",
+        "alive_menu[].affinity.keep_status",
+        "alive_menu[].affinity.lens",
+        "alive_menu[].affinity.side",
+        "alive_menu[].affinity.research_only",
+        "alive_menu[].affinity.banned_for_aplus"
+      ],
+      "env_flag_draft": "none (composer always-on; fail-closed empty affinity → keep_status=STATE_MISSING)",
+      "notes": "Gap inventory COMPLETE_STATE already names alive_menu[].affinity. gold_state/symbol_state/alive_menu do not emit it. P0 keep_signature has a tiny affinity pair — not the menu. Primary wire of this session."
+    },
+    {
+      "reason": "phi_prior_starved_non_eur_xau",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "phi Score per sleeve; never softmax into size",
+      "complete_state_fields": ["phi", "phi_by_sleeve", "alive_menu[].phi"],
+      "env_flag_draft": "none; merge packs in load_phi_prior",
+      "notes": "load_phi_prior only reads PHI_CAPABILITY_SLEEVE_SELECT_PRIOR (4 candidates). GBPJPY/XAG/NZD φ files unused → phi_score_for_tag=0 → alpha order. Merge GBPJPY_PHI_CAPABILITY_PRIOR + PHI_CAPABILITY_GBPJPY_XAG_BTC + NZD yearfold μ/σ. Do not softmax across 5y vs 13y span classes."
+    },
+    {
+      "reason": "f5_affinity_keep_priors_inject",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "keep_prior true|false per (instrument,sleeve)",
+      "complete_state_fields": ["alive_menu[].keep_prior", "alive_sleeves"],
+      "env_flag_draft": "none; table stays envelope list, Noul is the typed stamp",
+      "notes": "Inject is hardcoded. Keep the table as envelope (identity of named KEEP tags) AND stamp keep_prior so Jev sees it. alive_sleeves_for_symbol fallback omits NZDUSD — fix in sketch."
+    },
+    {
+      "reason": "sleeve_select_missing_from_symbol_fanout",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "question_id JEV_SLEEVE_SELECT added to symbol_fanout_questions()",
+      "complete_state_fields": ["alive_menu", "conflict_set", "selected_sleeve_candidate"],
+      "env_flag_draft": "GTOS_JEV_A1_CALL default-on if key; GTOS_JEV_MAX_CALLS=500000 draft",
+      "notes": "evaluate() currently asks gold_fanout only. Sleeve-select never reaches TypeSafe. Add Choice criteria from SleeveSelectMenu.option_ids. Cap 255. Escapes always present."
+    },
+    {
+      "reason": "complete_state_conflict_set_starved",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "conflict_set[].relation in {TRUE_CONFLICT, KEEP_ALL_DUAL_POS, SINGLE_KEEP, LABEL, UNPROVED}",
+      "complete_state_fields": ["conflict_set"],
+      "env_flag_draft": "none",
+      "notes": "Gap schema requires conflict_set. Resolver computes it ephemerally inside emit payload, not on state posted to evaluate()."
+    },
+    {
+      "reason": "path_scorecard_affinity_cell_shadow",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "path_scorecard.score 0-100 + grade enum; place/promote stay false until hist",
+      "complete_state_fields": ["alive_menu[].affinity.cell"],
+      "env_flag_draft": "SHADOW only; promote_grade_to_admit=false",
+      "notes": "Already writes affinity_cell=symbol|sleeve. Keep SHADOW. Do not promote grade to admit. Instrument×sleeve cell must match alive_menu[].affinity.cell."
+    },
+    {
+      "reason": "place_when_proved_scoped_choice",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["place_context", "selected_sleeve_candidate", "conflict_set", "occupancy", "account"],
+      "env_flag_draft": "scoped APPLY bits only; GTOS_JEV_SLEEVE_SELECT_APPLY stays 0; session place=false",
+      "notes": "Owner 2026-09-21: eternal never_place REVOKED. Design Choice PLACE|STAND|DELAY after Challenge hist-prove. Writer still prints. This session does not authorize place. Default-off until prove remains OK."
+    },
+    {
+      "reason": "xau_three_fresh_2026_capability_haircut",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "phi haircut already ×0.55; Choice STAND_THREE_FRESH on conflict",
+      "complete_state_fields": ["phi_by_sleeve", "alive_menu[].affinity.haircuts", "regime_tag"],
+      "env_flag_draft": "tied to XAU scoped conflict",
+      "notes": "LIVE_FILE 2026 sumR=-53.86 avgR=-0.119. Haircut is capability not this-trade R. Edge_ATR affinity +34.43 is a different lens — do not mix. research_only dsp_three_fresh_like on scoreboard is NOT the live tag."
+    },
+    {
+      "reason": "xau_expanding_up_staircase_keep_prior",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "keep_prior true on XAU; expanding lane lock = not a conflict rival",
+      "complete_state_fields": ["alive_menu[].keep_prior", "alive_menu[].affinity.lane"],
+      "env_flag_draft": "none; EXPANDING_LANE_LOCK separate P0 — do not APPLY via sleeve_select",
+      "notes": "Injected on XAU menu. Expanding validity is a separate P0 lock (affinity_hunt not another filter). Score/Noul stamp only. No conflict vs spring/three_fresh in resolver."
+    },
+    {
+      "reason": "eurusd_asian_fade_keep",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "phi=2.0291 KEEP; session_fitness Score already in fanout",
+      "complete_state_fields": ["alive_menu[].affinity", "session_fit", "phi"],
+      "env_flag_draft": "Policy C APPLY untouched; asian_fade Chair APPLY is a different land",
+      "notes": "F5 KEEP + φ rank 1. Force-inject if missing. ON_SURFACE EURUSD+GBPUSD — GBPUSD deepen is NARROW relative to EUR KEEP; do not port."
+    },
+    {
+      "reason": "eurusd_package_b_short_keep",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "phi=0.6576 KEEP SHORT M15",
+      "complete_state_fields": ["alive_menu[].affinity", "alive_menu[].affinity.side"],
+      "env_flag_draft": "EURUSD KEEP_ALL bit (draft)",
+      "notes": "Tag sub_mid_dn_re_proxy_eurusd_short_m15_atr. sleeve_select drops this tag on non-EURUSD (package_b_short_eurusd_only). KEEP."
+    },
+    {
+      "reason": "gbpjpy_vss_long_keep",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "keep_status=KEEP for vss LONG analog; live vss file NARROW n=38",
+      "complete_state_fields": ["alive_menu[].affinity", "alive_menu[].affinity.proxy_vs_live"],
+      "env_flag_draft": "GBPJPY scoped conflict",
+      "notes": "Module_ATR ORB-continuation LONG n=453 sumR=+170.21 yf=1.0. Live vss_fxcross_london_up_low is a different detector (PR40 thin) — stamp proxy_vs_live=proxy_KEEP_live_NARROW. Do not claim live 2R/48 = ORB proxy."
+    },
+    {
+      "reason": "gbpjpy_sub_mid_short_keep",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "keep_status=KEEP SHORT; never_alias live sub_mid_dn_revert as Package B",
+      "complete_state_fields": ["alive_menu[].affinity"],
+      "env_flag_draft": "GBPJPY scoped conflict",
+      "notes": "n=2057 sumR=+210.51 yf=1.0. F5 prior uses tag sub_mid_dn_revert on GBPJPY only as tape KEEP — refused_alias still blocks that tag on other symbols. Dig FAIL separate."
+    },
+    {
+      "reason": "nzdusd_spring_x_sub_mid_conflict_unproved",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["UNPROVED_CONFLICT_LABEL", "HOLD"],
+      "complete_state_fields": ["conflict_set", "alive_menu[].affinity"],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_NZDUSD_CONFLICT_SHADOW=1 (LABEL only). NO APPLY env.",
+      "notes": "AUDNZD pack: NZDUSD spring_LONG KEEP n=2367 avg_R=0.1203 yf=1.0 listed as conflict counterpart. No day-overlap sumR_select vs keep_all receipt found. Wire as LABEL/HOLD until Module_ATR conflict hist. Do not copy XAU spring-prefer rule onto NZD."
+    },
+    {
+      "reason": "nzdusd_sub_mid_long_both_research_keep",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "keep_status=KEEP_research for LONG/BOTH; F5 prior remains SHORT only",
+      "complete_state_fields": ["alive_menu[].affinity.side", "alive_menu[].keep_prior"],
+      "env_flag_draft": "none; do not inject LONG into F5 priors without Chair",
+      "notes": "BOTH n=3645 avg_R=0.2115; LONG n=1859 avg_R=0.1583; SHORT is the F5 KEEP activate tag. Score stamp research KEEP; Choice SINGLE stays SHORT prior until hist says otherwise."
+    },
+    {
+      "reason": "xag_sub_xvol_narrow",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "keep_status=NARROW (thin_span n=5, years 2020+2025 only)",
+      "complete_state_fields": ["alive_menu[].affinity.keep_status"],
+      "env_flag_draft": "none",
+      "notes": "Still in F5_AFFINITY_KEEP_PRIORS for XAG — honest NARROW, not KEEP. Jev Score must see NARROW so it cannot outrank metal_session. Do not APPLY."
+    },
+    {
+      "reason": "xag_metals_core_narrow",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "keep_status=NARROW yf=0.57 n=16",
+      "complete_state_fields": ["alive_menu[].affinity.keep_status"],
+      "env_flag_draft": "none",
+      "notes": "Same as sub_xvol: prior-injected but yearfold NARROW. Fail years 2020/2022/2026. Menu φ 0.0307."
+    },
+    {
+      "reason": "fail_closed_jev_dark_sleeve_select",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "state_sufficient already in fanout; sleeve_select_dark → no admit filter",
+      "complete_state_fields": ["full_state_dark", "n_incomplete"],
+      "env_flag_draft": "none; fail-closed default",
+      "notes": "If evaluate skip (key absent / budget / A1_CALL=0 / HTTP error): do not apply scoped conflict pick. Keep SHADOW log. Never silent fire-rate change."
+    },
+    {
+      "reason": "jev_call_budget_raise",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — env",
+      "complete_state_fields": [],
+      "env_flag_draft": "GTOS_JEV_MAX_CALLS=500000",
+      "notes": "jev_client DEFAULT_MAX_CALLS=200. Swarm law budget 500000. Draft env only; do not hardcode 500000 as eternal. Skip receipt if exhausted."
+    },
+    {
+      "reason": "gbpjpy_spring_affinity_swarm_not_f5_prior",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "keep_status=KEEP_research φ=1.0343; not F5 prior",
+      "complete_state_fields": ["alive_menu[].affinity"],
+      "env_flag_draft": "none; do not inject into F5_AFFINITY_KEEP_PRIORS without Chair+hist",
+      "notes": "Affinity swarm ranks spring_LONG×GBPJPY above vss. Live F5 KEEP is only vss+sub_mid. Stamp research KEEP; conflict vs those two is UNPROVED. Do not silently widen GBPJPY menu."
+    },
+    {
+      "reason": "refused_alias_package_b_to_sub_mid_dn_revert",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu"],
+      "env_flag_draft": "none",
+      "notes": "Envelope identity. GBPJPY may show sub_mid_dn_revert as tape KEEP; EURUSD Package B is a different tag. Never merge."
+    },
+    {
+      "reason": "eurusd_never_alias_live_sub_mid_dn_revert",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "Live sub_mid_dn_revert = H4 FIXED LONG geom 1:3 NY. Package B = M15 SHORT Module_ATR. Different sleeve."
+    },
+    {
+      "reason": "nzdusd_never_port_audusd",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu[].affinity.instrument"],
+      "env_flag_draft": "none",
+      "notes": "ON_SURFACE=('NZDUSD',) only. AUDUSD M15 multiyear MISSING. Affinity instrument×sleeve."
+    },
+    {
+      "reason": "nzdusd_never_port_eurusd_package_b_tag",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "do_not_port_EURUSD_tag=True in KEEP packs. NZD has its own tag."
+    },
+    {
+      "reason": "gbpjpy_vss_short_kill",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu[].affinity.keep_status"],
+      "env_flag_draft": "none",
+      "notes": "KILL n=365 sumR=-31.70 yf=0.4 fail 2023/2025/2026. Same-SHORT conflict prefers sub_mid and DROPS vss SHORT — that drop is the hist rule, not a resurrection of vss SHORT KEEP."
+    },
+    {
+      "reason": "gbpjpy_static_phi_always_sub_mid_fail",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "Static φ-always-sub_mid on mixed calendar BOTH FAIL 246.59 vs keep_all 305.55. Do not wire that picker."
+    },
+    {
+      "reason": "nzdusd_vss_kill",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "n=830 avg_R=-0.242 yf=0.0 KILL. Family not globally dead (GBPJPY vss LONG KEEP)."
+    },
+    {
+      "reason": "nzdusd_london_orb_kill",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "n=768 avg_R=-0.244 yf=0.2 KILL."
+    },
+    {
+      "reason": "nzdusd_wide_sweep_kill",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "n=543 avg_R=-0.256 yf=0.0 KILL. Idea on NZD is mid-stretch fade, not generic reversion."
+    },
+    {
+      "reason": "audusd_sub_mid_insufficient_span",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "No AUDUSD M15 >~0.31y on box. H1/H4 analogues NARROW. Cannot KEEP. Honest MISSING tape."
+    },
+    {
+      "reason": "mx_nzdjpy_park_hard_off",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["hard_off_hit"],
+      "env_flag_draft": "none",
+      "notes": "mx_nzdjpy_d1_donchian_20_breakout is mx family / dropped-from-surface. Not an affinity KEEP cell. NZD pairs in this session = NZDUSD (and AUDUSD honesty). Do not invent NZDJPY sleeve_select APPLY."
+    },
+    {
+      "reason": "soft_relax_house_law",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["hard_off_hit"],
+      "env_flag_draft": "GTOS_RELAX_TO_JEV optional → BLOCKED escape, not silent off",
+      "notes": "US30/idxrev stay house-law; bleed/xa_huge stay until KEEP proof. Soft exception only via Jev+Challenge hist (session 09). Never silent code flip."
+    },
+    {
+      "reason": "global_sleeve_select_apply_stay_0",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY=0",
+      "notes": "V2 combined Module_ATR FAIL (EURUSD pick-one drag 926<2350). Do not flip global. Scoped bits only."
+    },
+    {
+      "reason": "cost_never_kill",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["cost"],
+      "env_flag_draft": "none",
+      "notes": "OWNER_LAW_COST_NEVER_KILL_GATE. Cost is measurement-only. Do not invert into size-up."
+    },
+    {
+      "reason": "never_merge_dig3r_into_module_atr",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "Affinity scoreboard and KEEP yearfolds are Module_ATR (ATR14 at signal, next_open, structure∪time_stop@32). Dig3R / Challenge $ are separate lenses."
+    },
+    {
+      "reason": "dsp_three_fresh_like_research_only",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu[].affinity.research_only"],
+      "env_flag_draft": "none",
+      "notes": "Scoreboard sleeve dsp_three_fresh_like is trap-mode annotation. Live tag is dsp_three_fresh_lower_lows. Do not place research_only."
+    },
+    {
+      "reason": "news_join_state_missing",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["news_join"],
+      "env_flag_draft": "none",
+      "notes": "Honest STATE_MISSING OK. NEVER invent NEWS_PROTOCOL / fake endpoints. Session 11 owns repair."
+    },
+    {
+      "reason": "live_armed_set_never_mutate",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "Research overlay only. KEEP activate remint is Chair/machineId, not this session."
+    },
+    {
+      "reason": "xag_conflict_hist_skipped_no_apply",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["conflict_set"],
+      "env_flag_draft": "do not create GTOS_JEV_SLEEVE_SELECT_APPLY_XAG_CONFLICT",
+      "notes": "SKIPPED_NOT_FAIL because n_KEEP=1. Not a prove FAIL. Revisit only if a second sleeve graduates KEEP on Module_ATR."
+    },
+    {
+      "reason": "xag_metal_session_live_hardoff_vs_atr_keep",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — exception path is session 09 Choice KEEP_OFF|SCOPED_EXCEPTION",
+      "complete_state_fields": ["hard_off_hit"],
+      "env_flag_draft": "none; do not silent-lift $KILL",
+      "notes": "Live F5 history: metal_session_reversion on $KILL (undefined trailing_runner). Module_ATR KEEP is research file-exit STOP_K=0.8 ATR + trail. Default hard wall stays. Soften only via Jev+Challenge hist, never silent code flip."
+    },
+    {
+      "reason": "family_starve_prefix_sub_mid",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "family.py STARVE_PREFIXES=('sub_mid',) is unnamed-sub_mid starve. Named KEEP tags (Package B, NZD proxy, GBPJPY tape KEEP) are affinity exceptions via F5 priors. Do not delete STARVE globally."
+    },
+    {
+      "reason": "expanding_lane_lock_separate_p0",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu[].affinity.lane"],
+      "env_flag_draft": "none",
+      "notes": "Do NOT merge expanding validity / Close Loop expanding voter with affinity scoreboard (scoreboard header). Expanding stays P0 lane."
+    },
+    {
+      "reason": "xau_edge_atr_not_for_phi",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu[].affinity.lens"],
+      "env_flag_draft": "none",
+      "notes": "PHI pack lens_law: XAU spring/three_fresh φ uses LIVE_FILE Module_ATR 0.75/6.0 only — Edge_ATR affinity NOT used for φ."
+    },
+    {
+      "reason": "gbpjpy_live_vss_vs_proxy_narrow",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu[].affinity.proxy_vs_live"],
+      "env_flag_draft": "none",
+      "notes": "Do not promote live vss off the ORB-continuation proxy KEEP. NARROW live file."
+    },
+    {
+      "reason": "chair_hard_off_bleed_orb_idxrev_xa_huge_mx_us30",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["hard_off_hit"],
+      "env_flag_draft": "none",
+      "notes": "Integer envelope. BTC/orb_crypto banned_for_aplus. Teddy park. Session 09 owns exception Choice."
+    },
+    {
+      "reason": "cycle_fluid_never_place_label_path",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": "none this pass",
+      "notes": "cycle.py REQUIRED_LOG_CONSTS still never_place=True for fluid LABEL drafts. Sleeve-select emit may set place=true when scoped APPLY proved — that is Chair land, not this session. Do not edit live cycle to place from here."
+    },
+    {
+      "reason": "teddy_btc_park_out_of_scope",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "Affinity scoreboard ranks BTC high; banned_for_aplus + orb_crypto lock. Expand-everywhere: Teddy park. Not GBPJPY/XAG/NZD/EURUSD/XAU APPLY."
+    },
+    {
+      "reason": "package_b_short_eurusd_only",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "none",
+      "notes": "sleeve_select drops sub_mid_dn_re_proxy_eurusd_short_m15_atr when symbol!=EURUSD. Keep."
+    }
+  ]
+}

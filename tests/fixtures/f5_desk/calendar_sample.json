@@ -1,0 +1,72 @@
+{
+  "week_of": "2026-08-24",
+  "updated_at": "2026-08-24T00:00:00Z",
+  "kind": "news_calendar",
+  "coverage_utc": "2014-01-01..2026-12-31",
+  "source": "test fixture (real loader_contract shape, synthetic rows)",
+  "notes": "fixture for tests/f5_desk — same row shape as data/news_calendar.json",
+  "loader_contract": "events[] with scheduled_utc/impact/currency/event_type/role",
+  "counts": {"total": 4},
+  "events": [
+    {
+      "date": "2026-08-25",
+      "time_utc": "02:00",
+      "event": "US FOMC Member Speech (fixture)",
+      "impact": "HIGH",
+      "currency": "USD",
+      "event_type": "fed_speech",
+      "role": "print",
+      "family": "economic",
+      "scheduled_utc": "2026-08-25T02:00:00Z",
+      "released_utc": null,
+      "source_url": "https://example.invalid/fixture",
+      "derived": false,
+      "note": "inside the +/-12h window of 2026-08-24T23:45Z; USD-relevant"
+    },
+    {
+      "date": "2026-08-25",
+      "time_utc": "14:00",
+      "event": "ECB Rate Decision (fixture)",
+      "impact": "HIGH",
+      "currency": "EUR",
+      "event_type": "rate_decision",
+      "role": "print",
+      "family": "economic",
+      "scheduled_utc": "2026-08-25T14:00:00Z",
+      "released_utc": null,
+      "source_url": "https://example.invalid/fixture",
+      "derived": false,
+      "note": "OUTSIDE the +/-12h window of 2026-08-24T23:45Z (+14.25h)"
+    },
+    {
+      "date": "2026-08-24",
+      "time_utc": "16:00",
+      "event": "WM/Refinitiv 16:00 London Fix",
+      "impact": "LOW",
+      "currency": "ALL",
+      "event_type": "wmr_fix",
+      "role": "suppressed",
+      "family": "mechanical",
+      "scheduled_utc": "2026-08-24T16:00:00Z",
+      "released_utc": null,
+      "source_url": "https://example.invalid/fixture",
+      "derived": false,
+      "note": "inside window (-7.75h); currency ALL touches every symbol"
+    },
+    {
+      "date": "2026-08-25",
+      "time_utc": "01:30",
+      "event": "JPY Household Spending (fixture)",
+      "impact": "MEDIUM",
+      "currency": "JPY",
+      "event_type": "spending",
+      "role": "print",
+      "family": "economic",
+      "scheduled_utc": "2026-08-25T01:30:00Z",
+      "released_utc": null,
+      "source_url": "https://example.invalid/fixture",
+      "derived": false,
+      "note": "inside window; JPY-relevant only — no JPY symbol in the fixture slate"
+    }
+  ]
+}

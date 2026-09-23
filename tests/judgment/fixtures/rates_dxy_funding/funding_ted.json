@@ -1,0 +1,16 @@
+{
+  "id": "funding_ted_stress",
+  "as_of_utc": "2026-09-17T11:00:00Z",
+  "expect": {
+    "funding_stress": true,
+    "challenge_true": false
+  },
+  "funding_rows": [
+    {
+      "series": "TED",
+      "value": 0.72,
+      "threshold": 0.50,
+      "source_path": "fixture:funding_ted.json"
+    }
+  ]
+}
