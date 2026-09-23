@@ -1,0 +1,120 @@
+{
+  "schema": "gtos.judgment.complete_state.place_occupancy.v0",
+  "as_of_ict": "2026-09-21T06:04:27+07:00",
+  "session": "01_book_owner_lifecycle_place",
+  "purpose": "Typed COMPLETE_STATE for book_owner occupancy/place/lifecycle Choice PLACE|STAND|DELAY|REMINT|FLATTEN_ADD. Never invent NEWS_PROTOCOL. news_join may be STATE_MISSING.",
+  "never_broker_place_in_this_session": true,
+  "owner_place_path": "OPEN after Challenge hist-prove; default-off until prove; eternal never_place WRONG",
+  "fields": {
+    "symbol": {"type": "str", "req": true},
+    "broker_symbol": {"type": "str", "req": true},
+    "sleeve": {"type": "str", "req": true},
+    "side": {"type": "str", "req": true},
+    "session_day": {"type": "date", "req": true},
+    "decision_bar_iso": {"type": "str", "req": true},
+    "timeframe": {"type": "str", "req": true},
+    "session_bucket": {"type": "enum[asia,london,ny,overlap,off]", "req": true},
+    "candidate_id": {"type": "str|null", "req": false},
+    "identity": {
+      "type": "object",
+      "req": true,
+      "keys": ["login", "ns", "magic", "leave_orig_ticket"]
+    },
+    "alive_sleeves": {"type": "list[str]", "req": true},
+    "selected_sleeve_candidate": {"type": "str|null", "req": false},
+    "affinity": {"type": "object", "req": true, "keys": ["instrument", "sleeve", "held"]},
+    "regime_tag": {"type": "str|PENDING", "req": true, "honesty": "PENDING/STATE_MISSING if unassembled; do not invent"},
+    "conf_band": {"type": "str|PENDING", "req": true},
+    "session_fit": {"type": "str|PENDING", "req": true},
+    "phi": {"type": "float|null", "req": true},
+    "cost": {
+      "type": "object",
+      "req": true,
+      "keys": [
+        "spread_r",
+        "spread_price",
+        "stop_dist",
+        "max_spread_r",
+        "max_spread_r_by_sleeve",
+        "cost_screen_would_refuse",
+        "cost_skip_reason",
+        "spread_r_provenance"
+      ]
+    },
+    "occupancy": {
+      "type": "object",
+      "req": true,
+      "keys": [
+        "sleeve_holds_symbol",
+        "sleeve_holds_symbol_broker",
+        "already_placed_this_bar",
+        "already_placed_today",
+        "cluster_placed_today_other_bar",
+        "cluster",
+        "same_cycle_placed_broker_symbol",
+        "same_cycle_transient_attempt",
+        "same_broker_symbol_open",
+        "existing_broker_symbols",
+        "existing_comments",
+        "existing_position_count",
+        "position_source_unavailable",
+        "isolated_reentry_legal",
+        "minutes_since_flat",
+        "corr_hold_named",
+        "same_sleeve_orig_stops_utc_day",
+        "two_stop_exhausted",
+        "two_stop_source",
+        "n_open_book",
+        "occupancy_source"
+      ]
+    },
+    "freshness": {
+      "type": "object",
+      "req": true,
+      "keys": [
+        "bar_iso",
+        "tf_minutes",
+        "late_frac",
+        "minutes_past_close",
+        "stale_late_entry_after_restart",
+        "tick_age_s",
+        "stale_tick_market_closed"
+      ]
+    },
+    "place_context": {
+      "type": "object",
+      "req": true,
+      "keys": [
+        "writer_ready",
+        "runtime_effect_now",
+        "live_broker_authority",
+        "place_arg",
+        "breach_block",
+        "kill_or_halt",
+        "last_refusal_class",
+        "static_reason_now",
+        "ticket_draft_fp"
+      ]
+    },
+    "account": {
+      "type": "object",
+      "req": true,
+      "keys": ["login", "ns", "equity_r", "dd_wall_r", "soft_daily_stop", "realized_today_pct", "open_risk_pct"]
+    },
+    "remint": {
+      "type": "object",
+      "req": true,
+      "keys": ["orig_stops_today", "last_exit_class", "minutes_since_exit", "two_stop_armed", "isolated_reentry_legal"]
+    },
+    "hard_off_hit": {"type": "str|null", "req": true},
+    "news_join": {"type": "object|STATE_MISSING", "req": false, "honesty": "NEVER invent NEWS_PROTOCOL"},
+    "full_state_dark": {"type": "bool", "req": true},
+    "n_incomplete": {"type": "int", "req": true},
+    "module_atr": {
+      "type": "object",
+      "req": true,
+      "keys": ["lens", "R_available", "never_merge_dig3r_or_edge_atr"],
+      "honesty": "Use named Module_ATR blotter R only. Null if missing. Do not invent ATR/regime."
+    }
+  }
+}

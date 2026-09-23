@@ -40,7 +40,6 @@ import time
 import urllib.error
 from pathlib import Path
 from typing import Any, Callable, Mapping
-from urllib.parse import urlparse
 
 from .jev_questions import systemone_payload
 
@@ -800,71 +799,12 @@ class _Gate:
 _FLIGHT: dict[str, _Gate] = {}
 
 
-class _UrllibConn:
-    """One HTTP/1.1 connection. A failed request closes it for the next ask."""
-
-    def __init__(self) -> None:
-        self._lock = threading.Lock()
-        self._conn: http.client.HTTPSConnection | None = None
-
-    def close(self) -> None:
-        with self._lock:
-            self._close_raw()
-
-    def _close_raw(self) -> None:
-        conn = self._conn
-        self._conn = None
-        if conn is None:
-            return
-        try:
-            conn.close()
-        except Exception:
-            return
-
-    def post(self, key: str, payload: Mapping[str, Any], timeout: float | None) -> tuple[Any, int | None, Any]:
-        parsed = urlparse(API_URL)
-        path = parsed.path or "/"
-        if parsed.query:
-            path = path + "?" + parsed.query
-        host = parsed.hostname or ""
-        data = json.dumps(payload).encode("utf-8")
-        headers = {
-            "Authorization": "Bearer " + key,
-            "Content-Type": "application/json",
-            "User-Agent": "gtos-judgment/0.1",
-        }
-        with self._lock:
-            if self._conn is None:
-                self._conn = http.client.HTTPSConnection(host, timeout=timeout)
-            sock = getattr(self._conn, "sock", None)
-            if sock is not None:
-                sock.settimeout(timeout)
-            try:
-                self._conn.request("POST", path, body=data, headers=headers)
-                resp = self._conn.getresponse()
-                raw = resp.read()
-                status = getattr(resp, "status", None)
-                hdrs = getattr(resp, "headers", None)
-            except Exception:
-                self._close_raw()
-                raise
-        text = raw.decode("utf-8") if isinstance(raw, (bytes, bytearray)) else str(raw)
-        return json.loads(text), status, hdrs
-
-
 def _open_client() -> Any:
-    """One client. HTTP/2 when that package is present, else one urllib connection."""
+    """One shared HTTP/2 client. Every ask is a stream. No pool size and no timeout."""
 
-    try:
-        import httpx
-    except Exception:
-        return _UrllibConn()
-    try:
-        return httpx.Client(http2=True, timeout=None)
-    except ImportError:
-        return httpx.Client(http2=False, timeout=None)
-    except Exception:
-        return _UrllibConn()
+    import httpx
+
+    return httpx.Client(http2=True, timeout=None)
 
 
 def _http() -> Any:
@@ -878,15 +818,17 @@ def _http() -> Any:
 
 
 def _retire(client: Any) -> None:
-    """Drop a dead client. The ask that noticed it is the only one settled here."""
+    """Forget a dead client. This ask is the only one settled here.
+
+    The client stays open. Other streams already on it finish or fail as
+    their own asks. Closing it here would settle those asks too.
+    """
 
     global _HTTP
     with _HTTP_LOCK:
         if _HTTP is not client:
             return
         _HTTP = None
-    if isinstance(client, _UrllibConn):
-        client.close()
 
 
 def _dead_connection(exc: BaseException) -> bool:
@@ -911,8 +853,6 @@ def _dead_connection(exc: BaseException) -> bool:
 
 
 def _send(client: Any, key: str, payload: Mapping[str, Any], timeout: float | None) -> tuple[Any, int | None, Any]:
-    if isinstance(client, _UrllibConn):
-        return client.post(key, payload, timeout)
     response = client.post(
         API_URL,
         json=dict(payload),

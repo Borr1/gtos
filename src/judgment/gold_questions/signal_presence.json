@@ -1,0 +1,36 @@
+{
+  "id": "signal_presence",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "never",
+  "include_depth": {
+    "identity": "full",
+    "timeframes.m15": "full",
+    "geometry": "full"
+  },
+  "instructions": "Does this bar deserve a candidate as a range, not generator is None? Integer still emits/doesn't; Score logs the cliff. G-FULL unsigned every-bar long p_target 0.216 is the Score=0/1 floor, not metals_core. Descriptive EV (time_stop=0R) \u2248 \u22120.08 R/bar on this unsigned walker.",
+  "criteria": [
+    "Bar does not deserve a candidate versus named tape",
+    "Ordinary unsigned floor",
+    "Named tape supports emitting a candidate"
+  ],
+  "measured": {
+    "G-FULL_long_p_target": 0.21618521665250637,
+    "n": 47080
+  }
+}

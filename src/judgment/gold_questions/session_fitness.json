@@ -1,0 +1,81 @@
+{
+  "id": "session_fitness",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "size"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "sessions.source==unassembled",
+  "compose_weight": 0.35,
+  "include_depth": {
+    "sessions": "full",
+    "clock": "full"
+  },
+  "instructions": "Is this the sleeve's clean hour, or merely not the dead clock? Legend 0 dead/Friday-cutoff/wrong hour; 1 ordinary; 2 sleeve clean hour. G-FULL unsigned 2R/8 bars long p_target: london_ny 0.289 n=6179 vs ny 0.144 n=9329. Overlap hours print; NY does not. F5 dead window 21\u201300Z / Friday 16Z stays a clock fact \u2014 score fitness, do not invent a second clock. WAVE6 already said static session buckets add nothing once vol is gated on that H4 sleeve. Pin w_session=0.35.",
+  "criteria": [
+    "Dead window, Friday cutoff, or wrong hour for this sleeve",
+    "Ordinary session",
+    "Sleeve's clean hour"
+  ],
+  "measured": {
+    "window": "G-FULL",
+    "session": {
+      "london_ny": {
+        "n": 6179,
+        "long_p_target": 0.28855801909694123
+      },
+      "dead_21_00z": {
+        "n": 3362,
+        "long_p_target": 0.2781082688875669
+      },
+      "asia_london": {
+        "n": 2052,
+        "long_p_target": 0.26851851851851855
+      },
+      "london": {
+        "n": 10272,
+        "long_p_target": 0.236857476635514
+      },
+      "asia": {
+        "n": 8902,
+        "long_p_target": 0.22961132329813524
+      },
+      "friday_cutoff": {
+        "n": 2138,
+        "long_p_target": 0.16791393826005613
+      },
+      "late_ny": {
+        "n": 4134,
+        "long_p_target": 0.14755684567005323
+      },
+      "ny": {
+        "n": 9329,
+        "long_p_target": 0.1438525029477972
+      }
+    }
+  },
+  "g2m_observed_not_retuned": {
+    "london_ny": {
+      "n": 516,
+      "long_p_target": 0.2364341085271318
+    },
+    "ny": {
+      "n": 768,
+      "long_p_target": 0.11458333333333333
+    },
+    "delta": 0.12185077519379846
+  }
+}

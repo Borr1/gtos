@@ -1,0 +1,42 @@
+{
+  "id": "cost_hurtful",
+  "type": "noul",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission",
+    "size"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "cost.source==unassembled",
+  "include_depth": {
+    "cost": "short",
+    "geometry": "full"
+  },
+  "instructions": "Is cost the whole trade vs geometry.plan_r? Downloads CSVs have no spread column \u2014 unassembled on G-FULL M15 (include-depth short). Challenge 46-close offline score (not this M15): organism integer spread_r>0.10 vetoed 8 fills, \u2212$1,355.54, 0 winners lost. Same-sample MDE 0.50 R/trade. Size worker may shrink instead of veto when Noul is mid. This is not a new refuse wall.",
+  "criteria": {
+    "true": "Spread/cost eats a material fraction of the stop versus plan_r",
+    "false": "Cost is ordinary versus the named stop"
+  },
+  "measured": {
+    "G-FULL_spread_column": "absent",
+    "challenge_46": {
+      "n_closes": 46,
+      "spread_r_gt_0_10_vetoed": 8,
+      "pnl_usd": -1355.54,
+      "winners_lost": 0,
+      "same_sample_mde_r_per_trade": 0.5
+    }
+  }
+}

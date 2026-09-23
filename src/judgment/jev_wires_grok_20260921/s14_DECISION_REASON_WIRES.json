@@ -1,0 +1,516 @@
+{
+  "schema": "gtos.jev.decision_reason_wires.v0",
+  "session": "14_place_fluid_hist_prove_apply",
+  "as_of_ict": "2026-09-21T06:05:12+07:00",
+  "target_wire_family": "Choice PLACE|STAND|DELAY; hist→APPLY plan",
+  "owner_override_20260921": "DELETE eternal never_place; default-off until prove; place path OPEN after Challenge hist-prove",
+  "never_broker_place_this_session": true,
+  "do_not_flip_global_sleeve_select_apply": true,
+  "counts": {
+    "n_reasons": 50,
+    "n_jev_wires": 20,
+    "n_envelope_keep": 30
+  },
+  "wires": [
+    {
+      "reason": "FLUID-PLC-001_veto_corr",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "named correlation argues HOLD draft", "false": "no named correlation HOLD"},
+      "complete_state_fields": ["symbol", "occupancy", "conflict_set", "alive_sleeves", "selected_sleeve_candidate", "place_context"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1; compose into place_now; never a new ENV-OCC refuse",
+      "notes": "Inventory APPLIED_NAMED draft_only VETO label. Local: occupancy.corr_hold_named or chair corr. Shadow.jsonl n_decidable=97 n_moved=97. Stay Noul voter into PLACE|STAND|DELAY. Occupancy KEEP-one stays ENV-OCC integer."
+    },
+    {
+      "reason": "FLUID-PLC-002_veto_event",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "named HIGH in code window", "false": "no named HIGH or spine empty"},
+      "complete_state_fields": ["news_join", "session_bucket", "decision_bar_iso", "place_context"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1",
+      "notes": "draft_only VETO. Empty spine → undecidable, not 'no HIGH'. NEVER invent NEWS_PROTOCOL. Compose: true leans STAND/DELAY; false does not auto-PLACE."
+    },
+    {
+      "reason": "FLUID-PLC-003_veto_cost",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "cost-dominated vs named stop", "false": "cost ordinary"},
+      "complete_state_fields": ["cost", "phi", "session_bucket", "occupancy"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1; cannot_refuse stays",
+      "notes": "cannot_refuse=true. Must not become a new cost_skip. Shadow n_decidable=47 (cost-complete only). Voter toward DELAY/STAND when true; writer pretrade_spread_r_refuse remains integer until PRETRADE Score session proves otherwise."
+    },
+    {
+      "reason": "FLUID-PLC-004_veto_occupancy_label",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "named occupancy crowded", "false": "clear or unknown"},
+      "complete_state_fields": ["occupancy", "remint", "alive_sleeves"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1; not_occupancy_integer=true",
+      "notes": "Label only. Do not HOLD a legal 15m reprint as remint. ENV-OCC keep-one stays integer. Wave J called this constant_on_tape; current shadow.jsonl n_decidable=97 n_moved=97 (true+false present)."
+    },
+    {
+      "reason": "FLUID-PLC-005_cost_vs_tape",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": ["spread dominates named vol", "ordinary", "cheap versus named vol"],
+      "complete_state_fields": ["cost", "session_fit", "regime_tag", "phi"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1",
+      "notes": "Score 0/1/2 vs ATR, not just stop_dist. n_decidable=47. Cheap does not authorize PLACE; expensive leans DELAY. Chair field sess.ldn_ny_overlap_vol is an input."
+    },
+    {
+      "reason": "FLUID-PLC-006_stale_standing",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "standing stale vs as-of", "false": "current or unknown"},
+      "complete_state_fields": ["decision_bar_iso", "place_context", "session_day"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1",
+      "notes": "n_decidable=40 (slate rows). true → DELAY (do not fire stale slate). Writer stale_late_entry_after_restart stays envelope."
+    },
+    {
+      "reason": "FLUID-PLC-007_last_refusal_class",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["none", "cost", "other"],
+      "complete_state_fields": ["place_context.last_refusal_class", "cost", "occupancy"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1",
+      "notes": "Do not invent a refusal. n_decidable=97 n_moved=22. Wave J missing_named_state on earlier pack. cost last-refusal leans DELAY not new skip."
+    },
+    {
+      "reason": "FLUID-PLC-001..007_label",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["symbol", "broker_symbol", "session_day", "decision_bar_iso", "session_bucket", "alive_sleeves", "alive_menu", "selected_sleeve_candidate", "conflict_set", "regime_tag", "conf_band", "session_fit", "phi", "phi_by_sleeve", "cost", "occupancy", "account", "hard_off_hit", "remint", "news_join", "full_state_dark", "n_incomplete", "place_context"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1; APPLY scoped after hist PASS — never GTOS_JEV_FLUID_GATES_APPLY for place",
+      "notes": "Gap-inventory #6 PLACE_FLUID_promote_FLUID-PLC. APPLIED_NAMED labels ≠ complete-state place judge. Promote the seven voters into one place_now Choice."
+    },
+    {
+      "reason": "place_now_Choice",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["symbol", "broker_symbol", "session_day", "decision_bar_iso", "session_bucket", "alive_sleeves", "alive_menu", "selected_sleeve_candidate", "conflict_set", "regime_tag", "conf_band", "session_fit", "phi", "phi_by_sleeve", "cost", "occupancy", "account", "hard_off_hit", "remint", "news_join", "full_state_dark", "n_incomplete", "place_context", "plc_voters"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1; GTOS_JEV_PLACE_FLUID_APPLY=0 default; GTOS_JEV_PLACE_FLUID_APPLY_XAU / _GBPJPY after PASS",
+      "notes": "NEW question id place_now. Missing from symbol_fanout_questions today. Fail-closed STAND if Jev dark / full_state_dark / envelope hit. PLACE never bypasses ENV-*. DELAY = wait next bar, not skip-forever. Optional later labels REMINT|FLATTEN_CANDIDATE stay out of this wire (sessions 08/16)."
+    },
+    {
+      "reason": "UB-PLC-017_cost_hurtful",
+      "class_now": "JEV_JUDGED",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "Score",
+      "choice_labels_or_score": "size_tilt [0.70, 1.00] cannot_refuse",
+      "complete_state_fields": ["cost"],
+      "env_flag_draft": "GTOS_JEV_APPLY_LIVE=1 (size only); not a place APPLY bit",
+      "notes": "place_fluid family but effect=size_tilt alias F5-JEV-004 at book_owner._spread_cost_screen. Keep as size. Must not become place refuse. Host site :9531."
+    },
+    {
+      "reason": "eternal_never_place_cage",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["place_context", "account", "hard_off_hit"],
+      "env_flag_draft": "replace const never_place:true with never_place: not place_authorized; default-off until prove",
+      "notes": "Owner 2026-09-21. Files: JEV_GATE_INVENTORY.json top-level, process_lock.stamp_lock, cycle.REQUIRED_LOG_CONSTS, fluid_local.attach_fluid stamp, host_sites.vps_land_plan, compose docstring, research_armed.never_order_send, p0_hist_prove, jev_fluid_gate_v1 schema const, WAVE_* receipts. Default-off OK; eternal const WRONG."
+    },
+    {
+      "reason": "apply_authorized_veto_place_path",
+      "class_now": "ENVELOPE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["place_context.authority", "account.login"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_APPLY_* scoped; stake=place_fluid_choice legal only with prove receipt",
+      "notes": "flags.apply_authorized currently vetoes any stake matching place/order_send. After hist PASS, scoped stake 'place_fluid_choice' may APPLY as writer-authorize, still never mint tokens / write chair inbox / move SL from Jev."
+    },
+    {
+      "reason": "assert_answers_have_no_place_path",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": "when PLACE APPLY off: keep veto; when scoped APPLY on: allow selected choice PLACE",
+      "notes": "veto.assert_answers_have_no_place_path raises JevPlacePathVeto if payload.choice is place. Blocks the owner-open path. Draft: only fire when place APPLY flags off OR selected action is remint/flatten/order_send without prove."
+    },
+    {
+      "reason": "cycle_REQUIRED_LOG_CONSTS_never_place",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "none",
+      "choice_labels_or_score": "never_place becomes not place_authorized",
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": "sidecar schema jev_place_fluid_v0 alongside jev_fluid_gate_v1",
+      "notes": "cycle.py REQUIRED_LOG_CONSTS never_place:True makes verify_side_effect fail if a PLACE sidecar is honest. New schema for place APPLY; keep LABEL sidecar const for the old cycle."
+    },
+    {
+      "reason": "JEV_GATE_INVENTORY_never_place_true",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "none",
+      "choice_labels_or_score": "never_place_default_until_prove",
+      "complete_state_fields": [],
+      "env_flag_draft": "inventory key never_place_default: true; place_when_proved: true",
+      "notes": "Inventory as_of 2026-09-17 still never_place/never_remint/never_flatten true. Draft patch under OUT only."
+    },
+    {
+      "reason": "attach_fluid_never_place_stamp",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": "attach_fluid stamp never_place = not place_authorized",
+      "notes": "fluid_local.attach_fluid always stamps never_place True even when stamping PLC labels. After compose of place_now, stamp place_choice + place_authorized."
+    },
+    {
+      "reason": "process_lock_stamp_lock_never_place",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "none",
+      "choice_labels_or_score": "default_until_prove",
+      "complete_state_fields": [],
+      "env_flag_draft": "stamp_lock never_place_default True; owner_override_20260921_place_when_proved True",
+      "notes": "PREAUTH_EFFECTS stay {size_tilt,label}. place remains FORBIDDEN_AUTO_EFFECT — place APPLY is Chair+hist, not Wave-E preauth. That auto-apply forbid is ENVELOPE_KEEP (separate row)."
+    },
+    {
+      "reason": "host_sites_vps_land_plan_never_place",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "none",
+      "choice_labels_or_score": "place_when_proved",
+      "complete_state_fields": [],
+      "env_flag_draft": "vps_land_plan never_place_default; hook AFTER envelope+admit BEFORE order_send",
+      "notes": "host_sites.vps_land_plan never_place True. Draft land order adds place_now observe on every candidate; APPLY only scoped after receipt."
+    },
+    {
+      "reason": "FORBIDDEN_AUTO_EFFECTS_place",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [],
+      "env_flag_draft": "keep FORBIDDEN_AUTO_EFFECTS includes place",
+      "notes": "Place must not auto-APPLY from PROVED_SHADOW label bars. Needs its own hist receipt + scoped env + Chair ENFORCE. Keep this wall."
+    },
+    {
+      "reason": "ENV-OCC_occupancy_keep_one",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy"],
+      "env_flag_draft": "none",
+      "notes": "Keep-one writer integer. PLC-004 is label only. Remint/flatten-add is session 16, not this wire."
+    },
+    {
+      "reason": "ENV-TWO-STOP",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["remint.two_stop_armed"],
+      "env_flag_draft": "none",
+      "notes": "2-stop COUNT closed[] only. Session 08 remint Choice is separate. Place Choice cannot mint a third orig_stop."
+    },
+    {
+      "reason": "ENV-KILL",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["hard_off_hit", "account"],
+      "env_flag_draft": "none",
+      "notes": "$KILL / house_hard_off integer. Soft exception only via Jev+hist (session 09), never silent."
+    },
+    {
+      "reason": "ENV-DD",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account.dd_wall_r", "account.soft_daily_stop"],
+      "env_flag_draft": "none",
+      "notes": "Hard DD / governor floor. Place Choice cannot punch the wall."
+    },
+    {
+      "reason": "ENV-DEAD",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["session_bucket"],
+      "env_flag_draft": "none",
+      "notes": "Dead window 21:00Z / Friday 16Z writer clock stays integer. PLC session scores are labels."
+    },
+    {
+      "reason": "ENV-H8",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account"],
+      "env_flag_draft": "none",
+      "notes": "H8 flatten first then shut gate. Not a place Choice."
+    },
+    {
+      "reason": "ENV-TOKEN",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account"],
+      "env_flag_draft": "none",
+      "notes": "Activation token digest integer."
+    },
+    {
+      "reason": "ENV-US30",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["hard_off_hit", "symbol"],
+      "env_flag_draft": "none",
+      "notes": "us30_off integer. Chair field us30_rth_vs_eth is LABEL only."
+    },
+    {
+      "reason": "leave_orig_293332188",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "leave orig — do not manage from APPLY", "false": "not leave-orig"},
+      "complete_state_fields": ["place_context.ticket_draft_fp"],
+      "env_flag_draft": "none",
+      "notes": "Ticket closed 2026-09-17T11:10:58Z. Keep the lock. Place Choice never remints it."
+    },
+    {
+      "reason": "writer_already_placed_this_bar",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.same_cycle_placed", "decision_bar_iso"],
+      "env_flag_draft": "none",
+      "notes": "Same-bar double print. Integer. Place Choice STAND if already printed this bar."
+    },
+    {
+      "reason": "writer_already_placed_today",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy", "remint"],
+      "env_flag_draft": "none",
+      "notes": "Keep-one / once-per-day. Smart remint is session 16 OCCUPANCY_REMINT. This place wire does not punch it."
+    },
+    {
+      "reason": "writer_sleeve_already_holds_symbol",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.sleeve_holds_symbol"],
+      "env_flag_draft": "none",
+      "notes": "Envelope keep-one. Place Choice cannot add a second book row for the same sleeve×symbol."
+    },
+    {
+      "reason": "writer_sleeve_already_holds_symbol_broker",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.broker_open_symbols"],
+      "env_flag_draft": "none",
+      "notes": "Broker-open twin of keep-one."
+    },
+    {
+      "reason": "writer_weekend_entry_embargo",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["session_bucket", "session_day"],
+      "env_flag_draft": "none",
+      "notes": "Weekend entry embargo integer."
+    },
+    {
+      "reason": "writer_kill_switch_or_halt_forced_observe_only",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account", "place_context.authority"],
+      "env_flag_draft": "none",
+      "notes": "Observe-only. Place Choice cannot override halt."
+    },
+    {
+      "reason": "writer_breach_flatten_block",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account.dd_wall_r"],
+      "env_flag_draft": "none",
+      "notes": "BLOCK_NEW on breach flatten. Envelope."
+    },
+    {
+      "reason": "writer_account_state_unavailable",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account", "full_state_dark"],
+      "env_flag_draft": "none",
+      "notes": "SKIP. Fail-closed STAND. Honest STATE_MISSING."
+    },
+    {
+      "reason": "writer_live_broker_authority_false",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context.authority"],
+      "env_flag_draft": "none",
+      "notes": "Observe-only until writer authority true. Place Choice cannot mint authority."
+    },
+    {
+      "reason": "writer_no_tick_transient",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context.writer_ready"],
+      "env_flag_draft": "none",
+      "notes": "SKIP_RETRY. DELAY if Choice runs; writer retry stays code."
+    },
+    {
+      "reason": "writer_stale_late_entry_after_restart",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context", "decision_bar_iso"],
+      "env_flag_draft": "none",
+      "notes": "Integer skip. PLC-006 labels the same idea; does not replace the skip."
+    },
+    {
+      "reason": "news_join_STATE_MISSING",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "spine_empty_honesty; event questions abstain",
+      "complete_state_fields": ["news_join"],
+      "env_flag_draft": "none — honest missing OK",
+      "notes": "NEVER invent NEWS_PROTOCOL. PLC-002/event Noul near 0.5 / undecidable. place_now should DELAY not PLACE when news_join is STATE_MISSING and the sleeve is event-sensitive."
+    },
+    {
+      "reason": "Module_ATR_not_spliced_live_armed_set",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["alive_sleeves", "selected_sleeve_candidate"],
+      "env_flag_draft": "research_armed overlay only",
+      "notes": "research_armed.py tags stay overlay. Do not splice Module_ATR winners into live_armed_set. Affinity instrument×sleeve. Place APPLY uses writer-armed KEEP families (spring/vss) first."
+    },
+    {
+      "reason": "GTOS_JEV_SLEEVE_SELECT_APPLY_global_stay_0",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["conflict_set", "alive_menu"],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY=0",
+      "notes": "Do not flip global this pass. Scoped XAU/GBPJPY select bits are other sessions. Place wire is independent scoped flags."
+    },
+    {
+      "reason": "GTOS_JEV_FLUID_GATES_APPLY_not_place_authority",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [],
+      "env_flag_draft": "leave GTOS_JEV_FLUID_GATES_APPLY as LABEL-draft only",
+      "notes": "Queue forbids flipping this flag for place_fluid. New GTOS_JEV_PLACE_FLUID_APPLY_* family instead."
+    },
+    {
+      "reason": "PLC-003_cannot_refuse",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "cannot_refuse=true",
+      "complete_state_fields": ["cost"],
+      "env_flag_draft": "none",
+      "notes": "Cost never a new skip. Place Choice may DELAY; writer must not grow a cost_skip from this Noul."
+    },
+    {
+      "reason": "writer_pretrade_spread_r_refuse",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": ["COST_OK", "TRIM", "STAND"],
+      "complete_state_fields": ["cost", "phi", "session_fit", "occupancy"],
+      "env_flag_draft": "hist-first with place_now; PRETRADE Score is ranked wire #4 (other session) — place wire consumes it as voter",
+      "notes": "Coupling: static spread refuse kills without φ/session/occupancy. Place hist must log which spread-refuses were +EV on Challenge/Module_ATR. This session does not APPLY that Score; it records the counterfactual beside place_now."
+    },
+    {
+      "reason": "Module_ATR_yearfold_place_false_as_research_not_law",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["selected_sleeve_candidate", "phi", "conflict_set"],
+      "env_flag_draft": "hist runner uses Module_ATR R only; promote=false on yearfold is research, not eternal",
+      "notes": "THREE_FRESH HOLD sumR_Module_ATR +315.14 n=4345; SPRING HOLD +261.00 n=2217. Receipts say place=false / promote=NO because geometry_proxy ≠ live TradeIntent. That is honesty, not a never_place law. Place hist-prove must keep R universe separate and not claim broker fills."
+    },
+    {
+      "reason": "fluid_inventory_48_APPLIED_NAMED_neq_place_judge",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": ["full_state_dark", "n_incomplete"],
+      "env_flag_draft": "GTOS_JEV_PLACE_FLUID_SHADOW=1",
+      "notes": "Gap reason fluid_inventory_48. 44 APPLIED_NAMED mostly label. Do not treat inventory status as place APPLY. New place_now + hist receipt is the judge."
+    },
+    {
+      "reason": "same_broker_symbol_lifecycle_guard",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy", "remint"],
+      "env_flag_draft": "none",
+      "notes": "Lifecycle guard / transient attempt this cycle. Envelope. Remint Choice later."
+    },
+    {
+      "reason": "profile_missing_instrument_config",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["symbol", "broker_symbol", "full_state_dark"],
+      "env_flag_draft": "none",
+      "notes": "SKIP. Fail-closed. Place Choice not asked."
+    },
+    {
+      "reason": "writer_weekend_policy_clock_unavailable",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["session_day", "full_state_dark"],
+      "env_flag_draft": "none",
+      "notes": "Clock unavailable → SKIP. Honest. Do not invent session_bucket."
+    }
+  ]
+}

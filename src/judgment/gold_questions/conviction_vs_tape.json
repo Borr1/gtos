@@ -1,0 +1,33 @@
+{
+  "id": "conviction_vs_tape",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "admission",
+    "size"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "state_sufficient low",
+  "include_depth": {
+    "geometry": "full",
+    "timeframes.h4": "long",
+    "sessions": "full"
+  },
+  "instructions": "Which unit deserves remaining headroom / what multiplier fits named tape? Compose orders the shed and tilts size. Does not invent headroom past the prop wall. Reads geometry_vs_tape and flow_alignment on the same POST \u2014 do not ask this as a second hop. Leave-orig default until Jev names a tilt. Ticket 293332188 stays leave-orig 1.0 unless a named size is printed.",
+  "criteria": [
+    "Named tape argues haircut / last in the shed",
+    "Ordinary unit versus named tape",
+    "Named tape supports remaining headroom (still under the prop wall)"
+  ]
+}

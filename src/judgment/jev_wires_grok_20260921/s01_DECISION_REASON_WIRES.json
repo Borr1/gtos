@@ -1,0 +1,381 @@
+{
+  "schema": "gtos.jev_everywhere.decision_reason_wires.v0",
+  "session": "01_book_owner_lifecycle_place",
+  "as_of_ict": "2026-09-21T06:04:27+07:00",
+  "module": "book_owner",
+  "target_wire_family": "Choice PLACE|STAND|DELAY (+ REMINT|FLATTEN_ADD for occupancy)",
+  "freshest_source": "/workspace/gtos/close_loop/war_room_20260920/_pr41_land/ai-trading-agent/src/components/ultimate_book/book_owner.py",
+  "never_broker_place": true,
+  "owner_override_place": "OPEN after hist-prove; default-off until prove; eternal never_place WRONG",
+  "n_reasons": 23,
+  "n_jev_wires": 9,
+  "n_envelope_keep": 14,
+  "counts_note": "n_jev_wires = proposed==JEV_WIRE. Distinct live hooks: occupancy_action, place_action, freshness_action, cost_action. Session 15/16 handoffs classified ENVELOPE_KEEP here so no orphan.",
+  "wires": [
+    {
+      "reason": "already_placed_this_bar",
+      "code_site": "UltimateBookOwner.run_cycle + PlacementLedger.already_placed",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "occupancy.already_placed_this_bar",
+        "decision_bar_iso",
+        "sleeve",
+        "symbol"
+      ],
+      "env_flag_draft": null,
+      "notes": "Idempotency envelope: same (sleeve,symbol,decision_bar) must never send twice. PLACE would double-fire. DELAY is meaningless (already sent). Shadow Noul confirm is optional LABEL only. Inventory detail: 'idempotency envelope — keep static'."
+    },
+    {
+      "reason": "already_placed_today",
+      "code_site": "run_cycle ~2057 + PlacementLedger.already_placed_today",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["HOLD", "PLACE_ISOLATED", "REMINT", "STAND"],
+      "complete_state_fields": [
+        "occupancy.already_placed_today",
+        "occupancy.isolated_reentry_legal",
+        "occupancy.minutes_since_flat",
+        "occupancy.same_sleeve_orig_stops_utc_day",
+        "occupancy.two_stop_exhausted",
+        "remint.last_exit_class",
+        "place_context.static_reason_now",
+        "affinity",
+        "cost",
+        "session_bucket",
+        "news_join"
+      ],
+      "env_flag_draft": "GTOS_JEV_OCCUPANCY_CHOICE_SHADOW=1; GTOS_JEV_OCCUPANCY_CHOICE_APPLY=0 until hist; scoped XAUUSD/GBPJPY",
+      "notes": "PR41 W7 hard-refuses. Leftover-ship F5 YIELDS isolated re-entry (>=15m flat) then 2-stop COUNT refuse. Nightly CF METAL/INDEX n=48 sumR=+21.6 WATCH not prove. Keep-one default HOLD. Jev may PLACE_ISOLATED only when isolated_reentry_legal and two_stop_exhausted is false. 2-stop COUNT stays integer (session 08). Illegal labels fail-closed to HOLD. Nightly alias already_placed_today_fx8 (n=32 sumR=+1.54) is the same wire."
+    },
+    {
+      "reason": "cluster_unit_already_placed_today",
+      "code_site": "run_cycle cluster_placed_today_other_bar; reason f'cluster_unit_already_placed_today:{cluster}'",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["HOLD", "STAND", "REMINT"],
+      "complete_state_fields": [
+        "occupancy.cluster",
+        "occupancy.cluster_placed_today_other_bar",
+        "occupancy.corr_hold_named",
+        "alive_sleeves",
+        "affinity"
+      ],
+      "env_flag_draft": "GTOS_JEV_OCCUPANCY_CHOICE_SHADOW=1; APPLY=0; honor ultimate_book_cluster_cap_exempt_clusters=['jpy'] as envelope until prove",
+      "notes": "COMP-2 one-unit-per-cluster-per-day. Default ON; jpy exempt for London+NY trial. Same occupancy_action Choice as already_placed_today. Keep-one default. Cousin of ranked wire #9."
+    },
+    {
+      "reason": "sleeve_already_holds_symbol",
+      "code_site": "run_cycle ee.active_trade is not None",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["HOLD", "FLATTEN_ADD", "STAND"],
+      "complete_state_fields": [
+        "occupancy.sleeve_holds_symbol",
+        "occupancy.n_open_book",
+        "remint",
+        "account.open_risk_pct",
+        "place_context.live_broker_authority"
+      ],
+      "env_flag_draft": "GTOS_JEV_OCCUPANCY_CHOICE_APPLY=0; FLATTEN_ADD never auto",
+      "notes": "Second order on same (symbol,sleeve) engine orphans first ticket. Default HOLD. FLATTEN_ADD is owner-open after hist only. Code must ignore FLATTEN_ADD while APPLY=0 or authority false. Test: test_placement_guard_skips_when_sleeve_already_holds_symbol."
+    },
+    {
+      "reason": "sleeve_already_holds_symbol_broker",
+      "code_site": "run_cycle _broker_holds",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["HOLD", "FLATTEN_ADD", "STAND"],
+      "complete_state_fields": [
+        "occupancy.sleeve_holds_symbol_broker",
+        "occupancy.existing_comments",
+        "occupancy.occupancy_source"
+      ],
+      "env_flag_draft": "same occupancy_action as sleeve_already_holds_symbol",
+      "notes": "Defense-in-depth when adoption failed (active_trade None but W7:{sleeve} still open). Same occupancy_action wire. Session 16 residual deepen OK; classified here so no orphan."
+    },
+    {
+      "reason": "same_broker_symbol_already_placed_this_cycle",
+      "code_site": "run_cycle placed_broker_symbol_keys intersection",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "occupancy.same_cycle_placed_broker_symbol",
+        "broker_symbol"
+      ],
+      "env_flag_draft": null,
+      "notes": "Intra-cycle anti-dupe after a successful place this tick. Nightly CF n=4/4 sumR negative (refusing was better). Too small-n to Jev-upgrade. Session 16 residual. Shadow last_refusal_class=other OK."
+    },
+    {
+      "reason": "same_broker_symbol_transient_attempt_this_cycle",
+      "code_site": "run_cycle attempted_transient_broker_symbol_keys",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "occupancy.same_cycle_transient_attempt",
+        "place_context.last_refusal_class"
+      ],
+      "env_flag_draft": null,
+      "notes": "Retry safety after transient order_send. DELAY already encoded as bar_consumable=False. Do not Jev-place a sibling on the same broker symbol this cycle."
+    },
+    {
+      "reason": "same_broker_symbol_position_source_unavailable_for_lifecycle_guard",
+      "code_site": "_same_broker_symbol_open_exposures returns None",
+      "live_effect": "SKIP (bar_consumable=False)",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "occupancy.position_source_unavailable",
+        "occupancy.occupancy_source",
+        "full_state_dark"
+      ],
+      "env_flag_draft": null,
+      "notes": "Fail-closed when a real broker accessor exists but the read failed. Cannot judge occupancy. DELAY is the integer (retry bar). Jev dark/missing source must not PLACE."
+    },
+    {
+      "reason": "same_broker_symbol_open_position_lifecycle_guard",
+      "code_site": "run_cycle same_symbol_exposures non-empty",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["HOLD", "FLATTEN_ADD", "SWITCH_SLEEVE", "STAND"],
+      "complete_state_fields": [
+        "occupancy.same_broker_symbol_open",
+        "occupancy.existing_broker_symbols",
+        "occupancy.existing_comments",
+        "occupancy.existing_position_count",
+        "occupancy.corr_hold_named",
+        "alive_sleeves",
+        "conflict_set",
+        "account.open_risk_pct"
+      ],
+      "env_flag_draft": "GTOS_JEV_OCCUPANCY_CHOICE_SHADOW=1; APPLY=0",
+      "notes": "Any book/GTOS position on same broker symbol (other sleeve) blocks. Nightly METAL/INDEX n=10 sumR=+13.0 WATCH — refusing may have missed +EV. Strongest occupancy candidate. Default HOLD. SWITCH_SLEEVE is LABEL for selector (session 03), not a silent tag swap. Ranked wire #9."
+    },
+    {
+      "reason": "stale_late_entry_after_restart",
+      "code_site": "_entry_too_late; ultimate_book_max_entry_lateness_frac default 0.5",
+      "live_effect": "SKIP (shadow the late signal)",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE_FRESH", "DELAY", "STAND"],
+      "complete_state_fields": [
+        "freshness.bar_iso",
+        "freshness.tf_minutes",
+        "freshness.late_frac",
+        "freshness.minutes_past_close",
+        "freshness.stale_late_entry_after_restart",
+        "geometry",
+        "cost",
+        "session_bucket"
+      ],
+      "env_flag_draft": "GTOS_JEV_PLACE_CHOICE_SHADOW=1; APPLY=0; fail-open of _entry_too_late on missing bar/tf stays (never block a timely live entry on parse fail)",
+      "notes": "Restart-late chase. Static skip past frac*bar_period. Jev DELAY if near-window + still valid geometry; STAND if chase; PLACE_FRESH only if hist shows late-but-still-edge. Outer place_action maps PLACE_FRESH→PLACE. Default STAND (static)."
+    },
+    {
+      "reason": "live_broker_authority_false_observe_only",
+      "code_site": "_manage_engine / _flatten_all_engines / bridge ultimate_book_live_broker_authority",
+      "live_effect": "OBSERVE_ONLY (no broker mutation)",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "place_context.live_broker_authority",
+        "place_context.runtime_effect_now",
+        "identity"
+      ],
+      "env_flag_draft": null,
+      "notes": "Identity/authority envelope. Jev may SHADOW evaluate (session 12 observe every candidate) but MUST NOT APPLY place/remint/flatten while authority false. Owner override does not delete the config gate; it deletes eternal never_place-as-law after hist-prove WITH authority on."
+    },
+    {
+      "reason": "pretrade_spread_r_refuse",
+      "code_site": "_spread_cost_screen returns cost_screen_spread_r:{x}>{lim}; ExecMgr-V4 broker_net_cost_engine",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": ["COST_DOMINATED (0)", "TRIM (1)", "COST_OK (2)"],
+      "complete_state_fields": [
+        "cost.spread_r",
+        "cost.spread_price",
+        "cost.stop_dist",
+        "cost.max_spread_r",
+        "cost.max_spread_r_by_sleeve",
+        "cost.cost_screen_would_refuse",
+        "phi",
+        "session_bucket",
+        "occupancy",
+        "geometry.atr14"
+      ],
+      "env_flag_draft": "GTOS_JEV_COST_SCORE_SHADOW=1; GTOS_JEV_COST_SCORE_APPLY=0; do not invert cheap spread into size-up",
+      "notes": "Inventory ranked #4. Code reason string is cost_screen_spread_r:… not the inventory name. Default 0.10; fx_jpy/fx_jpy_ny 0.35. Existing cost_hurtful Noul is size-tilt only (F5-JEV-004, cannot refuse). Promote to Score: 0 STAND (skip), 1 TRIM (haircut, existing size path), 2 COST_OK (do not skip). Fail-closed: Jev dark → keep static 0.10 skip. Nightly cost_screen WATCH n=17 mean R -0.53. Session 16 deepens Score. Never size-up from cheap spread without prove (do-not list)."
+    },
+    {
+      "reason": "stale_tick_market_closed",
+      "code_site": "run_cycle tick.time age_s > 900",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "freshness.tick_age_s",
+        "freshness.stale_tick_market_closed"
+      ],
+      "env_flag_draft": null,
+      "notes": "Closed-market stale tick. Fail-OPEN on missing timestamp. Not in gap inventory n=45; found in same path. Envelope. Freshness cousin of stale_late_entry."
+    },
+    {
+      "reason": "UB-PLC-017_observe",
+      "code_site": "a1_log.maybe_observe_ub_plc_017 after cost_skip",
+      "live_effect": "LOG_ONLY",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+      "complete_state_fields": [
+        "place_context",
+        "occupancy",
+        "cost",
+        "freshness",
+        "alive_sleeves",
+        "news_join"
+      ],
+      "env_flag_draft": "GTOS_JEV_PLACE_CHOICE_SHADOW=1; GTOS_JEV_PLACE_CHOICE_APPLY=0; hook same site; must not mutate cost_skip",
+      "notes": "Existing observe already POSTs gold_fanout (admit/cost_hurtful/occupancy labels) but cannot change skip. Promote to outer place_action Choice. Owner place path OPEN. Fail-closed if Jev dark. Host splice at _spread_cost_screen CALL not wholesale book_owner copy."
+    },
+    {
+      "reason": "F5-JEV-004_cost_hurtful_size_tilt",
+      "code_site": "a1_log + apply_size.haircut_challenge_unit",
+      "live_effect": "SIZE_TILT [0.70,1.00]",
+      "class_now": "JEV_JUDGED",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "cost_hurtful noul → size_tilt; cannot_refuse",
+      "complete_state_fields": ["cost.spread_r_of_stop", "geometry.plan_r"],
+      "env_flag_draft": "GTOS_JEV_APPLY_LIVE already 1 for size; do not reuse for place",
+      "notes": "Keep as size-tilt. Place/refuse is pretrade_spread_r_refuse Score, a different wire. Do not turn cost_hurtful into a new skip."
+    },
+    {
+      "reason": "FLUID-PLC-004_veto_occupancy_label",
+      "code_site": "fluid_local.veto_occupancy_label; jev_questions",
+      "live_effect": "LABEL_ONLY",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "crowded true/false — feeds occupancy_action; not a refuse",
+      "complete_state_fields": [
+        "occupancy.symbol_open",
+        "occupancy.corr_hold_named"
+      ],
+      "env_flag_draft": "GTOS_JEV_FLUID_GATES_SHADOW=1; do not flip fluid APPLY for place",
+      "notes": "Keep-one writer integer stays code. This Noul labels crowded. Occupancy_action Choice consumes it. Place_fluid family promote is sessions 04/14; this session wires writer occupancy guards."
+    },
+    {
+      "reason": "breach_flatten_block",
+      "code_site": "run_cycle _breach_block → place=False",
+      "live_effect": "BLOCK_NEW",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context.breach_block", "account.dd_wall_r"],
+      "env_flag_draft": null,
+      "notes": "Prop wall. Handoff session 15. Soft exception only via Jev+hist never silent. This session does not draft an exception Choice."
+    },
+    {
+      "reason": "kill_switch_or_halt_forced_observe_only",
+      "code_site": "launcher place=False; run_cycle",
+      "live_effect": "OBSERVE_ONLY",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context.kill_or_halt"],
+      "env_flag_draft": null,
+      "notes": "Operator brake. Handoff session 15. Jev observe still legal (session 12)."
+    },
+    {
+      "reason": "account_state_unavailable",
+      "code_site": "router.account_state is None",
+      "live_effect": "SKIP_RETRY",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["account", "full_state_dark"],
+      "env_flag_draft": null,
+      "notes": "Transient headroom-read. bar_consumable=False. Handoff session 15."
+    },
+    {
+      "reason": "profile_missing_instrument_config",
+      "code_site": "_profile_supports_symbol",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["symbol", "identity"],
+      "env_flag_draft": null,
+      "notes": "Config hole. Envelope. Handoff session 15."
+    },
+    {
+      "reason": "weekend_entry_embargo",
+      "code_site": "_weekend_entry_block → weekend_entry_embargo",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["session_bucket", "place_context"],
+      "env_flag_draft": null,
+      "notes": "Weekend policy default-OFF; FTMO has no weekend-holding rule. redacted_account funded-phase. Handoff session 15. Do not arm on FTMO Challenge."
+    },
+    {
+      "reason": "weekend_policy_clock_unavailable",
+      "code_site": "_weekend_entry_block no server clock",
+      "live_effect": "SKIP",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": null,
+      "notes": "Fail-closed when policy enabled but clock dark. Handoff session 15."
+    },
+    {
+      "reason": "no_tick_transient",
+      "code_site": "_tick returns None",
+      "live_effect": "SKIP_RETRY",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["freshness", "full_state_dark"],
+      "env_flag_draft": null,
+      "notes": "Data hole. bar_consumable=False is DELAY. Handoff session 15. Jev must not PLACE without a tick."
+    }
+  ]
+}

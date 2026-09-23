@@ -1,0 +1,64 @@
+{
+  "id": "flow_stance",
+  "type": "choice",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "state_sufficient low",
+  "include_depth": {
+    "timeframes.h4": "long",
+    "timeframes.d1": "long",
+    "identity": "full"
+  },
+  "instructions": "Given named HTF flow and identity.side, is this fire with_flow, against_flow, or no_clear_flow? G-FULL M15 (H4 slope50/ATR, up>1.5 / dn<-1.5): long 2R-hit 0.235 n=25793 with H4 up vs 0.194 n=10169 with H4 down; short 0.235 n=10169 with H4 down vs 0.200 n=25793 with H4 up. Next-close p_up 0.515. This is the base rate the Choice must beat \u2014 not a new if h4_up: long. Must sit on the same POST as persistence (GOLD-002).",
+  "criteria": {
+    "with_flow": "Side agrees with named H4/D1 flow",
+    "against_flow": "Side fights named H4/D1 flow",
+    "no_clear_flow": "Named flow is mixed, flat, or missing"
+  },
+  "measured": {
+    "window": "G-FULL",
+    "h4_up_long_p_target": {
+      "n": 25793,
+      "p": 0.23471484511301516
+    },
+    "h4_dn_long_p_target": {
+      "n": 10169,
+      "p": 0.19352935391877274
+    },
+    "h4_up_short_p_target": {
+      "n": 25793,
+      "p": 0.19955026557593145
+    },
+    "h4_dn_short_p_target": {
+      "n": 10169,
+      "p": 0.23483135018192547
+    },
+    "p_up": 0.5149745114698385
+  },
+  "g2m_observed_not_retuned": {
+    "h4_up_long": {
+      "n": 1047,
+      "p": 0.18529130850047756
+    },
+    "h4_dn_long": {
+      "n": 1496,
+      "p": 0.18315508021390375
+    },
+    "delta": 0.0021362282865738103
+  }
+}

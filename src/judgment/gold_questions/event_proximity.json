@@ -1,0 +1,34 @@
+{
+  "id": "event_proximity",
+  "type": "noul",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "size"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "news.spine_empty",
+  "include_depth": {
+    "news": "short"
+  },
+  "instructions": "Is a named HIGH in news.events inside the code window (T\u221215..T+2 W7 or T\u221215..T+60 F5)? When news.spine_empty, expect ~0.5 \u2014 do not treat as 'no HIGH'. Gold: Downloads M15 ends 2026-03-30; committed calendar is week_of 2026-05-31. Historical slices abstain. Do not invent NEWS_PROTOCOL rows. Size: same atom as FLUID-SIZ-006 event_size tilt, not a second calendar. Compose subtracts this Noul when the spine is present; ignore when empty.",
+  "criteria": {
+    "true": "A named HIGH is inside the code window",
+    "false": "Named events exist and none are inside the code window"
+  },
+  "measured": {
+    "G-FULL_news_spine": "empty",
+    "abstain": true
+  }
+}

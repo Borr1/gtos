@@ -1,0 +1,537 @@
+{
+  "schema": "gtos.jev.everywhere.decision_reason_wires.v1",
+  "session_id": "03_sleeve_select_global_conflicts",
+  "as_of_ict": "2026-09-21T06:15:00+07:00",
+  "module": "sleeve_select",
+  "target_wire_family": "Choice scoped APPLY candidates; global APPLY=0 this pass",
+  "global_env_lock": {
+    "GTOS_JEV_SLEEVE_SELECT_APPLY": 0,
+    "do_not_flip_global": true,
+    "GTOS_JEV_SLEEVE_SELECT_SHADOW": 1
+  },
+  "complete_state_schema_cite": "JEV_COMPLETE_JUDGE_GAP_INVENTORY_20260921.md COMPLETE_STATE draft v0",
+  "choice_labels_conflict_canonical": ["KEEP_A", "KEEP_B", "STAND"],
+  "choice_labels_dual_pos": ["KEEP_BOTH", "STAND", "ABSTAIN"],
+  "escapes_always": ["HOLD", "ABSTAIN", "ESCALATE_CHAIR", "BLOCKED"],
+  "never_broker_place": true,
+  "owner_override_20260921_place_when_proved": true,
+  "n_reasons": 48,
+  "n_jev_wires": 22,
+  "n_envelope_keep": 26,
+  "wires": [
+    {
+      "reason": "jev_sleeve_select_shadow",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "HOLD|ABSTAIN|ESCALATE_CHAIR|BLOCKED|sleeve:{tag} (observe evaluate every cycle; APPLY still 0 globally)",
+      "complete_state_fields": [
+        "symbol", "broker_symbol", "session_day", "decision_bar_iso", "session_bucket",
+        "alive_sleeves", "alive_menu", "selected_sleeve_candidate", "conflict_set",
+        "phi", "phi_by_sleeve", "regime_tag", "conf_band", "session_fit",
+        "cost", "occupancy", "account", "hard_off_hit", "full_state_dark",
+        "n_incomplete", "news_join", "place_context", "affinity_status"
+      ],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_SHADOW=1; GTOS_JEV_SLEEVE_SELECT_APPLY=0; GTOS_JEV_MAX_CALLS=500000",
+      "notes": "Today: cycle emit jsonl advisory_only; evaluate() NOT called. Wire: POST jev_client.evaluate(COMPLETE_STATE) every shadow cycle. Fail-closed ABSTAIN if Jev dark. Do not flip global APPLY."
+    },
+    {
+      "reason": "scoped_xau_three_fresh_x_spring",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=dsp_three_fresh_lower_lows | KEEP_B=dsp_spring_close_on_20low_through_the_box | STAND",
+      "complete_state_fields": [
+        "symbol", "alive_sleeves", "conflict_set", "sleeve_sides",
+        "phi_by_sleeve", "phi_haircut", "same_direction_overlap",
+        "regime_tag", "conf_band", "session_fit", "n_incomplete",
+        "full_state_dark", "affinity_keep_priors", "scoped_apply"
+      ],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_XAU_CONFLICT=1 (Chair land after this design; this session does not flip); global APPLY stays 0",
+      "notes": "Hist V2 PASS Module_ATR day overlap n_conflicts=2353 sumR_select=+235.3602 vs keep_all=-74.7197 vs random=-37.36. Rule: prefer spring; STAND three_fresh (2026 haircut). APPLY candidate #1 scoped. Place path OPEN after Chair APPLY. Static resolve_scoped_conflict_choice already bakes this pick — replace with live Jev Choice over COMPLETE_STATE, hist-rule as prior not oracle."
+    },
+    {
+      "reason": "scoped_gbpjpy_vss_LONG_x_sub_mid_SHORT",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=vss_fxcross_london_up_low LONG | KEEP_B=sub_mid SHORT | STAND",
+      "complete_state_fields": [
+        "symbol", "alive_sleeves", "conflict_set", "sleeve_sides",
+        "sleeve_candidates_detail", "phi_by_sleeve", "session_fit",
+        "regime_tag", "conf_band", "n_incomplete", "scoped_apply"
+      ],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_GBPJPY_CONFLICT=1 (Chair; not this session); global APPLY=0",
+      "notes": "Opp-side TRUE_CONFLICT. Deepen PASS full cal n_days=420 sumR_select(vss LONG)=222.3549 vs keep_all=127.6098. Sub_mid fade is drag (orig_stop 91% on opp-time). KEEP_A. Never use swarm BOTH φ-pick sub_mid. Live vss 2R/48 ≠ ORB proxy — stamp detector_id."
+    },
+    {
+      "reason": "scoped_gbpjpy_vss_SHORT_x_sub_mid_SHORT",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=vss SHORT | KEEP_B=sub_mid SHORT | STAND",
+      "complete_state_fields": [
+        "symbol", "alive_sleeves", "conflict_set", "sleeve_sides",
+        "phi_by_sleeve", "session_fit", "occupancy", "scoped_apply"
+      ],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_GBPJPY_CONFLICT=1 (same scoped bit as opp-side); global APPLY=0",
+      "notes": "Same SHORT stack. Deepen PASS full cal n_days=272 sumR_select(sub_mid)=341.3318 vs keep_all=177.9396. KEEP_B; STAND/drop vss SHORT (KILL leg φ=-0.049). keep_all here is double SHORT risk, not a hedge."
+    },
+    {
+      "reason": "gbpjpy_conflict_sides_unresolved_or_residual",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A | KEEP_B | STAND",
+      "complete_state_fields": [
+        "symbol", "conflict_set", "sleeve_sides", "full_state_dark", "n_incomplete"
+      ],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_SHADOW=1; scoped APPLY does NOT arm place_when_apply for this kind",
+      "notes": "resolve_scoped_conflict_choice returns GBPJPY_CONFLICT_LABEL place_when_apply=false. Honest policy: STAND/HOLD until sides resolve. Do not D_FULL on one name. Fail-closed if sides missing."
+    },
+    {
+      "reason": "refused_alias_package_b_to_sub_mid_dn_revert",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — menu filter",
+      "complete_state_fields": ["symbol", "alive_sleeves"],
+      "env_flag_draft": "n/a",
+      "notes": "Envelope. Never present live sub_mid_dn_revert as Package B SHORT except GBPJPY F5 KEEP prior (tape KEEP, not Package B). Doctrine do-not: merge Dig3R / alias Package B → sub_mid_dn_revert."
+    },
+    {
+      "reason": "package_b_short_eurusd_only",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — menu filter",
+      "complete_state_fields": ["symbol", "alive_sleeves"],
+      "env_flag_draft": "n/a",
+      "notes": "sub_mid_dn_re_proxy_eurusd_short_m15_atr is EURUSD-only. v4 bug note: is_package_b('sub_mid_dn_re_proxy') must stay EURUSD-scoped so GBPJPY does not inherit Package B sizing."
+    },
+    {
+      "reason": "soft_relax_house_law",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — writer house-law (mx_us30, idxrev). bleed/xa_huge stay house until KEEP proof; exception Choice is session 09 not silent flip here.",
+      "complete_state_fields": ["hard_off_hit", "alive_sleeves"],
+      "env_flag_draft": "GTOS_RELAX_TO_JEV=0 default; if 1 emit blocked_escape BLOCKED not fire options",
+      "notes": "Envelope. Do not silently delete hard-offs. RELAX_TO_JEV only surfaces BLOCKED escapes."
+    },
+    {
+      "reason": "global_apply_stay_zero",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY=0",
+      "notes": "V2 combined FAIL (EURUSD drag: select 926.6 vs keep_all 2350.5 n=13). Global APPLY stays 0. Scoped XAU/GBPJPY only when Chair receipts say."
+    },
+    {
+      "reason": "eurusd_asian_fade_x_package_b_keep_all",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_BOTH | STAND | ABSTAIN  (NOT KEEP_A vs KEEP_B pick-one)",
+      "complete_state_fields": [
+        "symbol", "alive_sleeves", "conflict_set", "phi_by_sleeve",
+        "n_incomplete", "voters_complete", "signs_disagree", "session_fit"
+      ],
+      "env_flag_draft": "GTOS_JEV_SLEEVE_SELECT_APPLY_EURUSD_KEEP_ALL=1 draft; global APPLY=0",
+      "notes": "signs_disagree n=0; both sleeves green every year; keep_all sumR=2350.4576. Pick-one (v3 D_FULL φ-top asian_fade) CANNOT beat keep_all. Honest Choice is KEEP_BOTH dual-pos. Never TRIM both. Incomplete → TRIM incomplete sleeve only. Draft scoped bit; Chair land after identity confirm. Place BOTH when APPLY on — writer still prints."
+    },
+    {
+      "reason": "eurusd_pick_one_forbidden",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — do not wire pick-one",
+      "complete_state_fields": ["symbol", "conflict_set"],
+      "env_flag_draft": "n/a",
+      "notes": "v2/v3 EURUSD year 'conflict' was dual-positive complementary, not TRUE_CONFLICT. Chair bar pick-vs-keep_all is the wrong test. Envelope: refuse pick-one APPLY."
+    },
+    {
+      "reason": "gbpjpy_three_fresh_x_spring",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=three_fresh LONG | KEEP_B=spring LONG | STAND",
+      "complete_state_fields": [
+        "symbol", "alive_sleeves", "conflict_set", "sleeve_sides",
+        "phi_by_sleeve", "same_direction_overlap", "session_fit"
+      ],
+      "env_flag_draft": "SHADOW only; NO scoped APPLY bit this pass",
+      "notes": "Widen yearfold n_conflicts=5 sumR_select=296.9263 vs keep_all=985.6158 FAIL (C_SIZE_TRIM 0.75 made it worse). Wire SHADOW Choice KEEP_A|KEEP_B|STAND; hist-prove on DAY overlap (not year window) before any APPLY. Do not copy XAU spring-prefer without GBPJPY day blotter prove."
+    },
+    {
+      "reason": "gbpjpy_spring_LONG_x_sub_mid_SHORT",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=spring LONG | KEEP_B=sub_mid SHORT | STAND",
+      "complete_state_fields": [
+        "symbol", "conflict_set", "sleeve_sides", "phi_by_sleeve", "session_fit"
+      ],
+      "env_flag_draft": "SHADOW; no APPLY until day-overlap Module_ATR prove",
+      "notes": "Deepen: larger opp-side family than vss×sub_mid (spring n=2171 yf=1.0). Expect same pattern: when LONG KEEP live, STAND the fade. Unproved — SHADOW Choice only."
+    },
+    {
+      "reason": "gbpjpy_three_fresh_LONG_x_sub_mid_SHORT",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=three_fresh LONG | KEEP_B=sub_mid SHORT | STAND",
+      "complete_state_fields": [
+        "symbol", "conflict_set", "sleeve_sides", "phi_haircut", "session_fit"
+      ],
+      "env_flag_draft": "SHADOW; no APPLY",
+      "notes": "three_fresh n=3240 yf=1.0 vs fade SHORT. Unproved day conflict. SHADOW KEEP_A|KEEP_B|STAND. three_fresh is research_only on affinity scoreboard — do not graduate without Module_ATR day prove + live-tag honesty."
+    },
+    {
+      "reason": "gbpjpy_london_orb_x_sub_mid_SHORT",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=london_orb LONG | KEEP_B=sub_mid SHORT | STAND",
+      "complete_state_fields": [
+        "symbol", "conflict_set", "sleeve_sides", "session_bucket", "session_fit"
+      ],
+      "env_flag_draft": "SHADOW; no APPLY",
+      "notes": "Same-session LONG vs fade. Unproved. SHADOW only."
+    },
+    {
+      "reason": "gbpjpy_static_phi_mixed_BOTH_do_not_wire",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — picker KILL",
+      "complete_state_fields": [],
+      "env_flag_draft": "n/a",
+      "notes": "conflict_clear_winner on swarm BOTH menu names sub_mid (Δφ 0.211). Mixed calendar n=692 select 246.6 vs keep_all 305.5 FAIL. Do not wire that picker. Envelope refuse."
+    },
+    {
+      "reason": "xag_single_keep_metal_session_no_conflict",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "menu φ only (SINGLE); no KEEP_A|KEEP_B",
+      "complete_state_fields": ["symbol", "alive_sleeves", "phi_by_sleeve"],
+      "env_flag_draft": "no GTOS_JEV_SLEEVE_SELECT_APPLY_XAG_* bit",
+      "notes": "KEEP metal_session_reversion n=782 sumR=+168.08 yf=1.0. Conflict hist SKIPPED (need ≥2 KEEP). resolve returns SINGLE_KEEP_MENU_PHI place_when_apply=false. Menu SHADOW ok; no scoped conflict APPLY."
+    },
+    {
+      "reason": "xag_narrow_siblings_sub_xvol_metals_core",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["symbol", "alive_sleeves", "affinity_status"],
+      "env_flag_draft": "n/a",
+      "notes": "sub_xvol_pullback NARROW (thin_span 2y); metals_core NARROW (yf=0.57). Not conflict APPLY candidates."
+    },
+    {
+      "reason": "btc_sub_mid_x_three_fresh",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — Teddy park",
+      "complete_state_fields": ["symbol"],
+      "env_flag_draft": "n/a",
+      "notes": "Widen FAIL n=10 select 1379 vs keep_all 4098. banned_for_aplus. Park. No Challenge APPLY."
+    },
+    {
+      "reason": "btc_three_fresh_x_spring",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — Teddy park",
+      "complete_state_fields": ["symbol"],
+      "env_flag_draft": "n/a",
+      "notes": "Widen FAIL n=10 select 1694 vs keep_all 3043. Park."
+    },
+    {
+      "reason": "btc_sub_mid_x_vss",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — Teddy park",
+      "complete_state_fields": ["symbol"],
+      "env_flag_draft": "n/a",
+      "notes": "Widen FAIL n=10 select 1379 vs keep_all 2562. Park."
+    },
+    {
+      "reason": "teddy_park",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": [],
+      "env_flag_draft": "n/a",
+      "notes": "Expand-everywhere: BTC/Teddy park. orb_crypto already hard-off. No ON_SURFACE this pass."
+    },
+    {
+      "reason": "usdjpy_all_narrow_no_keep",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["symbol", "affinity_status"],
+      "env_flag_draft": "n/a",
+      "notes": "GROK_KEEP: Module_ATR yearfold demotes KEEP→NARROW (3 active years + 983.8h gap, no silent stitch). vss/london_orb fail 2026. fx_jpy_ny KILL. No scoped APPLY."
+    },
+    {
+      "reason": "gbpusd_stitch_gap_narrow",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["symbol"],
+      "env_flag_draft": "n/a",
+      "notes": "GBPUSD_M15 gap_hours=983.75 continuous=False. No silent stitch. NARROW. No conflict APPLY."
+    },
+    {
+      "reason": "nzdusd_single_keep_never_port_audusd",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — SINGLE KEEP menu",
+      "complete_state_fields": ["symbol", "alive_sleeves"],
+      "env_flag_draft": "n/a",
+      "notes": "Module_ATR KEEP on NZDUSD sub_mid proxy. NEVER port AUDUSD (KILL/insufficient). No conflict set."
+    },
+    {
+      "reason": "xau_expanding_up_staircase_x_spring_or_three_fresh",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=expanding_up_staircase | KEEP_B=spring_or_three_fresh | STAND",
+      "complete_state_fields": [
+        "symbol", "alive_sleeves", "conflict_set", "sleeve_sides", "phi_by_sleeve"
+      ],
+      "env_flag_draft": "SHADOW; no APPLY (no Module_ATR conflict blotter cited)",
+      "notes": "F5 prior injects expanding_up_staircase alongside spring/three_fresh. Not a named hist-proved conflict cell. SHADOW Choice until day-overlap prove. Do not invent ATR."
+    },
+    {
+      "reason": "stand_toxic",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "STAND via BLOCKED escape — not a fire option",
+      "complete_state_fields": ["hard_off_hit", "alive_sleeves"],
+      "env_flag_draft": "n/a",
+      "notes": "v4 STAND_TOXIC for xa_huge/bleed/orb_crypto/idxrev. Envelope hard-off. Soft exception only via Jev+Challenge hist (session 09)."
+    },
+    {
+      "reason": "stand_narrow_affinity",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "STAND | ABSTAIN | ESCALATE_CHAIR",
+      "complete_state_fields": ["affinity_status", "keep_signature", "alive_sleeves"],
+      "env_flag_draft": "SHADOW",
+      "notes": "v4 STAND_NARROW when affinity_status=NARROW and no keep_signature. Wire Choice STAND default; do not invent KEEP."
+    },
+    {
+      "reason": "stand_empty_full_state_dark",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "state_sufficient true|false; if false → ABSTAIN (not refuse-as-today)",
+      "complete_state_fields": ["full_state_dark", "geometry_alone_flag", "n_incomplete", "news_join"],
+      "env_flag_draft": "SHADOW; fail-closed if Jev dark",
+      "notes": "Honest STATE_MISSING / full_state_dark. Noul state_sufficient. Never invent NEWS_PROTOCOL. Skip not refuse."
+    },
+    {
+      "reason": "stand_haircut_three_fresh",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A=three_fresh | KEEP_B=residual KEEP | STAND",
+      "complete_state_fields": ["phi_haircut", "phi_by_sleeve", "alive_sleeves", "conflict_set"],
+      "env_flag_draft": "covered by XAU scoped bit when spring remains; else SHADOW",
+      "notes": "Standing capability haircut (2026 fail), NOT this-trade R/year_le0/miss. Poison-ignore those keys. If all haircut → STAND."
+    },
+    {
+      "reason": "conflict_better_sleeve_unclear_hold",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A | KEEP_B | STAND",
+      "complete_state_fields": ["conflict_set", "phi_by_sleeve", "n_incomplete"],
+      "env_flag_draft": "SHADOW; place_when_apply=false until clear hist winner",
+      "notes": "v4 HOLD when conflict_clear_winner is None. Canonical labels KEEP_A|KEEP_B|STAND with STAND the fail-closed pick."
+    },
+    {
+      "reason": "jev_dark_fail_closed",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "ABSTAIN / no APPLY / no place",
+      "complete_state_fields": ["place_context", "full_state_dark"],
+      "env_flag_draft": "GTOS_JEV_A1_CALL; TYPESAFE key; budget",
+      "notes": "If evaluate skip (key absent / budget / HTTP error): fail-closed — do not apply static hist pick as live fire-rate change. Shadow log the skip. Envelope."
+    },
+    {
+      "reason": "phi_menu_ranking",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "sleeve_fit 0=wrong/toxic 1=ordinary KEEP 2=φ-top clean session (prior only; not refuse)",
+      "complete_state_fields": ["phi_by_sleeve", "alive_menu", "session_fit", "affinity_status"],
+      "env_flag_draft": "SHADOW; Score is advisory rank not APPLY",
+      "notes": "Static φ already orders the menu. Optional Jev Score sleeve_fit over COMPLETE_STATE. Do not use Score as kill. Cost never kill."
+    },
+    {
+      "reason": "cost_never_kill",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["cost"],
+      "env_flag_draft": "n/a",
+      "notes": "OWNER_LAW_COST_NEVER_KILL_GATE. cost fields on COMPLETE_STATE are measurement-only. Do not invert into size-up without prove (session 06)."
+    },
+    {
+      "reason": "news_join_state_missing_honesty",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — news_join=STATE_MISSING ok",
+      "complete_state_fields": ["news_join"],
+      "env_flag_draft": "n/a",
+      "notes": "Never invent NEWS_PROTOCOL / fake endpoints. Empty spine is not 'no HIGH'."
+    },
+    {
+      "reason": "live_vss_not_orb_proxy_honesty",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu"],
+      "env_flag_draft": "n/a",
+      "notes": "Live vss_fxcross_london_up_low = squeeze+D1-up+2R/48 n=38 PR40. Research proxy = London ORB continuation time_stop@32. Stamp detector_id. Do not promote live tag off proxy KEEP."
+    },
+    {
+      "reason": "live_sub_mid_dn_revert_not_short",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_sleeves", "sleeve_sides"],
+      "env_flag_draft": "n/a",
+      "notes": "Live sub_mid_dn_revert is H4 FIXED LONG 1:3. Research SHORT is a named proxy. GBPJPY F5 prior may list live tag as KEEP — still never emit it as SHORT."
+    },
+    {
+      "reason": "admission_helper_should_stand_missing",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "helpers return stand_tag | None; admission refuse reasons jev_sleeve_select_xau_conflict_stand_three_fresh / jev_sleeve_select_gbpjpy_conflict_stand",
+      "complete_state_fields": ["symbol", "alive_sleeves", "conflict_set", "sleeve_sides", "scoped_apply"],
+      "env_flag_draft": "scoped bits only; fail-closed if helper missing",
+      "notes": "Land note 20260921 claims helpers implemented; box tree has ZERO defs. Draft: add should_stand_three_fresh_xau_conflict + should_stand_gbpjpy_conflict wrapping Jev Choice (or hist-rule fallback only when evaluate skip AND scoped APPLY on AND fail-closed default STAND of the hist-drop sleeve). This session does not land into VPS admission."
+    },
+    {
+      "reason": "evaluate_not_posted_from_sleeve_select",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "conflict Choice + Noul state_sufficient in one POST",
+      "complete_state_fields": ["*COMPLETE_STATE"],
+      "env_flag_draft": "GTOS_JEV_A1_CALL on; GTOS_JEV_MAX_CALLS=500000",
+      "notes": "Gap vs doctrine: every gate POSTs evaluate(). Patch: emit_sleeve_select_shadow_payload calls jev_client.evaluate. Observe always; mutate fire-rate only if scoped APPLY on AND Choice agrees AND not Jev-dark."
+    },
+    {
+      "reason": "pr41_sleeve_select_module_absent",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "port sleeve_select.py + cycle block into PR41 src/judgment (draft only)",
+      "complete_state_fields": ["*COMPLETE_STATE"],
+      "env_flag_draft": "same flags; global APPLY=0",
+      "notes": "_pr41_land ultimate_book has jev_client but no sleeve_select. Writer will never see conflict Choice until Chair copies VPS_LAND_SCOPED_APPLY pack. Draft port; do not edit live books this session."
+    },
+    {
+      "reason": "cycle_eternal_never_place_stale",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "place default-off until prove — not eternal law",
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": "place=true only when scoped APPLY + hist-proved conflict + Jev Choice KEEP_*",
+      "notes": "Owner override 2026-09-21 DELETE eternal 'Jev never places.' Fluid cycle still stamps never_place=True (default-off OK). Do not encode eternal never_place in new designs. This session never_broker_place=true."
+    },
+    {
+      "reason": "true_conflict_option_filter_dead_pass",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A | KEEP_B | STAND — dropped sleeve removed from fire options, escapes remain",
+      "complete_state_fields": ["conflict_set", "alive_menu"],
+      "env_flag_draft": "only when scoped APPLY on; SHADOW keeps both options for Label",
+      "notes": "emit has `if TRUE_CONFLICT: pass` — dropped sleeves stay on menu. Patch: when scoped APPLY, filter stood sleeve from fire criteria; keep HOLD/ABSTAIN/ESCALATE/BLOCKED."
+    },
+    {
+      "reason": "dsp_three_fresh_research_only_not_fire",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["alive_menu"],
+      "env_flag_draft": "n/a",
+      "notes": "Affinity scoreboard tags dsp_three_fresh_like research_only. Live dsp_three_fresh_lower_lows is the F5 prior tag. Do not graduate research_only proxy as fire option. XAU conflict uses LIVE_FILE Module_ATR 0.75/6.0 — Edge_ATR affinity NOT used for φ."
+    },
+    {
+      "reason": "eurgbp_vss_kill",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["symbol"],
+      "env_flag_draft": "n/a",
+      "notes": "GROK_KEEP: EURGBP×vss KILL. Do not port GBPJPY side-aware rule. Affinity instrument×sleeve held."
+    },
+    {
+      "reason": "fx_jpy_ny_kill",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a",
+      "complete_state_fields": ["symbol", "alive_sleeves"],
+      "env_flag_draft": "n/a",
+      "notes": "Known long-tape FAIL. Excluded. Envelope."
+    },
+    {
+      "reason": "incomplete_voters_stand_not_trim_winner",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": "KEEP_A | KEEP_B | STAND  (incomplete TRUE_CONFLICT → STAND, not C_SIZE_TRIM 0.75 of φ-winner)",
+      "complete_state_fields": ["n_incomplete", "voters_complete", "conflict_set", "regime_tag", "conf_band", "session_fit"],
+      "env_flag_draft": "SHADOW until hist shows STAND beats trim-winner on Challenge tape",
+      "notes": "Deepen: size-trim of φ winner made Δ vs keep_all worse (−121 vs −59). Incomplete voters → STAND, not trim-the-winner. KEEP_ALL dual-pos still TRIM incomplete sleeve only, never both."
+    },
+    {
+      "reason": "xau_2026_three_fresh_haircut_prior",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "phi_haircut_severity 0=no haircut 1=soft 2=2026-fail (feeds Choice STAND of three_fresh; not this-trade R)",
+      "complete_state_fields": ["phi_haircut", "phi_by_sleeve", "symbol"],
+      "env_flag_draft": "bundled with XAU scoped Choice; not a separate APPLY",
+      "notes": "φ prior keep_status KEEP_research_with_2026_fail_haircut; extra ×0.55. YTD 2026 Module_ATR file-exit three_fresh −53.86 / spring +14.25. Score is standing capability, poison-ignore miss/year_le0/R/exit_class."
+    },
+    {
+      "reason": "challenge_book_conflict_separate_lens",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "n/a — do not merge Challenge R into Module_ATR bar",
+      "complete_state_fields": ["account"],
+      "env_flag_draft": "n/a",
+      "notes": "V2 Challenge KEEP conflicts n=1 select 2.265 vs keep_all 2.01 SEPARATE lens. Hydrate window from 2026-08-10; n=38 not full YTD. Never merge into Module_ATR sumR. Envelope lens-separation."
+    }
+  ]
+}

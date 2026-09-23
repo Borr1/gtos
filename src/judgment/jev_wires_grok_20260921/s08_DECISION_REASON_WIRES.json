@@ -1,0 +1,472 @@
+{
+  "schema": "gtos.jev_everywhere.decision_reason_wires.v1",
+  "session": "08_two_stop_remint_choice",
+  "as_of_ict": "2026-09-21T06:05:25+07:00",
+  "target_wire_family": "Choice REMINT_OK|STAND|SWITCH_SLEEVE|FLATTEN_SIBLING",
+  "primary_reason": "wmb_2stop_day_circuit_same_symbol_sleeve_orig_stops",
+  "doctrine": "/workspace/gtos/close_loop/war_room_20260920/JEV_EVERYWHERE_DOCTRINE_20260921.md",
+  "gap_inventory_rank": 5,
+  "never_broker_place": true,
+  "do_not_flip_global_sleeve_select_apply": true,
+  "integer_envelope_fail_closed_if_jev_dark": true,
+  "n_reasons": 36,
+  "n_jev_wires": 14,
+  "n_envelope_keep": 22,
+  "wires": [
+    {
+      "reason": "wmb_2stop_day_circuit_same_symbol_sleeve_orig_stops",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["REMINT_OK", "STAND", "SWITCH_SLEEVE", "FLATTEN_SIBLING"],
+      "complete_state_fields": [
+        "symbol",
+        "broker_symbol",
+        "session_day",
+        "decision_bar_iso",
+        "session_bucket",
+        "alive_sleeves",
+        "alive_menu",
+        "selected_sleeve_candidate",
+        "conflict_set",
+        "regime_tag",
+        "conf_band",
+        "session_fit",
+        "phi",
+        "phi_by_sleeve",
+        "cost",
+        "occupancy.already_placed_today",
+        "occupancy.isolated_reentry_legal",
+        "occupancy.minutes_since_flat",
+        "occupancy.same_sleeve_orig_stops_utc_day",
+        "occupancy.two_stop_exhausted",
+        "occupancy.two_stop_source",
+        "occupancy.symbol_open",
+        "account",
+        "hard_off_hit",
+        "remint.orig_stops_today",
+        "remint.last_exit_class",
+        "remint.minutes_since_exit",
+        "remint.two_stop_armed",
+        "remint.family_in_wmb_scope",
+        "remint.closed_prune_risk",
+        "remint.parent_ticket",
+        "remint.sibling_open",
+        "affinity",
+        "news_join",
+        "full_state_dark",
+        "n_incomplete",
+        "place_context"
+      ],
+      "env_flag_draft": "GTOS_JEV_TWO_STOP_REMINT_SHADOW=1; GTOS_JEV_TWO_STOP_REMINT_APPLY=0 (Chair APPLY only after Challenge hist-prove)",
+      "notes": "PRIMARY. Gap inventory STATIC REFUSE_REMINT. WMB ENFORCE 2 scoped to two_bar|rejection_wick|isolated_spike. Module exists, refuse_reason NOT imported into book_owner yet. Integer refuse stays fail-closed if Jev dark / APPLY=0 / evaluate skip. Owner remint/place OPEN after prove — not eternal never_place. SWITCH_SLEEVE is remint-path Choice over alive_menu, NOT a flip of GTOS_JEV_SLEEVE_SELECT_APPLY. FLATTEN_SIBLING is Choice authorize only; writer executes after Chair APPLY; this session never order_send."
+    },
+    {
+      "reason": "same_sleeve_two_orig_stops_session_day",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["REMINT_OK", "STAND", "SWITCH_SLEEVE", "FLATTEN_SIBLING"],
+      "complete_state_fields": [
+        "occupancy.same_sleeve_orig_stops_utc_day",
+        "occupancy.two_stop_exhausted",
+        "occupancy.two_stop_source",
+        "remint.orig_stops_today",
+        "remint.family_in_wmb_scope",
+        "symbol",
+        "selected_sleeve_candidate",
+        "session_day"
+      ],
+      "env_flag_draft": "GTOS_JEV_TWO_STOP_REMINT_APPLY=0; host integer F5_SAME_SLEEVE_ORIG_STOP_DAY_CAP=2 stays the COUNT",
+      "notes": "Sep 13 GLOBAL writer refuse (host-dirty minimal_size). Leftover-ship / _vps_minimal_size.py MIRROR LACKS this function — VPS bytes unconfirmed this seat. Same Choice overlay as WMB. Global cap is blunter than WMB (would also refuse paying three_fresh remint). Hist-prove must score GLOBAL vs SCOPED vs Jev Choice separately. Integer COUNT remains envelope; Jev is not the counter."
+    },
+    {
+      "reason": "two_stop_would_be_third",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "Would be a third orig_stop", "false": "Would not, or unknown"},
+      "complete_state_fields": [
+        "occupancy.same_sleeve_orig_stops_utc_day",
+        "occupancy.two_stop_exhausted",
+        "occupancy.two_stop_source"
+      ],
+      "env_flag_draft": "already in symbol_fanout_questions(); keep LABEL; GTOS_JEV_A1_CALL default-on when key present",
+      "notes": "Existing Noul. Instructions already say Jev is not the counter; closed[] COUNT stays integer. fluid_local currently sets noul=(two_n>=2). Keep as speculative LABEL alongside remint_action Choice (one evaluate() call). Gate inventory alias F5-JEV-002. Never let this Noul refuse or place."
+    },
+    {
+      "reason": "sibling_cooldown",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "Named cooldown still binds", "false": "Clear or unknown"},
+      "complete_state_fields": [
+        "occupancy.minutes_since_flat",
+        "occupancy.isolated_reentry_legal",
+        "remint.minutes_since_exit",
+        "occupancy.two_stop_exhausted"
+      ],
+      "env_flag_draft": "keep in fanout; split source from two_stop_exhausted in fluid_local",
+      "notes": "Question text is 15m sibling cooldown; fluid_local currently aliases occupancy.two_stop_exhausted — BUG/conflation. Patch: Noul labels 15m/4h window only. 2-stop COUNT stays integer; remint_action Choice is the 2-stop judge. 15m HOLD itself is ENVELOPE_KEEP (see just_closed_sibling)."
+    },
+    {
+      "reason": "isolated_reentry_after_close",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "Named isolated re-entry is a new fire", "false": "Not isolated or unknown"},
+      "complete_state_fields": [
+        "occupancy.isolated_reentry_legal",
+        "occupancy.minutes_since_flat",
+        "occupancy.symbol_open",
+        "occupancy.already_placed_today",
+        "remint.last_exit_class",
+        "spring_reprint"
+      ],
+      "env_flag_draft": "existing isolated_reentry Noul (F5-JEV-007); remint_action Choice must not HOLD a legal 15m reprint",
+      "notes": "Writer yields already_placed_today / cluster cap after close+cooldown on a FLAT symbol. Charter: isolated reprint is a NEW fire, not remint of a spent ticket. Sep 15 three_fresh paid on this law; Sep 17 two_bar bled. Jev Noul labels new-vs-remint; WMB Choice STAND only when family in scope AND orig_stops>=2. Do not collapse reprint into remint."
+    },
+    {
+      "reason": "sleeve_in_2stop_scope",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["REMINT_OK", "STAND", "SWITCH_SLEEVE", "FLATTEN_SIBLING"],
+      "complete_state_fields": [
+        "selected_sleeve_candidate",
+        "alive_sleeves",
+        "alive_menu",
+        "remint.family_in_wmb_scope",
+        "affinity"
+      ],
+      "env_flag_draft": "TARGET_FAMILY_SUBSTR stays code default; Choice may SWITCH_SLEEVE to an out-of-family alive sleeve",
+      "notes": "Substring families two_bar|rejection_wick|isolated_spike. Out-of-family sleeves (spring, three_fresh, vss, expanding) keep isolated re-entry after 15m as integer law. SWITCH_SLEEVE is how Jev picks another alive sleeve when the spent sleeve is in-scope — scoped remint-path, not global sleeve_select APPLY."
+    },
+    {
+      "reason": "same_sleeve_remint_after_stop",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["REMINT_OK", "STAND", "SWITCH_SLEEVE", "FLATTEN_SIBLING"],
+      "complete_state_fields": [
+        "remint.parent_ticket",
+        "remint.last_exit_class",
+        "remint.orig_stops_today",
+        "symbol",
+        "selected_sleeve_candidate",
+        "session_day"
+      ],
+      "env_flag_draft": "hist class for remint_action; no live APPLY this session",
+      "notes": "Autopsy mechanism (ZERO_WIN 2026-09-10): n=5 members −$762.10 (US30 bleed chain, XAU walked remint, US30 isolated remint). Parents excluded. Sep 13 global 2-stop would cut chains at n=2. WMB scopes to two_bar/rejection/isolated (isolated is in-scope; walked/bleed are not — bleed already hard-off). Feed as train/hist label into remint_action Choice."
+    },
+    {
+      "reason": "spring_reprint",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "Named spring reprint", "false": "Not a spring reprint"},
+      "complete_state_fields": ["selected_sleeve_candidate", "occupancy.isolated_reentry_legal", "alive_sleeves"],
+      "env_flag_draft": "existing fanout Noul; LABEL only",
+      "notes": "Keep so remint_action does not call a legal spring reprint a remint. KEEP family. Not a refuse."
+    },
+    {
+      "reason": "never_remint_eternal_retired",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["REMINT_OK", "STAND", "SWITCH_SLEEVE", "FLATTEN_SIBLING"],
+      "complete_state_fields": ["place_context", "remint", "occupancy", "account"],
+      "env_flag_draft": "GTOS_JEV_TWO_STOP_REMINT_APPLY default 0; do not encode eternal never_remint in new designs",
+      "notes": "compose.py / process_lock.stamp_lock / veto.BROKER_OR_PAYOUT_ACTIONS / judgment __init__ / host_occupancy stamp never_remint=True as eternal. Owner 2026-09-21 DELETE eternal Jev never places/remint/flatten. Keep veto as DEFAULT-OFF live send until hist-prove. Choice may authorize remint/flatten after Chair APPLY. This session never order_send."
+    },
+    {
+      "reason": "g8_block_reentry_same_sleeve_already_placed_today",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["REMINT_OK", "STAND", "SWITCH_SLEEVE", "FLATTEN_SIBLING"],
+      "complete_state_fields": [
+        "occupancy.already_placed_today",
+        "occupancy.isolated_reentry_legal",
+        "remint.orig_stops_today",
+        "chair_fields"
+      ],
+      "env_flag_draft": "GTOS_JEV_TWO_STOP_REMINT_APPLY=0; G8 integer fail-closed if Jev dark",
+      "notes": "chair_enforce G8 blocks same-sleeve already_placed_today. Isolated yield already punches this for a flat symbol. After 2 orig_stops in WMB family, remint_action Choice STAND is the hist-first overlay. Do not silent-disable G8."
+    },
+    {
+      "reason": "g8_allow_after_15m_new_named_fire_only",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "Named isolated re-entry is a new fire", "false": "Not isolated or unknown"},
+      "complete_state_fields": [
+        "occupancy.minutes_since_flat",
+        "occupancy.new_named_fire",
+        "occupancy.isolated_reentry_legal"
+      ],
+      "env_flag_draft": "share isolated_reentry Noul",
+      "notes": "G8 allow path when minutes>=15 AND new_named_fire. Same reprint-vs-remint distinction as isolated_reentry_after_close."
+    },
+    {
+      "reason": "harvest_protection_atom_two_stop",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {"true": "Would be a third orig_stop", "false": "Would not, or unknown"},
+      "complete_state_fields": ["occupancy.same_sleeve_orig_stops_utc_day", "occupancy.two_stop_exhausted"],
+      "env_flag_draft": "learn_loop / harvest_patterns LABEL; train-row harvest session 18 consumes",
+      "notes": "ProtectionAtom kind=two_stop fired/remaining. Train tag occupancy:two_stop_exhausted. Not a live refuse. Keep as harvest LABEL feeding remint_action hist-prove."
+    },
+    {
+      "reason": "minutes_since_flat",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": ["Just flat / too soon", "Ordinary", "Clean isolated gap"],
+      "complete_state_fields": ["occupancy.minutes_since_flat", "remint.minutes_since_exit"],
+      "env_flag_draft": "existing fanout Score; LABEL",
+      "notes": "Already a Score. Keep in the same evaluate() as remint_action. 15m threshold stays integer envelope; Score is quality of the gap."
+    },
+    {
+      "reason": "remint_continuation_quality",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": ["Spent same setup (third orig_stop likely)", "Mixed / unknown", "Fresh structure / other-sleeve reprint"],
+      "complete_state_fields": [
+        "remint.last_exit_class",
+        "remint.orig_stops_today",
+        "geometry",
+        "sleeve_features",
+        "regime_tag",
+        "session_fit",
+        "phi",
+        "cost",
+        "affinity"
+      ],
+      "env_flag_draft": "add to remint_choice_questions; speculative in same evaluate(); APPLY does not read Score unless Chair later binds it",
+      "notes": "Auxiliary Score so Choice is not starved. regime_tag is often null on Challenge scoreboard — honest PENDING/STATE_MISSING, do not invent Module_ATR/regime. Score must not refuse; remint_action Choice is the action."
+    },
+    {
+      "reason": "two_stop_exhausted",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.two_stop_exhausted", "occupancy.same_sleeve_orig_stops_utc_day"],
+      "env_flag_draft": "none — integer COUNT",
+      "notes": "Bool from closed[] count >= 2. Jev must SEE it, not BE it. Fail-closed if closed_absent (None, do not invent)."
+    },
+    {
+      "reason": "ENV-TWO-STOP",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.two_stop_exhausted"],
+      "env_flag_draft": "process_lock.ENVELOPE_WALL_IDS; wire_apply_open cannot open",
+      "notes": "Envelope wall id two_stop_count / ENV-TWO-STOP. Env flags cannot open. Soft exception only via Jev Choice + Challenge hist + Chair APPLY — never silent code flip of the COUNT."
+    },
+    {
+      "reason": "same_sleeve_orig_stops_utc_day",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.same_sleeve_orig_stops_utc_day", "remint.orig_stops_today"],
+      "env_flag_draft": "none",
+      "notes": "The integer counter. UTC session day. Ignores legacy 09-08 symbol keys. as_of_utc excludes later rows so replay cannot leak future stops."
+    },
+    {
+      "reason": "just_closed_sibling",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.minutes_since_flat"],
+      "env_flag_draft": "none — 15m microstructure HOLD",
+      "notes": "Metals/index 15m same-symbol window. Isolated re-entry AFTER the window is wanted. Not a Jev toy. Noul sibling_cooldown may LABEL; cannot yield the HOLD."
+    },
+    {
+      "reason": "fx_sl_same_symbol_cooldown",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.minutes_since_flat", "symbol"],
+      "env_flag_draft": "none — 4h FX DSP after SL-class close",
+      "notes": "F5-MS-COOLDOWN. FX majors 4h after SL. Envelope. Jev may label; cannot shorten."
+    },
+    {
+      "reason": "isolated_reentry_legal",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.isolated_reentry_legal", "occupancy.symbol_open", "occupancy.minutes_since_flat"],
+      "env_flag_draft": "none — others_open==0 AND minutes>=15 (or never closed)",
+      "notes": "Integer 15m+flat. ISOLATED_REENTRY_MINUTES=15. Jev Noul labels; writer integer decides yield unless remint_action APPLY STAND on WMB family n>=2."
+    },
+    {
+      "reason": "already_placed_today",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.already_placed_today"],
+      "env_flag_draft": "none this session; occupancy remint Choice is session 16 primary",
+      "notes": "Keep-one / one-unit-per-sleeve-day. Isolated yield already exists. This session only overlays WMB 2-stop Choice on top of the yield. Do not steal session 16 occupancy-remint wire. Weekly keep-one blocks already_placed_today n=16 (Sep 14–18)."
+    },
+    {
+      "reason": "cluster_unit_already_placed_today",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.cluster_placed_today"],
+      "env_flag_draft": "none",
+      "notes": "COMP-2 cluster later-bar cap. Isolated yield on flat symbol already coded. Envelope. Jev occupancy_world Score is LABEL only."
+    },
+    {
+      "reason": "F5-MS-H4CAP",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["selected_sleeve_candidate"],
+      "env_flag_draft": "none — idxrev / orb_crypto_london(+widen) never yield daily cap",
+      "notes": "H4 one-unit-per-day. Those sleeves are also hard-off / US30-off cousins. Isolated yield must stay False. Not a remint Choice exception."
+    },
+    {
+      "reason": "closed_prune_24h_undercount",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["remint.closed_prune_risk", "occupancy.two_stop_source", "occupancy.two_stop_updated_utc"],
+      "env_flag_draft": "none — honesty field on COMPLETE_STATE",
+      "notes": "f5_record_just_closed keeps 24h / last 80. Same-day orig_stops that aged out under-count the envelope. COMPLETE_STATE must surface closed_prune_risk. Do not invent missing stops from deals into COUNT (LABEL-only deals doc)."
+    },
+    {
+      "reason": "legacy_symbol_keys_0908_freeze",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.two_stop_legacy_keys_ignored", "occupancy.two_stop_updated_ict_stale"],
+      "env_flag_draft": "none",
+      "notes": "Top-level XAUUSD/US30.cash keys frozen 2026-09-08. COUNT reads closed[] only. updated_ict stale. Repair is writer hygiene, not Jev. Abandoned twin judgment/live/just_closed_siblings.json must never be the counter."
+    },
+    {
+      "reason": "challenge_deals_label_not_count",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.two_stop_source"],
+      "env_flag_draft": "none",
+      "notes": "closed_doc_from_deals is LABEL. two_stop_source=challenge_deals_label_not_count. Must not feed flatten/remint/place. Live closed[] senior when present."
+    },
+    {
+      "reason": "closed_absent",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.two_stop_source", "full_state_dark", "n_incomplete"],
+      "env_flag_draft": "none",
+      "notes": "occupancy_from_closed(None) → two_stop_exhausted=None, source=closed_absent. Fail-closed: do not invent stops; do not APPLY remint; STAND if WMB family and COUNT unknown."
+    },
+    {
+      "reason": "spent_tonight",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["remint.spent_tickets"],
+      "env_flag_draft": "none",
+      "notes": "Owner-closed XAU 179380936 / EURUSD 179272692 in siblings law. Named tickets stay spent. Jev cannot remint them."
+    },
+    {
+      "reason": "leave_orig_293332188",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context.ticket_draft_fp"],
+      "env_flag_draft": "existing Noul LABEL; live tilts stay 1.0",
+      "notes": "Leave-orig lock. Ticket closed 2026-09-17T11:10:58Z. No remint. process_lock.leave_orig_ticket. Envelope."
+    },
+    {
+      "reason": "usdjpy_verification_hold_cannot_yield_reentry",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["symbol", "hard_off_hit"],
+      "env_flag_draft": "none",
+      "notes": "F5_STANDING_HOLD_SYMBOLS={USDJPY}. Isolated yield always False. Not a remint Choice exception."
+    },
+    {
+      "reason": "hard_off_sleeve_cannot_remint",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["hard_off_hit", "selected_sleeve_candidate"],
+      "env_flag_draft": "none — session 09 owns exception Choice KEEP_OFF|SCOPED_EXCEPTION",
+      "notes": "bleed / orb_crypto / idxrev / xa_huge / mx_us30 hard-offs cannot fire or remint. Soft exception only via session-09 Jev+hist, never silent. US30 isolated remint chain is dead because US30+bleed are off — do not reopen via remint Choice."
+    },
+    {
+      "reason": "FORBIDDEN_AUTO_EFFECTS_remint_flatten_place",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": "fluid_pipeline.may_auto_apply stays false for remint/flatten/place",
+      "notes": "Default wall. Owner override opens a hist-prove path; it does not auto-APPLY. Keep as fail-closed default. Chair APPLY of GTOS_JEV_TWO_STOP_REMINT_APPLY is the only later exception."
+    },
+    {
+      "reason": "g8_block_reentry_within_15m",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.minutes_since_flat"],
+      "env_flag_draft": "none",
+      "notes": "G8 minutes<15 AND not new_named_fire. Same 15m microstructure as just_closed_sibling. Envelope."
+    },
+    {
+      "reason": "same_symbol_stack_keep_working_ticket",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["occupancy.symbol_open"],
+      "env_flag_draft": "none",
+      "notes": "Keep-one occupancy while a ticket is live. Remint Choice only after flat. FLATTEN_SIBLING is the only Choice that talks to an open sibling — still default-off, never this session."
+    },
+    {
+      "reason": "news_join_remint_state",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["news_join"],
+      "env_flag_draft": "none",
+      "notes": "news_join object|STATE_MISSING. Honest missing OK. NEVER invent NEWS_PROTOCOL. Event-gap two_bar ticket 291383082 is a LABEL on scoreboard, not a fake calendar."
+    },
+    {
+      "reason": "module_atr_lens_honesty_wmb_families",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": ["regime_tag", "geometry.atr14", "geometry.stop_atr"],
+      "env_flag_draft": "none — hist-prove constraint",
+      "notes": "NO Module_ATR blotter for two_bar / rejection_wick / isolated_spike. Existing Module_ATR blotters are three_fresh, spring, GBPJPY, XAG — NEVER merge those R into WMB remint sumR. regime_tag is null on sampled Challenge scoreboard rows → PENDING. geometry.atr14 may be present on gold_state when M15 assembled; that is named tape ATR, not invented Module_ATR lens. Do not merge Dig_3R / Edge_ATR / Module_ATR."
+    }
+  ]
+}

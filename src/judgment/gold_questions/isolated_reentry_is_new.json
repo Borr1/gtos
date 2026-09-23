@@ -1,0 +1,40 @@
+{
+  "id": "isolated_reentry_is_new",
+  "type": "noul",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "occupancy unassembled",
+  "include_depth": {
+    "occupancy": "long",
+    "identity": "full"
+  },
+  "instructions": "Do writer integers say this is a new named fire on a flat symbol (isolated \u226515m), not the spent ticket? Occupancy HOLD is dead; this Noul is how re-entry stays a decision. Challenge XAU: 291096187 remint-of 291072108 (dsp_walked_hi), both orig_stop, parent \u2212$143.56 / child \u2212$155.14. Do not remint. Occupancy include-depth is long on gate, hide on size/admission. Do not Noul occupancy every tick.",
+  "criteria": {
+    "true": "Named isolated re-entry is a new fire on a flat symbol",
+    "false": "Not isolated, not flat, or the spent ticket"
+  },
+  "measured": {
+    "challenge_xau_remint": {
+      "parent": 291072108,
+      "child": 291096187,
+      "parent_net_usd": -143.56,
+      "child_net_usd": -155.14,
+      "sleeve": "dsp_walked_hi",
+      "both_exit": "orig_stop"
+    }
+  }
+}

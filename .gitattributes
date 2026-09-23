@@ -1,6 +1,55 @@
+shadow_logs/live_mechanical_strategy_shadow_outcomes.jsonl filter=lfs diff=lfs merge=lfs -text
+shadow_logs/ml_shadow_predictions.jsonl filter=lfs diff=lfs merge=lfs -text
+shadow_logs/*.jsonl filter=lfs diff=lfs merge=lfs -text
+shadow_logs/**/*.jsonl filter=lfs diff=lfs merge=lfs -text
+shadow_logs/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+shadow_logs/**/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/archive/**/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/no_api_mechanical_replay_engine_from_source_universe/NO_API_MECHANICAL_REPLAY_CANDIDATE_INVENTORY_ROWS_2026-05-10.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/no_api_mechanical_replay_engine_from_source_universe/NO_API_MECHANICAL_REPLAY_DISCOVERY_PATH_LABEL_ROWS_2026-05-10.jsonl filter=lfs diff=lfs merge=lfs -text
+research/program_control/*_PRE_DEDUP_*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/program_control/*_PRE_REPAIR_*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/program_control/SHADOW_LOG_INTEGRITY_VERIFICATION_2026-05-04.json filter=lfs diff=lfs merge=lfs -text
 research/science_program_2026_05/06_outcome_testing/scid_noapi_ready8_rowset_target_horizon_result_packet_materialization/SCID_NOAPI_READY8_ROWSET_ROWS_2026-05-12.jsonl text eol=lf
+research/science_program_2026_05/06_outcome_testing/scid_noapi_ready8_quarantined_target_result_packet_after_g0_gate/SCID_NOAPI_READY8_TARGET_RESULT_ROWS_*_2026-05-13.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/scid_ready8_discriminative_quarantined_target_result_packet/SCID_READY8_DISCRIMINATIVE_TARGET_RESULT_ROWS_*_2026-05-13.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/g0_scid_noapi_ready8_target_result_synthesis_and_quarantined_numerical_screen/G0_SCID_READY8_CANDIDATE_EXAMPLE_LEDGER_2026-05-13.jsonl filter=lfs diff=lfs merge=lfs -text
 research/science_program_2026_05/06_outcome_testing/scid_ready8_discriminative_card_rowset_repair_and_sealed_validation_design/SCID_READY8_DISCRIMINATIVE_CARD_ROWSET_ROWS_2026-05-13.jsonl text eol=lf
+research/science_program_2026_05/06_outcome_testing/g0_scid_ready8_discriminative_target_result_control_evidence_synthesis_after_g12_audit/G0_SCID_READY8_DISC_TARGET_SCREEN_CANDIDATE_LEVEL_VIEW_LEDGER_2026-05-13.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/scid_ready8_discriminative_sealed_validation_after_opening_gate/R8DISC_SEALED_*.jsonl filter=lfs diff=lfs merge=lfs -text
 research/science_program_2026_05/06_outcome_testing/haz005_transition_clock_split_and_source_repair/* text eol=lf
 research/science_program_2026_05/06_outcome_testing/haz001_density_waiting_time_concentration_expansion_and_sealed_retest/* text eol=lf
-# sot: no Git LFS and no line-ending conversion.
+research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_EVIDENCE_TO_SYSTEM_BUILD_MATRIX_2026-05-18.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCORER_FILTER_ROUTER_IMPLEMENTATION_LEDGER_2026-05-18.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_LEGACY_RESEARCH_MERGER_LEDGER_2026-05-18.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_replay_truth_engine_and_saturated_ablation_2026_05_24/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_replay_truth_engine_and_saturated_ablation_2026_05_24/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_full_historical_candidate_generation_replay_2026_05_24/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_full_historical_candidate_generation_replay_2026_05_24/stage02_shards/*/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_full_historical_candidate_generation_replay_2026_05_24/stage03_shards/*/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_full_historical_candidate_generation_replay_2026_05_24/stage04_shards/*/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_full_historical_candidate_generation_replay_2026_05_24/stage05_shards/*/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_full_historical_candidate_generation_replay_2026_05_24/stage06_shards/*/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_substrate_dynamic_execution_repair_2026_05_26/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_substrate_dynamic_execution_repair_2026_05_26/stage04_dynamic_policy_shards/*/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_production_candidate_failure_repair_ev_prop_governor_2026_05_25/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/*/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/stage05_full_activated_replay_shards/*/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_repair_hardening_2026_05_27/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_repair_hardening_2026_05_27/ei15r/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/operations/vnext_moonshot_lane04_historical_microscope_engine_2026_06_01/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/operations/wave3_hard_halt_causal_microscope_continuation_2026_06_04/*.jsonl filter=lfs diff=lfs merge=lfs -text
+research/operations/vnext_moonshot_lane03_historical_candidate_reconstruction_2026_06_01/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/operations/vnext_moonshot_lane08_digital_twin_replay_engine_2026_06_01/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/operations/vnext_moonshot_lane11_execution_policy_engine_v2_2026_06_01/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/operations/vnext_moonshot_lane10_portfolio_scheduler_v2_2026_06_01/*.jsonl.gz filter=lfs diff=lfs merge=lfs -text
+research/operations/wave3_historical_replay_digital_twin_v4_2026_06_04/*.jsonl filter=lfs diff=lfs merge=lfs -text
+knowledge_base/redacted_account_live_bee34003/** filter=lfs diff=lfs merge=lfs -text
+data/ticks/**/*.parquet filter=lfs diff=lfs merge=lfs -text
+
+# sot: no line-ending conversion.
 * -text

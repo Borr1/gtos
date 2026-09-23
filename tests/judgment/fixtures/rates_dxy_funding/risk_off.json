@@ -1,0 +1,33 @@
+{
+  "id": "risk_off",
+  "as_of_utc": "2026-09-17T11:00:00Z",
+  "focus": {"symbol": "XAUUSD", "side": "long"},
+  "expect": {
+    "usd_impulse": null,
+    "rates_impulse": null,
+    "funding_stress": null,
+    "risk_on_off": true,
+    "challenge_true": false,
+    "risk_stance": "risk_off"
+  },
+  "cross_books": {
+    "NAS100": {
+      "d1": {
+        "n": 16,
+        "start": "2026-09-02T00:00:00Z",
+        "step_hours": 24,
+        "start_close": 25000.0,
+        "step_close": -180.0
+      }
+    },
+    "US30": {
+      "d1": {
+        "n": 16,
+        "start": "2026-09-02T00:00:00Z",
+        "step_hours": 24,
+        "start_close": 48000.0,
+        "step_close": -220.0
+      }
+    }
+  }
+}
