@@ -35,7 +35,7 @@
       "geometry_lo_minus_xhi": 0.17974541336101663,
       "session_london_ny_minus_ny": 0.14470551614914404,
       "level_inside_minus_below_pdl": 0.04889204258495411,
-      "flow_h4_up_minus_dn_long": 0.04118549119424242,
+      "flow_h4_up_minus_dn_long": 0.041185491190,
       "persist_core_minus_softband": 0.0007446500578626725
     },
     "l1_raw": {

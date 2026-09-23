@@ -700,7 +700,7 @@ def test_load_trade_record_backfills_join_keys_from_placement_ledger(tmp_path):
     import json
 
     owner = UltimateBookOwner(_cfg(True), _FakeMT5(), str(tmp_path))
-    ticket = 424242
+    ticket = 0
     bar = "2026-06-16T08:00:00+00:00"
     owner._ledger.record(
         "crypto",
@@ -708,7 +708,7 @@ def test_load_trade_record_backfills_join_keys_from_placement_ledger(tmp_path):
         bar,
         decision_day="2026-06-16",
         cluster="crypto",
-        candidate_id="cand-424242",
+        candidate_id="cand-0",
         ticket=ticket,
         ts="2026-06-16T08:01:02+00:00",
     )
@@ -724,7 +724,7 @@ def test_load_trade_record_backfills_join_keys_from_placement_ledger(tmp_path):
 
     rec = owner._load_trade_record(ticket)
 
-    assert rec["candidate_id"] == "cand-424242"
+    assert rec["candidate_id"] == "cand-0"
     assert rec["decision_bar_iso"] == bar
     assert rec["decision_day"] == "2026-06-16"
     assert rec["cluster"] == "crypto"
@@ -732,7 +732,7 @@ def test_load_trade_record_backfills_join_keys_from_placement_ledger(tmp_path):
     assert rec["execution"]["broker_symbol"] == "BTCUSD"
     assert rec["execution"]["placed_at_utc"] == "2026-06-16T08:01:02+00:00"
     assert rec["runtime_learning_joinability_status"] == "ticket_candidate_decision_policy_joinable"
-    assert json.loads(p.read_text())["candidate_id"] == "cand-424242"
+    assert json.loads(p.read_text())["candidate_id"] == "cand-0"
 
     ctx = owner._runtime_learning_trade_context(ticket=ticket, record=rec)
     assert ctx["joinability_status"] == "ticket_candidate_decision_policy_joinable"

@@ -17,6 +17,7 @@ that field unset. Floor and baseline are not questions. This module does not sen
 from __future__ import annotations
 
 import json
+import sys
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
@@ -213,73 +214,463 @@ def _attr(obj: Any, *names: str) -> Any:
     return None
 
 
-def read_chair_day_start() -> dict[str, Any]:
-    """Chair day-start balance at FTMO 00:00 CE(S)T (22:00 UTC).
+def _iso_z(instant: datetime) -> str:
+    return instant.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    Day-start equity sits in the sibling file when a live read recorded it.
-    A missing sibling equity stays missing. This read does not create the
-    balance file.
-    """
-    out: dict[str, Any] = {
+
+def _parse_utc(value: Any) -> datetime | None:
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, str) and value.strip():
+        try:
+            parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    else:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _same_reset(stored: Any, reset: datetime | None) -> bool:
+    if reset is None:
+        return False
+    parsed = _parse_utc(stored)
+    return parsed is not None and parsed == reset.astimezone(timezone.utc)
+
+
+def _unset_day(reset: datetime | None, source: str = "unset") -> dict[str, Any]:
+    return {
         "day_start_balance": None,
         "day_start_equity": None,
-        "day_start_reset_utc": None,
-        "day_start_source": "unassembled",
-        "day_start_equity_source": "unassembled",
+        "day_start_reset_utc": None if reset is None else _iso_z(reset),
+        "day_start_source": source,
+        "day_start_equity_source": "unset",
     }
+
+
+def _account_reset_rule(rule_name: str | None) -> str | None:
+    """The running account's reset calendar. A missing rule is not a guessed hour."""
+
+    if rule_name in (None, ""):
+        return None
+    text = str(rule_name).strip()
+    return text or None
+
+
+def _account_login(value: Any) -> int | None:
+    if isinstance(value, bool) or value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _terminal_login(mt5: Any) -> int | None:
+    fn = getattr(mt5, "get_account_login", None)
+    if callable(fn):
+        try:
+            return _account_login(fn())
+        except Exception:
+            return None
+    return None
+
+
+def _writer_may_record(login: Any, namespace: Any, terminal_login: Any) -> bool:
+    """The running book records its own day start. A name on argv does not.
+
+    The files live under one account directory. Only that namespace, with
+    the terminal's own login, may write them.
+    """
+
+    book = _account_login(login)
+    terminal = _account_login(terminal_login)
+    ns = str(namespace or "").strip()
+    if book is None or terminal is None or not ns or book != terminal:
+        return False
+    try:
+        folder = _CHAIR_BASELINE.parents[2].name
+    except IndexError:
+        return False
+    return ns == folder
+
+
+def _cash_amount(value: Any) -> float | None:
+    if value is None:
+        return 0.0
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _deal_time(deal: Any, offset_seconds: int | None) -> datetime | None:
+    """Deal ``time`` is a broker-wall epoch, the same clock as a position time.
+
+    A datetime is already UTC, which is what ``get_account_history_deals``
+    returns after it has removed the offset. An int is the raw epoch.
+    """
+
+    raw = _attr(deal, "time")
+    if isinstance(raw, datetime) or isinstance(raw, str):
+        return _parse_utc(raw)
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        if offset_seconds is None:
+            return None
+        return datetime.fromtimestamp(float(raw) - float(offset_seconds), tz=timezone.utc)
+    return None
+
+
+def _deal_balance_delta(deal: Any) -> float | None:
+    """Profit, commission, swap and fee. Balance operations are included."""
+
+    total = 0.0
+    for name in ("profit", "commission", "swap", "fee"):
+        number = _cash_amount(_attr(deal, name))
+        if number is None:
+            return None
+        total += number
+    return total
+
+
+def _history_deals(mt5: Any, reset: datetime, now: datetime) -> list[Any] | None:
+    """Deals in ``[reset, now]``, both instants true UTC.
+
+    ``get_account_history_deals`` shifts that UTC window by the broker offset
+    before ``history_deals_get``, because the terminal compares the bounds to
+    broker-wall epochs. It then returns each deal time as UTC. This caller
+    does not shift the window again.
+    """
+
+    fn = getattr(mt5, "get_account_history_deals", None)
+    if not callable(fn):
+        return None
+    try:
+        deals = fn(reset, now)
+    except Exception:
+        return None
+    if deals is None:
+        return None
+    try:
+        return list(deals)
+    except TypeError:
+        return None
+
+
+def _raw_module(mt5: Any) -> Any:
+    raw = getattr(mt5, "_mt5", None)
+    return raw if raw is not None else mt5
+
+
+def _live_position_rows(mt5: Any) -> list[Any] | None:
+    raw = _raw_module(mt5)
+    fn = getattr(raw, "positions_get", None)
+    if not callable(fn):
+        return None
+    try:
+        found = fn()
+    except Exception:
+        return None
+    if found is None:
+        return None
+    try:
+        return list(found)
+    except TypeError:
+        return None
+
+
+def _offset_seconds(mt5: Any, server_offset_hours: float | None) -> int | None:
+    fn = getattr(mt5, "get_broker_offset_seconds", None)
+    if callable(fn):
+        try:
+            seconds = fn()
+        except Exception:
+            seconds = None
+        if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
+            return int(seconds)
+    if server_offset_hours is None:
+        return None
+    try:
+        hours = float(server_offset_hours)
+    except (TypeError, ValueError):
+        return None
+    if hours != hours or hours in (float("inf"), float("-inf")):
+        return None
+    return int(round(hours * 3600.0))
+
+
+def _position_time_utc(pos: Any, offset_seconds: int | None) -> datetime | None:
+    raw = _attr(pos, "time")
+    if isinstance(raw, datetime):
+        return _parse_utc(raw)
+    if isinstance(raw, (int, float)) and not isinstance(raw, bool):
+        if offset_seconds is None:
+            return None
+        return datetime.fromtimestamp(float(raw) - float(offset_seconds), tz=timezone.utc)
+    return None
+
+
+def _open_across_reset(
+    deals: list[Any],
+    positions: list[Any] | None,
+    reset: datetime,
+    offset_seconds: int | None,
+) -> bool | None:
+    """Whether a position was open at the reset. None when that cannot be read."""
+
+    if positions is None:
+        return None
+    opened: set[str] = set()
+    crossed = False
+    for deal in deals:
+        when = _deal_time(deal, offset_seconds)
+        if when is None or when < reset:
+            continue
+        try:
+            pid = int(_attr(deal, "position_id"))
+        except (TypeError, ValueError):
+            pid = 0
+        if pid <= 0:
+            continue
+        try:
+            entry = int(_attr(deal, "entry"))
+        except (TypeError, ValueError):
+            return None
+        key = str(pid)
+        if entry == 0:
+            opened.add(key)
+        elif entry in (1, 2, 3) and key not in opened:
+            crossed = True
+    if crossed:
+        return True
+    for pos in positions:
+        when = _position_time_utc(pos, offset_seconds)
+        if when is None:
+            return None
+        if when < reset:
+            return True
+    return False
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def _stored_today(reset: datetime | None, login: Any) -> dict[str, Any] | None:
+    if reset is None:
+        return None
+    asked = _account_login(login)
+    if asked is None:
+        return None
     raw = _read_json(_CHAIR_BASELINE)
-    if raw is None:
+    if raw is None or not _same_reset(raw.get("reset_utc"), reset):
+        return None
+    if _account_login(raw.get("login")) != asked:
+        return None
+    balance = _float_or_none(raw.get("balance"))
+    if balance is None:
+        return None
+    out = _unset_day(reset, "recorded")
+    out["day_start_balance"] = balance
+    out["day_start_source"] = "recorded"
+    equity = _float_or_none(raw.get("equity"))
+    equity_source = "recorded_at_reset"
+    if equity is None:
+        side = _read_json(_CHAIR_EQUITY)
+        if (
+            side is not None
+            and _same_reset(side.get("reset_utc"), reset)
+            and _account_login(side.get("login")) == asked
+        ):
+            equity = _float_or_none(side.get("equity"))
+            equity_source = str(side.get("source") or "recorded_at_reset")
+    if equity is None:
+        out["day_start_equity_source"] = "unset"
         return out
-    out["day_start_balance"] = _float_or_none(raw.get("balance"))
-    out["day_start_reset_utc"] = raw.get("reset_utc")
-    out["day_start_source"] = "chair_day_baseline"
-    file_equity = _float_or_none(raw.get("equity"))
-    if file_equity is not None:
-        out["day_start_equity"] = file_equity
-        out["day_start_equity_source"] = "chair_day_baseline"
-        return out
-    side = _read_json(_CHAIR_EQUITY)
-    if side is None or _float_or_none(side.get("equity")) is None:
-        return out
-    if side.get("reset_utc") != raw.get("reset_utc"):
-        return out
-    out["day_start_equity"] = _float_or_none(side.get("equity"))
-    out["day_start_equity_source"] = str(side.get("source") or "live_read")
+    out["day_start_equity"] = equity
+    out["day_start_equity_source"] = equity_source
     return out
 
 
-def _sit_day_start_equity(live_equity: float, recorded_utc: str) -> dict[str, Any]:
-    """Record this live equity beside the existing Chair balance baseline.
-
-    No Chair file → do not create one. Equity already stored for this reset
-    → keep it. No live number → do not invent one.
-    """
-    day = read_chair_day_start()
-    if day.get("day_start_balance") is None or day.get("day_start_equity") is not None:
-        return day
-    if live_equity is None:
-        return day
-    raw = _read_json(_CHAIR_BASELINE)
-    if raw is None or _float_or_none(raw.get("balance")) is None:
-        return day
-    payload = {
-        "equity": float(live_equity),
-        "reset_utc": raw.get("reset_utc"),
-        "source": "live_read",
-        "recorded_utc": recorded_utc,
-        "invented": False,
-    }
+def _derive_day_start(
+    mt5: Any,
+    now: datetime,
+    reset: datetime,
+    server_offset_hours: float | None,
+) -> dict[str, Any]:
+    bal_fn = getattr(mt5, "get_account_balance", None)
+    if not callable(bal_fn):
+        return _unset_day(reset)
     try:
-        _CHAIR_EQUITY.parent.mkdir(parents=True, exist_ok=True)
-        tmp = _CHAIR_EQUITY.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(payload, indent=1) + "\n", encoding="utf-8")
-        tmp.replace(_CHAIR_EQUITY)
+        balance = _float_or_none(bal_fn())
     except Exception:
-        day = dict(day)
-        day["day_start_equity"] = float(live_equity)
-        day["day_start_equity_source"] = "live_read"
-        return day
-    return read_chair_day_start()
+        return _unset_day(reset)
+    if balance is None:
+        return _unset_day(reset)
+    deals = _history_deals(mt5, reset, now)
+    if deals is None:
+        return _unset_day(reset)
+    offset = _offset_seconds(mt5, server_offset_hours)
+    delta = 0.0
+    kept: list[Any] = []
+    for deal in deals:
+        when = _deal_time(deal, offset)
+        if when is None:
+            return _unset_day(reset)
+        if when < reset:
+            continue
+        cash = _deal_balance_delta(deal)
+        if cash is None:
+            return _unset_day(reset)
+        delta += cash
+        kept.append(deal)
+    start_balance = balance - delta
+    if start_balance <= 0 or start_balance != start_balance:
+        return _unset_day(reset)
+    positions = _live_position_rows(mt5)
+    crossed = _open_across_reset(kept, positions, reset, offset)
+    out = _unset_day(reset, "derived")
+    out["day_start_balance"] = start_balance
+    out["day_start_source"] = "derived"
+    if crossed is False:
+        out["day_start_equity"] = start_balance
+        out["day_start_equity_source"] = "flat_across_reset"
+    return out
+
+
+def _record_day_start(day: Mapping[str, Any], reset: datetime, login: Any) -> None:
+    balance = _float_or_none(day.get("day_start_balance"))
+    account = _account_login(login)
+    if balance is None or account is None:
+        return
+    existing = _read_json(_CHAIR_BASELINE)
+    if existing is not None:
+        stamped = _account_login(existing.get("login"))
+        if stamped is not None and stamped != account:
+            return
+    _write_json(_CHAIR_BASELINE, {
+        "login": account,
+        "balance": balance,
+        "reset_utc": _iso_z(reset),
+        "source": day.get("day_start_source") or "derived",
+    })
+    equity = _float_or_none(day.get("day_start_equity"))
+    if equity is None:
+        return
+    _write_json(_CHAIR_EQUITY, {
+        "login": account,
+        "equity": equity,
+        "reset_utc": _iso_z(reset),
+        "source": day.get("day_start_equity_source") or "flat_across_reset",
+        "invented": False,
+    })
+
+
+def read_chair_day_start(
+    mt5: Any = None,
+    now: datetime | None = None,
+    *,
+    rule_name: str | None = None,
+    server_offset_hours: float | None = None,
+    login: Any = None,
+    namespace: Any = None,
+    record: bool | None = None,
+) -> dict[str, Any]:
+    """Today's day start. A reset that is not the current one is unset.
+
+    The first read after the reset derives the balance from the terminal.
+    The running book records it when its login is the terminal's login and
+    it names its namespace. A file for another login is not this account.
+    """
+
+    now_dt = now or datetime.now(timezone.utc)
+    parsed_now = _parse_utc(now_dt)
+    if parsed_now is None:
+        return _unset_day(None)
+    from src.utils.broker_clock import daily_reset_instant_utc
+
+    reset = daily_reset_instant_utc(parsed_now, _account_reset_rule(rule_name), server_offset_hours)
+    stored = _stored_today(reset, login)
+    if stored is not None:
+        return stored
+    if mt5 is None or reset is None:
+        return _unset_day(reset)
+    derived = _derive_day_start(mt5, parsed_now, reset, server_offset_hours)
+    terminal_login = _terminal_login(mt5)
+    if record is None:
+        do_record = _writer_may_record(login, namespace, terminal_login)
+    else:
+        do_record = bool(record)
+    recorded_login = _account_login(login) or terminal_login
+    if do_record and derived.get("day_start_balance") is not None:
+        try:
+            _record_day_start(derived, reset, recorded_login)
+        except Exception:
+            pass
+    return derived
+
+
+def read_live_positions(raw: Any = None) -> tuple[list[dict[str, Any]] | None, bool]:
+    """Broker positions from positions_get. A failed read is unset, not flat."""
+
+    module = raw
+    if module is None:
+        try:
+            import MetaTrader5 as mt5  # type: ignore
+        except Exception:
+            return None, False
+        module = mt5
+    fn = getattr(module, "positions_get", None)
+    if not callable(fn):
+        return None, False
+    try:
+        found = fn()
+    except Exception:
+        return None, False
+    if found is None:
+        return None, False
+    try:
+        listed = list(found)
+    except TypeError:
+        return None, False
+    rows: list[dict[str, Any]] = []
+    for pos in listed:
+        ticket = _attr(pos, "ticket")
+        symbol = _attr(pos, "symbol")
+        if ticket is None or not symbol:
+            continue
+        side_raw = _attr(pos, "type")
+        if side_raw in (0, "BUY", "LONG", "buy"):
+            side = "buy"
+        elif side_raw in (1, "SELL", "SHORT", "sell"):
+            side = "sell"
+        else:
+            side = None
+        rows.append({
+            "ticket": ticket,
+            "symbol": symbol,
+            "side": side,
+            "lots": _attr(pos, "volume"),
+            "live_sl": _attr(pos, "sl"),
+            "tp": _attr(pos, "tp"),
+            "entry": _attr(pos, "price_open"),
+            "price_open": _attr(pos, "price_open"),
+            "comment": _attr(pos, "comment"),
+            "sleeve": _attr(pos, "comment"),
+            "magic": _attr(pos, "magic"),
+            "time": _attr(pos, "time"),
+        })
+    return rows, True
 
 
 def _apply_day_start(row: dict[str, Any], day: Mapping[str, Any]) -> None:
@@ -804,16 +1195,42 @@ def _decide(row: dict[str, Any], ask: Callable[..., Any] | None = None) -> dict[
     return row
 
 
+def _day_start_for_card(
+    mt5: Any,
+    as_of: datetime,
+    *,
+    login: Any,
+    rule_name: str | None,
+    server_offset_hours: float | None,
+) -> dict[str, Any]:
+    """This account's day start. The card reads. It does not record."""
+
+    return read_chair_day_start(
+        mt5=mt5,
+        now=as_of,
+        rule_name=rule_name,
+        server_offset_hours=server_offset_hours,
+        login=login,
+        record=False,
+    )
+
+
 def _assemble_facts(
     *,
     injected: Mapping[str, Any] | None = None,
     mt5: Any = None,
     owner: Any = None,
     as_of_utc: datetime | None = None,
+    login: Any = None,
+    rule_name: str | None = None,
+    server_offset_hours: float | None = None,
 ) -> dict[str, Any]:
     """Terminal facts. Money keys are always on the card. Parameters stay unset."""
     as_of = as_of_utc or datetime.now(timezone.utc)
     as_of_s = as_of.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    asked_login = login
+    if asked_login is None and isinstance(injected, Mapping):
+        asked_login = injected.get("login")
 
     live = None
     if isinstance(injected, Mapping) and _float_or_none(injected.get("equity")) is not None:
@@ -835,13 +1252,25 @@ def _assemble_facts(
     if live is None or live.get("equity") is None:
         row = _card_shell(terminal_read="missing")
         row["as_of_utc"] = as_of_s
-        _apply_day_start(row, read_chair_day_start())
+        _apply_day_start(row, _day_start_for_card(
+            mt5 or owner,
+            as_of,
+            login=asked_login,
+            rule_name=rule_name,
+            server_offset_hours=server_offset_hours,
+        ))
         return row
 
     equity = float(live["equity"])
     balance = _float_or_none(live.get("balance"))
     open_pnl = _float_or_none(live.get("open_pnl"))
-    day = read_chair_day_start()
+    day = _day_start_for_card(
+        mt5 or owner,
+        as_of,
+        login=asked_login,
+        rule_name=rule_name,
+        server_offset_hours=server_offset_hours,
+    )
     if isinstance(injected, Mapping):
         injected_equity = _float_or_none(injected.get("day_start_equity"))
         injected_balance = _float_or_none(injected.get("day_start_balance"))
@@ -854,9 +1283,6 @@ def _assemble_facts(
             day["day_start_balance"] = injected_balance
             if day.get("day_start_source") == "unassembled":
                 day["day_start_source"] = "injected"
-    if day.get("day_start_equity") is None and day.get("day_start_balance") is not None:
-        day = _sit_day_start_equity(equity, as_of_s)
-
     row = _card_shell(terminal_read="live")
     row.update(
         {
@@ -884,6 +1310,9 @@ def assemble_account_card(
     owner: Any = None,
     as_of_utc: datetime | None = None,
     ask: Callable[..., Any] | None = None,
+    login: Any = None,
+    rule_name: str | None = None,
+    server_offset_hours: float | None = None,
 ) -> dict[str, Any]:
     """Facts, then one System One ask for the decisions and the parameters."""
 
@@ -893,6 +1322,9 @@ def assemble_account_card(
             mt5=mt5,
             owner=owner,
             as_of_utc=as_of_utc,
+            login=login,
+            rule_name=rule_name,
+            server_offset_hours=server_offset_hours,
         ),
         ask=ask,
     )
@@ -924,8 +1356,19 @@ def attach_account(
     """Stamp ``account`` onto a gold_state object. Never raise."""
     out: dict[str, Any] = dict(state or {})
     existing = out.get("account") if isinstance(out.get("account"), Mapping) else None
+    identity = out.get("identity") if isinstance(out.get("identity"), Mapping) else {}
+    asked_login = identity.get("login")
+    rule_name = identity.get("reset_rule") or identity.get("daily_reset_rule")
+    server_offset_hours = identity.get("server_offset_hours")
     try:
-        card = _assemble_facts(injected=injected, mt5=mt5, owner=owner)
+        card = _assemble_facts(
+            injected=injected,
+            mt5=mt5,
+            owner=owner,
+            login=asked_login,
+            rule_name=rule_name,
+            server_offset_hours=server_offset_hours,
+        )
     except Exception:
         card = _card_shell(terminal_read="missing")
     if (
@@ -936,7 +1379,14 @@ def attach_account(
         and _float_or_none(existing.get("equity")) is not None
     ):
         try:
-            card = _assemble_facts(injected=existing, mt5=mt5, owner=owner)
+            card = _assemble_facts(
+                injected=existing,
+                mt5=mt5,
+                owner=owner,
+                login=asked_login if asked_login is not None else existing.get("login"),
+                rule_name=rule_name,
+                server_offset_hours=server_offset_hours,
+            )
         except Exception:
             card = _card_shell(terminal_read="missing")
     saved = _cached(card, _snapshot_key(card))

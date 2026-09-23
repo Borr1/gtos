@@ -86,6 +86,7 @@ __all__ = [
     "broker_naive_to_utc",
     "broker_epoch_to_utc",
     "utc_to_broker_naive",
+    "daily_reset_instant_utc",
     "fixed_offset_rule",
 ]
 
@@ -490,6 +491,51 @@ def offset_seconds_at_utc(instant: datetime, rule: BrokerClockRule) -> int:
         assert rule.fixed_offset_hours is not None
         return int(round(rule.fixed_offset_hours * 3600))
     return int(round(_anchor_offset_hours_at_utc(instant, rule) * 3600))
+
+
+def daily_reset_instant_utc(
+    now: datetime,
+    rule_name: str | None,
+    server_offset_hours: float | None = None,
+) -> datetime | None:
+    """UTC instant at which this account's current daily-loss day began.
+
+    ``rule_name`` is the account's own reset calendar. FTMO's profile names
+    Europe/Prague (00:00 CE(S)T). redacted_account names the server clock: pass no
+    calendar and supply the live server offset. A missing rule does not guess
+    an hour.
+    """
+
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    now = now.astimezone(timezone.utc)
+    try:
+        offset = daily_reset_offset_hours(now, rule_name)
+    except UnknownBrokerClockError:
+        return None
+    if offset is None:
+        if server_offset_hours is None:
+            return None
+        try:
+            offset = float(server_offset_hours)
+        except (TypeError, ValueError):
+            return None
+        if offset != offset or offset in (float("inf"), float("-inf")):
+            return None
+    local_now = now + timedelta(hours=float(offset))
+    local_midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    start = local_midnight - timedelta(hours=float(offset))
+    try:
+        offset_at_start = daily_reset_offset_hours(start, rule_name)
+    except UnknownBrokerClockError:
+        return None
+    if offset_at_start is None:
+        offset_at_start = offset
+    if offset_at_start != offset:
+        start = local_midnight - timedelta(hours=float(offset_at_start))
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+    return start.astimezone(timezone.utc)
 
 
 def offset_seconds_at_broker_time(broker_wall: datetime, rule: BrokerClockRule) -> int:

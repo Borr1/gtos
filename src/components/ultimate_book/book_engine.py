@@ -3125,6 +3125,46 @@ class UltimateBookLiveEngine:
             pass
         return base
 
+    def _shared_day_start_balance(self, now: datetime) -> Optional[float]:
+        """Today's day-start balance from the shared read. Missing stays missing."""
+        try:
+            from src.judgment.equity_frame import read_chair_day_start
+        except Exception:
+            return None
+        rule = getattr(self._governor, "_reset_rule", None)
+        offset = None
+        try:
+            offset = float(self._governor._effective_offset_h(now))
+        except Exception:
+            offset = None
+        book_login = None
+        login_fn = getattr(self._mt5, "get_account_login", None)
+        if callable(login_fn):
+            try:
+                book_login = login_fn()
+            except Exception:
+                book_login = None
+        try:
+            day = read_chair_day_start(
+                self._mt5,
+                now,
+                rule_name=rule,
+                server_offset_hours=offset,
+                login=book_login,
+                namespace=getattr(self, "_namespace", None),
+            )
+        except Exception:
+            return None
+        if not isinstance(day, dict):
+            return None
+        try:
+            number = float(day.get("day_start_balance"))
+        except (TypeError, ValueError):
+            return None
+        if number != number or number in (float("inf"), float("-inf")) or number <= 0:
+            return None
+        return number
+
     def _f5_day_start_balance(self, now: datetime) -> Optional[float]:
         """The governor's day-start balance -- F5 N3.
 
@@ -3134,13 +3174,20 @@ class UltimateBookLiveEngine:
         keyed on `reset_window_date` -- already the broker-correct reset-window key -- so the
         notional day rolls on the same clock the firm uses.
 
-        With no ledger this is exactly the call it replaced."""
+        With no ledger the shared day start is preferred. Reconstruction remains when that
+        read cannot derive a balance."""
         if self._f5_ledger is not None:
             return float(self._f5_ledger.day_start_balance(self._governor.reset_window_date(now)))
+        shared = self._shared_day_start_balance(now)
+        if shared is not None:
+            return shared
         return self._governor.reconstruct_day_start_balance(self._mt5, now)
 
     def broker_day_start_balance(self, now: datetime) -> Optional[float]:
         """Broker-real daily baseline for the F5 real-vs-notional headroom minimum."""
+        shared = self._shared_day_start_balance(now)
+        if shared is not None:
+            return shared
         baseline = self._governor.reconstruct_day_start_balance(self._mt5, now)
         if baseline is not None:
             return float(baseline)

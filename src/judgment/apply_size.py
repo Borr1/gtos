@@ -601,14 +601,11 @@ def _day_baseline(facts: Mapping[str, Any]) -> float | None:
     named = _positive_usd(facts.get("day_start_equity_or_balance_baseline"))
     if named is not None:
         return named
-    starts = []
-    for key in ("day_start_equity", "day_start_balance"):
-        number = _positive_usd(facts.get(key))
-        if number is not None:
-            starts.append(number)
-    if not starts:
+    equity = _positive_usd(facts.get("day_start_equity"))
+    balance = _positive_usd(facts.get("day_start_balance"))
+    if equity is None or balance is None:
         return None
-    return max(starts)
+    return max(equity, balance)
 
 
 def _remaining_loss_room(baseline: Any, equity: Any, percent: Any, initial: Any) -> float | None:
@@ -634,7 +631,9 @@ def daily_room_read(
 
     A named USD room is that room. Otherwise the firm's daily percent of the
     initial balance is measured down from the higher of the day's starting
-    equity and balance. An internal overlay is not a rule of the account.
+    equity and balance. One of those two, without the other, is not the
+    higher, so the room stays unset. An internal overlay is not a rule of
+    the account.
     """
 
     facts = params if isinstance(params, Mapping) else {}
@@ -659,6 +658,14 @@ def open_risk_read(params: Mapping[str, Any] | None) -> tuple[float | None, str]
     """Stop-risk already open, in USD. A flat book is zero. An unread book stays unset."""
 
     facts = params if isinstance(params, Mapping) else {}
+    pending = facts.get("pending_orders_total")
+    if pending not in (None, ""):
+        try:
+            pending_n = int(pending)
+        except (TypeError, ValueError):
+            return None, "unset"
+        if pending_n > 0 and facts.get("open_risk_usd") in (None, ""):
+            return None, "unset"
     if "open_risk_usd" in facts and facts.get("open_risk_usd") not in (None, ""):
         number = _float_or_none(facts.get("open_risk_usd"))
         if (

@@ -430,88 +430,31 @@ def _cached_json(path: Path) -> dict[str, Any] | None:
 
 
 def open_pair(root: Path) -> dict[str, Any]:
-    """Facts about an open position. Does not close or resize it."""
+    """Facts about an open position from positions_get. Does not close or resize it.
 
-    records = root / "trade_records"
-    if records.is_dir():
-        files = list(records.glob("*.json"))
-        present = {str(path) for path in files}
-        for cached in list(_FILE_CACHE):
-            if cached.startswith(str(records)) and cached not in present:
-                _FILE_CACHE.pop(cached, None)
-        newest: dict[str, Any] | None = None
-        newest_ticket: Any = None
-        newest_mtime: int | None = None
-        for file_path in files:
-            try:
-                mtime = file_path.stat().st_mtime_ns
-            except OSError:
-                continue
-            row = _cached_json(file_path)
-            if not isinstance(row, dict):
-                continue
-            status = str(row.get("trade_lifecycle_status") or row.get("status") or "").lower()
-            if status != "open":
-                continue
-            if newest_mtime is not None and mtime < newest_mtime:
-                continue
-            newest_mtime = mtime
-            newest = row
-            newest_ticket = row.get("ticket") or file_path.stem
-        if newest is not None:
-            return {
-                "pair_present": True,
-                "symbol": newest.get("symbol"),
-                "sleeve": newest.get("sleeve") or newest.get("sleeve_name"),
-                "ticket": newest_ticket,
-                "status": "open",
-            }
-    found: list[dict[str, Any]] = []
+    A failed read stays unset. A live flat book stays flat even when a trade
+    record or a chair file still says open. ``root`` is the namespace the
+    caller already resolved; the position itself is the terminal's.
+    """
 
-    def walk(node: Any, seen: set[int]) -> None:
-        if isinstance(node, (dict, list)):
-            ident = id(node)
-            if ident in seen:
-                return
-            seen.add(ident)
-        if isinstance(node, dict):
-            symbol = node.get("symbol")
-            sleeve = node.get("sleeve") or node.get("sleeve_name") or node.get("tag")
-            ticket = node.get("ticket") or node.get("position_id") or node.get("position")
-            status = str(
-                node.get("trade_lifecycle_status") or node.get("status") or ""
-            ).lower()
-            if symbol and (sleeve or status in {"open", "occupied"} or node.get("occupied") is True):
-                found.append(
-                    {
-                        "symbol": symbol,
-                        "sleeve": sleeve,
-                        "ticket": ticket,
-                        "status": status or None,
-                    }
-                )
-            for value in node.values():
-                walk(value, seen)
-        elif isinstance(node, list):
-            for item in node:
-                walk(item, seen)
+    del root
+    try:
+        from src.judgment.equity_frame import read_live_positions
 
-    for name in ("chair_health.json", "heartbeat.json"):
-        walk(_cached_json(root / name), set())
-    open_rows = [
-        row
-        for row in found
-        if row.get("status") in {"open", "occupied"} or row.get("sleeve")
-    ]
-    chosen = open_rows[0] if open_rows else None
-    if chosen is None:
+        positions, read = read_live_positions()
+    except Exception:
+        positions, read = None, False
+    if not read or positions is None:
+        return {"pair_present": None}
+    if not positions:
         return {"pair_present": False}
+    pos = positions[0]
     return {
         "pair_present": True,
-        "symbol": chosen.get("symbol"),
-        "sleeve": chosen.get("sleeve"),
-        "ticket": chosen.get("ticket"),
-        "status": chosen.get("status"),
+        "symbol": pos.get("symbol"),
+        "sleeve": pos.get("sleeve") or pos.get("comment"),
+        "ticket": pos.get("ticket"),
+        "status": "open",
     }
 
 

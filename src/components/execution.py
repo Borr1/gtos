@@ -3355,12 +3355,14 @@ class ExecutionEngine:
         raw = getattr(adapter, "_mt5", None)
         return raw if raw is not None else adapter
 
-    def _open_stop_risk_usd(self, positions) -> "float | None":
-        """USD lost if every open position on the account hits its stop.
+    def _open_stop_risk_usd(self, positions, orders) -> "tuple[float, float] | None":
+        """USD lost if every open position and pending order hits its stop.
 
-        Every position on the account counts, whatever its magic. A position
+        Every position and every pending order counts, whatever its magic.
+        Pending volume is ``volume_current``. A position or a pending order
         with no stop has no bounded loss, so the total stays unset. A stop
-        already in profit adds nothing.
+        already in profit adds nothing. The pair is account total, then the
+        pending-only part of that total.
         """
         raw = self._raw_mt5()
         calc = getattr(raw, "order_calc_profit", None)
@@ -3368,6 +3370,38 @@ class ExecutionEngine:
             return None
         buy = getattr(raw, "ORDER_TYPE_BUY", 0)
         sell = getattr(raw, "ORDER_TYPE_SELL", 1)
+        buy_orders = []
+        sell_orders = []
+        for name in (
+            "ORDER_TYPE_BUY",
+            "ORDER_TYPE_BUY_LIMIT",
+            "ORDER_TYPE_BUY_STOP",
+            "ORDER_TYPE_BUY_STOP_LIMIT",
+        ):
+            value = getattr(raw, name, None)
+            if isinstance(value, int) and not isinstance(value, bool):
+                buy_orders.append(value)
+        for name in (
+            "ORDER_TYPE_SELL",
+            "ORDER_TYPE_SELL_LIMIT",
+            "ORDER_TYPE_SELL_STOP",
+            "ORDER_TYPE_SELL_STOP_LIMIT",
+        ):
+            value = getattr(raw, name, None)
+            if isinstance(value, int) and not isinstance(value, bool):
+                sell_orders.append(value)
+
+        def piece(order_type, symbol, volume, price, stop):
+            try:
+                pnl = float(calc(order_type, symbol, volume, price, stop))
+            except Exception:
+                return None
+            if pnl != pnl or pnl in (float("inf"), float("-inf")):
+                return None
+            if pnl < 0:
+                return -pnl
+            return 0.0
+
         total = 0.0
         for pos in positions:
             symbol = self._account_attr(pos, "symbol")
@@ -3377,22 +3411,50 @@ class ExecutionEngine:
             side = self._account_attr(pos, "type")
             if not symbol or volume_n is None or price_n is None or stop_n is None:
                 return None
-            order_type = buy if side in (0, buy, "BUY", "LONG", "buy") else sell
-            try:
-                pnl = float(calc(order_type, symbol, volume_n, price_n, stop_n))
-            except Exception:
+            if side in (0, buy, "BUY", "LONG", "buy"):
+                order_type = buy
+            elif side in (1, sell, "SELL", "SHORT", "sell"):
+                order_type = sell
+            else:
                 return None
-            if pnl != pnl or pnl in (float("inf"), float("-inf")):
+            loss = piece(order_type, symbol, volume_n, price_n, stop_n)
+            if loss is None:
                 return None
-            if pnl < 0:
-                total += -pnl
-        return total
+            total += loss
+        pending = 0.0
+        for order in orders:
+            symbol = self._account_attr(order, "symbol")
+            volume_n = self._positive_fact(self._account_attr(order, "volume_current"))
+            price_n = self._positive_fact(self._account_attr(order, "price_open"))
+            stop_n = self._positive_fact(self._account_attr(order, "sl"))
+            side = self._account_attr(order, "type")
+            if side in buy_orders:
+                order_type = buy
+            elif side in sell_orders:
+                order_type = sell
+            else:
+                return None
+            if side in (
+                getattr(raw, "ORDER_TYPE_BUY_STOP_LIMIT", None),
+                getattr(raw, "ORDER_TYPE_SELL_STOP_LIMIT", None),
+            ):
+                price_n = self._positive_fact(self._account_attr(order, "price_stoplimit"))
+            if not symbol or volume_n is None or price_n is None or stop_n is None:
+                return None
+            loss = piece(order_type, symbol, volume_n, price_n, stop_n)
+            if loss is None:
+                return None
+            pending += loss
+            total += loss
+        return total, pending
 
     def _size_room_facts(self, account_balance: float) -> dict:
         """Floor, daily, and open-risk facts from this process's account.
 
         Reads go through the adapter's own methods and the raw module behind
-        it, so they take the terminal lock like every other call.
+        it, so they take the terminal lock like every other call. Pending
+        orders are part of the open risk. A failed positions or orders read
+        leaves that risk unset.
         """
         adapter = getattr(self, "mt5", None)
         raw = self._raw_mt5()
@@ -3412,8 +3474,13 @@ class ExecutionEngine:
                 else:
                     balance = value
         positions = None
+        orders = None
         open_risk = None
+        pending_risk = None
+        listed = None
+        listed_orders = None
         get_pos = getattr(raw, "positions_get", None)
+        get_orders = getattr(raw, "orders_get", None)
         if callable(get_pos):
             try:
                 found = get_pos()
@@ -3424,15 +3491,59 @@ class ExecutionEngine:
                     listed = list(found)
                 except TypeError:
                     listed = None
-                if listed is not None:
-                    positions = len(listed)
-                    open_risk = 0.0 if not listed else self._open_stop_risk_usd(listed)
+        if callable(get_orders):
+            try:
+                found_orders = get_orders()
+            except Exception:
+                found_orders = None
+            if found_orders is not None:
+                try:
+                    listed_orders = list(found_orders)
+                except TypeError:
+                    listed_orders = None
+        if listed is not None and listed_orders is not None:
+            positions = len(listed)
+        if listed_orders is not None:
+            orders = len(listed_orders)
+        if listed is not None and listed_orders is not None:
+            if not listed and not listed_orders:
+                open_risk = 0.0
+                pending_risk = 0.0
+            else:
+                counted = self._open_stop_risk_usd(listed, listed_orders)
+                if counted is not None:
+                    open_risk, pending_risk = counted
         day: dict = {}
         if self._challenge_book():
             try:
                 from src.judgment.equity_frame import read_chair_day_start
 
-                got = read_chair_day_start()
+                offset = None
+                offset_fn = getattr(adapter, "get_broker_offset_seconds", None)
+                if callable(offset_fn):
+                    try:
+                        seconds = offset_fn()
+                    except Exception:
+                        seconds = None
+                    if isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
+                        offset = float(seconds) / 3600.0
+                book_login = None
+                login_fn = getattr(adapter, "get_account_login", None)
+                if callable(login_fn):
+                    try:
+                        book_login = login_fn()
+                    except Exception:
+                        book_login = None
+                got = read_chair_day_start(
+                    mt5=adapter,
+                    rule_name=self._cfg_fact(
+                        "prop_safe_selector_daily_reset_timezone",
+                        "governor_daily_reset_rule",
+                    ),
+                    server_offset_hours=offset,
+                    login=book_login,
+                    namespace=getattr(self, "_runtime_namespace", None),
+                )
                 if isinstance(got, dict):
                     day = got
             except Exception:
@@ -3459,6 +3570,10 @@ class ExecutionEngine:
         declared = self._cfg_fact("account_rules")
         if declared not in (None, ""):
             facts["account_rules"] = str(declared)
+        if orders is not None:
+            facts["pending_orders_total"] = orders
+        if pending_risk is not None:
+            facts["pending_stop_risk_usd"] = pending_risk
         if open_risk is not None:
             facts["open_risk_usd"] = open_risk
         return facts

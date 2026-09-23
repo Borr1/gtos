@@ -2062,7 +2062,18 @@ def run_command_center(
     pin = _pin_facts()
     root = namespace_root(REPO_ROOT, str(CHALLENGE_NS))
     heartbeat = read_json(root / "heartbeat.json") or {}
-    chair = read_json(root / "judgment" / "state" / "chair_health.json") or {}
+    live_account = None
+    live_positions = None
+    positions_read = False
+    try:
+        from src.judgment.equity_frame import read_live_mt5, read_live_positions
+
+        live_account = read_live_mt5()
+        live_positions, positions_read = read_live_positions()
+    except Exception:
+        live_account = None
+        live_positions = None
+        positions_read = False
     pair = open_pair(root)
     now = datetime.now(timezone.utc)
     age_hours = _sit_age_hours(sit_body, now=now) if sit_body else None
@@ -2081,10 +2092,10 @@ def run_command_center(
         **ident,
         **pin,
         "heartbeat_ok": heartbeat.get("ok") if isinstance(heartbeat, dict) else None,
-        "positions": heartbeat.get("positions") if isinstance(heartbeat, dict) else None,
-        "day_net": chair.get("day_net") if isinstance(chair, dict) else None,
-        "equity": chair.get("equity") if isinstance(chair, dict) else heartbeat.get("equity"),
-        "balance": chair.get("balance") if isinstance(chair, dict) else heartbeat.get("balance"),
+        "positions": len(live_positions) if positions_read and isinstance(live_positions, list) else None,
+        "day_net": None,
+        "equity": live_account.get("equity") if isinstance(live_account, dict) else None,
+        "balance": live_account.get("balance") if isinstance(live_account, dict) else None,
         "open_pair": pair,
         "as_of": as_of,
     }
