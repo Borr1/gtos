@@ -120,8 +120,9 @@ def _timeout_s(facts: dict | None) -> float | None:
 
 def _questions(facts: dict | None = None, bars=None, i: int | None = None) -> dict[str, Any]:
     from src.judgment.jev_questions import spot_question
-    from .spot_choice import amount_question, anchors_for
+    from .spot_choice import amount_question, anchors_for, structure_notes
 
+    notes = structure_notes(bars, i)
     text = {
         GATE_K: "The score you return is the ATR-average multiple that opens this bar." + _UNSET,
         TARGET_R: "The score you return is the reward multiple of the stop for this bar." + _UNSET,
@@ -133,12 +134,12 @@ def _questions(facts: dict | None = None, bars=None, i: int | None = None) -> di
         ATR_WINDOW: "The score you return is how many ATR values the average uses." + _UNSET,
         TREND_LB: "The score you return is the trend lookback in bars." + _UNSET,
         TREND_ATR: "The score you return is the ATR multiple that marks the trend." + _UNSET,
-        SCAN_FROM: "The score you return is how many bars back the gap scan starts." + _UNSET,
-        SCAN_SPAN: "The score you return is how far back the gap scan reaches." + _UNSET,
-        SCAN_OLDEST: "The score you return is the oldest bar index the gap scan may use." + _UNSET,
-        GAP_SHIFT: "The score you return is the bar distance between the two edges of the gap." + _UNSET,
+        SCAN_FROM: "The score you return is how many bars back the gap scan starts. " + notes["gap"] + _UNSET,
+        SCAN_SPAN: "The score you return is how far back the gap scan reaches. " + notes["gap"] + _UNSET,
+        SCAN_OLDEST: "The score you return is the oldest bar index the gap scan may use. " + notes["gap"] + _UNSET,
+        GAP_SHIFT: "The score you return is the bar distance between the two edges of the gap. " + notes["shift"] + _UNSET,
         GAP_ATR: "The score you return is the gap size as a multiple of ATR." + _UNSET,
-        AC_LAG: "The score you return is the autocorrelation lag in bars." + _UNSET,
+        AC_LAG: "The score you return is the autocorrelation lag in bars. " + notes["lag"] + _UNSET,
         SLOPE_BARS: "The score you return is how many closes the slope uses." + _UNSET,
         MOM_BARS: "The score you return is how many bars the momentum uses." + _UNSET,
         LIMIT_PRICE: (

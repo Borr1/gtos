@@ -56,14 +56,16 @@ If bar_times is missing/unparseable the session cannot be located -> FAIL CLOSED
 ================================  TRAP 2 — LOOK-AHEAD in len>=6  ====================================
 The route enters at iw=lon[3]/ses[3] (the 4th session bar) but its `len(lon)>=6` / `len(ses)>=lw+2=6`
 guard inspects lon[4],lon[5] — bars AFTER iw that do NOT exist when iw closes live. It is a backtest
-data-COMPLETENESS filter, not knowable leak-free at iw's close. FAITHFUL leak-free live rule:
-fire iff the LATEST CLOSED bar i=len(bars)-1 IS today's 4th session bar (i is a session bar AND exactly
-3 session bars precede it on the same server-day) AND i0>=20. `len>=6` is treated as the expected
-normal-session assumption (London/NY run many hours -> a full session always has >>6 M15 bars). The
-ONLY divergence from the route is a rare truncated/holiday session that would have had <6 bars: the
-route's completeness filter skips it, this generator (correctly, leak-free) fires. The direction
-inputs (open[i0], close[iw], close[iw-20]) are all at index <= iw=i, so every feature is leak-free;
-no bar with index > i is ever read.
+data-COMPLETENESS filter, not knowable leak-free at iw's close. The live generator reads no bar
+after the decision bar. The direction inputs (session open, this bar's close, and a trend lookback
+at or before this bar) stay at index <= i.
+
+The live entry is not an index and a grace. Those two, sized so every pair contains
+the session, made every bar an entry. The entry is a Choice on the measured session:
+the server hour, this bar's position in the session, the session range, and the time
+left until the next server hour. "Not this bar" does not build an intent. An empty
+answer, a tie, or an error stays unset. When the answer is this bar, the entry bar
+is this bar and the impulse is this bar's close minus the session open.
 
 Reuses the LOCKED primitive atr14 verbatim. Pure: stdlib only, no IO, no order path.
 """
@@ -83,12 +85,9 @@ from ....utils.broker_clock import NEW_YORK_PLUS_7, offset_seconds_at_utc
 ON_SURFACE = ("GBPJPY", "USDJPY")
 
 _SHARED = {
-    "session_hour": "The score you return is the server hour at which this session opens.",
-    "session_index": "The score you return is which session bar, counting from 1, is the entry bar.",
     "stop_mult": "The score you return is the ATR multiple of the stop.",
     "target_mult": "The score you return is the ATR multiple of the target.",
     "i0_min": "The score you return is how many bars must exist before the first session bar.",
-    "catchup_grace": "The score you return is how many session bars after the entry bar still count.",
     "warmup_bars": "The score you return is how many closed bars this scan needs.",
 }
 _NY_EXTRA = {
@@ -170,9 +169,13 @@ def _parse(bar_times):
 
 
 def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, ny: bool):
-    """One post. The session hour and the multiples are scores. The surface is a choice."""
+    """One post. The multiples are scores. The entry is a choice on the session facts."""
     n = len(bars) if bars else 0
     i = n - 1 if n else -1
+    scores = _scores_for(sleeve)
+    from .spot_choice import entry_choice, session_entry_facts
+
+    entry = session_entry_facts(bars, i if n else None, bar_times)
     aligned = bool(bar_times is not None and bars is not None and len(bar_times) == n and n > 0)
     latest = bar_times[i] if aligned else None
     previous = bar_times[i - 1] if aligned and i >= 1 else None
@@ -186,6 +189,13 @@ def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, n
         named_surface=list(ON_SURFACE),
         times_aligned=aligned,
     )
+    if entry is not None:
+        state["session_hour"] = entry["session_hour"]
+        state["session_open_hour"] = entry["open_hour"]
+        state["session_position"] = entry["position"]
+        state["hour_position"] = entry["hour_position"]
+        state["session_range"] = entry["session_range"]
+        state["time_left"] = entry["time_left"]
     remain = fx_spot.seconds_until_next_print(latest, previous)
     if remain is not None:
         state["seconds_from_clock"] = remain
@@ -201,38 +211,32 @@ def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, n
             },
         }
     }
-    return fx_spot.ask_pack(
-        _scores_for(sleeve), state, choices=choices, bars=bars, index=n - 1 if n else None, bar_times=bar_times,
+    if entry is not None:
+        choices["session_entry"] = entry_choice(entry)
+    packed = fx_spot.ask_pack(
+        scores, state, choices=choices, bars=bars, index=n - 1 if n else None, bar_times=bar_times,
     )
+    packed["entry"] = entry
+    return packed
 
 
-def _geometry(bars, parsed, i, scores, *, ny: bool):
-    """Direction and distances from the returned bounds. A flat impulse is not a side."""
-    session_hour = _whole(scores.get("session_hour"), least=0)
-    session_index = _whole(scores.get("session_index"), least=1)
+def _geometry(bars, parsed, i, scores, entry, *, ny: bool):
+    """Direction and distances when this bar is the entry. A flat impulse is not a side."""
     stop_mult = _positive(scores.get("stop_mult"))
     target_mult = _positive(scores.get("target_mult"))
     i0_min = _whole(scores.get("i0_min"), least=0)
-    grace = _whole(scores.get("catchup_grace"), least=0)
     warmup = _whole(scores.get("warmup_bars"), least=1)
-    if None in (session_hour, session_index, stop_mult, target_mult, i0_min, grace, warmup):
+    if parsed is None or i >= len(parsed) or parsed[i] is None:
+        return None
+    if None in (stop_mult, target_mult, i0_min, warmup) or not isinstance(entry, dict):
+        return None
+    indexes = entry.get("indexes")
+    if not isinstance(indexes, list) or not indexes or indexes[-1] != i:
         return None
     if len(bars) < warmup or i < 0:
         return None
-    stamp_i = parsed[i]
-    if stamp_i.hour < session_hour:
-        return None
-    day_i = stamp_i.date()
-    session_idx = [
-        k for k, stamp in enumerate(parsed)
-        if stamp.date() == day_i and stamp.hour >= session_hour
-    ]
-    if not session_idx or session_idx[-1] != i:
-        return None
-    if not (session_index <= len(session_idx) <= session_index + grace):
-        return None
-    iw = session_idx[session_index - 1]
-    i0 = session_idx[0]
+    iw = i
+    i0 = indexes[0]
     trend_lb = 0
     if ny:
         impulse_atr = _positive(scores.get("impulse_atr"))
@@ -287,7 +291,11 @@ def _generate(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, n
     packed = spot_pack(sleeve, symbol, bars, decision_day, bar_times, ny=ny)
     if packed.get("sides", {}).get("surface") != "on_surface":
         return None
-    built = _geometry(bars, parsed, len(bars) - 1, packed.get("scores") or {}, ny=ny)
+    if packed.get("sides", {}).get("session_entry") != "this_bar":
+        return None
+    built = _geometry(
+        bars, parsed, len(bars) - 1, packed.get("scores") or {}, packed.get("entry"), ny=ny,
+    )
     if built is None:
         return None
     direction, stop_dist, target_dist = built
@@ -303,7 +311,7 @@ def _generate(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, n
 
 def generate_fx_jpy(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
                     aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
-    """London session open. The hour, the entry bar, and the multiples are the returned scores."""
+    """London session. This bar is the entry only when that Choice says so."""
     del bar_time, aux_bars, aux_times
     return _generate("fx_jpy", symbol, bars, decision_day, bar_times, ny=False)
 
