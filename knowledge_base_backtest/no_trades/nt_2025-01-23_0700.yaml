@@ -1,0 +1,24 @@
+candle_time: '2025-01-23T07:00:00Z'
+data_quality_ok: true
+date: '2025-01-23'
+decision: NO_TRADE
+reason: 'unexpected_error: Error code: 400 - {''type'': ''error'', ''error'': {''type'':
+  ''invalid_request_error'', ''message'': ''Your credit balance is too low to access
+  the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.''},
+  ''request_id'': ''req_011CZXx23zRjBSM8RGfVrgQm''}'
+reasoning:
+  daily_bias: null
+  full_explanation: 'Session produced 0 candidates. Primary reasons: unexpected_error:
+    Error code: 400 - {''type'': ''error'', ''error'': {''type'': ''invalid_request_error'',
+    ''message'': ''Your credit balance is too low to access the Anthropic API. Please
+    go to Plans & Billing to upgrade or purchase credits.''}, ''request_id'': ''req_011CZXx2AKBqeSbfzfeAJNDL''},
+    unexpected_error: Error code: 400 - {''type'': ''error'', ''error'': {''type'':
+    ''invalid_request_error'', ''message'': ''Your credit balance is too low to access
+    the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.''},
+    ''request_id'': ''req_011CZXx23zRjBSM8RGfVrgQm''}, unexpected_error: Error code:
+    400 - {''type'': ''error'', ''error'': {''type'': ''invalid_request_error'', ''message'':
+    ''Your credit balance is too low to access the Anthropic API. Please go to Plans
+    & Billing to upgrade or purchase credits.''}, ''request_id'': ''req_011CZXx2G8gJWZ1mUMHvF1zg''}'
+  h4_alignment: null
+  stopped_at_step: null
+record_id: nt_2025-01-23_0700

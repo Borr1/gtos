@@ -1,0 +1,13 @@
+HOW FAR IS THE EMITTED ENTRY FROM THE MARKET?  January 2026, all roster emissions.
+|entry - last close before the decision| in bps, and as a fraction of the row's own risk distance.
+family                                   n  AT-MKT?  gap_bps p50       p90       p99  gap/d p50      p90  share gap>0.25R
+current_fvg_fill                     84503    False      44.4764   94.0964  132.5532     5.1654  17.4655           0.9817
+current_ob_retest                    31733    False      50.3626   93.3885  117.8885     4.7810  10.7332           0.9951
+current_breaker_re_entry             12232    False      41.7969   88.3485  109.2740     5.3046  13.2903           0.9882
+liquidity_sweep_reclaim               5208     True       0.0000    0.0000    0.0000     0.0000   0.0000           0.0000
+displacement_continuation             4814     True       0.0000    0.0000    0.0000     0.0000   0.0000           0.0000
+structural_distance_extreme           2869     True       0.0000    0.0000    0.0000     0.0000   0.0000           0.0000
+cross_asset_lead_lag                  2584     True       0.0000    0.0000    0.0000     0.0000   0.0000           0.0000
+session_open_range_break              1026     True       0.0000    0.0000    0.0000     0.0000   0.0000           0.0000
+volatility_compression_expansion       645     True       0.0000    0.0000    0.0000     0.0000   0.0000           0.0000
+regime_transition_break                309     True       0.0000    0.0000    0.0000     0.0000   0.0000           0.0000

@@ -1,0 +1,261 @@
+# Price Predictions: Gold $5,000, Silver $130 & Natural Gas Explosion? (Q1 2026 Forecast)
+URL: https://www.youtube.com/watch?v=ZncFQX5iBbg
+Video ID: ZncFQX5iBbg
+Duration: 713s
+Fetched: 2026-04-18T13:24:04Z
+---
+
+Good day everybody. Brian here from
+quadlabsnet.com.
+We're going to be talking about some new
+updates, some important, very important
+updates
+uh regarding everything in the world
+today on January
+27.
+Okay,
+so let's talk about what's been going
+on. I've been running this uh little
+server now with the client strategies
+for over 24 hours. Uh I haven't done the
+full-on analysis yet, but um everything
+seems to be still running over 24 hours,
+so that's great. It's kind of foolproof,
+so that's a good sign right there. All
+right. So,
+one of the other confusing things on my
+last video, uh, I mentioned about how
+high frequency trading for retail
+traders, mom and pops, independents,
+whatnot, might be kind of overkill in
+trading. Um, I still think it can still
+be used for um, buy buy signals and sell
+signals and it can be very good for that
+based upon liquidity and volume. So I
+think that's where the value will be for
+uh M paw traders. Now the other question
+is what do you do about it? So I've been
+focusing all yesterday on nukes uh with
+aggregators and news feeds and u been
+testing everything out. So let me just
+show you what we're talking about here.
+So if you came into my quant analytics
+in the back end you can get that through
+a trial uh or very very low price. So
+you can get access to all this. So I'm
+rejigging all my news stuff that I
+report and um basically what's happened
+is um as I'm only focusing on futures
+and options. Now when I say options I'm
+not uh talking about stock options,
+equity options. I'm talking about future
+on options. So that's important to
+distinguish there. So, I've been posting
+and all everything I'm showing you now
+is based around
+um nude seats uh that I built out uh in
+a custom way which shall remain
+nameless. Um but there's a whole variety
+of them. Okay. And um this is really
+important because this is fairly fresh
+news in the last week. Um,
+and I'm playing around with the
+prompting to just only show me now, most
+recently as of the last 10 minutes is to
+only focus on the pricing of the actual
+strategy um, and the pricing of whatever
+it's interested in trading with the
+forecast of an entry and exit and the
+reason behind it using news on on top of
+what I just showed you with this this
+thing here. Okay. So, um with the news,
+we're able to originally from yesterday
+had built out 16 custom feeds. What I
+started realizing is, uh only five are
+kind of valuable. 16 of them uh
+including every virtual news source you
+could imagine over hundreds of them from
+major news outlets like Bloomberg or FT
+or CNBC. A lot of it's just noise. Okay?
+So if you want to be successful in this
+trading, you have to decipher between
+the noise and the signals, the valid
+signals. Now with the noise, a lot of
+just intuition. A lot of it is very
+shortterm. A lot of it we can't control.
+This is it's exogenous external. So the
+only real thing we could focus on on is
+potentially the past recent past of
+price direction and potential of price
+movement in the futures and options
+space.
+So, I've got all these articles again
+here in my back end, all ranging from
+pretty well crypto, mainly Bitcoin and
+uh Ethereum. Now, with the CMU, they've
+just added a bunch of altcoins
+um which that news covers. On top of
+that, uh there's forex currency. I think
+this is where the real predictable way
+to make money is in um plus commodity
+uh treasury or bonds as just a thing to
+watch and gauge and the standard um
+other future and option major markets
+obviously the US indices and so so
+forth. So in here um I've given
+um I've I've built basically as I keep
+saying people don't know this you can
+build out um from the news uh and using
+now I'm using I'm not using real data I
+am using theoretical data so if I supply
+what I'm going to show you real data
+this would be much more accurate in
+terms of price and entry exit
+um so what you you will see here is kind
+of off of current pricing. Okay. So here
+what we've got included among these um
+instruments got gold, silver, natural
+gas, euro USD, the Japanese yen with the
+USD Japanese yen, Bitcoin, Sena, New
+Zealand, US dollar, crude oil, and
+Ethereum. So that's what's projected
+>> to um potentially move down the line. We
+also have here um the different
+strategies popular ones everyone uses
+options and bull call spread futures
+long momentum options bare put spread
+and quite a few here and that's all
+based upon the news that I fed it from
+basically this long prompt with all the
+targeting all that's built out. So um
+let me just show you how many lines
+we're dealing with here. we're dealing
+with about 2,000 lines of data. That's
+just from the last 24 hours. So, this is
+pretty pretty accurate. So, when you
+look at this, and that's just part of
+the prompting to give me the drivers on
+its overall
+uh analysis on forecast of where things
+will go. So, this is again built out
+around um built out around major news
+currently in the last 24 hours. So,
+we're able to get what looks pretty good
+in terms of the overall uh market where
+it's at. Again, the pricing here that
+you're seeing is not accurate, but it's
+just more about the trending. So, once I
+provide it real data, then yeah, we can
+work with that. So, anyways, um so here
+the drivers here, what we're looking at
+is USD weakness. Again, this is current
+news. Last 24 hours, dollar index at
+2026 lows driving commodity rallies,
+precious metal super cycle, gold
+crushing, and silver. Okay, so this this
+pricing is correct. Uh with the gold
+breaking through um 5,000 silver and now
+currently at 117. So also there's a talk
+of uh an energy crisis
+um because the gas natural gas prices I
+guess at $6 because of this deep freeze
+of this recent storm we had since
+Saturday Sunday coming out of the Texas
+region and going right across the US and
+Canada. We also have here um in the
+commodity space capital rotation uh with
+the Bitcoin Ethereum
+um trend when you look at that. Um and
+then of of course we have this
+geopolitical tension regarding a shadow
+fleet trade and Venezuela uh oil rehab
+habitization.
+So here's what we've got in the sick uh
+based around um what it projects based
+upon that current news as drivers and
+looking at the uh gold here.
+Uh so here we're looking at gold with a
+target of 5150 5250 timeline over the
+next quarter. The way it's been going
+lately, it's been matter of days, right?
+silver uh direction long entry at 115 to
+116 targets at 125130
+timeline obviously current quarter then
+we get natural gas which is interesting
+um with the long at 545 560 with a
+target of 720 to 850 okay and then
+that's your timeline between February
+and March 2026
+for the Euro or sorry for the forex we
+have the Euro USD we can long here 1818
+118
+with a target of 1191205.
+So that's again a target of this
+quarter. Again we have the other
+direction of a short on the USD Japanese
+yen. Same target timeline and then we
+have Bitcoin as well. So um of course
+here we have 80,000 target 945 or 105
+timeline between 20 Q2 and Q4. So when
+you look at this, you can ask and I can
+ask this the AI is the next step is to
+say based upon what you're supplying as
+data projection, which one should I go
+with that has the highest potential?
+Visually, you can see that as it stands
+right now, silver is pretty good.
+Natural gas, if that's true, is pretty
+good. And then the Euro USD is pretty
+good, too. And if you're willing to
+chance it, you go with the DEN as well
+because that's what's going to break
+everything as it stands right now with
+the Bank of Japan intervening uh which
+could untie a lot of this trade. But you
+can clearly see between gold and silver
+that we do definitely have a trend here.
+The trend right now is really pushed uh
+in uh silver. Okay. And then again I can
+ask it to run whatever. I've already
+done the analysis. So I can ask it, you
+know, what kind of analysis should I do?
+But I just want to show you that you can
+use a news to now reapply here into this
+similar architecture and rebuild an
+entire trading system around this news
+which would be more realistic for retail
+traders, mom and pop, smaller traders.
+Up to this point, this was always that
+had that mindset of high frequency
+trading and fast trading. As I said,
+this this would definitely work with um
+for high like like for for accounts of I
+don't know half a million, a million
+over. But here is the better more
+realistic way to trade for mom and pop
+in the futures and options market
+because this does include futures and
+both and options as well. So, um, this
+will be very good for signal generation
+on the short term, very short term
+actually. And then on the long term,
+this is what you'd probably invest into.
+In here, you can see based upon the news
+that US indices are not the place to be
+right now. Um, they've been flat, but
+this is what it's projecting will be the
+major drivers in the uh, space here. So,
+if you ask yourself, which ones would
+you rather be? Probably in the top three
+here. Um, oil's not included in here as
+well, but this this trade right here for
+the natural gas. I don't know if that's
+going to be plausible or not, but again,
+I can as part of this analysis, ask for
+probability on a forecast and how
+sustainable it is. So, just wanted to
+point that out there. And again, if you
+want to know more about this analysis
+in detail and what drives what, give
+this a try here under quantabset.com.
+Thanks for watching.

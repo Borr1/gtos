@@ -1,0 +1,408 @@
+# AI Developers and the Open Source Labyrinth: Taming Dependencies with Code Generation
+URL: https://www.youtube.com/watch?v=IzG8B-IchZE
+Video ID: IzG8B-IchZE
+Duration: 1090s
+Fetched: 2026-04-18T13:24:28Z
+---
+
+Hello everybody. Brian here from uh
+quantabs.net.
+Um just uh reaching out to you now that
+I have found a interesting
+podcast episode
+uh on a site I have never heard of but
+uh it this is on blogpot.com
+believe it or not that still exists.
+Anyways uh the blog is the practical
+quant.
+It's uh run by this guy named Ben
+Lorica I guess. Uh he has a person by
+the name of Steve Pike and the title is
+automating software upgrades. How to
+combine AI and expert developers.
+Steve Pike on tools for managing the
+complexity of open-source dependencies
+and software upgrades. In my next uh
+podcast episode, I'll be talking exactly
+about this um my resolutions on this,
+but I just wanted to kind of go over my
+opinions on these topics because they
+are important. Um and uh a couple things
+that take note on
+AI and expert development, software
+development. So the first uh thing about
+here is open-source dependencies. I
+agree that managing and maintaining the
+open source dependencies is really
+tough. Uh especially if you're on
+whatever programming language you're on.
+Uh you got to deal with upgrades in the
+Python let's say. Then you have to worry
+about dependencies if they're compatible
+or not with um those that you currently
+use. When you upgrade to the new Python
+interpreter, the question becomes, will
+you break it? Uh, obviously you can
+waste your time going down many many uh
+just rabbit a really bad rabbit hole
+going through this. I'm not going to get
+into it. I'm sure a lot of you know what
+I'm talking about. Uh, also maintaining
+open-source project as well. Do they
+play nice with each other? It's not so
+bad in the world of Python, but when you
+look at in my current state of
+WordPress,
+uh it's just it's a complete dogs
+breakfast when you try to integrate and
+merge other uh other um dependencies,
+plugins together and they just don't
+play nice together. So what are the
+solutions? Now, couple things I want to
+talk about is just AI generation,
+code generation. Um, specifically what
+you may or may want to do. I can't
+obviously say what people are using,
+what they're uh what they're going with,
+but what I can say
+uh is this. Uh over the last couple of
+weeks, I've been trying out a lot of the
+different options when it comes to AI,
+specifically code generation.
+Uh usually I've I've worked with the
+equivalent of chat GPT earlier versions
+before I don't know two months ago. And
+do understand that these this these
+these these models these LLM large
+language models change all the time and
+they radically improve. Um everything
+really boils down to how you prompt the
+AI in your questioning the prompt
+engineering as they call it. Uh that's
+key. So uh right now J I think the older
+versions of chat GBT are somewhat
+antiquated. Somebody did this for me. So
+what I did was um
+I used uh the new the newer Google
+Gemini.
+Um and uh what I what I did was I just
+put in basically a sentence. I asked it
+to write me an arbitrage
+script and uh for gold assets be it uh
+gold exchanges, gold stocks, gold
+whatever arbitrage and and that exists.
+It's not too complicated to know that.
+And um I'm just looking for exactly what
+it was. So I passed that through the
+current version of um of uh
+Gem the Gemini, the Google Gemini. I
+just so you know, I've subscribed to it
+through the Google one uh subscription.
+For the money, I think it's okay for
+when you get to that tier of like $30,
+$40. Anyway, so uh I find that also the
+Google Gemini is very very good at
+creating in my case articles. I mean
+this is the power of AI but generally
+for code it's a little different. So I
+put in a a prompt in the Google Gemini.
+I asked create a script uh that will
+arbitrage gold on one minute time
+frequency. Now I did that on purpose for
+a few things. I'm not saying I want high
+frequency, but I see I want to see what
+it would do, what it would generate, and
+the kind of code it would. So, this is
+basically what it came back with. Um,
+I'll be glad to help you create a uh
+script for potential gold arbitrage
+opportunity on a one minute time frame.
+However, and it goes into the warning.
+However, it's essential to understand
+inheritance limitations, risks involved,
+market efficiency, transaction cost,
+market data delays, fundamental factors.
+So, in here, uh it has a disclaimer. Uh
+this script for educational purposes
+only and should not be considered
+financial advice. So, that's to cover
+their end on the legal front. Get it?
+uh always conduct through thorough
+research and back test before risking
+capital. Very true. So then it said here
+is a script that simulates a basic now
+the key word there is basic arbitrage
+check between two gold symbols replace
+with your gold uh with your desired
+symbols. So the ones I came up with was
+standard like a CFD uh let's say U USD
+on let's say a Wanda and then an actual
+future contract of GC equals F. This is
+for um trading view.
+Now it had a very
+uh maybe 10 line script
+uh and then it said explanation data
+source define source one source two to
+represent your chosen gold symbols price
+difference calculate difference between
+closing prices of source one source two
+using price diff
+uh set a min profit minimum threshold to
+uh account for uh transaction cost
+adjust as needed. Price difference plot
+plot the price diff as the blue line for
+visualization.
+I never coded that just so you know.
+Highlighting opportunities use
+conditional statement to highlight
+potential arbitrage opportunity between
+the green for positive for the price
+diff and red for the uh negative based
+on min threshold. Note, there are these
+are forformational purposes only. Again,
+the liability and don't get guarantee
+actual profit. And I know that there's
+going to be bozos out there thinking
+that they they you know, they'll be able
+to hold this up and be able to come up
+with awesome profit. It doesn't work
+like that. I I don't think it's that
+advanced. And even if it was, I don't
+think it'll make it public. But it does
+uh remind me here, back test the script
+thoroughly on historical data to assess
+the effectiveness and potential risk. We
+know about the the the power and the
+ease that uh trading trading view gives
+you on that factor in transaction and
+commission spreads when calculating
+profitability. This is so true depending
+upon your your frequency. As I said this
+is one minute so I can guarantee you the
+commissions from the uh broker will
+easily uh exceed any profit potential.
+The other one it said consider
+fundamental factors that might affect
+gold prices across markets. Currently we
+see threats of war. The script is for
+educational. Okay. So we saw that. So I
+had somebody generate this differently
+for um
+using Microsoft Copilot. Vast difference
+and much more advanced. Um, let me and
+and and we're also going to look at
+Llama 2, which is the open source from
+Facebook. And on top of that, we've got
+another one. I think it's built on top
+of of uh Llama called Star Coder 2. This
+is the ones he chose.
+So, let's go through the first one here
+of Copilot. Same same prompt. Create a
+Pine uh yeah, a script. Pine script
+version five script that will arbitrage
+gold on one minute time frequency. So
+it's the exact same I fed the Google
+bard. Um so the expression is for
+arbitrage involves comparing the price
+of a gold across different exchanges and
+executing trades when there's a price
+discrepancy. Now remember this is very
+basic stuff the basic arbitrage.
+However, due to the complexity of
+arbitrage strategies and the need for
+real-time data for re multiple sources.
+Now, you could easily do this on trading
+view. That's the beauty of it. It's
+important to note that the following
+script is simplified example and may not
+be suitable for live trading without
+further development. So again, this is
+just a template, a base to work off of.
+And again, because you are working in
+something like Trading View, very
+powerful, very convenient on the back
+testing. This is a very powerful
+combination to get you the code base
+that you want. Basic structure of
+Pinescript version 5 could be used as a
+starting point arbitrage strategy on a
+one minute time frame. So there you go.
+It gives you the code. Then it comes
+back with notes on please replace uh
+gold exchange one and two actual ticker
+symbols of gold from the exchanges you
+want to arbitrage. So this could be
+across anything, ETFs, gold, a stock, it
+could be uh again CFD, whatever you
+want. You could do all that within the
+one platform
+of trading view. That's the power of
+this threshold input allows you to set
+the minimum price difference you
+consider profitable with an arbitrage.
+The script does not account for
+transaction fees, transaction transfer
+time or slippage which are critical
+factors in a world real world arbitrage
+strategy. Uh real time data and
+execution are essential for arbitrage.
+The script is for educational purposes
+and should be tested thoroughly before
+real trading. So again, this is why you
+get the high frequency shops doing this
+sort of stuff because of that. Arbitrage
+opportunities are rare and require
+sophisticated systems to identify
+execute trades profitably. Before
+attempting to use this script for live
+trading, it's highly uh recommended to
+seek advice from a financial adviser.
+Again, the liability financial expert
+ensure compliance with trading
+regulations.
+All right. So, um, that's that's that's
+the co-pilot. So, that's considered
+probably the better one of all of the
+options here. So, this one's with Llama
+2. Um,
+so this one's pretty scant as well as
+the Google Gemini. Uh, same same prompt.
+Uh, here's an example of a Pine Script
+of blah blah blah can be used for
+arbitration for arbitrarily generate
+gold on a one minute time frequency.
+Okay, so it comes back with the notes.
+In this script, we first define gold
+price in dollars per ounce as gold
+price. We then define a function called
+generate generate gold. It takes an
+argument site represents the desired
+size of the gold bar. The function
+calculates the number of ounces in the
+bar using the conversion factor of
+whatever and then checks if the
+generated amount greater than or equal
+to the gold price. It is the function
+returns the number of ounces generated.
+So this is like for physical goals. So
+right there's a disadvantage. Um I'll
+just read you the last part here. In the
+main part of the script, we generate a
+random number between 0 and one using
+the uh rand function. Then call the
+generate gold function with a generated
+number as an argument. The script then
+prints out the amount of gold generated.
+Very scan. Uh not not a good one, but
+remember that's done locally on your
+computer. So this other one called uh
+uh star star coder 2 um same problem you
+can see that in my uh script I'm using
+two separate indicators sure that the
+short long are not correlated with each
+other. Wow that sounds pretty
+sophisticated. This is to reduce the
+risk of trading the same time. Also, if
+you look at the volume of 20-minute bar,
+you will notice that there are no
+15-second bars.
+So, this is very sophisticated now
+compared to even the co-pilot. The
+reason is that pine script do not trade
+with precision. Again, something I
+didn't know. So, if you have a 31
+15-second 20-minute bars trading four
+times in a day, wow, that's pretty
+detailed. Uh again this is from
+Starcoder 2 LLM
+and again I believe this is open source
+and it can be uh can be uh built locally
+on your computer and I think GPUs are
+needed as well. Uh reason is that okay
+uh if you only have 29 15-second 20
+minute bars only three times this will
+make sure you're not trading the same at
+the same time as long short indicators.
+Wow, this is very sophisticated. As you
+will notice that one minute bar volume
+is quite low and used
+volume to determine if I should be short
+or long. But you can use the other
+things such as price and any of the
+indicators to determine which one is
+short or which one is long. I hope this
+was useful. Now it puts an edit in here.
+added the arbitrage pine script uses two
+different indicators to trade gold. I
+also add a one minute bar volume
+indicator that will short or long if it
+is using a five second price difference
+indicator to to determine whether to go
+short or long. And this was an example
+how to do arbitrage trading and it's
+very lengthy very sophisticated script
+I'm looking at at the code. Um,
+let's see here what it says. Uh,
+I like the idea of using five, and this
+is just right out of the, uh, what's
+generated here on top of this. I like
+the idea of using 5-second bars, but you
+should think twice before
+whether it's worth trading at all. Gold
+is rarely traded on one minute time
+frames and will be hard to find a buyer.
+In your case, assuming this is gold,
+even if he finds something to buy gold,
+he will not want to pay much more than
+he paid for the one minute bar. And he
+will probably trade at most twice per
+day, one at open and one at close. This
+is unbelievable. So, it's unlikely that
+you'll be able to uh make a profit.
+Uh I don't know where this is getting it
+from. This This has got to be coming
+from something like Reddit. Sounds like
+there's up votes in here. Up votes. As
+others have said, I'd rather say that it
+is probably not the best time frame to
+use for trading gold. The reason being
+that there are so many of them in one
+day and it would be hard to find someone
+willing to buy. Oh, I'm sorry.
+Uh
+no. Uh willing to buy. Also, the price
+action is extremely small. you'd
+probably get a lot of volume on uh one
+minute bars, but it wouldn't be the be
+worth anything. So, again, this looks
+like it's coming from like a a Reddit
+post, but it but it's very good at
+sourcing this out so you're aware of it.
+Um, I think you'll need to use 5 to 30
+second time frames for gold, and you
+could do that again on on Trading View,
+but again, you got to factor in uh the
+factor in the commissions of your
+broker. There are so many more open
+hours on the market compared to trading
+gold that it might find someone willing
+to buy sell. Also, there's probably more
+volume on those one minute bars than a
+15minute.
+Yeah, this is definitely sounds like
+it's from uh
+definitely definitely from Reddit. It's
+pretty powerful uh on the results
+though. So, there you go. Uh if you want
+to know more about this is is thankfully
+I've got somebody that already
+investigated it. Uh talked about on
+Discord. You can get my link there. Um
+if you want to know what I'm trading,
+just go over to the Substack. I'm
+probably pushing more out onto the
+Substack. If you want to get on my email
+list, just go to quantabs.net/blogs
+or books and you can get info there as
+well. Um leave it at that and I shall uh
+talk to you later. Thanks for listening.

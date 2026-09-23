@@ -1,0 +1,60 @@
+
+-- XAUUSD D1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 12 candle closes: {'bullish': 12}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- XAUUSD H4 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 72 candle closes: {'bullish': 72}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- XAUUSD H1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 276 candle closes: {'bullish': 276}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- US30_cash D1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 13 candle closes: {'bullish': 13}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- US30_cash H4 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 77 candle closes: {'bullish': 77}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- US30_cash H1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 292 candle closes: {'bullish': 292}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- USDJPY D1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 13 candle closes: {'bullish': 13}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- USDJPY H4 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 78 candle closes: {'bullish': 78}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- USDJPY H1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 312 candle closes: {'bullish': 312}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- GBPJPY D1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 13 candle closes: {'bullish': 13}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- GBPJPY H4 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 78 candle closes: {'bullish': 78}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- GBPJPY H1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 312 candle closes: {'bullish': 312}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- GBPUSD D1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 13 candle closes: {'bearish': 13}
+  Bull pct: 0%, Bear pct: 100%, Trans pct: 0%
+
+-- GBPUSD H4 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 78 candle closes: {'bullish': 78}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%
+
+-- GBPUSD H1 — replay identify_structure at end-of-day for April 2026 --
+  Label distribution over 312 candle closes: {'bullish': 312}
+  Bull pct: 100%, Bear pct: 0%, Trans pct: 0%

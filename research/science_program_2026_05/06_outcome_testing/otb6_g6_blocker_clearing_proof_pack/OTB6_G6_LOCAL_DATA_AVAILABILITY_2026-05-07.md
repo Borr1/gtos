@@ -1,0 +1,35 @@
+# OTB6 G6 Local Data Availability
+
+Promotion verdict: `NO_PROMOTION_VERDICT`
+
+- Coverage verdict: `LOCAL_TICK_AND_M1_NOT_AVAILABLE_FOR_TARGET_DECISION_DATES`
+- Target decision dates: 2026-05-03, 2026-05-04, 2026-05-05, 2026-05-06
+- Tick parquet files under `data/ticks`: 0
+
+| Symbol | Latest local M1 |
+|---|---|
+| `CL_PROXY` | `2026-04-17 20:59:00` |
+| `EURUSD_6E` | `2026-04-17 20:59:00` |
+| `EURUSD_SCID` | `2026-04-17 20:58:00` |
+| `GBPUSD` | `2026-05-01 20:59:00` |
+| `GBPUSD_6B` | `2026-04-17 20:59:00` |
+| `NAS100` | `2026-05-01 20:59:00` |
+| `NAS100_MNQ` | `2026-04-17 20:59:00` |
+| `NAS100_NQ` | `2026-04-17 20:59:00` |
+| `SPX_ES` | `2026-04-17 20:59:00` |
+| `SPX_MES` | `2026-04-17 20:59:00` |
+| `US30_MYM` | `2026-04-17 20:59:00` |
+| `US30_YM` | `2026-04-17 20:59:00` |
+| `US30_cash` | `2026-05-01 20:59:00` |
+| `USDJPY` | `2026-05-01 20:59:00` |
+| `USDJPY_6J` | `2026-04-17 20:59:00` |
+| `VIX_VXM` | `2026-04-17 20:59:00` |
+| `VIX_VXMM` | `2026-04-17 20:57:00` |
+| `XAGUSD` | `2026-05-01 20:49:00` |
+| `XAGUSD_SI` | `2026-04-17 20:58:00` |
+| `XAGUSD_SIL` | `2026-04-17 20:58:00` |
+| `XAUUSD` | `2026-05-01 20:44:00` |
+| `XAUUSD_GC` | `2026-04-17 20:59:00` |
+| `XAUUSD_MGC` | `2026-04-17 20:59:00` |
+| `XAUUSD_SCID` | `2026-04-17 20:45:00` |
+| `ZN_CONTROL` | `2026-04-17 20:59:00` |

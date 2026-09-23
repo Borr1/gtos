@@ -1,0 +1,5 @@
+before b22b64da4 ('swarm2: nine-lane constructive audit — the rule trades the negative arm'): 46 bad
+after  f2fdd99de ('breakthrough: ten build lanes — the funnel closes, ETHUSD prepared'): 46 bad
+unchanged: 46   fixed: 0   REGRESSED: 0
+
+No regressions.

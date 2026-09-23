@@ -1,0 +1,48 @@
+======================================================================
+Q1 — Composability
+======================================================================
+
+  Q1 verdict: PASS
+======================================================================
+Q4 — Inference cost benchmark
+======================================================================
+Timing structure...
+Timing volatility...
+Timing microstructure...
+Timing time_session...
+Timing liquidity...
+Timing regime...
+
+  Q4 total: 1643.87ms; per-family:
+    structure        median=21.01ms  n=432
+    volatility       median=1134.34ms  n=270
+    microstructure   median=483.89ms  n=187
+    time_session     median=0.23ms  n=126
+    liquidity        median=4.14ms  n=129
+    regime           median=0.26ms  n=63
+======================================================================
+Q2 — Cross-family redundancy
+======================================================================
+  cohort: 60 XAUUSD timestamps
+    [1/60] 2024-04-01 08:00:00
+    [6/60] 2025-01-21 08:00:00
+    [11/60] 2025-02-17 08:00:00
+    [16/60] 2025-03-04 08:00:00
+    [21/60] 2025-03-24 08:00:00
+    [26/60] 2025-06-16 14:00:00
+    [31/60] 2025-09-22 14:00:00
+    [36/60] 2025-10-08 14:00:00
+    [41/60] 2025-12-18 14:00:00
+    [46/60] 2026-01-08 22:00:00
+    [51/60] 2026-01-16 14:00:00
+    [56/60] 2026-01-28 08:00:00
+    materialized 59 feature rows x 1207 columns
+    after drop nan/const: 1027 columns / 59 rows
+    computing Spearman correlation matrix...
+    extracting cross-family pairs...
+
+  Q2 cohort_size: 59
+  Q2 |rho|>=0.7 cross-family: 2759
+  Q2 |rho|>=0.9 cross-family: 202
+
+Done.

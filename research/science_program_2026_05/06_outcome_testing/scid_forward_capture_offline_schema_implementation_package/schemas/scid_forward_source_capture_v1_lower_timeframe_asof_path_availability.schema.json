@@ -1,0 +1,208 @@
+{
+  "$id": "https://gtos.local/research/scid_forward_capture/lower_timeframe_asof_path_availability.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "only bars/ticks with timestamps <= decision_asof_utc may be used for availability or descriptor fields",
+  "properties": {
+    "asof_path_descriptor_version": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "bars_present_by_timeframe": {
+      "type": "object"
+    },
+    "candidate_input_row_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "decision_asof_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "decision_minus_window_start_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "downstream_g12_acceptance_rule": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "duplicate_proxy_denominator_key": {
+      "minLength": 16,
+      "type": "string"
+    },
+    "evidence_class": {
+      "const": "SCID_FORWARD_CAPTURE_OFFLINE_SCHEMA_IMPLEMENTATION_PACKAGE_ONLY"
+    },
+    "field_group": {
+      "const": "lower_timeframe_asof_path_availability"
+    },
+    "field_status": {
+      "enum": [
+        "CAPTURED_SOURCE_SAFE",
+        "SOURCE_UNAVAILABLE_FAIL_CLOSED",
+        "PROSPECTIVE_CAPTURE_REQUIRED",
+        "FORBIDDEN_FAIL_CLOSED"
+      ]
+    },
+    "forbidden_value_policy_id": {
+      "const": "SCID_FORWARD_CAPTURE_FORBIDDEN_SURFACE_FAIL_CLOSED_V1"
+    },
+    "live_effect": {
+      "const": false
+    },
+    "ltf_availability_status": {
+      "enum": [
+        "AVAILABLE",
+        "UNAVAILABLE_FAIL_CLOSED"
+      ],
+      "minLength": 1,
+      "type": "string"
+    },
+    "ltf_source_file_pointer_or_cache_id": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ltf_source_hash": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ltf_timeframes_available": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "missing_status_policy": {
+      "enum": [
+        "FAIL_CLOSED_MISSING_SOURCE_FIELD",
+        "PROSPECTIVE_CAPTURE_REQUIRED",
+        "FORBIDDEN_FAIL_CLOSED"
+      ]
+    },
+    "opens_ai_api": {
+      "const": false
+    },
+    "opens_broker_account_order_history_deal_position_evidence": {
+      "const": false
+    },
+    "opens_live_restart": {
+      "const": false
+    },
+    "opens_live_trading_behavior": {
+      "const": false
+    },
+    "opens_paid_or_vendor_access": {
+      "const": false
+    },
+    "opens_prompt_config_risk_safety_execution_canary_selector_edit": {
+      "const": false
+    },
+    "opens_raw_market_data_blob_commit": {
+      "const": false
+    },
+    "opens_result_scoring": {
+      "const": false
+    },
+    "opens_strategy_edge_claims": {
+      "const": false
+    },
+    "opens_validation": {
+      "const": false
+    },
+    "outcome_review_opened": {
+      "const": false
+    },
+    "promotion_verdict": {
+      "const": "NO_PROMOTION_VERDICT"
+    },
+    "redaction_policy_id": {
+      "const": "SCID_FORWARD_CAPTURE_NO_BROKER_ACCOUNT_ORDER_DEAL_POSITION_IDS_V1"
+    },
+    "route_id": {
+      "const": "SCID_FORWARD_CAPTURE_OFFLINE_SCHEMA_IMPLEMENTATION_PACKAGE"
+    },
+    "schema_version": {
+      "const": "scid_forward_source_capture_v1"
+    },
+    "source_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_hash_policy": {
+      "enum": [
+        "STRICT_SHA256_REQUIRED",
+        "HASH_DEFERRED_SOURCE_UNAVAILABLE_FAIL_CLOSED",
+        "SELF_REFERENTIAL_MANIFEST_HASH_NON_BLOCKING"
+      ]
+    },
+    "source_identifier": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_observed_asof_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "validation_safe": {
+      "const": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "route_id",
+    "evidence_class",
+    "promotion_verdict",
+    "validation_safe",
+    "outcome_review_opened",
+    "live_effect",
+    "opens_validation",
+    "opens_result_scoring",
+    "opens_strategy_edge_claims",
+    "opens_broker_account_order_history_deal_position_evidence",
+    "opens_ai_api",
+    "opens_paid_or_vendor_access",
+    "opens_live_restart",
+    "opens_live_trading_behavior",
+    "opens_raw_market_data_blob_commit",
+    "opens_prompt_config_risk_safety_execution_canary_selector_edit",
+    "candidate_input_row_id",
+    "duplicate_proxy_denominator_key",
+    "field_group",
+    "decision_asof_utc",
+    "source_observed_asof_utc",
+    "source_identifier",
+    "source_hash",
+    "source_hash_policy",
+    "redaction_policy_id",
+    "forbidden_value_policy_id",
+    "missing_status_policy",
+    "field_status",
+    "downstream_g12_acceptance_rule",
+    "ltf_timeframes_available",
+    "ltf_source_file_pointer_or_cache_id",
+    "ltf_source_hash",
+    "decision_minus_window_start_utc",
+    "bars_present_by_timeframe",
+    "asof_path_descriptor_version",
+    "ltf_availability_status"
+  ],
+  "title": "lower_timeframe_asof_path_availability row schema",
+  "type": "object",
+  "x_scid_contract": {
+    "as_of_rule": "only bars/ticks with timestamps <= decision_asof_utc may be used for availability or descriptor fields",
+    "field_group": "lower_timeframe_asof_path_availability",
+    "future_source_or_logger": "ltf_source_availability_and_path_descriptor_capture",
+    "historical_status": "RECOVERABLE_MARKET_CONTEXT_BUT_NOT_ATTACHED_TO_ACCEPTED_CANDIDATES_CAPTURE_REQUIRED",
+    "no_leak_rule": "availability/path descriptors cannot include post-decision target/stop/fill status",
+    "parser_requirement": "append-only JSONL parser with schema-version check, source-hash recomputation, duplicate-key preservation, and fail-closed missing-field behavior"
+  }
+}

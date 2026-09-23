@@ -1,0 +1,40 @@
+# A2 v2-Active Backtest — Synthesis + Recommendation
+
+**Status:** DRAFT TEMPLATE — will be rewritten with real numbers after `analyze.py` produces `ANALYSIS.md` + `analysis_output.json`.
+**Date:** 2026-04-24
+**Scope:** 12 backtest slices Jan 2 – Apr 13 2026 with `--detector-version v2` (ADR-004 Option D, `identify_structure_v2`, `dead_zone_divisor=8`).
+**Instruments:** XAUUSD × 8 + USDJPY × 4.
+**Data provenance:** `research/a2_v2_active_backtest/slices/`
+**v1 baseline comparator:** `.claude/worktrees/agent-afdadba7818cfadd8/research/a1_adr005_backtest/slices/` (A1 dataset — same slice boundaries under `detector_version: v2_shadow` which routes production through v1).
+
+---
+
+## 1. Executive summary + verdict
+
+[TBD — fill from ANALYSIS.md verdict block]
+
+- **VERDICT: GO / STAY / HALT**
+- Fleet Exp R v2: __R (n=__) vs v1: __R (n=__); Δ __R
+- XAUUSD SHORT share v2: __% vs v1: __%
+- LONG WR v2: __% [CI] vs v1: __% [CI]
+- MaxDD @ 1% risk v2: __% vs v1: __%
+
+## 2. v2 vs v1 side-by-side (headline table)
+
+[TBD]
+
+## 3. Per-slice detail + April decay
+
+[TBD — does v2 fix the H1→H2 decay flagged in Phase 1?]
+
+## 4. Direction split — the honest SHORT-edge read
+
+[TBD — SHORT cand share, filled, WR with wide-CI caveats]
+
+## 5. Risk flags + residual uncertainty
+
+[TBD]
+
+## 6. Recommendation to CEO for Monday 2026-04-27
+
+[TBD]

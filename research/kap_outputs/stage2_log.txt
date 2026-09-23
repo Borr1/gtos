@@ -1,0 +1,16 @@
+## Agent 2 Comprehension — Complete
+
+**Nothing new to process.** All 62 transcripts have been evaluated:
+
+| Status | Count |
+|--------|-------|
+| Videos with claims extracted | 24 |
+| Videos blocked (no transcript) | 38 |
+| **New this run** | **0** |
+
+**Totals from prior runs:**
+- **226** total claims extracted
+- **218** specific (with numbers/conditions)
+- **157** testable (verifiable with OHLC data)
+
+The 38 blocked videos (25-62) all failed during Agent 1's YouTube transcript scraping due to IP rate limiting. Claims extraction cannot proceed until Agent 1 re-fetches those transcripts. The `.agent2_done` signal file has been updated for Agent 3.

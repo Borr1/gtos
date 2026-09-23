@@ -1,0 +1,46 @@
+================================================================================
+GBPUSD SAMPLE PROMPT — With Cross-Instrument Context
+================================================================================
+
+=== SYSTEM PROMPT ===
+Length: 11704 chars (~3901 tokens)
+
+## Internal Consistency Rules
+- If decision is CANDIDATE, m15_confirmation.choch_detected MUST be true (otherwise violates U3).
+- If m15_confirmation.choch_detected is false, decision MUST be NO_TRADE.
+- If h1_setup.poi_identified is FALSE or h1_setup.poi_type is "none", the decision MUST be NO_TRADE. The ob_retest framework requires price to pull back to an H1 point of interest. Without a valid H1 POI, the setup sequence is incomplete regardless of M15 confirmation quality.
+
+## CONFIDENCE SCORE
+Rate 50-95 based on overall confluence count. Higher = more confirming factors aligned.
+Show a one-line computation in confidence_computation.
+
+
+=== USER MESSAGE ===
+Length: 1653 chars (~551 tokens)
+
+## Dynamic Market Data (H1/M15 — this candle)
+Candle: 2025-03-10T07:30:00Z
+
+## H1: No data
+
+## M15: No data
+
+## Prior Candle Assessments (this session)
+The following are your assessments of prior candles in this kill zone.
+Consider the progression: Is a setup developing across candles? Did a prior candle show a sweep or displacement that sets up the current candle? If you said WAIT or noted a developing pattern on a prior candle, check if the trigger has now occurred.
+
+- 07:15 UTC: NO_TRADE — H1 structure unclear
+
+## Cross-Instrument & Volatility Context
+XAUUSD D1 structure: bullish (indicates dollar weakness)
+Asian session range: 0.00065 = 54% of ADR (wide)
+
+DECISION GUIDANCE:
+- If your proposed trade direction CONFLICTS with XAUUSD D1 direction (e.g., you want LONG GBPUSD but gold D1 is bearish), this is a significant macro headwind. Both instruments respond to USD flows. Require exceptionally strong H1+M15 confluence to proceed with a conflicting direction. If confluence is not exceptional, output NO_TRADE.
+- If Asian range is narrow (<28% of ADR), the pre-London session built minimal liquidity. Displacement setups in narrow-range environments have historically shown 33% win rate. Require stronger-than-normal displacement quality (>2.5x average body) to proceed.
+- If both signals are unfavorable (conflicting direction AND narrow Asian range), output NO_TRADE regardless of other factors.
+
+## Current Time: 2025-03-10T07:30:00Z
+## Candle Being Evaluated: M15 close at 2025-03-10T07:30:00Z
+
+Evaluate this candle for BOTH the OB Retest and Breaker Block Retest setups. The active kill zone is: london. Output your analysis as JSON.

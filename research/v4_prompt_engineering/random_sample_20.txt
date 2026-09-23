@@ -1,0 +1,120 @@
+
+=== Sample 1: xauusd_s5 2026-03-02T13:15:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 shows 12 total BOS events with 5 recent bullish breaks including BOS at 5393.53 on 2026-03-02T09:00, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 is strongly bullish with 5+ consecutive bullish BOS events, M15 is aligned bullish with no opposing CHoCH, and LONG direction matches the computed bias. H1 OB at 5366.74-5344.77 provides the qualifying POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 2: xauusd_s3 2026-01-30T08:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 5 bullish BOS breaks (last at 5311.40) with protected swing at 5111.75, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 confirms bullish bias via 5 consecutive bullish BOS, M15 is aligned bullish with no opposing CHoCH, and direction matches the LONG mandate. Lowest-touches H1 bullish OB at 5094.12-5076.33 (touches=2) selected as POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 3: usdjpy_s1 2026-01-15T15:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 has 12 total BOS with the last 5 all bullish, most recently BOS at 158.73 with displacement ratio 2.1, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 is unambiguously bullish (12 BOS, last at 158.73 with disp ratio 2.1), M15 is aligned bullish with no opposing structure, and direction matches LONG. One unmitigated H1 bullish OB at 158.70-158.30 provides the POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 4: usdjpy_s1 2026-01-14T00:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 has 10 bullish BOS (last 5 shown), most recent at 159.05 on 2026-01-13T18:00 with displacement ratio 2.5; protected swing at 158.57.
+overall_reasoning: C1 PASS: H1 has 10 bullish BOS confirming strong upward bias. C2 PASS: M15 is fully aligned bullish with no opposing CHoCH. C3 PASS: H1 bullish bias matches LONG direction.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 5: usdjpy_s1 2026-01-13T07:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 11 bullish BOS with the most recent at 158.20 (2026-01-13T03:00), confirming strong bullish bias; protected swing sits at 157.89.
+overall_reasoning: C1 PASS: H1 has 11 bullish BOS confirming strong directional bias. C2 PASS: M15 is bullish and non-opposing. C3 PASS: direction is LONG matching H1 bullish bias. One unmitigated H1 OB (157.89-158.18) qualifies as POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 6: xauusd_s3 2026-02-03T14:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 5 bullish BOS including two recent high-displacement breaks at 4812.37 and 4856.07, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 has 5 bullish BOS confirming strong directional bias (C1), M15 is bullish and non-opposing (C2), and LONG direction matches H1 bullish structure (C3). H1 bullish OB at 4800.87-4824.97 is the qualifying POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 7: usdjpy_s2 2026-02-06T07:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 13 bullish BOS with 5 recent ones confirming sustained upward structure; protected swing at 156.51.
+overall_reasoning: All three gates pass: H1 has clear bullish bias with 13 BOS (5 recent), M15 is bullish and not opposing H1, and direction matches LONG. Lowest-touches qualifying H1 OB is at 155.52-155.30 (touches=2).
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 8: xauusd_s3 2026-02-03T08:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 shows 5 BOS in bullish direction with most recent BOS at 4856.07 with displacement ratio 1.5, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 is clearly bullish with multiple BOS including two with displacement, M15 is fully aligned bullish with no opposing structure, and LONG direction matches H1 bias. H1 unmitigated bullish OB at 4800.87-4824.97 provides the POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 9: usdjpy_s2 2026-02-05T07:15:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 11 bullish BOS (last 5 shown all bullish) with protected swing at 156.68, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 confirms strong bullish bias with 11 bullish BOS, M15 is aligned bullish with no opposing structure, and direction matches LONG. Citing lowest-touches H1 bullish OB at 155.52-155.30 (touches=1) as the POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 10: usdjpy_s3 2026-03-02T07:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 9 bullish BOS total, last 5 all bullish with displacement ratios 2.1–9.3, confirming strong upward structural bias.
+overall_reasoning: C1 PASS: H1 has 5+ bullish BOS with strong displacement confirming bullish bias. C2 PASS: M15 is fully aligned bullish with no opposing CHoCH. C3 PASS: LONG direction matches H1 bullish structure. CANDIDATE confirmed.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 11: usdjpy_s4 2026-03-24T15:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: D1 shows 2 bullish BOS (156.82 and 157.97) confirming upward structural bias.
+overall_reasoning: C1 PASS: H1 CHoCH bullish at 158.79 following a series of bearish BOS establishes a new bullish directional bias. C2 PASS: M15 is bullish with multiple bullish BOS and does not oppose H1. C3 PASS: LONG direction matches H1 bullish CHoCH and D1 bullish bias.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 12: xauusd_s3 2026-01-30T13:15:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 has 5+ bullish BOS breaks confirming strong upward structure with protected swing at 4942.26.
+overall_reasoning: C1 PASS: H1 has 5+ consecutive bullish BOS confirming strong bullish bias. C2 PASS: M15 is bullish and aligned, not opposing H1. C3 PASS: H1 bullish matches LONG mandate. One unmitigated H1 bullish OB exists at 4818.79-4832.49 to serve as POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 13: usdjpy_s2 2026-02-04T09:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 12 total BOS with 5 recent bullish breaks including high-displacement events at ratios 4.3, 5.3, and 3.3, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 is clearly bullish with multiple high-displacement BOS events (C1=PASS), M15 is aligned bullish with no opposing structure (C2=PASS), and the required direction is LONG matching H1 bullish bias (C3=PASS). Nearest unmitigated H1 OB at 156.36-156.24 provides the POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 14: usdjpy_s1 2026-01-13T00:15:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 5+ bullish BOS events in the last 10 breaks, most recently BOS at 158.17, confirming strong bullish structure with protected swing at 157.71.
+overall_reasoning: C1 PASS: H1 has multiple bullish BOS confirming clear upward bias. C2 PASS: M15 bearish CHoCH is low-displacement (ratio=1.1, disp=False) and represents a minor retracement, not active opposition. C3 PASS: H1 bullish → LONG direction confirmed.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 15: usdjpy_s4 2026-03-26T14:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=WIN r_mul=1.5
+daily_bias.explanation: H1 has 12 bullish BOS events including the most recent at 159.53 with displacement ratio 2.8, confirming strong bullish bias.
+overall_reasoning: All three gates pass: H1 is strongly bullish (12 BOS, latest ratio 2.8), M15 is aligned bullish with no opposing structure, and direction matches LONG. One unmitigated H1 bullish OB at 159.55-159.42 with touches=1 provides the POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 16: xauusd_s2 2026-01-27T07:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 has 9 bullish BOS including two with strong displacement (ratio 2.4 and 1.7), confirming high-confidence bullish bias.
+overall_reasoning: All three gates pass: H1 is firmly bullish (9 BOS, protected swing at 4989.90), M15 is bullish with no opposing CHoCH, and direction matches LONG. Nearest unmitigated H1 OB at 5078.62-5061.47 (touches=1) provides the POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 17: usdjpy_s3 2026-02-26T00:15:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=UNFILLED r_mul=None
+daily_bias.explanation: H1 has 5 bullish BOS in the last 10 breaks (including 3 with strong displacement), confirming high-confidence bullish bias.
+overall_reasoning: All three gates pass: H1 is clearly bullish (5 bullish BOS, high confidence), M15 CHoCH is undisplaced and too weak to constitute active opposition, and the required direction is LONG matching H1 bullish bias. At least one unmitigated H1 bullish OB exists; citing the lowest-touches (touches=1) OB at 155.19-154.97.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 18: xauusd_s5 2026-03-02T09:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 has 12 total BOS with last 5 all bullish including a confirmed break above 5393.53 on the current candle, establishing strong bullish bias.
+overall_reasoning: All three gates pass: H1 is strongly bullish with 5 consecutive bullish BOS including the current candle breaking 5393.53; M15 is fully aligned bullish with no opposing structure. LONG setup targeting the nearest unmitigated H1 OB at 5366.74-5344.77.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 19: usdjpy_s4 2026-03-27T13:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 has 12 total bullish BOS with 5 recent confirmed breaks including a strong disp=True ratio=2.8 BOS at 159.76 on 2026-03-27T10:00.
+overall_reasoning: All three gates pass: H1 confirms strong bullish bias with 5 recent bullish BOS including high-displacement breaks; M15 is fully aligned bullish with no opposing structure; direction matches LONG. H1 unmitigated bullish OB at 159.59-159.45 provides the POI.
+conf_computation: C1=PASS C2=PASS C3=PASS
+
+=== Sample 20: usdjpy_s1 2026-01-14T07:00:00Z ===
+direction=LONG h1=bullish bias=bullish outcome=LOSS r_mul=-1.0
+daily_bias.explanation: H1 has 11 bullish BOS events including 3 displaced breaks, confirming strong bullish bias; H4 also bullish with 3 BOS.
+overall_reasoning: All three gates pass: H1 is clearly bullish with 5 recent bullish BOS including displaced breaks, M15 is aligned bullish with no opposing CHoCH, and LONG direction matches H1 bias. At least one unmitigated H1 OB exists in the bullish direction.
+conf_computation: C1=PASS C2=PASS C3=PASS

@@ -1,0 +1,4 @@
+# NOT APPLIED. Rollback proposal only.
+gtos_vnext_runtime:
+  ultimate_book_include_market_expansion_book: false
+  ultimate_book_market_expansion_sleeves: []

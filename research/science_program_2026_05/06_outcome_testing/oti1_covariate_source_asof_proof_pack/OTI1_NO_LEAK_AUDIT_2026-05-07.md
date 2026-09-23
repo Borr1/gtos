@@ -1,0 +1,21 @@
+# OTI1 No-Leak Audit
+
+- artifact_family: OTI1_COVARIATE_SOURCE_ASOF_PROOF_PACK
+- artifact_type: no_leak_audit
+- generated_at_utc: 2026-05-07T03:30:43Z
+- scope: Accepted OTI1 OTB1R lifecycle packets, packet rows, and sanitized source projections only.
+- policy_exclusions: ['data/account_history/**', 'shadow_logs/*broker*actual*', 'shadow_logs/*account*truth*', 'shadow_logs/*pnl*truth*', 'broker actual-R row/value files', 'blocked packet outcome/result rows outside the 9 G12-accepted OTB1R lifecycle packets']
+- blocked_packet_outcomes_inspected: False
+- broker_actual_r_values_inspected: False
+- synthetic_path_r_values_inspected: False
+- covariate_conditioned_performance_computed: False
+- flag_issues: []
+- packet_flag_issues: []
+- primary_row_forbidden_key_hits: []
+- projection_forbidden_issues: []
+- projection_excluded_key_values_stored: []
+- accidental_prior_account_history_grep_note: A broad exploratory rg earlier matched account_history path text. No broker actual-R/account values were consumed, joined, summarized, persisted, or used in this proof pack.
+- validation_safe: False
+- outcome_review_opened: False
+- promotion_verdict: NO_PROMOTION_VERDICT
+- pass: True

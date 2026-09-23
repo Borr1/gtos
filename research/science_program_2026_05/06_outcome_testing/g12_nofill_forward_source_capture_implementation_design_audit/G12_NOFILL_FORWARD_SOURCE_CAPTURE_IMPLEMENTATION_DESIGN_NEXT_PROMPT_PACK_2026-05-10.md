@@ -1,0 +1,3 @@
+# Next Prompt Pack
+
+/goal Follow the full controlling prompt for the next owner-approved additive NOFILL forward source-capture logger implementation lane; do mandatory preflight and context refresh first; do not rely on chat memory; stay source/control implementation-only with no prompts, config, risk, execution, permissions, safety, selectors, canaries, MT5 order/account/history/deal/position behavior, credentials, registry, remote, scoring, validation, promotion, paid/API, or live-behavior changes; implement only after explicit CEO code-wiring approval and preserve NO_PROMOTION_VERDICT, validation_safe=false, outcome_review_opened=false, live_effect=false.

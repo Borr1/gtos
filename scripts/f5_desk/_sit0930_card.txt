@@ -1,0 +1,5 @@
+2026-09-08 09:38 ICT | 0 bal 92517.72 eq 92482.86
+CLOSE XAUUSD SHORT 182134088 exit_class=stop_loss exit=4438.66 [sl 4438.53] ~-1.02R(unit150) broker_net=-153.2 held 29m57s | orig never moved | flat; re-entry after 2026-09-08 09:03 ICT
+CLOSE GBPUSD LONG 182118705 exit_class=stop_loss exit=1.35371 [sl 1.35376] ~-1.12R(unit150) broker_net=-168.0 held 2h16m45s | orig never moved | flat; re-entry after 2026-09-08 09:48 ICT
+leave GER40 180734064 LONG + UK100 181411441 SHORT + DASHUSD 181801555 LONG + US30 182062146 LONG | pending AVAUSD BUY_LIMIT 182146604 @7.92 SL7.61 TP8.55 vol0.47 age~19.8m (<45) | spent 180717112 stays spent | no remint
+ctx: sit backstop LABEL — XAU short 182134088 close missed by book-event after fill 08:23; GBP 182118705 SL during sit; prior XAU long 182118694 LABEL @07:54 (~103.6m>50m) mentioned only | OPEN4 containers ok spread<<1R live==orig trade_mode4 | red DASH PnL alone not broken | dual W7 intentional | F5 new orders paused ULTIMATE_BOOK_KILL

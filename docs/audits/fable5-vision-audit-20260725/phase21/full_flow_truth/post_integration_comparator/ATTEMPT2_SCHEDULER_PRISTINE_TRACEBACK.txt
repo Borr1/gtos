@@ -1,0 +1,60 @@
+Traceback (most recent call last):
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/docs/audits/fable5-vision-audit-20260725/phase21/full_flow_truth/run_post_integration_comparator.py", line 140, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/docs/audits/fable5-vision-audit-20260725/phase21/full_flow_truth/run_post_integration_comparator.py", line 121, in main
+    result = run(
+        output_dir=args.output_dir,
+    ...<2 lines>...
+        end=args.end,
+    )
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/docs/audits/fable5-vision-audit-20260725/phase21/full_flow_truth/run_post_integration_comparator.py", line 67, in run
+    payload = execute_full_flow(
+        campaign=_raw_campaign(days, truth_mode=False),
+    ...<10 lines>...
+        stage_ledger_path=stage_path,
+    )
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/src/research_infra/wave21_full_flow_harness.py", line 3085, in execute_full_flow
+    result = timewarp.run_campaign(
+        campaign=campaign,
+    ...<4 lines>...
+        prepared_day_pack=None,
+    )
+  File "/opt/homebrew/Cellar/python@3.14/3.14.4/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 85, in inner
+    return func(*args, **kwds)
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/src/research_infra/v4_timewarp_simulated_live_research_loop.py", line 4306, in wrapped
+    return function(*args, **kwargs)
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/src/research_infra/v4_timewarp_simulated_live_research_loop.py", line 93448, in run_campaign
+    scheduler_packet = decision_core.schedule_window(
+        asof_utc=asof_utc,
+    ...<6 lines>...
+        ),
+    )
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/src/components/v4_live_replay_decision_core.py", line 231, in schedule_window
+    return dict(self._scheduler_allocator(**kwargs))
+                ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/src/research_infra/v4_timewarp_simulated_live_research_loop.py", line 83878, in materialize_scheduler_window
+    allocate_decision_window_with_pristine_sidecar(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        window,
+        ^^^^^^^
+        typed_scheduler_limits,
+        ^^^^^^^^^^^^^^^^^^^^^^^
+        raw_config=scheduler_limits,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/src/research/moonshot_scheduler_v4_best_trade_allocator.py", line 28998, in allocate_decision_window_with_pristine_sidecar
+    packet = _allocate_decision_window_impl(
+        window,
+    ...<2 lines>...
+        _pristine_trace_sink=trace,
+    )
+  File "/Users/borr/GTOSActive/worktrees/wave21-post-integration-measurements/src/research/moonshot_scheduler_v4_best_trade_allocator.py", line 28362, in _allocate_decision_window_impl
+    raise ValueError("scheduler_pristine_candidate_occurrence_missing")
+ValueError: scheduler_pristine_candidate_occurrence_missing
+      103.96 real       101.37 user         1.96 sys
+          1212858368  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size

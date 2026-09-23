@@ -1,0 +1,543 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.astra.jev_admit_v2",
+  "title": "jev_admit_v2",
+  "description": "Jev LIVE/STUDY admit sidecar v2. Shadow log only. Primary: house laws + feature-complete slate state computed in code. Confidence is secondary abstain/escalate. Never place, remint, flatten, move SL, write chair inbox, or splice tags. Calibration account is Challenge 0 / $110k. Verification 0 is quarantined. Calendar/event fields expect leftover-ship official_high_spine + composer fold; NEWS_PROTOCOL / MAC_INGEST / OWNER_LAW / ASTRA_ARCH are Project files not in this git tree (see JEV_INTEGRATION_V2 §8).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "mode",
+    "shadow_log_only",
+    "never_place",
+    "never_remint",
+    "never_flatten",
+    "never_move_sl",
+    "never_write_chair_inbox",
+    "account_surface",
+    "admit_clock",
+    "evaluable",
+    "house_law",
+    "state",
+    "answers",
+    "code_policy"
+  ],
+  "properties": {
+    "schema": {"const": "jev_admit_v2"},
+    "mode": {"const": "shadow_log_only"},
+    "shadow_log_only": {"const": true},
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_move_sl": {"const": true},
+    "never_write_chair_inbox": {"const": true},
+    "audit_id": {"type": "string", "minLength": 1},
+    "logged_at_utc": {"type": "string", "format": "date-time"},
+    "namespace": {
+      "type": "string",
+      "const": "gtos.astra.jev_trial.v2"
+    },
+    "account_surface": {"$ref": "#/$defs/account_surface"},
+    "admit_clock": {
+      "type": "string",
+      "enum": ["live_intent", "as_of_open_study", "as_of_close_illegal_for_live"],
+      "description": "live_intent requires slate_id+fingerprint+status intent|standing and no EXPOST keys. Historical reconstructs are study or illegal."
+    },
+    "evaluable": {
+      "type": "boolean",
+      "description": "False if identity, slate bind, or LIVE EXPOST rules fail. Code must ignore answers for fire."
+    },
+    "evaluable_reason": {"type": "string"},
+    "house_law": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "us30_off",
+        "hard_off_hit",
+        "keep_family",
+        "two_stop_exhausted",
+        "token_digest_matches",
+        "writer_enrolled",
+        "house_block"
+      ],
+      "properties": {
+        "us30_off": {"const": true},
+        "hard_off_hit": {
+          "type": "boolean",
+          "description": "Code: symbol US30* or sleeve family in bleed|orb_crypto|idxrev|xa_huge|mx_us30|prior week-repair hard-offs."
+        },
+        "keep_family": {
+          "type": "boolean",
+          "description": "Code: dsp_spring* or vss_fxcross*. Not a Jev special-case threshold."
+        },
+        "two_stop_exhausted": {"type": "boolean"},
+        "token_digest_matches": {"type": "boolean"},
+        "cost_screen_would_refuse": {"type": "boolean"},
+        "high_window_code_block": {"type": "boolean"},
+        "dead_window_or_friday_cutoff": {"type": "boolean"},
+        "occupied_keep_one": {"type": "boolean"},
+        "isolated_reentry_legal": {"type": "boolean"},
+        "writer_enrolled": {
+          "type": "boolean",
+          "description": "Would the printer be willing to send if chair is PASS? Jev never enrolls."
+        },
+        "house_block": {
+          "type": "boolean",
+          "description": "OR of writer refuses. When true, Jev answers are log-only for fire."
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "surface", "writer"],
+      "properties": {
+        "slate": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema": {"type": "string", "const": "gtos.judgment.slate.v2"},
+            "slate_id": {"type": "string", "minLength": 1},
+            "fingerprint": {"type": "string", "minLength": 1},
+            "built_at_utc": {"type": "string"},
+            "namespace": {"type": "string", "const": "operator"}
+          }
+        },
+        "candidate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate_id", "symbol", "sleeve", "direction"],
+          "properties": {
+            "candidate_id": {"type": "string", "minLength": 1},
+            "alias_ids": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "status": {
+              "type": "string",
+              "enum": ["intent", "standing", "placed", "filled", "refused", "unknown"]
+            },
+            "symbol": {"type": "string", "minLength": 1},
+            "sleeve": {"type": "string", "minLength": 1},
+            "family_class": {
+              "type": "string",
+              "enum": [
+                "house_keep",
+                "house_hard_off",
+                "study",
+                "starve_watch",
+                "other_tagged",
+                "unknown"
+              ]
+            },
+            "cluster": {"type": "string"},
+            "direction": {"type": "string", "enum": ["long", "short"]},
+            "decision_day": {"type": "string"},
+            "decision_bar_iso": {"type": "string"},
+            "first_seen_utc": {"type": "string"},
+            "last_seen_utc": {"type": "string"},
+            "last_refusal_class": {"type": "string"},
+            "geometry": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "entry": {"type": "number"},
+                "stop": {"type": "number"},
+                "target": {"type": "number"},
+                "stop_dist": {"type": "number"},
+                "plan_r": {"type": "number"},
+                "stop_atr": {"type": "number"},
+                "target_atr": {"type": "number"},
+                "fx_stop_pips": {"type": "number"}
+              }
+            }
+          }
+        },
+        "surface": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "us30_off",
+            "hard_off_families",
+            "keep_families",
+            "circuit"
+          ],
+          "properties": {
+            "us30_off": {"const": true},
+            "hard_off_families": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "bleed",
+                  "orb_crypto",
+                  "idxrev",
+                  "xa_huge",
+                  "mx_us30"
+                ]
+              }
+            },
+            "keep_families": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "enum": ["spring", "vss"]}
+            },
+            "circuit": {"const": "2-stop"},
+            "tags_hash": {"type": "string"},
+            "tags_contains_spring_and_vss": {"type": "boolean"},
+            "tags_contains_hard_off_name": {"type": "boolean"}
+          }
+        },
+        "writer": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["token_digest_matches"],
+          "properties": {
+            "token_namespace": {"type": "string", "const": "operator"},
+            "token_config_digest_sha256": {"type": "string"},
+            "token_digest_matches": {"type": "boolean"},
+            "already_placed_today": {"type": "boolean"},
+            "cluster_placed_today": {"type": "boolean"},
+            "symbol_open": {"type": "boolean"},
+            "symbol_pending": {"type": "boolean"},
+            "just_closed_same_symbol": {"type": "boolean"},
+            "minutes_since_flat": {"type": ["number", "null"]},
+            "same_sleeve_orig_stops_utc_day": {"type": "integer", "minimum": 0},
+            "isolated_reentry_legal": {"type": "boolean"},
+            "cost_expected_commission_r": {"type": "number"},
+            "spread_r_of_stop": {"type": "number"},
+            "governor_allow": {"type": "boolean"},
+            "governor_cap_mult": {"type": "number"}
+          }
+        },
+        "information": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "high_impact_minutes": {"type": ["number", "null"]},
+            "minutes_to_nearest_high_impact": {"type": ["number", "null"]},
+            "spine_extracted_utc": {"type": ["string", "null"]},
+            "spine_empty": {"type": "boolean"},
+            "walter_present": {"type": "boolean"},
+            "walter_card_id": {"type": ["string", "null"]}
+          }
+        },
+        "cluster": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cluster_id": {"type": "string"},
+            "symbols": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "direction": {"type": "string", "enum": ["long", "short"]},
+            "same_dir_count": {"type": "integer", "minimum": 0},
+            "candidate_ids": {
+              "type": "array",
+              "items": {"type": "string"}
+            },
+            "any_already_live": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "typesafe_questions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Atomic TypeSafe questions on the same state. Compose in code. Do not ask KEEP.",
+      "properties": {
+        "state_sufficient": {"type": "object", "const": {"primitive": "noul"}},
+        "admit": {
+          "type": "object",
+          "const": {
+            "primitive": "choice",
+            "criteria": ["admit", "abstain", "hard_refuse"]
+          }
+        },
+        "fast_stop_hazard": {
+          "type": "object",
+          "const": {
+            "primitive": "score",
+            "levels": {
+              "0": "Low — stop width and session facts in state do not look like a sub-15m death",
+              "1": "Ordinary house risk — 1R-class stop, unknown tape",
+              "2": "High — stop vs session/tape in state looks like a sub-15m orig_stop"
+            }
+          }
+        },
+        "side_formula_tension": {"type": "object", "const": {"primitive": "noul"}},
+        "cluster_same_dir": {"type": "object", "const": {"primitive": "noul"}},
+        "event_proximity": {"type": "object", "const": {"primitive": "noul"}},
+        "house_consistency": {
+          "type": "object",
+          "description": "Optional: does Jev agree this row is house_hard_off given surface facts? Never overrides code.",
+          "const": {"primitive": "noul"}
+        }
+      }
+    },
+    "answers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["admit"],
+      "properties": {
+        "state_sufficient": {"$ref": "#/$defs/noul_answer"},
+        "admit": {
+          "allOf": [
+            {"$ref": "#/$defs/choice_answer"},
+            {
+              "properties": {
+                "choice": {
+                  "type": "string",
+                  "enum": ["admit", "abstain", "hard_refuse"]
+                }
+              }
+            }
+          ]
+        },
+        "fast_stop_hazard": {"$ref": "#/$defs/score_answer"},
+        "side_formula_tension": {"$ref": "#/$defs/noul_answer"},
+        "cluster_same_dir": {"$ref": "#/$defs/noul_answer"},
+        "event_proximity": {"$ref": "#/$defs/noul_answer"},
+        "house_consistency": {"$ref": "#/$defs/noul_answer"}
+      }
+    },
+    "code_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary",
+        "confidence_role",
+        "admit_confidence_secondary_min",
+        "on_house_block",
+        "on_low_confidence",
+        "on_missing_jev",
+        "on_isolated_reentry_legal"
+      ],
+      "properties": {
+        "primary": {
+          "const": "house_laws_and_feature_complete_state"
+        },
+        "confidence_role": {
+          "const": "secondary_abstain_escalate_never_place"
+        },
+        "admit_confidence_secondary_min": {
+          "const": 0.55,
+          "description": "Lab starting floor only. Low confidence → escalate even if choice is admit. Not a KEEP threshold. Not fitted on Challenge 45 winners."
+        },
+        "on_house_block": {"const": "log_only_ignore_answers_for_fire"},
+        "on_low_confidence": {"const": "abstain_escalate"},
+        "on_admit_below_min": {
+          "const": "abstain_escalate_even_if_choice_admit"
+        },
+        "on_missing_jev": {
+          "const": "abstain_book_unchanged_never_fail_open_place"
+        },
+        "on_isolated_reentry_legal": {
+          "const": "new_named_fire_do_not_hold_as_remint"
+        },
+        "on_occupancy": {"const": "writer_script_jev_silent"},
+        "on_flatten": {"const": "broken_schema_refuse"},
+        "nightly_keep_off": {
+          "const": "decide_py_n40_two_se_only"
+        }
+      }
+    },
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "log_only",
+        "log_only_blocked_by_writer",
+        "state_illegal_for_live",
+        "escalate_chair",
+        "draft_hold_siblings",
+        "chair_ignore"
+      ],
+      "description": "Code disposition. Never place, remint, flatten, or write verdict.json."
+    },
+    "shadow_metrics": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional log fields. kept_pnl is not_a_gate.",
+      "properties": {
+        "kept_pnl_not_a_gate": {"type": "number"},
+        "house_jev_hard_refuse_agree": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "account_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["login", "pass_target", "role"],
+      "properties": {
+        "login": {"const": "0"},
+        "pass_target": {"const": "$110k"},
+        "magic": {"const": "0"},
+        "ns": {"const": "operator"},
+        "role": {"const": "challenge_calibration"},
+        "verification_login_quarantined": {"const": "0"}
+      }
+    },
+    "choice_answer": {
+      "type": "object",
+      "required": ["choice", "confidence", "probabilities"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "choice": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "noul_answer": {
+      "type": "object",
+      "required": ["noul"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "noul": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "score_answer": {
+      "type": "object",
+      "required": ["score", "confidence"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "score": {"type": "number", "minimum": 0, "maximum": 2},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "legend": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "jev_admit_v2",
+      "mode": "shadow_log_only",
+      "shadow_log_only": true,
+      "never_place": true,
+      "never_remint": true,
+      "never_flatten": true,
+      "never_move_sl": true,
+      "never_write_chair_inbox": true,
+      "namespace": "gtos.astra.jev_trial.v2",
+      "account_surface": {
+        "login": "0",
+        "pass_target": "$110k",
+        "magic": "0",
+        "ns": "operator",
+        "role": "challenge_calibration",
+        "verification_login_quarantined": "0"
+      },
+      "admit_clock": "live_intent",
+      "evaluable": true,
+      "house_law": {
+        "us30_off": true,
+        "hard_off_hit": false,
+        "keep_family": true,
+        "two_stop_exhausted": false,
+        "token_digest_matches": true,
+        "cost_screen_would_refuse": false,
+        "high_window_code_block": false,
+        "dead_window_or_friday_cutoff": false,
+        "occupied_keep_one": false,
+        "isolated_reentry_legal": false,
+        "writer_enrolled": true,
+        "house_block": false
+      },
+      "state": {
+        "slate": {
+          "schema": "gtos.judgment.slate.v2",
+          "slate_id": "example-slate01",
+          "fingerprint": "example-fp00001",
+          "namespace": "operator"
+        },
+        "candidate": {
+          "candidate_id": "W7::spring::XAUUSD::2026-09-17::long",
+          "status": "intent",
+          "symbol": "XAUUSD",
+          "sleeve": "dsp_spring_close_on_20low_through_the_box",
+          "family_class": "house_keep",
+          "direction": "long",
+          "decision_day": "2026-09-17",
+          "geometry": {
+            "plan_r": 8.0,
+            "stop_atr": 0.75,
+            "target_atr": 6.0
+          }
+        },
+        "surface": {
+          "us30_off": true,
+          "hard_off_families": [
+            "bleed",
+            "orb_crypto",
+            "idxrev",
+            "xa_huge",
+            "mx_us30"
+          ],
+          "keep_families": ["spring", "vss"],
+          "circuit": "2-stop",
+          "tags_contains_spring_and_vss": true,
+          "tags_contains_hard_off_name": false
+        },
+        "writer": {
+          "token_namespace": "operator",
+          "token_digest_matches": true,
+          "already_placed_today": false,
+          "symbol_open": false,
+          "same_sleeve_orig_stops_utc_day": 0,
+          "isolated_reentry_legal": false
+        },
+        "information": {
+          "high_impact_minutes": null,
+          "spine_empty": true,
+          "walter_present": false
+        }
+      },
+      "answers": {
+        "state_sufficient": {"type": null, "noul": 0.82},
+        "admit": {
+          "type": null,
+          "choice": "admit",
+          "confidence": 0.33,
+          "probabilities": {
+            "admit": 0.56,
+            "abstain": 0.13,
+            "hard_refuse": 0.31
+          }
+        },
+        "fast_stop_hazard": {
+          "type": null,
+          "score": 1.0,
+          "confidence": 0.4
+        },
+        "side_formula_tension": {"type": null, "noul": 0.12},
+        "cluster_same_dir": {"type": null, "noul": 0.2},
+        "event_proximity": {"type": null, "noul": 0.48}
+      },
+      "code_policy": {
+        "primary": "house_laws_and_feature_complete_state",
+        "confidence_role": "secondary_abstain_escalate_never_place",
+        "admit_confidence_secondary_min": 0.55,
+        "on_house_block": "log_only_ignore_answers_for_fire",
+        "on_low_confidence": "abstain_escalate",
+        "on_admit_below_min": "abstain_escalate_even_if_choice_admit",
+        "on_missing_jev": "abstain_book_unchanged_never_fail_open_place",
+        "on_isolated_reentry_legal": "new_named_fire_do_not_hold_as_remint",
+        "on_occupancy": "writer_script_jev_silent",
+        "on_flatten": "broken_schema_refuse",
+        "nightly_keep_off": "decide_py_n40_two_se_only"
+      },
+      "disposition": "escalate_chair"
+    }
+  ]
+}

@@ -1,0 +1,407 @@
+# My AI Trading Bots Are Making Money While Markets Crash (Full Setup Revealed)
+URL: https://www.youtube.com/watch?v=RVKvYOoDQ7Q
+Video ID: RVKvYOoDQ7Q
+Duration: 1119s
+Fetched: 2026-04-18T13:22:33Z
+---
+
+Hello everybody. Welcome to another
+video here. Uh going to show you some
+really interesting things I've got
+working now. Some learning lessons. Um
+so let me go through the list here. I'm
+going to talk about the current BTC bots
+that I got running uh in the markets are
+doing pretty good. Uh we've I'm going to
+show you the new Discord uh some of the
+updates there. The um new thing that
+I've got running is
+not just um flawed desktop but the
+everything I can automate now through
+agents and uh MCP servers. I'm going to
+talk about some of the other tips,
+security tips that are really important
+uh to mention as well. So, let me go
+over to my uh screen here.
+Yes, we're running now. All right.
+Hooray. Okay. So, let me show you the
+first thing. First thing, first thing
+we've got running now, um, all these
+different bots. Okay. So, on my Discord,
+I strongly encourage you to get on that
+because that's seems to be the way
+people want to communicate. We've got a
+bunch of bots running. Um, which is this
+list right here. Um, so these are the
+three bots I've got running.
+um BTC bot um futures breakout momentum
+and Ethereum bot uh a brand futures uh
+geopolitical
+and RBO which is gas gold
+natural gas copper okay um no hang on
+here let me just make sure I got that
+yeah so we got let's just say those are
+the sort of things we got running okay
+so if I go into this uh dashboard Um
+right now what we've got
+profiting nicely are two bots. We've got
+this um thick C bot which is a Canadian
+dollar and this Z S as well. So if I go
+into the markets right now um you know
+people will go well golly gee Brian it's
+hard. Yeah of course it's hard. Um but
+that's why I'm trading the futures
+market. So, if you look at it right now,
+the markets are not looking good. Okay,
+you can see here 2 uh 1% down on the
+S&P.
+Uh VIX is down or VIX is up. Bitcoin's
+down quite a bit. Gold is up and so on.
+Okay. Uh so, just to let you know, today
+is March 30th, quarter to two, so it's a
+Friday. All right. So going back to
+this, you can see here it's done doing
+quite well. For every uh trade in the
+futures market on the Canadian dollar,
+we're getting uh one trade that may
+lose, we're getting two
+uh about half a profitable. It's
+somewhat same with the Z aspect of the
+uh soybean, I believe. Um here's the
+performance. 19 trades,
+>> 42% win ratio. So technically we're
+we're probably still making some money
+here. Uh so last there was there was
+some good trading last night as well
+which I can show. Um
+and uh let me show you that as well.
+So
+in here uh
+this was run last night. Okay. So the
+only ones that made money uh was
+Bitcoin. Okay. So, showing you the main
+point here is uh let me just go back
+here to our last night's reports.
+Okay. So, I can I can run this. I've
+shown this before. It's it's so powerful
+what we got here. So, uh this was run
+through the night up until I don't know
+till my system reset. So, you can see
+here we're at 47% uh win ratio, 364
+trades. Now, I can tone that down if I
+want, but uh what traded was Bitcoin.
+Okay, so here is the Bitcoin trades
+right here. Um the similar situation
+with uh with um like things are not
+profitable, but I could have traded
+Bitcoin last night. And that's my whole
+point is that you get certain moments
+when you that certain assets are going
+to profit. So as I said here when you
+look at today
+everything's just down okay everything's
+down but we are making money currently
+right now and this is the following test
+my last step is to move everything
+that's profitable into a environment and
+I can do that with these MCP servers and
+the agents uh that I got running now.
+So, I'll I'll I'll talk about that in a
+minute. But right now, uh so last night,
+I could have run this thing and made
+money. Okay. And then going back to
+today, uh let me just load up
+uh hang on here. Let me just load up
+last today's set of files.
+These these are off of my logs, off of
+each bot. Okay. very powerful what's
+being developed and what's going to
+expand out of this. Okay, so going back
+now to get my latest set of today's bots
+that are running.
+Okay, so today's bots again, you'll see
+um
+uh today's started this morning. Uh
+what's been running, what's been
+profitable. So when you people crying
+that there's no money to be made, this
+is why I trade the futures market
+because if you're just trading stocks
+only and everything's been down, you're
+not making money. You probably losing
+money. But here we're making money.
+Okay, so again, the ZS
+and the Canadian dollar in these
+different contracts. So that is possible
+making money. And here's the overview.
+19 trades, 42% but still making money.
+Okay. So, I'd be very happy with that.
+>> Okay. So, again, this is the Discord
+server. I would strongly recommend you
+get on that. Uh this little thing right
+here that I'm posting is very important
+now because now through NCP servers, I
+can uh send out files
+um to my Discord. I can send it out to
+my website, paid or not.
+And uh I can also tap into what's
+happening in my website traffic and
+seeing what people are coming in to look
+at. So I can respond to that as well if
+I wanted to. And again I can automate
+all this. I can I can not just automate
+all I can um schedule it around certain
+things. Right? So um if I go back into
+my other environment uh so here is my
+MTP environment. This is where I'm
+running different servers
+uh via MCP. Look it up if you don't know
+what it is, but this is all courtesy of
+agents
+and MCP. So I can connect into uh
+currently my website provider and also
+my discord. So, and then I can have all
+of my Python clean scripts, all that,
+and plus other stuff as well,
+integrated, and post it where I want,
+paid or not, for free or not, it doesn't
+really matter. So, I wanted to show you
+that uh as well. So, this is all done
+courtesy of, as you can see here, Claude
+Cloud. So, let me talk about the quad
+desktop and the like. I've been using
+AI, a certain type of AI that's been
+great because Quad is not just the best
+AI overall. Probably is, but also the
+most expensive. Uh there's also Gemini
+AI, some of the Chinese ones I've
+highlighted as well. Um the Claude
+desktop
+uh and the Claude that's been hot buzzy.
+Uh, and then the other one as a coder
+using VS Code, the quad code extension.
+This works great. I was able to get all
+my MCP servers connected through the
+quad code. I've tried to do it with
+Cine. I tried to do with Kilo AI. Didn't
+get anywhere because quad modeling is
+more advanced. Okay. I was able to do it
+within quite literally minutes to get it
+all set up with what I've just
+mentioned. Okay, so quad code is better
+for that. And to really take advantage
+of it, I would recommend to use the quad
+code extension in VS Code, what you're
+seeing here. And then you can just type
+away in English and it'll create all the
+agents that you want. and you just say
+to it, "Okay, now create me a a Python
+script for it." It's that advanced. And
+again, you're just using intuitive
+English. So that's beyond powerful. And
+it's great for non-technical people as
+well. And you can apply the same thing
+in the world of quant trading quant as
+well. So for instance, if you are doing
+what I'm doing and you want to go more
+advanced in the in the quant research,
+let's say you can you connect into MCP
+servers from places like Wolfram
+uh it's called Wolfrram
+alpha wolf whatever that one there's uh
+integration with mat lab uh plus you can
+use perplexity uh research as well which
+would be quite good for
+for the research.
+Um, now I want to mention a couple of
+security
+uh tips here for you if you go down this
+path. Um, few days ago I got an alert
+from somebody who's been highly
+reliable. Uh, big thanks to him. He
+knows who he is. I don't have to mention
+anything beyond that. Anyways, um one of
+the Python packages that came parasite
+package delight if you loaded it called
+LM light what would happen is if you
+loaded in a certain version what would
+happen is um that package when you run
+it from your Python scripting it would
+basically swipe all your credentials off
+your computer. So if you have banking
+any login security level, it would it
+would it would steal all your
+credentials. Another one that just came
+to my attention this morning is with the
+MCP servers themselves. Okay, this is
+where providers like Quad, OpenAI,
+whoever have to be very careful what
+they suggest or put up in their in their
+ecosystem, especially on their um MCP
+equivalent repository of where to get
+reliable and safe MCP servers. So,
+another one came to my attention where
+one of the NC MCP servers
+uh as a third party open- source came in
+and did the same thing where it's swipe
+all your data, all your security data.
+we're now moving into the environment of
+where we have to worry about security
+when it comes to NCP security and Python
+packages because these hackers know
+um with the vioders and the like they
+don't know what they're doing. So you're
+going to have to stick with reliable
+sources. Okay. So the reliable now come
+back to the big three. Okay. reliable be
+it Gemini Quad or Open AI. I have no
+problem and I like using all the Chinese
+AI models cuz they're cheap. They're
+quite effective or even Brock or
+something like that. But we have to when
+it comes to your security, you have to
+be very careful on what you use. So if
+you're not a technical person, you're
+going to have to make sure that whatever
+you install through your Python
+scripting and whatever packages you load
+in and run are safe. So again, in my
+case with the MCP servers that I choose,
+trying to stick with the official one.
+So for instance, if I'm using uh let's
+say I don't know uh I'm using Google
+Analytics is one of them, that's an
+official
+CP server from Google. And you tell that
+when you applaud code to whatever AI
+you're using to only use the official
+ones, not third party, okay, not open
+source because you don't know if you can
+trust those packages or MCP servers,
+okay? Because they may be actual hack
+hacked or intended to be hackable
+parasite uh packages or MCQ servers. So
+you have to be very careful what you
+use. Okay, I can't stress that anymore
+beyond that. Other than that, the
+technology is great. Um, but in terms of
+if you want to play it safe and most
+advanced,
+uh, you may want to just stick with claw
+cloud. Not saying 100% guaranteed to be
+safe. That's probably the better way.
+Now, I know in streams I've mentioned
+that claude is very expensive. It is,
+okay? But when I start playing around
+with this MCP stuff and agent stuff,
+it's great to do. The productivity goes
+up, blah blah blah blah. Um, the thing
+is the quad itself because let's say
+you're going to use quad code, quad
+desktops, whatever,
+you're going to be only able to use quad
+models or quad LLMs. So, what I would
+suggest is use the lowest cost one,
+which is haiku. If you can go back a few
+versions like current one would be 4.6.
+If you can use 4.5 or even four before
+four, um, I've been using Haiku all this
+time and it does the job. You don't need
+to pay extra for quad uh or even quad
+sonnet. They're very expensive and you
+can blow through your account very very
+easily um if you're using uh anthropic
+claude as a subscription.
+So kind of stick with it. um haiku as
+much as possible. Now, one thing I have
+mentioned that's very dangerous and I
+know a lot of these providers probably
+love it is when you start using this
+this technology this AI stuff and if
+it's use
+flawed only anthropic only what I would
+suggest is if you have access or get a
+prepaid credit card if you want to
+protect your account from not going more
+than what it should I would only use a
+prepaid credit card loaded up to the
+amount that you want. I'm paying I don't
+know is it I'm on the pro which is 20 25
+a month. There's no cap on it. Okay. Um
+so if I go beyond that it'll keep
+spending. Whereas if you have a prepaid
+credit card it's a way to limit what
+Anthropic will charge on your credit
+card. Okay. Um so do that with uh Claude
+or any of these type of subscriptions.
+secure yourself so you don't get um bill
+extra. I've I've heard people will get
+addicted to to claude the subscription
+and then they're well into $10,000 bill
+just in one month once you start out.
+And you also got to make make sure you
+watch your activity on the subscription
+again with oropic and make sure it's not
+going above and beyond what you intend
+to spend for that month. Just as tips.
+Okay. So, again, uh these are just some
+tips I've got. If you want to know more,
+a couple things. I do have my regular
+events happening this Tuesday coming up
+on the 31st. We're going to talk about
+this experience. Also, um I've uh got uh
+our uh our if you want to subscribe to
+stuff, um what I would recommend is to
+do that via email because I send out a
+lot of stuff on my email. I do know a
+lot of people don't really use email.
+That's why I'm now using more Discord as
+another way set up your own
+notifications in real time. And if you
+do the email, you know, you got the C++
+ebook with HFT blah blah blah as as a
+thank you whatever. But um trading just
+just so you know, everything's all about
+retail, right? Um, so if I go back here
+and we have, so for instance, if I have
+bots running currently, some of these
+bots may start to lose money and you
+have to have setup notifications on that
+to ensure that you're still making money
+if you're going to follow what I do
+>> when it comes to trading. So as an
+example, that's why you need to be
+everything now in real time, okay? And
+be able to respond to it. So my my case,
+we have two bots running that are
+profitable. either of these can suddenly
+go negative. Okay. So, if I take a look
+again um and get the lid and again I
+could do this in real time and and maybe
+I might do that as a service for people
+but nothing's traded but just as an
+example you know nothing's changed but
+we could have an instance where uh
+things can reverse you and start losing
+money so you have to be notified somehow
+that's why you want to be on something
+like like Discord because if you get the
+notice that yes it's losing money you
+can get out of the trade because in my
+case I'm doing everything in an
+automated way. So I don't have to worry
+about this stuff because now I'm using
+the cloud desktop and all that and
+having bots run in the background as you
+can see here in the different uh
+PowerShell sessions as well. Um and then
+I can rerun a new batch, get a new set
+of bots and and launch those and and
+continue running other bots. I mean you
+go all hog wild here.
+So everything's running ticky boo is
+what I'm saying. Anyways, I'm going to
+leave it at that. Thank you very much
+for uh watching
+and uh we shall talk to you later and
+have a good day.

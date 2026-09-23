@@ -1,0 +1,1494 @@
+#!/usr/bin/env python3
+"""F5 judge scoreboard — price each verdict from journal + flow + deals/pnl.
+
+Owner: Grok Bot only. Read-only versus the book.
+
+Does not call place(), flatten, remint, or restart book_owner.
+Does not touch adapter.default_providers() (must stay []).
+Does not checkout config/agent_config.yaml.
+Does not git add.
+
+UNPRICED rows name the missing field. Never invent a dollar.
+"""
+from __future__ import annotations
+
+import json
+import os
+import sys
+from collections import Counter, defaultdict
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+from typing import Any, Optional
+
+_REPO = Path(__file__).resolve().parents[2]
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
+from scripts.f5_desk import common
+
+SCHEMA = "gtos.judgment.scoreboard.v2"
+ICT = timezone(timedelta(hours=7))
+SEED_DAY = "2026-08-27"
+WITHDRAWN_PROVIDERS = {"cursor-agent"}
+INTEL_PROVIDERS = {"grok-inbox"}
+OCCUPANCY_PROVIDERS = {"grok-chair"}
+OCCUPANCY_SHA = "grok-chair-stack-hold"
+
+
+def _round_usd(value: Optional[float]) -> Optional[float]:
+    if value is None:
+        return None
+    return round(float(value), 2)
+
+
+def _ticket_id(ticket: Any) -> Optional[str]:
+    """Broker ticket only. Backup stems like 179217216.pre_sit_repair are not tickets."""
+    if ticket in (None, "", 0, "0"):
+        return None
+    text = str(ticket).strip()
+    if text.isdigit():
+        return text
+    return None
+
+
+def _first_num(*vals: Any) -> Optional[float]:
+    for value in vals:
+        if value is None or value == "":
+            continue
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            continue
+    return None
+
+
+def _record_size(doc: dict[str, Any]) -> dict[str, Any]:
+    """Join lots / risk only from named fields that exist. Never invent unit $250."""
+    execu = doc.get("execution") if isinstance(doc.get("execution"), dict) else {}
+    inst = doc.get("instrumentation") if isinstance(doc.get("instrumentation"), dict) else {}
+    flow_ex = inst.get("gtos_live_flow_execution") if isinstance(inst.get("gtos_live_flow_execution"), dict) else {}
+    result = flow_ex.get("result") if isinstance(flow_ex.get("result"), dict) else {}
+    req = flow_ex.get("request") if isinstance(flow_ex.get("request"), dict) else {}
+    geom = inst.get("gtos_live_flow_broker_geometry") if isinstance(inst.get("gtos_live_flow_broker_geometry"), dict) else {}
+    close = execu.get("f5_close") if isinstance(execu.get("f5_close"), dict) else {}
+    lots = _first_num(
+        doc.get("volume"),
+        doc.get("lots"),
+        doc.get("broker_volume"),
+        execu.get("volume"),
+        execu.get("lots"),
+        flow_ex.get("lots_placed"),
+        result.get("volume"),
+        req.get("volume"),
+        geom.get("lots_normalized"),
+    )
+    risk = _first_num(
+        doc.get("actual_risk_usd"),
+        doc.get("risk_usd"),
+        inst.get("f5_actual_risk_usd"),
+        close.get("f5_actual_risk_usd"),
+    )
+    intended = _first_num(
+        doc.get("intended_risk_usd"),
+        inst.get("f5_intended_risk_usd"),
+        close.get("f5_intended_risk_usd"),
+    )
+    src = None
+    if flow_ex.get("lots_placed") is not None:
+        src = "trade_record.instrumentation.gtos_live_flow_execution.lots_placed"
+    elif result.get("volume") is not None:
+        src = "trade_record.instrumentation.gtos_live_flow_execution.result.volume"
+    elif lots is not None:
+        src = "trade_record.size"
+    risk_src = None
+    if inst.get("f5_actual_risk_usd") is not None:
+        risk_src = "trade_record.instrumentation.f5_actual_risk_usd"
+    elif close.get("f5_actual_risk_usd") is not None:
+        risk_src = "trade_record.execution.f5_close.f5_actual_risk_usd"
+    return {
+        "lots": lots,
+        "actual_risk_usd": _round_usd(risk) if risk is not None else None,
+        "intended_risk_usd": _round_usd(intended) if intended is not None else None,
+        "size_source": src,
+        "risk_source": risk_src,
+    }
+
+
+def _parse_utc(value: Any) -> Optional[datetime]:
+    return common.parse_utc(value)
+
+
+def _iso(dt: Optional[datetime]) -> str:
+    if dt is None:
+        return common.iso_utc()
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+def _iso_ict(dt: Optional[datetime]) -> str:
+    if dt is None:
+        dt = datetime.now(timezone.utc)
+    return dt.astimezone(ICT).strftime("%Y-%m-%d %H:%M:%S ICT")
+
+
+def _norm_sym(symbol: Any) -> str:
+    text = str(symbol or "").strip().upper()
+    for suffix in (".CASH", "_CASH"):
+        if text.endswith(suffix):
+            text = text[: -len(suffix)]
+    aliases = {
+        "US30": "US30",
+        "GER40": "GER40",
+        "UK100": "UK100",
+        "JP225": "JP225",
+        "XAUUSD": "XAUUSD",
+        "ETHUSD": "ETHUSD",
+        "BTCUSD": "BTCUSD",
+        "GBPUSD": "GBPUSD",
+        "EURUSD": "EURUSD",
+        "GBPJPY": "GBPJPY",
+        "USDJPY": "USDJPY",
+    }
+    return aliases.get(text, text)
+
+
+def _symbol_from_cid(cid: str) -> str:
+    parts = str(cid or "").split("::")
+    if len(parts) >= 3:
+        return _norm_sym(parts[2])
+    return ""
+
+
+def _lane(provider: str, raw_sha: str, why_codes: list[str] | None = None) -> str:
+    p = str(provider or "")
+    sha = str(raw_sha or "")
+    if p in WITHDRAWN_PROVIDERS:
+        return "withdrawn_history"
+    if p in OCCUPANCY_PROVIDERS or sha == OCCUPANCY_SHA:
+        return "occupancy_overlay"
+    codes = [str(c or "") for c in (why_codes or []) if str(c or "").strip()]
+    occupancy_codes = 0
+    hard_off_codes = 0
+    intel_codes = 0
+    try:
+        from scripts.f5_desk.inbox_gates import HARD_OFF_WHY, is_occupancy_why
+    except Exception:
+        is_occupancy_why = lambda c: False  # noqa: E731
+        HARD_OFF_WHY = frozenset()
+    for code in codes:
+        if code in HARD_OFF_WHY or code == "hard_off_sleeve":
+            hard_off_codes += 1
+        elif is_occupancy_why(code):
+            occupancy_codes += 1
+        else:
+            intel_codes += 1
+    if p in INTEL_PROVIDERS:
+        if codes and occupancy_codes == len(codes):
+            return "occupancy_overlay"
+        if codes and hard_off_codes == len(codes):
+            return "occupancy_overlay"
+        return "intelligence"
+    return "historical_junior"
+
+
+def _write_text_atomic(path: Path, text: str) -> bool:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + f".tmp{os.getpid()}")
+        tmp.write_text(text, encoding="utf-8")
+        os.replace(tmp, path)
+        return True
+    except Exception as exc:
+        print("atomic md write failed", path, exc)
+        return False
+
+
+def _money(value: Optional[float]) -> str:
+    if value is None:
+        return "UNPRICED"
+    sign = "+" if value > 0 else ""
+    return f"{sign}${value:,.2f}"
+
+
+def load_deals(ps: Path) -> dict[str, Any]:
+    newest: Optional[Path] = None
+    for p in sorted(ps.glob("deals_f5_*.json")):
+        newest = p
+    if newest is None:
+        return {"path": None, "positions": {}, "account": {}, "generated_at_utc": None, "n_deals": 0}
+    doc = common.read_json(newest, default={}) or {}
+    positions: dict[int, dict[str, Any]] = {}
+    for deal in doc.get("deals") or []:
+        try:
+            pid = int(deal.get("position_id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if pid <= 0:
+            continue
+        slot = positions.setdefault(
+            pid,
+            {
+                "position_id": pid,
+                "symbol": _norm_sym(deal.get("symbol")),
+                "comment": deal.get("comment") or "",
+                "n_deals": 0,
+                "n_entry": 0,
+                "n_exit": 0,
+                "profit": 0.0,
+                "commission": 0.0,
+                "swap": 0.0,
+                "fee": 0.0,
+                "realized": 0.0,
+                "volume": 0.0,
+                "entry_times": [],
+                "exit_times": [],
+                "exit_comments": [],
+            },
+        )
+        slot["n_deals"] += 1
+        if deal.get("symbol"):
+            slot["symbol"] = _norm_sym(deal.get("symbol"))
+        if deal.get("comment"):
+            slot["comment"] = deal.get("comment")
+        profit = float(deal.get("profit") or 0)
+        comm = float(deal.get("commission") or 0)
+        swap = float(deal.get("swap") or 0)
+        fee = float(deal.get("fee") or 0)
+        slot["profit"] += profit
+        slot["commission"] += comm
+        slot["swap"] += swap
+        slot["fee"] += fee
+        slot["realized"] += profit + comm + swap + fee
+        entry = deal.get("entry")
+        tiso = deal.get("time_broker_iso")
+        if entry == 0:
+            slot["n_entry"] += 1
+            try:
+                slot["volume"] += float(deal.get("volume") or 0)
+            except (TypeError, ValueError):
+                pass
+            if tiso:
+                slot["entry_times"].append(tiso)
+        elif entry == 1:
+            slot["n_exit"] += 1
+            if tiso:
+                slot["exit_times"].append(tiso)
+            if deal.get("comment"):
+                slot["exit_comments"].append(str(deal.get("comment")))
+    for slot in positions.values():
+        slot["realized"] = _round_usd(slot["realized"])
+        slot["profit"] = _round_usd(slot["profit"])
+        slot["commission"] = _round_usd(slot["commission"])
+        slot["swap"] = _round_usd(slot["swap"])
+        slot["fee"] = _round_usd(slot["fee"])
+        slot["volume"] = round(float(slot["volume"]), 2) if slot.get("volume") else None
+        slot["closed"] = slot["n_exit"] > 0
+    return {
+        "path": str(newest),
+        "generated_at_utc": doc.get("generated_at_utc"),
+        "account": doc.get("account") or {},
+        "n_deals": int(doc.get("n_deals") or len(doc.get("deals") or [])),
+        "positions": positions,
+        "schema": doc.get("schema"),
+    }
+
+
+def load_trade_records(ps: Path) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    tr = ps / "trade_records"
+    if not tr.is_dir():
+        return out
+    for path in tr.glob("*.json"):
+        doc = common.read_json(path, default=None)
+        if not isinstance(doc, dict):
+            continue
+        ticket = _ticket_id(path.stem)
+        if not ticket:
+            continue
+        execu = doc.get("execution") if isinstance(doc.get("execution"), dict) else {}
+        close_action = doc.get("close_action") or execu.get("close_action")
+        exit_status = doc.get("exit_reconciliation_status") or execu.get("exit_reconciliation_status")
+        false_close = close_action == "broker_closed_absent_on_reconcile" and exit_status == "NO_EXIT_DEAL_FOUND"
+        realized = doc.get("broker_realized_pnl")
+        if realized is None:
+            realized = doc.get("broker_position_realized_pnl")
+        if realized is None:
+            realized = execu.get("broker_realized_pnl")
+        if realized is None:
+            realized = execu.get("broker_position_realized_pnl")
+        exit_profit = doc.get("broker_exit_profit")
+        if exit_profit is None:
+            exit_profit = execu.get("broker_exit_profit")
+        if realized is None and exit_profit is not None:
+            realized = (
+                float(exit_profit or 0)
+                + float((doc.get("broker_exit_commission") if doc.get("broker_exit_commission") is not None else execu.get("broker_exit_commission")) or 0)
+                + float((doc.get("broker_exit_swap") if doc.get("broker_exit_swap") is not None else execu.get("broker_exit_swap")) or 0)
+                + float((doc.get("broker_exit_fee") if doc.get("broker_exit_fee") is not None else execu.get("broker_exit_fee")) or 0)
+            )
+        size = _record_size(doc)
+        out[ticket] = {
+            "ticket": ticket,
+            "candidate_id": doc.get("candidate_id") or "",
+            "symbol": _norm_sym(doc.get("symbol") or execu.get("broker_symbol")),
+            "sleeve": doc.get("sleeve") or "",
+            "lifecycle": doc.get("trade_lifecycle_status") or "",
+            "opened_at_utc": doc.get("opened_at_utc") or execu.get("placed_at_utc"),
+            "closed_at_utc": None if false_close else (doc.get("closed_at_utc") or execu.get("closed_at_utc")),
+            "close_action": None if false_close else close_action,
+            "false_close": false_close,
+            "realized": _round_usd(realized) if realized is not None and not false_close else None,
+            "profit": _round_usd(exit_profit) if exit_profit is not None and not false_close else None,
+            "commission": _round_usd(doc.get("broker_position_aggregate_commission") if doc.get("broker_position_aggregate_commission") is not None else (doc.get("broker_exit_commission") if doc.get("broker_exit_commission") is not None else execu.get("broker_position_aggregate_commission"))),
+            "swap": _round_usd(doc.get("broker_position_aggregate_swap") if doc.get("broker_position_aggregate_swap") is not None else (doc.get("broker_exit_swap") if doc.get("broker_exit_swap") is not None else execu.get("broker_position_aggregate_swap"))),
+            "lots": size.get("lots"),
+            "actual_risk_usd": size.get("actual_risk_usd"),
+            "intended_risk_usd": size.get("intended_risk_usd"),
+            "size_source": size.get("size_source"),
+            "risk_source": size.get("risk_source"),
+        }
+    return out
+
+
+def load_placements(ps: Path) -> list[dict[str, Any]]:
+    path = ps / "placed_decisions.jsonl"
+    rows: list[dict[str, Any]] = []
+    if not path.is_file():
+        return rows
+    try:
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    except OSError:
+        return rows
+    return rows
+
+
+def load_chair_wake(state_dir: Path) -> dict[str, Any]:
+    """Chair sit lives under judgment/state/, not judgment/ root."""
+    for path in (state_dir / "chair_wake.json", state_dir / "state" / "chair_wake.json"):
+        doc = common.read_json(path, default=None)
+        if isinstance(doc, dict) and doc:
+            doc = dict(doc)
+            doc["_chair_wake_path"] = str(path)
+            return doc
+    return {}
+
+
+def load_ledger(ps: Path) -> dict[str, Any]:
+    return common.read_json(ps / "f5_notional_ledger.json", default={}) or {}
+
+
+def load_flow(repo: Path, day: str) -> dict[str, Any]:
+    return common.read_json(common.flow_dir(repo) / f"flow_{day}.json", default={}) or {}
+
+
+def load_consume(repo: Path, day: str) -> dict[str, Any]:
+    return common.read_json(common.flow_dir(repo) / f"consume_{day}.json", default={}) or {}
+
+
+def load_hold_skips(repo: Path, day: str) -> list[dict[str, Any]]:
+    """Real book skips: launcher cycle ``skipped.reason == judgment_hold``.
+
+    These are the fire-path vetoes. Journal HOLDs that never met a sized
+    intent are occupancy words, not skips. Do not invent a dollar when
+    volume / a subsequent fill is missing.
+    """
+    path = repo / "shadow_logs" / "ultimate_book_launcher.jsonl"
+    out: list[dict[str, Any]] = []
+    if not path.is_file():
+        return out
+    needle_day = day
+    try:
+        with path.open(encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                if needle_day not in line or "judgment_hold" not in line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                ts = str(rec.get("ts") or "")
+                if not ts.startswith(day):
+                    continue
+                for sk in rec.get("skipped") or []:
+                    if not isinstance(sk, dict) or sk.get("reason") != "judgment_hold":
+                        continue
+                    flow = sk.get("judgment_flow") if isinstance(sk.get("judgment_flow"), dict) else {}
+                    join = str(flow.get("join_key") or "")
+                    symbol = _norm_sym(sk.get("symbol") or "")
+                    sleeve = sk.get("sleeve") or ""
+                    cid = join if join.startswith(("W7_BOOK::", "LAUNCHER::")) else ""
+                    if not cid and symbol and sleeve:
+                        cid = f"LAUNCHER::{sk.get('symbol')}::{sleeve}::{day}"
+                    standing = join.startswith("STANDING::") or str(flow.get("reason") or "").startswith("usdjpy_verification")
+                    source = str(flow.get("source") or ("standing" if standing else "sidecar"))
+                    out.append({
+                        "ts": ts,
+                        "symbol": symbol,
+                        "sleeve": sleeve,
+                        "decision_bar_iso": sk.get("decision_bar_iso"),
+                        "candidate_id": cid,
+                        "join_key": join,
+                        "action": flow.get("action") or "HOLD",
+                        "verdict": flow.get("verdict") or "hold",
+                        "why_code": flow.get("why_code") or flow.get("reason") or "",
+                        "flow_reason": flow.get("reason") or "",
+                        "flow_source": source,
+                        "standing": standing,
+                        "launcher_reason": rec.get("reason"),
+                    })
+    except OSError:
+        return out
+    return out
+
+
+def price_hold_skip(
+    skip: dict[str, Any],
+    *,
+    by_cid: dict[str, dict[str, Any]],
+    by_ticket: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    """Counterfactual of a real skip: the ticket that would have been the fire."""
+    cid = skip.get("candidate_id") or ""
+    linked = by_cid.get(cid) if cid else None
+    ticket = linked.get("ticket") if linked else None
+    placed_at = _parse_utc((linked or {}).get("placed_at_utc") or (linked or {}).get("opened_at_utc"))
+    hold_at = _parse_utc(skip.get("ts"))
+    tmeta = by_ticket.get(ticket) if ticket else None
+    tprice = ticket_price(tmeta) if tmeta else None
+    size_join = {
+        "lots": (tmeta or {}).get("lots"),
+        "actual_risk_usd": (tmeta or {}).get("actual_risk_usd"),
+        "intended_risk_usd": (tmeta or {}).get("intended_risk_usd"),
+        "lots_source": (tmeta or {}).get("lots_source"),
+        "risk_source": (tmeta or {}).get("risk_source"),
+    }
+    size_join = {k: v for k, v in size_join.items() if v is not None}
+    base = {
+        "lane": "occupancy_overlay" if skip.get("standing") else "judgment_hold_skip",
+        "provider": "book_owner.judgment_hold",
+        "kind": "hold_counterfactual",
+        "source": "shadow_logs/ultimate_book_launcher.jsonl skipped.reason=judgment_hold",
+    }
+    if ticket and tprice and tprice.get("priced") and placed_at and hold_at and hold_at <= placed_at:
+        return {
+            **base,
+            "priced": True,
+            "usd": tprice["usd"],
+            "reason": "hold_skip_then_same_candidate_filled",
+            "missing": None,
+            "ticket": ticket,
+            "pnl_source": tprice.get("source"),
+            "ticket_state": tprice.get("state"),
+            "note": "HOLD skipped a fire; same candidate later filled. Counterfactual of no-veto = this ticket.",
+            **size_join,
+        }
+    if ticket and tprice and placed_at and hold_at and hold_at > placed_at:
+        return {
+            **base,
+            "priced": True,
+            "usd": 0.0,
+            "reason": "hold_skip_after_same_candidate_already_on_book",
+            "missing": None,
+            "ticket": ticket,
+            "book_follow_usd": tprice.get("usd") if tprice.get("priced") else None,
+            "note": "working ticket already on; skip did not add another",
+            **size_join,
+        }
+    missing = "close_deal_or_broker_floating" if size_join.get("lots") is not None else "volume"
+    return {
+        **base,
+        "priced": False,
+        "usd": None,
+        "reason": "hold_skip_blocked_no_fill",
+        "missing": missing,
+        "ticket": ticket,
+        "note": (
+            "book skipped a sized intent; ticket volume joined but no broker P&L yet."
+            if missing == "close_deal_or_broker_floating"
+            else "book skipped a sized intent; no subsequent matching fill. Geometry without size is not a dollar."
+        ),
+        **size_join,
+    }
+
+
+def build_ticket_index(
+    placements: list[dict[str, Any]],
+    trade_records: dict[str, dict[str, Any]],
+    ledger: dict[str, Any],
+    chair_wake: dict[str, Any],
+    deals: dict[str, Any],
+) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """cid -> ticket meta; ticket -> pnl meta."""
+    by_cid: dict[str, dict[str, Any]] = {}
+    by_ticket: dict[str, dict[str, Any]] = {}
+
+    def _touch_cid(cid: str, ticket: Any, extra: Optional[dict] = None) -> None:
+        t = _ticket_id(ticket)
+        if not cid or not t:
+            return
+        slot = by_cid.setdefault(cid, {"candidate_id": cid, "ticket": t})
+        slot["ticket"] = t
+        if extra:
+            slot.update({k: v for k, v in extra.items() if v is not None})
+
+    for row in placements:
+        cid = row.get("candidate_id")
+        if cid:
+            _touch_cid(cid, row.get("ticket"), {"placed_at_utc": row.get("ts"), "symbol": _norm_sym(row.get("symbol")), "sleeve": row.get("sleeve")})
+
+    for ticket, rec in trade_records.items():
+        cid = rec.get("candidate_id")
+        if cid:
+            _touch_cid(cid, ticket, {"symbol": rec.get("symbol"), "sleeve": rec.get("sleeve"), "opened_at_utc": rec.get("opened_at_utc")})
+
+    book = chair_wake.get("book") if isinstance(chair_wake.get("book"), dict) else {}
+    for pos in book.get("positions") or []:
+        t = _ticket_id(pos.get("ticket"))
+        if not t:
+            continue
+        by_ticket.setdefault(t, {})
+        by_ticket[t]["ticket"] = t
+        by_ticket[t]["symbol"] = _norm_sym(pos.get("symbol"))
+        by_ticket[t]["floating_usd"] = _round_usd(pos.get("profit_usd"))
+        by_ticket[t]["floating_source"] = "chair_wake.book.positions.profit_usd"
+        by_ticket[t]["open"] = True
+        by_ticket[t]["entry"] = pos.get("entry")
+        by_ticket[t]["mark"] = pos.get("mark")
+        by_ticket[t]["side"] = pos.get("side")
+        if pos.get("lots") is not None:
+            by_ticket[t]["lots"] = pos.get("lots")
+            by_ticket[t]["lots_source"] = "chair_wake.book.positions.lots"
+        by_ticket[t]["sleeve"] = pos.get("sleeve")
+    for pend in book.get("pending") or chair_wake.get("pending") or []:
+        if not isinstance(pend, dict):
+            continue
+        t = _ticket_id(pend.get("ticket"))
+        if not t:
+            continue
+        slot = by_ticket.setdefault(t, {"ticket": t})
+        slot.setdefault("symbol", _norm_sym(pend.get("symbol")))
+        slot["pending"] = True
+        if pend.get("volume") is not None or pend.get("lots") is not None:
+            slot.setdefault("lots", pend.get("volume") if pend.get("volume") is not None else pend.get("lots"))
+            slot.setdefault("lots_source", "chair_wake.book.pending.volume")
+
+    for raw_t, unit in (ledger.get("open_units") or {}).items():
+        t = _ticket_id(raw_t)
+        if not t or not isinstance(unit, dict):
+            continue
+        slot = by_ticket.setdefault(t, {"ticket": t})
+        slot.setdefault("symbol", _norm_sym(unit.get("symbol")))
+        slot.setdefault("sleeve", unit.get("sleeve"))
+        if unit.get("current_volume") is not None:
+            slot.setdefault("lots", unit.get("current_volume"))
+            slot.setdefault("lots_source", "ledger.open_units.current_volume")
+        if unit.get("actual_risk_usd") is not None:
+            slot.setdefault("actual_risk_usd", _round_usd(unit.get("actual_risk_usd")))
+            slot.setdefault("risk_source", "ledger.open_units.actual_risk_usd")
+        if unit.get("intended_risk_usd") is not None:
+            slot.setdefault("intended_risk_usd", _round_usd(unit.get("intended_risk_usd")))
+        if slot.get("floating_usd") is None and unit.get("current_notional_floating_pnl_usd") is not None:
+            # notional is not broker — do not use as a priced dollar
+            slot["notional_floating_usd"] = _round_usd(unit.get("current_notional_floating_pnl_usd"))
+            slot["notional_floating_note"] = "ledger.current_notional_floating_pnl_usd (not broker; not used as price)"
+        if unit.get("candidate_id"):
+            _touch_cid(unit["candidate_id"], t, {"symbol": _norm_sym(unit.get("symbol"))})
+
+    positions = deals.get("positions") or {}
+    for pid, slot in positions.items():
+        t = _ticket_id(pid)
+        if not t:
+            continue
+        dest = by_ticket.setdefault(t, {"ticket": t})
+        dest["symbol"] = dest.get("symbol") or slot.get("symbol")
+        dest["deals_realized"] = slot.get("realized")
+        dest["deals_profit"] = slot.get("profit")
+        dest["deals_commission"] = slot.get("commission")
+        dest["deals_swap"] = slot.get("swap")
+        dest["deals_closed"] = slot.get("closed")
+        dest["deals_n_entry"] = slot.get("n_entry")
+        dest["deals_n_exit"] = slot.get("n_exit")
+        dest["deals_exit_comments"] = slot.get("exit_comments")
+        dest["deals_source"] = deals.get("path")
+        if slot.get("volume") is not None:
+            dest.setdefault("lots", slot.get("volume"))
+            dest.setdefault("lots_source", "deals.entry_volume")
+
+    for ticket, rec in trade_records.items():
+        t = _ticket_id(ticket)
+        if not t:
+            continue
+        dest = by_ticket.setdefault(t, {"ticket": t})
+        dest.setdefault("symbol", rec.get("symbol"))
+        dest.setdefault("sleeve", rec.get("sleeve"))
+        dest["record_realized"] = rec.get("realized")
+        dest["record_closed_at"] = rec.get("closed_at_utc")
+        dest["record_close_action"] = rec.get("close_action")
+        dest["record_false_close"] = rec.get("false_close")
+        dest["candidate_id"] = rec.get("candidate_id")
+        if rec.get("lots") is not None:
+            dest.setdefault("lots", rec.get("lots"))
+            dest.setdefault("lots_source", rec.get("size_source") or "trade_record.size")
+        if rec.get("actual_risk_usd") is not None:
+            dest.setdefault("actual_risk_usd", rec.get("actual_risk_usd"))
+            dest.setdefault("risk_source", rec.get("risk_source") or "trade_record.instrumentation.f5_actual_risk_usd")
+        if rec.get("intended_risk_usd") is not None:
+            dest.setdefault("intended_risk_usd", rec.get("intended_risk_usd"))
+        if rec.get("candidate_id"):
+            _touch_cid(rec["candidate_id"], t, {"symbol": rec.get("symbol")})
+
+    return by_cid, by_ticket
+
+
+def ticket_price(meta: Optional[dict[str, Any]]) -> dict[str, Any]:
+    """Honest dollar for a ticket, or UNPRICED with missing field."""
+    if not meta:
+        return {"priced": False, "usd": None, "missing": "ticket", "source": None, "state": "none"}
+    if meta.get("deals_closed") and meta.get("deals_realized") is not None:
+        return {
+            "priced": True,
+            "usd": _round_usd(meta["deals_realized"]),
+            "missing": None,
+            "source": "deals_position_profit_commission_swap_fee",
+            "state": "closed",
+            "profit": meta.get("deals_profit"),
+            "commission": meta.get("deals_commission"),
+            "swap": meta.get("deals_swap"),
+            "exit_comments": meta.get("deals_exit_comments") or [],
+        }
+    if meta.get("record_realized") is not None and meta.get("record_close_action") and not meta.get("record_false_close"):
+        return {
+            "priced": True,
+            "usd": _round_usd(meta["record_realized"]),
+            "missing": None,
+            "source": "trade_record.broker_realized_pnl",
+            "state": "closed",
+            "close_action": meta.get("record_close_action"),
+        }
+    if meta.get("floating_usd") is not None:
+        return {
+            "priced": True,
+            "usd": _round_usd(meta["floating_usd"]),
+            "missing": None,
+            "source": meta.get("floating_source") or "chair_wake.profit_usd",
+            "state": "open_floating",
+            "note": "mark-to-market, not a close",
+        }
+    if meta.get("deals_n_entry") and not meta.get("deals_closed"):
+        return {
+            "priced": False,
+            "usd": None,
+            "missing": "close_deal_or_broker_floating",
+            "source": None,
+            "state": "open_unpriced",
+            "entry_commission": meta.get("deals_commission"),
+        }
+    return {
+        "priced": False,
+        "usd": None,
+        "missing": "deal",
+        "source": None,
+        "state": "no_deal",
+    }
+
+
+def flow_word(flow: dict[str, Any], cid: str, aliases: list[str]) -> Optional[dict[str, Any]]:
+    for key in [cid, *aliases]:
+        if key in flow and isinstance(flow[key], dict):
+            return flow[key]
+    # also try the other namespace
+    parts = cid.split("::")
+    guesses = []
+    if cid.startswith("W7_BOOK::") and len(parts) >= 6:
+        guesses.append(f"LAUNCHER::{parts[2]}::{parts[5]}::{parts[3]}")
+    elif cid.startswith("LAUNCHER::") and len(parts) >= 4:
+        guesses.append(cid)
+    for key in guesses:
+        if key in flow and isinstance(flow[key], dict):
+            return flow[key]
+    return None
+
+
+def iter_journal(path: Path, day: str):
+    if not path.is_file():
+        return
+    with path.open(encoding="utf-8") as handle:
+        for line in handle:
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            at = str(row.get("at_utc") or "")
+            if not at.startswith(day):
+                continue
+            yield row
+
+
+def price_verdict(
+    *,
+    lane: str,
+    verdict: str,
+    why_code: str,
+    cid: str,
+    by_cid: dict[str, dict[str, Any]],
+    by_ticket: dict[str, dict[str, Any]],
+    hold_at: Optional[datetime],
+) -> dict[str, Any]:
+    """Dollar of this word. HOLD = counterfactual if the veto had not stood."""
+    if lane == "withdrawn_history":
+        return {
+            "priced": True,
+            "usd": 0.0,
+            "kind": "withdrawn_history",
+            "reason": "cursor-agent_withdrawn_history_priced_0",
+            "missing": None,
+            "ticket": None,
+        }
+
+    if verdict == "abstain":
+        linked = by_cid.get(cid)
+        ticket = linked.get("ticket") if linked else None
+        follow = ticket_price(by_ticket.get(ticket)) if ticket else None
+        out = {
+            "priced": True,
+            "usd": 0.0,
+            "kind": "veto_counterfactual",
+            "reason": "abstain_pass_no_veto",
+            "missing": None,
+            "ticket": ticket,
+        }
+        if follow and follow.get("priced"):
+            out["book_follow_usd"] = follow["usd"]
+            out["book_follow_source"] = follow.get("source")
+            out["book_follow_state"] = follow.get("state")
+            out["note"] = "abstain did not veto; book_follow is the book, not the judge"
+        return out
+
+    linked = by_cid.get(cid)
+    ticket = linked.get("ticket") if linked else None
+    placed_at = _parse_utc((linked or {}).get("placed_at_utc") or (linked or {}).get("opened_at_utc"))
+    tmeta = by_ticket.get(ticket) if ticket else None
+    tprice = ticket_price(tmeta) if tmeta else None
+
+    if verdict == "approve":
+        if tprice and tprice.get("priced"):
+            return {
+                "priced": True,
+                "usd": tprice["usd"],
+                "kind": "actual",
+                "reason": "approve_matched_ticket",
+                "missing": None,
+                "ticket": ticket,
+                "pnl_source": tprice.get("source"),
+                "ticket_state": tprice.get("state"),
+            }
+        return {
+            "priced": False,
+            "usd": None,
+            "kind": "actual",
+            "reason": "approve_unpriced",
+            "missing": (tprice or {}).get("missing") or "ticket",
+            "ticket": ticket,
+        }
+
+    # HOLD
+    occupancy_stack = why_code == "same_symbol_stack_keep_working_ticket" or why_code.startswith("usdjpy_verification")
+    if occupancy_stack and lane == "occupancy_overlay":
+        # Working-ticket float/realized is occupancy path, NOT the missed stack.
+        working = None
+        if tprice and tprice.get("priced"):
+            working = {
+                "working_ticket": ticket,
+                "working_usd": tprice["usd"],
+                "working_source": tprice.get("source"),
+                "working_state": tprice.get("state"),
+            }
+        out = {
+            "priced": False,
+            "usd": None,
+            "kind": "hold_counterfactual",
+            "reason": "occupancy_stack_hold_not_intelligence",
+            "missing": "stack_volume",
+            "ticket": ticket,
+            "note": "if this HOLD had not vetoed, a second same-symbol ticket would be the counterfactual; stack_volume is not on the candidate",
+        }
+        if working:
+            out.update(working)
+        if tmeta:
+            if tmeta.get("lots") is not None:
+                out["working_lots"] = tmeta.get("lots")
+                out["working_lots_source"] = tmeta.get("lots_source")
+            if tmeta.get("actual_risk_usd") is not None:
+                out["working_risk_usd"] = tmeta.get("actual_risk_usd")
+                out["working_risk_source"] = tmeta.get("risk_source")
+            if tmeta.get("intended_risk_usd") is not None:
+                out["working_intended_risk_usd"] = tmeta.get("intended_risk_usd")
+        return out
+
+    if ticket and tprice:
+        # A fill exists for this candidate.
+        if placed_at and hold_at and hold_at <= placed_at:
+            # Hold was already written before the book placed — veto did not keep it off.
+            if tprice.get("priced"):
+                return {
+                    "priced": True,
+                    "usd": tprice["usd"],
+                    "kind": "hold_counterfactual",
+                    "reason": "hold_did_not_keep_off_subsequent_fill",
+                    "missing": None,
+                    "ticket": ticket,
+                    "pnl_source": tprice.get("source"),
+                    "ticket_state": tprice.get("state"),
+                    "placed_at_utc": (linked or {}).get("placed_at_utc"),
+                    "note": "HOLD was standing at place time; book still took it. Counterfactual of no-veto = this ticket.",
+                }
+            return {
+                "priced": False,
+                "usd": None,
+                "kind": "hold_counterfactual",
+                "reason": "hold_matched_ticket_unpriced",
+                "missing": tprice.get("missing") or "deal",
+                "ticket": ticket,
+            }
+        if placed_at and hold_at and hold_at > placed_at:
+            # Hold after the fill: veto could not change the already-on ticket.
+            if tprice.get("priced"):
+                return {
+                    "priced": True,
+                    "usd": 0.0,
+                    "kind": "hold_counterfactual",
+                    "reason": "hold_after_fill_already_on_book",
+                    "missing": None,
+                    "ticket": ticket,
+                    "book_follow_usd": tprice["usd"],
+                    "book_follow_source": tprice.get("source"),
+                    "note": "HOLD arrived after the fill; not vetoing would not add this ticket again",
+                }
+            return {
+                "priced": True,
+                "usd": 0.0,
+                "kind": "hold_counterfactual",
+                "reason": "hold_after_fill_already_on_book",
+                "missing": None,
+                "ticket": ticket,
+            }
+        # timestamps missing — if we have a ticket, still use it as subsequent fill
+        if tprice.get("priced"):
+            return {
+                "priced": True,
+                "usd": tprice["usd"],
+                "kind": "hold_counterfactual",
+                "reason": "hold_matched_ticket_time_order_unknown",
+                "missing": None,
+                "ticket": ticket,
+                "pnl_source": tprice.get("source"),
+                "ticket_state": tprice.get("state"),
+                "note": "ticket exists; place-vs-hold order not both dated",
+            }
+
+    # No ticket: a blocked launch. Need volume to convert a path into dollars.
+    # Launcher skips do not record lots. Desk unit $250 is not a candidate size.
+    missing = "volume"
+    extra = {}
+    if tmeta and tmeta.get("lots") is not None:
+        missing = "close_deal_or_broker_floating"
+        extra["lots"] = tmeta.get("lots")
+        extra["lots_source"] = tmeta.get("lots_source")
+        extra["actual_risk_usd"] = tmeta.get("actual_risk_usd")
+        extra["intended_risk_usd"] = tmeta.get("intended_risk_usd")
+    return {
+        "priced": False,
+        "usd": None,
+        "kind": "hold_counterfactual",
+        "reason": "hold_blocked_no_fill",
+        "missing": missing,
+        "ticket": ticket,
+        "note": (
+            "ticket volume joined; no broker close or floating to turn it into a dollar"
+            if missing == "close_deal_or_broker_floating"
+            else "no subsequent fill; launcher skip has no lots; desk unit $250 is not a candidate size"
+        ),
+        **{k: v for k, v in extra.items() if v is not None},
+    }
+
+
+def fmt_cycle_row(c: dict[str, Any]) -> str:
+    return (
+        f"| {c['at_utc']} | {c['lane']} | {c['provider']} | `{c.get('slate_id') or ''}` "
+        f"| {c.get('mix') or ''} | {c.get('n_approve', 0)}/{c.get('n_hold', 0)}/{c.get('n_abstain', 0)} "
+        f"| {c.get('priced_n', 0)} | {c.get('unpriced_n', 0)} | {_money(c.get('usd_sum_priced'))} |"
+    )
+
+
+def build(day: str = SEED_DAY) -> dict[str, Any]:
+    repo = common.repo_root_default()
+    state_dir = common.judgment_state_dir(repo)
+    ps = repo / "pipeline_state" / "ultimate_book" / common.NAMESPACE
+    now = datetime.now(timezone.utc)
+
+    journal_path = state_dir / f"judge_{day}.jsonl"
+    deals = load_deals(ps)
+    trade_records = load_trade_records(ps)
+    placements = load_placements(ps)
+    chair_wake = load_chair_wake(state_dir)
+    ledger = load_ledger(ps)
+    flow = load_flow(repo, day)
+    consume = load_consume(repo, day)
+    hold_skips_raw = load_hold_skips(repo, day)
+    last_judged = common.read_json(state_dir / "last_judged.json", default={}) or {}
+    cycle_counters = common.read_json(state_dir / "cycle_counters.json", default={}) or {}
+    latest_slate = common.read_json(state_dir / "latest_slate.json", default={}) or {}
+    call_counter = common.read_json(state_dir / "call_counter.json", default={}) or {}
+
+    by_cid, by_ticket = build_ticket_index(placements, trade_records, ledger, chair_wake, deals)
+
+    cycles: list[dict[str, Any]] = []
+    raw_rows: list[dict[str, Any]] = []
+
+    for rec in iter_journal(journal_path, day):
+        kind = rec.get("kind")
+        provider = rec.get("provider") or ""
+        sha = rec.get("raw_response_sha") or ""
+        at = rec.get("at_utc")
+        at_dt = _parse_utc(at)
+        slate_id = rec.get("slate_id")
+        mix = rec.get("verdict_mix")
+        if kind == "cycle_no_verdict":
+            cycles.append({
+                "at_utc": at,
+                "lane": "none",
+                "provider": provider or "none",
+                "slate_id": slate_id,
+                "mix": None,
+                "kind": kind,
+                "reason": rec.get("reason"),
+                "n_approve": 0,
+                "n_hold": 0,
+                "n_abstain": 0,
+                "priced_n": 0,
+                "unpriced_n": 0,
+                "usd_sum_priced": 0.0,
+            })
+            continue
+        if kind != "slate_judged":
+            continue
+        verdicts = rec.get("verdicts") or []
+        lane = _lane(provider, sha, [str(v.get("why_code") or "") for v in verdicts if isinstance(v, dict)])
+        n_a = n_h = n_x = 0
+        priced_n = 0
+        unpriced_n = 0
+        usd_sum = 0.0
+        for v in verdicts:
+            if not isinstance(v, dict):
+                continue
+            verdict = str(v.get("verdict") or "")
+            if verdict == "approve":
+                n_a += 1
+            elif verdict == "hold":
+                n_h += 1
+            elif verdict == "abstain":
+                n_x += 1
+            cid = v.get("candidate_id") or ""
+            aliases = list(v.get("alias_ids") or [])
+            fw = flow_word(flow, cid, aliases)
+            priced = price_verdict(
+                lane=lane,
+                verdict=verdict,
+                why_code=str(v.get("why_code") or ""),
+                cid=cid,
+                by_cid=by_cid,
+                by_ticket=by_ticket,
+                hold_at=at_dt,
+            )
+            if priced.get("priced"):
+                priced_n += 1
+                usd_sum += float(priced.get("usd") or 0)
+            else:
+                unpriced_n += 1
+            raw_rows.append({
+                "lane": lane,
+                "provider": provider,
+                "raw_response_sha": sha,
+                "at_utc": at,
+                "slate_id": slate_id,
+                "mix": mix,
+                "candidate_id": cid,
+                "alias_ids": aliases,
+                "symbol": _symbol_from_cid(cid) or _norm_sym(v.get("symbol")),
+                "verdict": verdict,
+                "why_code": v.get("why_code") or "",
+                "mechanism": v.get("mechanism") or "",
+                "confidence": v.get("confidence"),
+                "flow_action": (fw or {}).get("action"),
+                "flow_verdict": (fw or {}).get("verdict"),
+                "flow_why": (fw or {}).get("why_code"),
+                "flow_ts": (fw or {}).get("written_at_utc") or (fw or {}).get("ts"),
+                **priced,
+            })
+        cycles.append({
+            "at_utc": at,
+            "lane": lane,
+            "provider": provider,
+            "raw_response_sha": sha,
+            "slate_id": slate_id,
+            "mix": mix,
+            "kind": kind,
+            "n_approve": n_a,
+            "n_hold": n_h,
+            "n_abstain": n_x,
+            "n_verdicts": len(verdicts),
+            "priced_n": priced_n,
+            "unpriced_n": unpriced_n,
+            "usd_sum_priced": _round_usd(usd_sum),
+        })
+
+    # Collapse occupancy + repeated intelligence words for the row table.
+    collapsed: list[dict[str, Any]] = []
+    groups: dict[tuple, dict[str, Any]] = {}
+    for row in raw_rows:
+        key = (row["lane"], row["provider"], row["candidate_id"], row["verdict"], row.get("why_code") or "")
+        g = groups.get(key)
+        if g is None:
+            g = dict(row)
+            g["n_cycles"] = 1
+            g["first_at_utc"] = row["at_utc"]
+            g["last_at_utc"] = row["at_utc"]
+            g["slate_ids"] = [row.get("slate_id")]
+            groups[key] = g
+        else:
+            g["n_cycles"] += 1
+            g["last_at_utc"] = row["at_utc"]
+            if row.get("slate_id") and row.get("slate_id") not in g["slate_ids"]:
+                g["slate_ids"].append(row.get("slate_id"))
+            # keep first priced snapshot; if later is priced and first wasn't, upgrade
+            if (not g.get("priced")) and row.get("priced"):
+                for k in (
+                    "priced", "usd", "kind", "reason", "missing", "ticket", "pnl_source",
+                    "ticket_state", "note", "book_follow_usd", "working_usd", "working_ticket",
+                    "lots", "actual_risk_usd", "intended_risk_usd", "lots_source", "risk_source",
+                    "working_lots", "working_risk_usd", "working_intended_risk_usd",
+                ):
+                    if k in row:
+                        g[k] = row[k]
+    collapsed = sorted(groups.values(), key=lambda r: (r["lane"], r["first_at_utc"] or "", r.get("symbol") or "", r.get("candidate_id") or ""))
+
+    def _lane_totals(name: str) -> dict[str, Any]:
+        rows = [r for r in collapsed if r["lane"] == name]
+        cyc = [c for c in cycles if c["lane"] == name]
+        priced = [r for r in rows if r.get("priced")]
+        unpriced = [r for r in rows if not r.get("priced")]
+        by_verdict = Counter(r.get("verdict") for r in rows)
+        return {
+            "lane": name,
+            "cycles": len(cyc),
+            "unique_rows": len(rows),
+            "priced_unique": len(priced),
+            "unpriced_unique": len(unpriced),
+            "usd_sum_priced_unique": _round_usd(sum(float(r.get("usd") or 0) for r in priced)),
+            "verdicts": dict(by_verdict),
+            "missing_fields": dict(Counter(r.get("missing") for r in unpriced if r.get("missing"))),
+        }
+
+    skip_rows: list[dict[str, Any]] = []
+    for sk in hold_skips_raw:
+        priced = price_hold_skip(sk, by_cid=by_cid, by_ticket=by_ticket)
+        skip_rows.append({**sk, **priced})
+
+    totals = {
+        "intelligence": _lane_totals("intelligence"),
+        "occupancy_overlay": _lane_totals("occupancy_overlay"),
+        "withdrawn_history": _lane_totals("withdrawn_history"),
+        "historical_junior": _lane_totals("historical_junior"),
+        "judgment_hold_skips": {
+            "lane": "judgment_hold_skips",
+            "n": len(skip_rows),
+            "standing_n": sum(1 for r in skip_rows if r.get("standing")),
+            "sidecar_n": sum(1 for r in skip_rows if not r.get("standing")),
+            "priced_n": sum(1 for r in skip_rows if r.get("priced")),
+            "unpriced_n": sum(1 for r in skip_rows if not r.get("priced")),
+            "usd_sum_priced": _round_usd(sum(float(r.get("usd") or 0) for r in skip_rows if r.get("priced"))),
+            "by_symbol": dict(Counter(r.get("symbol") for r in skip_rows)),
+            "by_why": dict(Counter(r.get("why_code") for r in skip_rows)),
+            "missing_fields": dict(Counter(r.get("missing") for r in skip_rows if r.get("missing"))),
+        },
+    }
+
+    # Book snapshot — every number named with its source/time. No blending.
+    book_positions = []
+    wake_book = chair_wake.get("book") if isinstance(chair_wake.get("book"), dict) else {}
+    for pos in wake_book.get("positions") or []:
+        t = _ticket_id(pos.get("ticket"))
+        meta = by_ticket.get(t) if t else None
+        book_positions.append({
+            "ticket": pos.get("ticket"),
+            "symbol": pos.get("symbol"),
+            "side": pos.get("side"),
+            "lots": pos.get("lots") if pos.get("lots") is not None else (meta or {}).get("lots"),
+            "actual_risk_usd": (meta or {}).get("actual_risk_usd"),
+            "intended_risk_usd": (meta or {}).get("intended_risk_usd"),
+            "lots_source": "chair_wake.book.positions.lots" if pos.get("lots") is not None else (meta or {}).get("lots_source"),
+            "risk_source": (meta or {}).get("risk_source"),
+            "entry": pos.get("entry"),
+            "mark": pos.get("mark"),
+            "profit_usd": _round_usd(pos.get("profit_usd")),
+            "source": "chair_wake.book.positions.profit_usd",
+        })
+    pending = []
+    for pend in wake_book.get("pending") or chair_wake.get("pending") or []:
+        if not isinstance(pend, dict):
+            continue
+        item = dict(pend)
+        t = _ticket_id(pend.get("ticket"))
+        meta = by_ticket.get(t) if t else None
+        if meta:
+            if item.get("volume") is None and meta.get("lots") is not None:
+                item["volume"] = meta.get("lots")
+                item["volume_source"] = meta.get("lots_source")
+            if meta.get("actual_risk_usd") is not None:
+                item["actual_risk_usd"] = meta.get("actual_risk_usd")
+                item["risk_source"] = meta.get("risk_source")
+            if meta.get("intended_risk_usd") is not None:
+                item["intended_risk_usd"] = meta.get("intended_risk_usd")
+            if meta.get("candidate_id"):
+                item["candidate_id"] = meta.get("candidate_id")
+        pending.append(item)
+
+    # Closed tickets that have a candidate join, for the book table.
+    closed_today = []
+    for t, meta in by_ticket.items():
+        if not meta.get("deals_closed"):
+            continue
+        rec = trade_records.get(t) or {}
+        opened = rec.get("opened_at_utc") or ""
+        closed = rec.get("closed_at_utc") or ""
+        if not (str(opened).startswith(day) or str(closed).startswith(day) or str(closed).startswith("2026-08-26T2")):
+            # include 26-late / 27 UTC closes that landed on the 27 broker dump
+            if not meta.get("deals_exit_comments"):
+                continue
+        closed_today.append({
+            "ticket": int(t) if str(t).isdigit() else t,
+            "candidate_id": rec.get("candidate_id") or meta.get("candidate_id"),
+            "symbol": meta.get("symbol") or rec.get("symbol"),
+            "sleeve": rec.get("sleeve") or meta.get("sleeve"),
+            "realized_usd": meta.get("deals_realized"),
+            "profit": meta.get("deals_profit"),
+            "commission": meta.get("deals_commission"),
+            "swap": meta.get("deals_swap"),
+            "exit": (meta.get("deals_exit_comments") or [None])[-1],
+            "source": "deals_position_profit_commission_swap_fee",
+            "lots": meta.get("lots") or rec.get("lots"),
+            "actual_risk_usd": meta.get("actual_risk_usd") or rec.get("actual_risk_usd"),
+            "intended_risk_usd": meta.get("intended_risk_usd") or rec.get("intended_risk_usd"),
+            "lots_source": meta.get("lots_source") or rec.get("size_source"),
+        })
+    seen_closed = {str(r.get("ticket")) for r in closed_today}
+    for t, rec in trade_records.items():
+        if t in seen_closed or rec.get("false_close"):
+            continue
+        if rec.get("realized") is None:
+            continue
+        if not rec.get("close_action") and not rec.get("closed_at_utc"):
+            continue
+        opened = rec.get("opened_at_utc") or ""
+        closed = rec.get("closed_at_utc") or ""
+        if not (str(opened).startswith(day) or str(closed).startswith(day)):
+            continue
+        closed_today.append({
+            "ticket": int(t) if str(t).isdigit() else t,
+            "candidate_id": rec.get("candidate_id"),
+            "symbol": rec.get("symbol"),
+            "sleeve": rec.get("sleeve"),
+            "realized_usd": rec.get("realized"),
+            "profit": rec.get("profit"),
+            "commission": rec.get("commission"),
+            "swap": rec.get("swap"),
+            "exit": rec.get("close_action"),
+            "source": "trade_record.broker_realized_pnl",
+            "lots": rec.get("lots"),
+            "actual_risk_usd": rec.get("actual_risk_usd"),
+            "intended_risk_usd": rec.get("intended_risk_usd"),
+            "lots_source": rec.get("size_source"),
+        })
+        seen_closed.add(t)
+    closed_today.sort(key=lambda r: str(r.get("ticket")))
+
+    payload = {
+        "schema": SCHEMA,
+        "day": day,
+        "as_of_utc": _iso(now),
+        "as_of_ict": _iso_ict(now),
+        "written_by": "grok-bot scoreboard stand",
+        "owner": "Grok Bot only",
+        "adapter_default_providers": [],
+        "law": {
+            "intelligence": "grok-inbox",
+            "occupancy_overlay": "grok-chair / grok-chair-stack-hold — occupancy, not intelligence",
+            "withdrawn_history": "cursor-agent a0/h0/x37 priced $0",
+            "unpriced": "if a row cannot be priced, missing names the field; never a fake number",
+            "hold_dollar": "HOLD counterfactual = what the book would have made if the HOLD had not vetoed",
+            "abstain_dollar": "abstain is PASS / fail-open; veto dollars are $0",
+            "occupancy_stack": "same_symbol_stack_keep_working_ticket is not a missed-launch price; stack_volume is missing so those HOLDs stay UNPRICED. Working ticket lots/risk may be joined; they are not the stack dollar.",
+            "judgment_hold_skip": "launcher skipped.reason=judgment_hold is a real fire-path veto; priced only when a later same-candidate fill exists; volume joined from deals/ledger/chair/trade_record; else missing=volume or close_deal_or_broker_floating",
+            "volume_join": "join only existing lots/risk_usd from deals.entry_volume, ledger.current_volume/actual_risk_usd, chair_wake.lots, trade_record.instrumentation lots_placed/f5_actual_risk_usd. Desk unit $250 is not a candidate size. Risk is not P&L.",
+        },
+        "sources": {
+            "journal": str(journal_path),
+            "flow": str(common.flow_dir(repo) / f"flow_{day}.json"),
+            "consume": str(common.flow_dir(repo) / f"consume_{day}.json"),
+            "deals": deals.get("path"),
+            "deals_generated_at_utc": deals.get("generated_at_utc"),
+            "deals_schema": deals.get("schema"),
+            "placed_decisions": str(ps / "placed_decisions.jsonl"),
+            "trade_records": str(ps / "trade_records"),
+            "ledger": str(ps / "f5_notional_ledger.json"),
+            "chair_wake": chair_wake.get("_chair_wake_path") or str(state_dir / "state" / "chair_wake.json"),
+            "launcher_jsonl": str(repo / "shadow_logs" / "ultimate_book_launcher.jsonl"),
+            "scoreboard_md": str(state_dir / "JUDGE-SCOREBOARD.md"),
+            "scoreboard_json": str(state_dir / "scoreboard.json"),
+            "refresh_cmd": r"C:\Users\MSI\Documents\ai-trading-agent\.venv-gtos\Scripts\python.exe host-local\redacted_host\repo\scripts\f5_desk\scoreboard.py",
+        },
+        "book": {
+            "login": (deals.get("account") or {}).get("login") or (wake_book.get("login")),
+            "deals_account": deals.get("account"),
+            "deals_generated_at_utc": deals.get("generated_at_utc"),
+            "chair_wake_at_utc": chair_wake.get("at_utc") or (wake_book.get("at_utc")),
+            "chair_wake_balance": wake_book.get("balance") or chair_wake.get("balance"),
+            "chair_wake_equity": wake_book.get("equity") or chair_wake.get("equity"),
+            "chair_wake_day_net": _round_usd(wake_book.get("day_net") if wake_book.get("day_net") is not None else chair_wake.get("day_net")),
+            "occupied": chair_wake.get("occupied") or wake_book.get("occupied"),
+            "open_positions": book_positions,
+            "pending": pending,
+            "closed_joined": closed_today,
+            "ledger_notional_equity": _round_usd(ledger.get("notional_equity")),
+            "ledger_day_start_notional": _round_usd(ledger.get("day_start_notional")),
+            "ledger_note": "notional is not broker; not used as a verdict price",
+        },
+        "hold_skips": skip_rows,
+        "desk": {
+            "last_judged": last_judged,
+            "cycle_counters": cycle_counters,
+            "latest_slate": latest_slate,
+            "call_counter": call_counter,
+            "flow_entries": len(flow) if isinstance(flow, dict) else 0,
+            "consume_entries": len(consume) if isinstance(consume, dict) else 0,
+            "consume_equals_flow": flow == consume,
+        },
+        "cycles": cycles,
+        "rows": collapsed,
+        "totals": totals,
+        "raw_verdict_n": len(raw_rows),
+    }
+    return payload
+
+
+def render_md(doc: dict[str, Any]) -> str:
+    day = doc["day"]
+    book = doc["book"]
+    totals = doc["totals"]
+    lines: list[str] = []
+    lines.append(f"# JUDGE-SCOREBOARD — {day}")
+    lines.append("")
+    lines.append(f"as_of_utc: {doc['as_of_utc']}")
+    lines.append(f"as_of_ict: {doc['as_of_ict']}")
+    lines.append(f"written_by: {doc['written_by']}")
+    lines.append(f"schema: {doc['schema']}")
+    lines.append("owner: Grok Bot only. adapter.default_providers() = [].")
+    lines.append("machine: scoreboard.json (same dir)")
+    lines.append("")
+    lines.append("This is the scoreboard the daemon tails (`JudgeDaemon.scoreboard_path`).")
+    lines.append("It is a price. It is not JUDGE-MEMORY. It is not a HOLD.")
+    lines.append("")
+    lines.append("## Law")
+    lines.append("")
+    lines.append("| lane | what | dollar |")
+    lines.append("|---|---|---|")
+    lines.append("| intelligence | `grok-inbox` | each verdict priced; abstain = $0 veto (PASS) |")
+    lines.append("| occupancy overlay | `grok-chair` / `grok-chair-stack-hold` | occupancy, **not** intelligence. stack HOLD counterfactual needs `stack_volume` → UNPRICED |")
+    lines.append("| withdrawn history | `cursor-agent` a0/h0/x37 | priced **$0** by seed |")
+    lines.append("| historical junior | `codex` (today, pre-Grok-only) | priced when a ticket joins; else UNPRICED |")
+    lines.append("")
+    lines.append("HOLD dollar = what the book would have made if the HOLD had not vetoed.")
+    lines.append("If that cannot be computed from deals/pnl + a ticket or a size, the row is **UNPRICED** with the missing field. No invented number.")
+    lines.append("")
+    lines.append("## Book (named sources, not blended)")
+    lines.append("")
+    deals_acct = book.get("deals_account") or {}
+    lines.append(
+        f"- deals dump `{doc['sources'].get('deals_generated_at_utc')}` login **{book.get('login')}** "
+        f"balance **{_money(deals_acct.get('balance'))}** equity **{_money(deals_acct.get('equity'))}** "
+        f"(source `deals_f5_*.json` account)."
+    )
+    lines.append(
+        f"- chair_wake `{book.get('chair_wake_at_utc')}` day_net **{_money(book.get('chair_wake_day_net'))}** "
+        f"occupied `{book.get('occupied')}`."
+    )
+    if book.get("open_positions"):
+        bits = []
+        for p in book["open_positions"]:
+            lots = f" lots={p.get('lots')}" if p.get("lots") is not None else ""
+            bits.append(f"{p.get('symbol')} {p.get('ticket')} {p.get('side')}{lots} {_money(p.get('profit_usd'))}")
+        lines.append(f"- open (chair_wake.profit_usd, mark-to-market): {'; '.join(bits)}.")
+    if book.get("pending"):
+        bits = []
+        for p in book["pending"]:
+            vol = p.get("volume") if p.get("volume") is not None else p.get("lots")
+            vol_s = f" vol={vol}" if vol is not None else " vol=UNPRICED"
+            risk = p.get("actual_risk_usd")
+            risk_s = f" risk={_money(risk)}" if risk is not None else ""
+            bits.append(f"{p.get('symbol')} {p.get('ticket')} {p.get('type_name') or p.get('type')}{vol_s}{risk_s}")
+        lines.append(f"- pending (chair_wake + joined trade_record size): {'; '.join(bits)}.")
+    if book.get("ledger_notional_equity") is not None:
+        lines.append(
+            f"- notional ledger equity {_money(book.get('ledger_notional_equity'))} vs day_start "
+            f"{_money(book.get('ledger_day_start_notional'))} — **not broker, not a verdict price**."
+        )
+    lines.append("")
+    lines.append("### Closed tickets joined to a candidate (deals profit+commission+swap+fee)")
+    lines.append("")
+    lines.append("| ticket | symbol | sleeve | lots | risk | realized | profit | comm | swap | exit | candidate |")
+    lines.append("|---:|---|---|---:|---:|---:|---:|---:|---:|---|---|")
+    for r in book.get("closed_joined") or []:
+        lots = r.get("lots")
+        lots_s = f"{lots}" if lots is not None else "UNPRICED"
+        lines.append(
+            f"| {r.get('ticket')} | {r.get('symbol')} | {r.get('sleeve') or ''} | "
+            f"{lots_s} | {_money(r.get('actual_risk_usd'))} | "
+            f"{_money(r.get('realized_usd'))} | {_money(r.get('profit'))} | {_money(r.get('commission'))} | "
+            f"{_money(r.get('swap'))} | {r.get('exit') or ''} | `{r.get('candidate_id') or ''}` |"
+        )
+    if not book.get("closed_joined"):
+        lines.append("| — | — | — | UNPRICED |  |  |  |  | missing=closed_join |")
+    lines.append("")
+    lines.append("## Lane totals (unique candidate × verdict × why)")
+    lines.append("")
+    lines.append("| lane | cycles | unique rows | priced | UNPRICED | $ sum (priced unique) | verdicts | missing |")
+    lines.append("|---|---:|---:|---:|---:|---:|---|---|")
+    for name in ("intelligence", "occupancy_overlay", "withdrawn_history", "historical_junior"):
+        t = totals[name]
+        lines.append(
+            f"| {name} | {t['cycles']} | {t['unique_rows']} | {t['priced_unique']} | {t['unpriced_unique']} | "
+            f"{_money(t['usd_sum_priced_unique'])} | {t.get('verdicts')} | {t.get('missing_fields') or ''} |"
+        )
+    lines.append("")
+    lines.append("Occupancy $ sum is **not** an intelligence score. Stack HOLDs are UNPRICED (`missing=stack_volume`).")
+    lines.append("")
+
+    def _section(title: str, lane: str, *, max_rows: int = 80) -> None:
+        rows = [r for r in doc["rows"] if r["lane"] == lane]
+        cyc = [c for c in doc["cycles"] if c["lane"] == lane]
+        lines.append(f"## {title}")
+        lines.append("")
+        if not cyc and not rows:
+            lines.append("none today.")
+            lines.append("")
+            return
+        lines.append("| at_utc | lane | provider | slate | mix | a/h/x | priced | UNPRICED | $ priced |")
+        lines.append("|---|---|---|---|---|---|---:|---:|---:|")
+        for c in cyc:
+            lines.append(fmt_cycle_row(c))
+        lines.append("")
+        lines.append("| first | last | n | symbol | verdict | why | $ | missing | ticket | reason | candidate |")
+        lines.append("|---|---|---:|---|---|---|---:|---|---|---|---|")
+        shown = 0
+        for r in rows:
+            if shown >= max_rows:
+                lines.append(f"| … |  | {len(rows) - shown} more unique rows in scoreboard.json |  |  |  |  |  |  |  |  |")
+                break
+            usd = _money(r.get("usd")) if r.get("priced") else f"UNPRICED"
+            miss = r.get("missing") or ""
+            lines.append(
+                f"| {r.get('first_at_utc')} | {r.get('last_at_utc')} | {r.get('n_cycles')} | "
+                f"{r.get('symbol')} | {r.get('verdict')} | {r.get('why_code')} | {usd} | {miss} | "
+                f"{r.get('ticket') or ''} | {r.get('reason')} | `{r.get('candidate_id')}` |"
+            )
+            shown += 1
+        lines.append("")
+
+    _section("Intelligence — grok-inbox", "intelligence")
+    _section("Withdrawn history — cursor-agent (priced $0)", "withdrawn_history")
+    _section("Occupancy overlay — grok-chair-stack-hold (NOT intelligence)", "occupancy_overlay", max_rows=40)
+    _section("Historical junior today — codex (pre-Grok-only, not a live provider)", "historical_junior", max_rows=40)
+
+    skips = doc.get("hold_skips") or []
+    st = totals.get("judgment_hold_skips") or {}
+    lines.append("## Real judgment_hold skips (book fire path)")
+    lines.append("")
+    lines.append(
+        f"Launcher `skipped.reason=judgment_hold` today: **{st.get('n', 0)}** "
+        f"(standing {st.get('standing_n', 0)} / sidecar {st.get('sidecar_n', 0)}). "
+        f"Priced {st.get('priced_n', 0)}; UNPRICED {st.get('unpriced_n', 0)} missing={st.get('missing_fields')}. "
+        f"$ sum priced {_money(st.get('usd_sum_priced'))}."
+    )
+    lines.append("These are occupancy/risk overlay vetoes on a sized intent, not grok-inbox intelligence.")
+    lines.append("HOLD dollar = what the book would have made if the skip had not vetoed. No size + no later fill = UNPRICED.")
+    lines.append("")
+    lines.append("| ts | symbol | sleeve | why | standing | $ | missing | ticket | lots | risk | join |")
+    lines.append("|---|---|---|---|---|---:|---|---|---:|---:|---|")
+    if not skips:
+        lines.append("| — | — | — | none today |  |  |  |  |  |  |  |")
+    for r in skips:
+        usd = _money(r.get("usd")) if r.get("priced") else "UNPRICED"
+        lots = r.get("lots")
+        lots_s = f"{lots}" if lots is not None else ""
+        lines.append(
+            f"| {r.get('ts')} | {r.get('symbol')} | {r.get('sleeve')} | {r.get('why_code')} | "
+            f"{'yes' if r.get('standing') else 'sidecar'} | {usd} | {r.get('missing') or ''} | "
+            f"{r.get('ticket') or ''} | {lots_s} | {_money(r.get('actual_risk_usd')) if r.get('actual_risk_usd') is not None else ''} | "
+            f"`{r.get('join_key') or r.get('candidate_id') or ''}` |"
+        )
+    lines.append("")
+
+    lines.append("## Desk pointers")
+    lines.append("")
+    desk = doc.get("desk") or {}
+    lines.append(f"- last_judged: `{json.dumps(desk.get('last_judged'), default=str)}`")
+    lines.append(f"- cycle_counters: `{json.dumps(desk.get('cycle_counters'), default=str)}`")
+    lines.append(f"- call_counter: `{json.dumps(desk.get('call_counter'), default=str)}`")
+    lines.append(f"- latest_slate: `{json.dumps(desk.get('latest_slate'), default=str)}`")
+    lines.append(f"- flow entries {desk.get('flow_entries')} consume entries {desk.get('consume_entries')} equal={desk.get('consume_equals_flow')}")
+    lines.append(f"- raw verdict instances in journal today: {doc.get('raw_verdict_n')}")
+    lines.append("")
+    lines.append("## Paths")
+    lines.append("")
+    for k, v in (doc.get("sources") or {}).items():
+        lines.append(f"- {k}: `{v}`")
+    lines.append("")
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    day = datetime.now(timezone.utc).date().isoformat()   # CONTRACT V2: today, not the 2026-08-27 seed forever
+    args = list(argv or sys.argv[1:])
+    if args:
+        day = args[0]
+    repo = common.repo_root_default()
+    state_dir = common.judgment_state_dir(repo)
+    doc = build(day)
+    md = render_md(doc)
+    md_path = state_dir / "JUDGE-SCOREBOARD.md"
+    json_path = state_dir / "scoreboard.json"
+    ok_json = common.write_json_atomic(json_path, doc, indent=2)
+    ok_md = _write_text_atomic(md_path, md)
+    print("DAY", day)
+    print("MD", md_path, "ok", ok_md, "bytes", md_path.stat().st_size if md_path.exists() else 0)
+    print("JSON", json_path, "ok", ok_json, "bytes", json_path.stat().st_size if json_path.exists() else 0)
+    print("RAW_VERDICTS", doc.get("raw_verdict_n"))
+    print("CYCLES", len(doc.get("cycles") or []))
+    print("UNIQUE_ROWS", len(doc.get("rows") or []))
+    print("HOLD_SKIPS", len(doc.get("hold_skips") or []))
+    print("TOTALS", json.dumps(doc.get("totals"), default=str))
+    # sample priced
+    samples = [r for r in doc.get("rows") or [] if r.get("priced")][:8]
+    print("SAMPLE_PRICED", json.dumps(samples, default=str)[:4000])
+    return 0 if ok_json and ok_md else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,172 @@
+# I Analyzed Institutional Algorithms: The "Secret Sauce" No One Shows You
+URL: https://www.youtube.com/watch?v=jxMQa6vu9eY
+Video ID: jxMQa6vu9eY
+Duration: 452s
+Fetched: 2026-04-18T13:24:16Z
+---
+
+Everybody, we are here on January 24th.
+It's 19 p.m. Uh, January 24th. This
+video, I don't think, will be as uh
+popular at all. Um, what I'm about to
+show you is pretty boring stuff. That's
+standard data, but the data is what
+drives the markets. So, over the last
+few weeks, um, what I've been paying
+attention to is all of the experimental
+AI generated reports that I put up on
+LinkedIn. Uh, I've been hitting a lot of
+very interesting people. Thanks to
+everybody who's started following me on
+LinkedIn for all that. We're hitting the
+right kind of market that I want to hit.
+Okay, so let's get into our next
+bit here.
+Okay, as you know, I've been watching a
+lot of the data. So, as an example here,
+I've been playing a lot with the C
+stuff. Uh, namely from real world data
+on rhythmic, which is really the C
+features data. There's a couple of
+things I wanted to showcase here that I
+think are important, but probably be
+insignificant for people. Everybody
+wants to watch their uh bells and
+whistles coming out of software whatever
+in trading. The real secret sauce stuff
+is in data. So I've been able to this
+what you're looking at here is just like
+maybe a couple hours worth of data
+that's been flowing between three big
+instruments be it um the futures in um
+in the futures market for both NQ which
+is NASDAQ. We also have ES which is the
+S&P 500. We also have CL which is oil.
+So what I've done was
+um I wanted to measure how many times
+this season the temporary log of all the
+activity between my
+uh software that analyzes the markets
+with a simple strategy. I'm being able
+to test the volume and how frequent the
+data is, how much analysis there is and
+how many items here. So, I put in a
+search for this contract, the ESH6,
+which is the uh ES S&P 500. And what
+that tells you because there's so much
+volume there um comparative to uh NASDAQ
+here at 48,000
+U occurrences, it tells you it's nearly
+double. So, there's double the
+opportunity
+with ES versus NQ. On top of that, I
+also wanted to measure another one like
+oil, another strategy. So, this shows
+you you can use these type of insights
+to see where the volume is. Doesn't
+matter if it's long or short, but in the
+futures market, which is where all the
+secret sauce stuff is, which drives the
+markets, which drives everything out
+there based upon volume, liquidity, and
+just general direction on these
+particular instruments.
+I'm seeing lots of reports about global
+liquidity could dry up because of the
+Bank of Japan with their intervention
+and the bonds rising. Something maybe in
+the next week could be having colossal
+impact on the financial markets in a
+negative way. Um I'm also seeing you
+know Bitcoin and Ethereum now all of a
+sudden from UBS is being pushed for uh
+UBS clientele. um Alex. So I must tell
+you something that we don't know. So
+these are all the signals that we get to
+work with. So um here's the one thing I
+want to showcase here. It's very
+important. These are the buy and sell
+signals that all the software out there
+that I've been looking at. Um I just
+want to show you how detailed this is.
+Now, if you're an HFT fund uh firm, this
+data is going to be very valuable for
+you because these are sell and buy
+signals across both the um ES and mostly
+the uh NASDAQ as well
+>> and there should be some signals in
+there for oil which we don't find. Could
+be the strategy itself. I don't know.
+The point here is that um this is where
+opportunity lies for the short or long.
+Okay? And then you can look at this data
+and say to yourself, well, this is data
+again for the big wigs running
+multi-billion dollar shops. Each one of
+these sell and buy sell signals is
+opportunity for them. But what can mom
+and pop
+investor or retail investor do with
+this? Not a whole lot. So a lot of this
+high-speed stuff data and just really
+what it boils down to is buy and sell
+opportunities are kind of like more
+noise than anything else. So we got to
+come to a point of like we have to take
+this at a higher level to see trading
+opportunities that we can have um we can
+take advantage of because this type of
+data analysis is really for um the big
+the big wigs in the HFT world
+multi-billion dollar firms that focus on
+this. So here you can see breaking it
+right down to the millisecond like where
+you have a a buy signal for something
+on the ES with a MACD signal and a few
+seconds later it can be a sell. So how
+do you trade that? Um so now everything
+comes down to just a general theme that
+we look for and a lot of that can be
+through this and more importantly in the
+news. So, I'm looking at news
+opportunities with some news feeds now
+and see what I can do with that to look
+for to see if that there's opportunities
+in there to layer this what I'm showing
+you with news and being able to come out
+with more intelligent type of trading uh
+with it uh using obviously AI to develop
+that kind of system. So I just want to
+highlight this for people um that this
+type of data analysis is very deep and
+from somebody with a small account even
+under a million dollars 10 million maybe
+10 million might be different but under
+a million dollars which is most retail
+I'm not so sure if this data is very
+useful for people on this buy and sell
+signal stuff there's a lot of signals in
+here which results to being noise so
+there's other ways to overlay uh
+confirmation because there's so much
+manipulation
+out of these firms, HFT firms I know of.
+But we need to ensure that we can uh be
+able to um
+differentiate to see what's real trading
+opportunity and what's this noise and
+manipulation from these firms because
+that's the new way a lot of these firms
+will do will will will take advantage of
+to confuse the retail market what's real
+or what's not real um when it comes to
+real trading opportunities. So, I just
+want to highlight that as something to
+to be aware of, but I'm a step ahead of
+that um and and checking out more of the
+the news now because there's fees data
+fee services that you can use to confirm
+this theory with real trading volume and
+we're going to figure all that out down
+the line. Over and out. Thank you for
+watching.

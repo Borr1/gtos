@@ -1,0 +1,34 @@
+READ-RESTRICTED — built, unspent, held out.
+
+window_id: september_2025
+capture_window: 2025-09-01 .. 2025-09-30
+pool: docs/audits/fable5-vision-audit-20260725/phase19/receipts/pools/LP_september_2025_S0R0_POOL_V1.jsonl.gz
+pool_sha256: 9c830abe961e1690e16db28d4aac838e2f8cf285c1b3b61d2492391a3fd2c551
+rows: 25051
+receipt: docs/audits/fable5-vision-audit-20260725/phase19/receipts/pools/september_2025_S0R0_POOL_V1.json
+
+This pool exists so that a future test does not have to wait three
+hours for it. It is NOT available to any analysis until a
+pre-declared test names this window. Reading its economics without
+that declaration spends the estate's held-out set and cannot be
+undone. Session LP produced it and did not read it.
+
+================================================================
+SPENT 2026-08-06 by lane p2 (wave 19 sealed-test lane).
+Declaration: docs/audits/fable5-vision-audit-20260725/phase19/receipts/discovery/p2_PREDECLARATION.md
+Result:      docs/audits/fable5-vision-audit-20260725/phase19/receipts/discovery/p2_RESULT.md
+
+Spent on seven pre-declared hypotheses: H1 signal-is-zero (CONFIRMED,
+gross +0.02718 / toll 0.34262 / net -0.31545 per fill), H2
+structural_distance_extreme (REPLICATES, +0.12522, 3/3 windows), H3 exit
+swap (DOES NOT REPLICATE, +0.01002), H4 fill repair (walker-specific:
+-0.00049 vs range containment, +0.02087 vs d5's one-sided baseline),
+H5 the forming-bar surviving candidate (paired effect REPLICATES +0.18063;
+implementable book FAILS, -0.30551 vs incumbent -0.28041 -- september only),
+H6 direction vs mirror (+0.02391, CI crosses zero; f2's sign, refutes d7's).
+
+NOT VIRGIN. The economics of this month have been read -- via a regenerated
+roster, not this pool file, which is the better object and the same window.
+Treat this month as in-sample from now on. The pool file itself was never
+opened; that does not restore the window.
+================================================================

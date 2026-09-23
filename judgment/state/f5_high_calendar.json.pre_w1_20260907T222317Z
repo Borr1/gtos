@@ -1,0 +1,116 @@
+{
+ "schema": "gtos.f5.high_calendar.v1",
+ "updated_utc": "20260907T061842Z",
+ "window_pre_min": 15,
+ "window_post_min": 60,
+ "join": "candidate_symbol_not_occupancy",
+ "note": "Writer-readable HIGH spine. Reloaded by mtime. Warsh-class. Refresh 2026-09-07. ISM/PMI/retail/claims excluded.",
+ "events": [
+  {
+   "name": "Fed Chair Kevin Warsh Jackson Hole remarks",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-08-28T14:00:00Z",
+   "currency": "USD",
+   "event_type": "fed_speaker",
+   "source": "news_brief.json",
+   "past": true
+  },
+  {
+   "name": "US Nonfarm Payrolls (NFP)",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-04T12:30:00Z",
+   "currency": "USD",
+   "event_type": "nfp",
+   "source": "bls.gov",
+   "past": true
+  },
+  {
+   "name": "ECB Rate Decision",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-10T12:15:00Z",
+   "currency": "EUR",
+   "event_type": "ecb_decision",
+   "source": "calendar:official"
+  },
+  {
+   "name": "ECB Press Conference",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-10T12:45:00Z",
+   "currency": "EUR",
+   "event_type": "ecb_presser",
+   "source": "calendar:official"
+  },
+  {
+   "name": "US CPI (August 2026)",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-11T12:30:00Z",
+   "currency": "USD",
+   "event_type": "cpi",
+   "source": "bls.gov"
+  },
+  {
+   "name": "FOMC Rate Decision",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-16T18:00:00Z",
+   "currency": "USD",
+   "event_type": "fomc_decision",
+   "source": "calendar:official"
+  },
+  {
+   "name": "FOMC Press Conference",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-16T18:30:00Z",
+   "currency": "USD",
+   "event_type": "fomc_presser",
+   "source": "calendar:official"
+  },
+  {
+   "name": "BOE Rate Decision",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-17T11:00:00Z",
+   "currency": "GBP",
+   "event_type": "boe_decision",
+   "source": "calendar:official"
+  },
+  {
+   "name": "BOJ Rate Decision",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-18T02:50:00Z",
+   "currency": "JPY",
+   "event_type": "boj_decision",
+   "source": "boj.or.jp",
+   "note": "Official release time undecided as of 2026-09-07 BOJ calendar; 02:50Z = conventional midday JST estimate"
+  },
+  {
+   "name": "US NFP print +162K (cons +53K)",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-04T12:30:21Z",
+   "currency": "USD",
+   "event_type": "unscheduled_nfp",
+   "source": "DeItaone/2095851961547395244",
+   "past": true,
+   "headline": "US LABOR AUG NONFARM PAYROLLS +162K; CONSENSUS +53K"
+  },
+  {
+   "name": "US NFP print +162K URATE 4.1% rev +55K",
+   "impact": "HIGH",
+   "official_high": true,
+   "scheduled_utc": "2026-09-04T12:31:34Z",
+   "currency": "USD",
+   "event_type": "unscheduled_nfp",
+   "source": "DeItaone/2095852269971321307",
+   "past": true,
+   "headline": "US AUG. NONFARM PAYROLLS RISE 162,000 M/M; EST. +55K | URATE 4.1% EST 4.1% | TWO-MONTH REVISION +55K"
+  }
+ ]
+}

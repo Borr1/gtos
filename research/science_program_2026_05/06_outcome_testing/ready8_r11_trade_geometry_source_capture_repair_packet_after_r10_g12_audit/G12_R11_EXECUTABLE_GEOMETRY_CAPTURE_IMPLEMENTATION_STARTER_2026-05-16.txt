@@ -1,0 +1,25 @@
+Start here for the G12 R11 executable geometry capture implementation route.
+
+1. Work in a fresh no-promotion branch/worktree.
+2. Read `.context/LIVE_STATE.md`, AGENTS.md, CLAUDE.md,
+   `.context/00_core/research_operating_doctrine.md`,
+   `.context/00_core/goal_session_research_discipline.md`, this G12 audit packet,
+   and the R11 capture schema/requirements from disk. Do not rely on chat memory.
+   Treat the files as active instructions and operationalize them.
+3. Implement only research-only schema/validator/build artifacts. Do not touch
+   live trading, prompts, config, risk, safety, execution, canary, selector,
+   broker/order/history/deal/position, paid/API/vendor, or promotion surfaces.
+4. Use active creativity and curiosity with no conservative brake. Pursue
+   same-evidence-class repairs before concluding impossible.
+5. Preserve the full 5,502 row universe and full ledger. No arbitrary top-N, top
+   3/5/10, number-limited cutoff, or representative-only output.
+6. Treat weak symbol-time rows as proxy evidence unless they bind to accepted
+   `candidate_input_row_id` and complete trade R geometry.
+7. For every unrepaired row, emit proof-or-impossibility with exact missing field,
+   source, join key, and lawful next route.
+8. Keep safe flags closed as evidence labels only: NO_PROMOTION_VERDICT,
+   validation_safe=false, outcome_review_opened=false, live_effect=false.
+9. Finish with verifier, focused tests, artifact audit, manifest, completion
+   audit, instruction-coverage ledger, and explicit zero open same-evidence-class
+   repairable issues.
+10. Emit a completion audit.

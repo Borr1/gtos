@@ -1,0 +1,362 @@
+# RIP TradingView? The New Chinese AI "Destroying" US Models (Miniax M2.1)
+URL: https://www.youtube.com/watch?v=VadK_ya6kh8
+Video ID: VadK_ya6kh8
+Duration: 1009s
+Fetched: 2026-04-18T13:23:29Z
+---
+
+Good day. Good day everybody. Brian here
+on February 9th, 2026.
+So
+what I'm going to do in this video,
+I'm going to be talking about some re
+very revolutionary things. I'm going to
+make some predictions here that might be
+I don't know, call it what you want. two
+things that to be taken away from this
+particular video you're about to watch.
+First, you're going to watch a new,
+well, not new, but fairly newer Chinese
+LLM that's probably going to destroy a
+lot of the uh US AI out there because of
+its cost and how good the output is. On
+top of I'm going to show you also what I
+think will happen to a lot of the retail
+trading platforms including both
+uh Trading View and
+MetaTrader will probably no longer exist
+based upon what I'm going to show you.
+So hang tight, watch till the end to
+know what I'm talking about. And uh I
+think this will set things straight.
+Okay.
+So, what we're going to look at first is
+I've shown this a few times. Normally, I
+can create news driven dashboards for
+the day, but I'm getting faster at it.
+And the number one thing I want to show
+you is what I've shown before. So, this
+is for today, February 9th.
+all of the different news driven events
+that can happen and project um trading
+events that will affect and impact
+certain trading opportunity that's
+presented within this trading uh
+dashboard. Okay. So you can see this is
+from generated from quad 4.6
+the latest and greatest. So in this case
+we have an energy complex strategy Brent
+crude bull coal spread uh some
+positioning how to do that and the first
+different legs of it the different
+events that will drive it and what we
+can expect over these different time
+periods expected draw down return
+sharp ratio win ratio profit factor.
+Okay that's fine. That's what we're used
+to. Again, this is from the latest
+that's just been released uh last week,
+4.6.
+Meanwhile, we have this one.
+Same prompt. Nothing's changed.
+Different output, but this is generated
+from a Chinese
+model LM called Miniax M2.1.
+The cost here is going to is it's
+staggering. So, you can see here we have
+the same level compared to output.
+um very similar output, maybe different,
+but the idea here is to, as I said, to
+take one of these news events as a
+strategy and be able to code it up very
+quickly. Okay, that's the goal here. So,
+in this particular strategy, what we've
+got here is we have this what could
+happen, a straighter humor moves with
+Iran, the US Armada, what could happen?
+Let's measure the risk and let's see if
+there's a trading opportunity here. So,
+it's going to give you a projected
+implied volatility. Now, this is all
+futures and options, which I've talked
+about for months now. And why I'm using
+this because what you're about to see
+here is how you're able to reduce your
+risk, still be in a tradable environment
+down, protect your downside, and have
+virtually unlimited risk, okay? or
+unlimited uh potent uh profit potential.
+Okay. So, if you've not taken advantage
+of my course that I've got, you'll see
+why I've raised it two and a half times.
+Um
+so,
+this is what we're involving here for
+downside and upside protection on this
+particular trade. We set up a Brent call
+option,
+20 contracts, could be any amount
+really. Um, targeting of a at the money
+plus 5% on a buy or a long. Okay. And
+then we have a Brent put CL
+and uh same target but minus 5% at the
+money. Okay. So then we also and these
+are options here. Then we also double
+down 40 contracts to sell a short on the
+Brent future make it market neutral and
+hopefully
+uh we our profit here is basically
+uh all the detail here but for each 1%
+move in Brent we execute two additional
+future contracts in the direction of the
+move to capture gamma profit which I've
+talked about before
+gamma exposure per 1% % move yielding
+um let's say 8 to 10 8 to 12,000
+in gamma profit per 1% move on a half a
+million dollar notional options
+position. Now obviously you could scale
+this down quite a bit and do all of this
+in micro so it's quite possible for
+smaller people to do it. Um, and then
+we're transforming a straddle built
+around pure volatility that I predicted
+a few weeks ago. And if you're trading
+it in a naked way, it's going to be
+virtually high risk because of the
+unpredictable volatility.
+Um, but we're protecting ourselves
+against that. Okay. And that becomes
+profit from the market noise. So um
+there's that plus it will able to as
+what I ask in the prompt is I ask for
+any quote unquote secretive unknown
+algorithms in Python. So it provides
+that for us. So here's the goals on the
+back test. Now again this is not 100%
+predictable but we're doing our best
+using the current conditions.
+Okay. So here we we're projecting a
+sharp ratio of 1.87
+max draw down of negative 11%.
+Okay 15% is good and that within that
+tolerance
+win ratio is 74%.
+Profit factor 3.12 which is very high.
+Um anything over two is considered quite
+good. So we're going to hold this for 18
+days. this this particular trade
+and capture high volatility at 67%.
+That's a pretty good trade. This is
+where it gets very let let me show you
+the the points here. So between the
+these two dashboards, this one generated
+in quad uh 4.6 opus.
+This one similar but using Miniax uh M
+uh 2.1. Here's the difference in cost.
+So here when you factor in the cost of
+this dashboard in quad this is how much
+it's costing us might not sound a lot
+for a dollar
+but it's 29,000 points.
+Meanwhile
+to generate the equivalent of what I
+just showed you in miniax it's about 5%
+of this.
+So if you're generating deep analysis or
+heavy coding
+um it gets expensive.
+So this is why I say I think the US AI
+is going to have a very tough go when
+you get these type of LLMs or models
+from China that are doing that 5% 10%
+of the equivalency of what any of the
+best US-based AI model can generate let
+alone data centers. I have no idea how
+this works and how they're able to do it
+for on the cheap like this. I don't
+know, based out of China, but that's
+your actual cost right there. So, let's
+get into the more exciting stuff.
+So, in here, I've spent five days kind
+of wasted my time generating different
+types of J dashboards under these same
+conditions and trying to be able to
+rapidly generate code in response to
+these partic particular events.
+And I tried to do it all in Python. Did
+it in many complicated ways. So I kept
+it very prim and proper, very simple to
+a point where I'm very comfortable call
+them trading bots because that's kind of
+what they are. So before I show you um
+the equivalent of of these dashboards,
+I'm going to show you some examples
+here. My next other prediction I'm going
+to say is I do believe that trading
+platforms, retail trading platforms are
+pretty well doomed as well. Here's why.
+Here's a random
+script that I downloaded for Trading
+View, Pine Script, a step trailing
+thing. Okay.
+And uh there it is. Converted it into
+Python with twoline pro uh prompt
+generated. No problem. Here's how I did
+it. So, I'm using VS Code. I'm using
+this fairly new extension called Kimmy
+Code. Okay? is what you're used to with
+other um AI tools. Okay, you prompt it
+and it gives you a result. Better thing
+is from what I'm used to doing, it
+actually changes the code. Some of the
+models that you choose will actually do
+the building for you. So, this is
+important to know. I've also tested quad
+code. I've also tested all these other
+CLIs.
+I will tell you if you're a beginner,
+you're getting hosed badly because if
+you don't put the time and effort into
+what I will show you,
+uh, knowing things like DevOps, you're
+getting hosed because you're going to
+pay double the cost because you're
+you're expecting the AI to do all the
+building for you and running
+uh the the code for you if you don't
+know what you're doing. call it vibe
+coding and you're going to get killed on
+that and it's going to get very
+expensive and even $200 a month may not
+do it for you. I'm sure you heard about
+the example of the C++ compiler that got
+built out as a claude that came at a
+cost of $20,000
+among 11 different agents. The other
+thing I have to say about a lot of these
+CI CLI tools
+is they run
+in a gentic mode. Meaning you ask the
+prompt and it will automatically go out
+and run in parallel all these different
+a uh agents for you to get a result.
+That means you're going to be paying
+probably a lot more than you need to to
+accomplish something. So here with with
+Kimmy that will minimize it. That could
+be said also with any of these CLI. If
+it's Gemini, if it's OpenAI, it's all
+the same. These CLI tools are meant for
+like beginners vioders and they're
+getting slaughtered on cost. They don't
+even know it. all because they don't go
+out and input and learn the basics of
+programming specifically let's say
+Python or JavaScript and on top of that
+running all of the um bash Linux
+commands to get things done because
+you're paying for all of that in the
+prompting using something like quad
+code. So that's something I don't
+recommend. Okay, but you can do it here
+with with with this kilo extension at a
+much lower cost
+um with VS Code which is free. And the
+other thing is you're not limited to
+one proprietary set of models because it
+comes from one vendor like with Gemini,
+let's say Google.
+So you have that advantage as well. And
+with this kilo, it's very low cost. And
+then it gets even lower cost when you
+you only use miniax
+as I've hinted. So you have to ask
+yourself when it comes to using these
+specifically as I said I'm able to
+convert this with two-line prompt which
+is a pine script um pine script uh to
+Python equivalent in five minutes and
+maybe one error to work with fix it and
+it'll take you no more five 10 minutes
+to do. So going all the way back to when
+you had hand coding and how long it
+would take you to do, let alone to
+generate it and let alone to try to
+convert it. We're able to literally do
+it in minutes.
+So I did the same thing on purpose for
+all you MetaTrader folks, Forex traders.
+So this one is using um MetaTrader MQ5
+200 line. I generated equivalent. Okay,
+it's a little longer, but in Python,
+same process. 5 10 minutes, no problem.
+Using Miniax and and kilo to a kilo
+extension blows my freaking mind. Okay,
+so let's go and be a little more
+practical.
+So, I talked about this one strategy
+here, the 1.2, this crude oil volatility
+that we're presented with today. Okay,
+so I took all of this, set it into a a
+prompt
+prompted a certain way and asked for it
+to generate
+to generate uh code in Python. And lo
+and behold, it generated it. And here it
+is. A fairly lengthy
+uh but simplified
+strategy or bot you call it in Python
+that will interface into my C server.
+Okay, that I've shown before, but this
+one's much more simpler.
+And from there it interfaces with
+Rhythmic Trader Pro into the API of
+Rhythmic Trader and it will trade. I've
+tested it. It will trade and prompt uh
+send out orders as well. So now I'm
+ready to go and I did this process this
+oil volatility strategy
+from this. Okay. feeding it into uh kilo
+uh the code. As for the Python
+equivalent did in less than 10 minutes
+flawlessly.
+So right there you've got to ask
+yourself where do we go with this? What
+happens to all the people that did all
+the hand coding here? I don't know. But
+I will tell you right now you can do it
+on the cheap. you can do it fairly
+accurately
+um and be able to actually get it
+working and running within 10 minutes.
+This is what I try to achieve. So it's
+no longer a C client connecting with C#
+server which the server really as I said
+is a gateway between the strategies
+and rhythmic API as a gateway and of
+course using Reddus messaging as the
+message bus using hubsub which I've
+talked about as well. So this is very
+I'll call it to me it's very
+revolutionary.
+Okay. So here uh is the actual we'll
+just run this. It's going to connect
+into the oil into the the server C. Off
+it goes. Okay. And it's running
+waiting for signals and it works and it
+streams works and if there's an order
+opportunity it'll put that in there too.
+Okay. So I just wanted to show you that
+this is where we're at now. I said if
+you want to know more there's links
+quantabslletnet.com.
+This will get more expensive as we move
+forward. And now we have the ability now
+to to trade this
+live. Okay. It's got some bugs here on
+the pricing. Make sure it connects into
+the right instrument. But before that,
+no problem there. But we're we're we're
+now good to go. And we'll leave it at
+that. Thanks for watching.

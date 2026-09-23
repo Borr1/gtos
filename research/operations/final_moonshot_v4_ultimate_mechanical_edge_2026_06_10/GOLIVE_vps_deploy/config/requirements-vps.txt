@@ -1,0 +1,24 @@
+# GTOS go-live — VPS runtime deps (pinned subset of repo requirements.txt).
+# The deploy decision MODULE (ultimate_book_live_package.py) has zero heavy deps on
+# its decision path (import-safe, verified by its own subprocess test). run_agent.py
+# needs the broader runtime set below. Research-only ML deps (shap/lightgbm/sklearn,
+# lancedb, plotly, databento) are EXCLUDED from the live VPS image.
+
+# Core runtime
+numpy>=2.4.4
+pyyaml>=6.0.3
+python-dotenv>=1.2.2
+pydantic>=2.12.5
+psutil>=7.2.2
+
+# LLM (only if the live runtime path invokes it; deploy module does NOT)
+anthropic>=0.87.0
+
+# Bridge transport — Windows MT5 / siliconmetatrader5 / nmetatrader5.
+# Install on the VPS per the broker host OS. NOT installable on Linux for the
+# in-process terminal; the bridge client is the cross-host path:
+#   pip install MetaTrader5          # Windows MT5 host
+#   pip install nmetatrader5         # bridge client (host/port -> MT5)
+
+# Tests (so the VPS can self-verify the deploy module post-pull)
+pytest>=9.0.2

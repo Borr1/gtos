@@ -1,0 +1,52 @@
+PDF: research\primitive_orderflow_sources_2026-05-02\raw\lmax_market_data_fees_user_supplied_2026-05-02.pdf
+pages: 1
+
+--- PAGE 1 ---
+LMAX Exchange is a trading name of LMAX Limited, which operates a multilateral trading facility, authorised and regulated by the Financial Conduct Authority (firm reference 
+number 509778) and is a company registered in England and Wales (number 6505809). LMAX Exchange is part of the LMAX Group, whose registered address is 
+Yellow Building, 1A Nicholas Road, London W11 4AN.
+LMAX Exchange sales: +44 20 3192 2682 | redacted@example.com | www.LMAX.com
+LMAX Exchange market data
+Monthly market data fees
+DEPTH/FULL ORDER BOOK ACCESS FEES - EFFECTIVE FROM: 01 JUNE 2026
+FIX - connection fees
+Venue Fee
+LD4 / NY4 / TY3 $500 (per venue)
+SG1 Free of charge
+ITCH - market data access fees
+Venue Fee Volume discount
+LD4 $80,000 Reduced to $25,000 if total global volumes exceed $25bn 
+and a minimum aggressive/passive ratio of 30% is reached.
+Metals only 
+TOB $500 Free
+3 levels $1,200 $600 50% (if total notional >=4b) 
+5 levels $2,400 $1,200 50% (if total notional >=7b) 
+10 levels $5,500 $2,750 50% (if total notional >=10b) 
+Delayed trade feed $1,100 Free
+Combined schedule (FX & Metals)
+TOB $1,500 Free
+3 levels $3,000 $1,500 50% (if total notional >=4b) 
+5 levels $6,500 $3,250 50% (if total notional >=7b) 
+10 levels $15,000 $7,500 50% (if total notional >=10b) 
+Delayed trade feed $1,500 Free
+For non-trading and trading clients who 
+do not meet monthly eligibility criteria  
+FIX market data throttled to 10 
+updates per second.
+Trading clients monthly eligibility criteria $250  
+million minimum traded volume per month, per tier, 
+per venue. 
+$5 billion minimum traded volume per month for 
+ access to 5 and 10 levels. 
+Trading clients can receive unthrottled FIX market 
+data (up to 1ms updates).
+Volume discounts are applicable to trading  
+clients meeting monthly trading volume  
+thresholds in any LMAX Exchange venue.
+Depth Standard fees Trading client discounts Volume discounts
+FX only 
+TOB $1,200 Free
+3 levels $2,600 $1,300 50% (if total notional >=4b) 
+5 levels $6,000 $3,000 50% (if total notional >=7b) 
+10 levels $13,500 $6,750 50% (if total notional >=10b) 
+Delayed trade feed $1,500 Free

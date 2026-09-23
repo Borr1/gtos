@@ -1,0 +1,93 @@
+# .tools/monitor_books.py
+# a/ = the running host, redacted_host87668c5d503b52925d10be7dfb66540 (sha256 93af1b3ae84947494ece63ccd49f3ecbc5f62230ae99604815734b04ca1a32c3)
+# b/ = the activation carry, Session AC (sha256 91577c1f34656fdfd746ef067636c4fafd32c9d376fa791f13fe280629b025d3)
+# applies with `patch -p1 -F 0` and with `git apply -p1`, zero fuzz.
+--- a/.tools/monitor_books.py
++++ b/.tools/monitor_books.py
+@@ -29,8 +29,64 @@
+ ]
+ DAILY_SOFT, DAILY_HARD, MAXDD, INIT_BAL = 0.03, 0.05, 0.10, 100000.0
+ GROSS_CAP = 0.04
+-SRV_OFFSET_H = 3   # FTMO/FN server = UTC+3 (EEST)
+ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
++sys.path.insert(0, REPO_ROOT)
++from src.utils.broker_clock import (  # noqa: E402
++    broker_epoch_to_utc,
++    daily_reset_offset_hours,
++    offset_seconds_at_utc,
++    resolve_rule,
++)
++
++# Struck 2026-07-29 (B56 carry): `SRV_OFFSET_H = 3   # FTMO/FN server = UTC+3 (EEST)`.
++# It was wrong in two independent ways, and both of them move the daily-loss alert in the
++# SAME dangerous direction -- the monitor believes the day has reset while the firm is
++# still counting.
++#
++#  1. The label was wrong and the number is dated. Both servers are MEASURED to run the
++#     **US** DST calendar (America/New_York + 7 h; 81 weekly session boundaries per broker),
++#     not EET/EEST. They drop to +2 on **2026-11-01** while a hardcoded 3 would not, so from
++#     that date the window would open a further hour early, every night, silently.
++#  2. The server clock is not FTMO's reset rule at all. FTMO resets at 00:00 CE(S)T
++#     (config/profiles/operator_profile.yaml:104); redacted_account resets at 00:00 server
++#     time. Server midnight is therefore 1 h before FTMO's real reset normally, and 2 h
++#     before it for the ~4 weeks a year the US and EU calendars disagree.
++#
++# The window is now computed as an INSTANT rather than a date, because the two rules do not
++# share a calendar and comparing a CE(S)T date against a broker-wall date would be a type
++# error wearing a fix. Deal times are raw broker epochs, so they are converted with the
++# server rule before the comparison -- never by decoding them as UTC.
++DAILY_RESET_RULE_BY_LABEL = {
++    "FTMO": "Europe/Prague",   # 00:00 CE(S)T, academy.ftmo.com/lesson/maximum-daily-loss/
++    "redacted_account": None,        # 00:00 server time, help.redacted_account.com/en/articles/8394309
++}
++MT5_SERVER_BY_LABEL = {"FTMO": "FTMO-Server3", "redacted_account": "redacted_account-Server 2"}
++
++
++def server_offset_hours(label, now_utc):
++    """The MT5 server's own offset from UTC, measured, DST-correct."""
++    return offset_seconds_at_utc(now_utc, resolve_rule(MT5_SERVER_BY_LABEL[label])) / 3600.0
++
++
++def daily_reset_window_start_utc(label, now_utc):
++    """UTC instant at which THIS FIRM'S current daily-loss window began.
++
++    Raises rather than guessing: an unregistered label or server comes out of ``broker_clock``
++    as ``UnknownBrokerClockError``. A wrong window is invisible until it costs an account, and a
++    guessed one is exactly the defect this replaces.
++
++    Be clear about what that costs, because an earlier draft of this docstring claimed
++    containment that does not exist: ``snap`` has no ``except`` and its caller does not wrap it,
++    so a raise here kills the monitor loop. The supervisor restarts it within ~30 s, so the blast
++    radius is a crash loop rather than silent wrong alerting -- the right direction, but it is a
++    crash, not a graceful degradation. Both server strings and both rules resolve today.
++    """
++    hours = daily_reset_offset_hours(now_utc, DAILY_RESET_RULE_BY_LABEL[label])
++    if hours is None:
++        hours = server_offset_hours(label, now_utc)
++    local_now = now_utc + dt.timedelta(hours=hours)
++    local_midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
++    return local_midnight - dt.timedelta(hours=hours)
+ MONITOR_HEARTBEAT_PATH = os.path.join(REPO_ROOT, "pipeline_state", "monitor_books", "heartbeat.json")
+ 
+ 
+@@ -65,11 +121,17 @@
+         eq, bal = float(info.equity), float(info.balance)
+         floating = eq - bal
+         now = dt.datetime.now(dt.timezone.utc)
+-        srv_today = (now + dt.timedelta(hours=SRV_OFFSET_H)).date()
+-        deals = mt5.history_deals_get(now - dt.timedelta(hours=24), now + dt.timedelta(hours=13)) or []
++        window_start = daily_reset_window_start_utc(label, now)
++        srv_rule = resolve_rule(MT5_SERVER_BY_LABEL[label])
++        # 30 h back, not 24. The window itself is always < 24 h old (max measured 23.50 h), but
++        # history_deals_get's bounds are interpreted as BROKER wall clock, so passing UTC shifts
++        # the requested range by the server offset (~3 h). 24 h of window plus a 3 h shift does
++        # not fit in a 24 h request. The filter below is exact, so over-fetching costs nothing
++        # and under-fetching would silently drop realized loss out of the daily-limit alert.
++        deals = mt5.history_deals_get(now - dt.timedelta(hours=30), now + dt.timedelta(hours=13)) or []
+         realized_today = sum(float(d.profit) + float(getattr(d, "swap", 0)) + float(getattr(d, "commission", 0))
+                              for d in deals if getattr(d, "entry", 0) == 1
+-                             and dt.datetime.fromtimestamp(d.time, dt.timezone.utc).date() == srv_today)
++                             and broker_epoch_to_utc(d.time, srv_rule) >= window_start)
+         day_eq_start = bal - realized_today
+         daily_pl_pct = (eq - day_eq_start) / day_eq_start if day_eq_start else 0.0
+         maxdd_floor = INIT_BAL * (1 - MAXDD)

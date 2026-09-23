@@ -1,0 +1,18 @@
+# GTOS go-live — monitoring sidecar (Linux VPS). Runs the parity / DD / governor /
+# alert cycle on a timer (paired with gtos-monitor.timer). Read/append-only on
+# local ledgers — never touches the broker. Safe to run even while halted.
+#
+# Owner fills: WorkingDirectory, User, env file.
+
+[Unit]
+Description=GTOS live monitoring + alerting cycle
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=<GTOS_VPS_USER>
+WorkingDirectory=<REPO_ROOT_ON_VPS>
+EnvironmentFile=<REPO_ROOT_ON_VPS>/.env
+# The monitor cycle reads equity/parity ledgers the runtime writes and emits alerts.
+# Owner points it at the per-account namespace(s).
+ExecStart=/usr/bin/python3 research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_vps_deploy/deploy/run_monitor_cycle.py

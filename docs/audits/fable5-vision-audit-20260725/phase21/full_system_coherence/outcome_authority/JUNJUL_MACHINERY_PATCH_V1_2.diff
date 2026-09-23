@@ -1,0 +1,463 @@
+diff --git a/docs/audits/fable5-vision-audit-20260725/phase14/receipts/CC_CONTAMINATION_AUDIT_V1.json b/docs/audits/fable5-vision-audit-20260725/phase14/receipts/CC_CONTAMINATION_AUDIT_V1.json
+index cb1338ad2..c2db677bf 100644
+--- a/docs/audits/fable5-vision-audit-20260725/phase14/receipts/CC_CONTAMINATION_AUDIT_V1.json
++++ b/docs/audits/fable5-vision-audit-20260725/phase14/receipts/CC_CONTAMINATION_AUDIT_V1.json
+@@ -192,8 +192,8 @@
+   "UNREAD": "measured absence, with the mechanism that fails closed named"
+  },
+  "coverage": {
+-  "n_iterable_runs": 3,
+-  "n_refused_runs": 4,
++  "n_iterable_runs": 4,
++  "n_refused_runs": 3,
+   "runs": [
+    {
+     "band_id": null,
+@@ -236,11 +236,11 @@
+     "to": "2026-05-31"
+    },
+    {
+-    "band_id": "gap:gap_2026H1_tail_pre_arming",
++    "band_id": "train_2026_junjul_funnel_confirm",
+     "from": "2026-06-01",
+-    "iterable": false,
+-    "refusal": "day_outside_every_surface",
+-    "surface": null,
++    "iterable": true,
++    "refusal": null,
++    "surface": "TRAIN",
+     "to": "2026-07-28"
+    },
+    {
+@@ -258,7 +258,7 @@
+   ]
+  },
+  "generated_by": "docs/audits/fable5-vision-audit-20260725/phase14/receipts/cc_contamination_audit.py",
+- "loosenings_note": "Empty by construction and asserted: the frame is 'CC audits and may tighten, never loosen'. The one place this map is WIDER than the fitting registry — 1992..2024 is lane-TRAIN while the registry refuses it as day_outside_every_partition — is not a loosening of the FRAME but the frame's own TRAIN row, and it widens no fitting permission (T5).",
++ "loosenings_note": "Empty by construction and asserted: the frame is 'CC audits and may tighten, never loosen'. The one place this map is WIDER than the fitting registry — 1992..2024 is lane-TRAIN while the registry refuses it as day_outside_every_partition — is not a loosening of the FRAME but the frame's own TRAIN row, and it widens no fitting permission (T5). The 2026-08-11 junjul band is not a loosening either: the frame as held by CC left the range refused pending an owner decision the gap's resolution_owner clause explicitly reserved, and that decision arrived (BAR3_RATIFICATION_20260811.md) — the band is the frame AS AMENDED by newer owner word, on the exact terms the clause pre-stated. It widens no fitting permission.",
+  "loosenings_vs_the_ratified_frame": [],
+  "owner_decision": "Borhen, 2026-07-31 — 'i give explicit approval, please proceed as proposed with the training lane.'",
+  "partition_registry": {
+@@ -304,6 +304,20 @@
+     "tightened_from": "T2: the ratified frame lists the January / April-sealed / May replay windows under TRAIN ('iterate freely') while its own VAL row claims the same calendar days. Two declarations over one range is an ambiguity, and the narrower USE wins — those windows are VAL here. Nothing the lane needs is lost (both surfaces are unbilled and both are logged); what is gained is that every figure off them carries the used-once disclosure automatically instead of by memory. T1 lives here too: the frame's 'April's 15 sealed days' would, read as 'April', have opened 2026-04-16..2026-04-30 — fifteen days whose outcomes have NEVER been read (2026-04-16 has shards but no COMPACT_EVENT_MANIFEST.json and zero ledger rows; 04-17 onward was prepared and never run; B36, JANUARY_BANK.md section 5.1). Under VAL they are ranking-only rather than free, which is the disposition that keeps them worth something.",
+     "used_once_disclosure": "VAL is the survivor book's own selection surface (d.year >= 2025, build_survivor_book.py:74 / KB7_growth_kelly_sizing.py:130). Ranking and gradient checks only; headline expectancy is never quoted from VAL alone."
+    },
++   {
++    "band_id": "train_2026_junjul_funnel_confirm",
++    "basis": "Owner decision 2026-08-11, recorded verbatim in docs/audits/fable5-vision-audit-20260725/phase21/full_system_coherence/outcome_authority/BAR3_RATIFICATION_20260811.md ('yes proceed as proposed and recommended with bar-3'): the June/July BAR-3 confirm read of the frozen MARKET-top-choice funnel rule. Opens exactly the range the former gap_2026H1_tail_pre_arming declared, under that gap's own resolution_owner clause ('Opening this range for lane iteration is an orchestrator/owner decision') and with the label the clause mandates: TRAIN, never TEST. Sources: JUNE_JULY_LANE_MATERIALIZATION_V1.md (june_2026 root 7498a9d5…, july_2026 root a6296474…).",
++    "date_range": [
++     "2026-06-01",
++     "2026-07-28"
++    ],
++    "lane_iterable": true,
++    "prior_consumption": "NOT VIRGIN for estate claims, carried verbatim from the retired gap: GateSpec.global_span = ('1992-02-18','2026-07-27'), so every full-history gate walk in the estate has already read 2026-06-01..2026-07-27. The partition registry independently marks 2026-06-01..06-09 SEALED (sealed_june_fresh) and 2026-06-10 onward FORWARD. FUNNEL-VIRGIN by measurement: no funnel candidate generation or rule scoring ever touched this range before the June/July read (THREE_MONTH_POSTMORTEM_V1.md §5.5: 'no outcome beyond 2026-05-29 was read'; postmortem/pm_regime.py drops every bar >= 2026-06-01 by construction).",
++    "row_kind": "surface_band",
++    "surface": "TRAIN",
++    "tightened_from": "Replaces UncoveredGap gap_2026H1_tail_pre_arming (2026-06-01..2026-07-28, T3) under its own resolution_owner clause. Ends 2026-07-28 so the TEST live-forward band (2026-07-29 onward) is untouched and stays virgin.",
++    "used_once_disclosure": "Estate-consumed, funnel-virgin. TRAIN here means lane-iterable, not free for estate confirmation: an estate claim must never cite this band as OOS. Funnel-side the range is spent by the one frozen read (JUNE_JULY_MARKET_TOP_CHOICE_PREREG_V1); any later funnel figure from it carries that read's used-once status."
++   },
+    {
+     "band_id": "test_live_forward_stream",
+     "basis": "TRAINING_LANE_RATIFICATION.md section 2 TEST row ('the live forward stream from each arming date, sealed_holdout cutoff semantics'). Arming dates from CLAUDE.md section 4: FTMO 2026-07-29 12:55 UTC (three sleeves from 14:25), redacted_account 2026-07-30 ~05:18 UTC, mx_btcusd @ target_5R on FTMO 2026-07-31 ~01:26 UTC (phase13/receipts/MX_ACTIVATION_20260731.md).",
+@@ -319,37 +333,24 @@
+     "tightened_from": "T4: opened at the EARLIEST arming date across both accounts rather than at each account's own. A per-account cutoff would leave 2026-07-29 and 2026-07-30 iterable for a redacted_account-scoped claim while FTMO was already trading them, and the two books share sleeves."
+    }
+   ],
+-  "digest": "c102b10b97043fee4bad16f4947e81c931a4b8b52ffc915dba8102abea978b62",
+-  "gaps": [
+-   {
+-    "date_range": [
+-     "2026-06-01",
+-     "2026-07-28"
+-    ],
+-    "disposition": "refused_day_outside_every_surface",
+-    "gap_id": "gap_2026H1_tail_pre_arming",
+-    "prior_consumption": "NOT VIRGIN. GateSpec.global_span = ('1992-02-18','2026-07-27'), so every full-history gate walk in the estate has already read 2026-06-01..2026-07-27. Calling this range TEST would therefore be false and actively dangerous — it would invite a 'confirmation' on data the candidate was already scored against. The partition registry independently marks 2026-06-01..06-09 SEALED (sealed_june_fresh) and 2026-06-10 onward FORWARD.",
+-    "reason": "T3. The ratified frame declares no surface for it: VAL ends 2026-05-31 and TEST opens at the first arming date, 2026-07-29. Uncovered means REFUSED, which is the safe direction and is left in place deliberately rather than papered over.",
+-    "resolution_owner": "Opening this range for lane iteration is an orchestrator/owner decision, not a session's. It is ~41 trading days of already-burned history; the honest label if it is ever opened is TRAIN, never TEST.",
+-    "row_kind": "uncovered_gap"
+-   }
+-  ],
++  "digest": "6aa3e3864fefd1721450bfe060bb4abdc0781dc484670138f3fc230ee9ab36bd",
++  "gaps": [],
+   "header": {
+    "authored_utc": "2026-07-31T00:00:00+00:00",
+-   "band_count": 3,
++   "band_count": 4,
+    "blackout": [
+     [
+      "2026-03-01",
+      "2026-03-31"
+     ]
+    ],
+-   "digest": "c102b10b97043fee4bad16f4947e81c931a4b8b52ffc915dba8102abea978b62",
++   "digest": "6aa3e3864fefd1721450bfe060bb4abdc0781dc484670138f3fc230ee9ab36bd",
+    "fail_closed": {
+     "day_inside_reserved_blackout": "refused_regardless_of_band",
+     "day_outside_every_surface": "refused",
+     "surface_not_in_lane_iterable_surfaces": "refused"
+    },
+-   "gap_count": 1,
++   "gap_count": 0,
+    "lane_iterable_surfaces": [
+     "TRAIN",
+     "VAL"
+@@ -370,7 +371,7 @@
+  "tightenings_vs_the_ratified_frame": {
+   "T1": "Half of April 2026 is not already-read. The frame's 'April's 15 sealed days' read as 'April' would have opened 2026-04-16..04-30, fifteen days with no outcome ever read. Held at VAL.",
+   "T2": "The three already-read replay windows are VAL, not TRAIN. They fall inside the frame's own VAL span; two declarations over one range is an ambiguity and the narrower USE wins. Both surfaces are unbilled and logged, so nothing is lost and the used-once disclosure is gained.",
+-  "T3": "2026-06-01..2026-07-28 is left UNCOVERED, therefore refused. The frame declares no surface for it; it is measurably already consumed by gate walks, so calling it TEST would be a lie that invites a confirmation on burned data.",
++  "T3": "2026-06-01..2026-07-28 was held UNCOVERED, therefore refused, at CC's audit (2026-07-31): the frame declared no surface for it, and it is measurably already consumed by gate walks, so calling it TEST would be a lie that invites a confirmation on burned data. AMENDED 2026-08-11 by owner decision (BAR3_RATIFICATION_20260811.md) under the gap's own resolution_owner clause: opened as band train_2026_junjul_funnel_confirm with exactly the label that clause mandated — TRAIN, never TEST — carrying the estate-consumed/funnel-virgin dual disclosure for the June/July BAR-3 confirm read. The TEST band from 2026-07-29 is untouched.",
+   "T4": "TEST opens at the earliest arming date across both accounts (2026-07-29), not at each account's own.",
+   "T5": "TRAINABLE_ROLES is unchanged. Not one additional day became fittable; the surface axis is additive and answers a different verb."
+  }
+diff --git a/docs/audits/fable5-vision-audit-20260725/phase14/receipts/cc_contamination_audit.py b/docs/audits/fable5-vision-audit-20260725/phase14/receipts/cc_contamination_audit.py
+index ea486f52b..d5714dc38 100644
+--- a/docs/audits/fable5-vision-audit-20260725/phase14/receipts/cc_contamination_audit.py
++++ b/docs/audits/fable5-vision-audit-20260725/phase14/receipts/cc_contamination_audit.py
+@@ -372,9 +372,15 @@ def build() -> dict:
+                 "and the used-once disclosure is gained."
+             ),
+             "T3": (
+-                "2026-06-01..2026-07-28 is left UNCOVERED, therefore refused. The frame "
+-                "declares no surface for it; it is measurably already consumed by gate walks, "
+-                "so calling it TEST would be a lie that invites a confirmation on burned data."
++                "2026-06-01..2026-07-28 was held UNCOVERED, therefore refused, at CC's audit "
++                "(2026-07-31): the frame declared no surface for it, and it is measurably "
++                "already consumed by gate walks, so calling it TEST would be a lie that "
++                "invites a confirmation on burned data. AMENDED 2026-08-11 by owner decision "
++                "(BAR3_RATIFICATION_20260811.md) under the gap's own resolution_owner clause: "
++                "opened as band train_2026_junjul_funnel_confirm with exactly the label that "
++                "clause mandated — TRAIN, never TEST — carrying the estate-consumed/"
++                "funnel-virgin dual disclosure for the June/July BAR-3 confirm read. The TEST "
++                "band from 2026-07-29 is untouched."
+             ),
+             "T4": (
+                 "TEST opens at the earliest arming date across both accounts (2026-07-29), not "
+@@ -391,7 +397,11 @@ def build() -> dict:
+             "loosen'. The one place this map is WIDER than the fitting registry — 1992..2024 is "
+             "lane-TRAIN while the registry refuses it as day_outside_every_partition — is not a "
+             "loosening of the FRAME but the frame's own TRAIN row, and it widens no fitting "
+-            "permission (T5)."
++            "permission (T5). The 2026-08-11 junjul band is not a loosening either: the frame "
++            "as held by CC left the range refused pending an owner decision the gap's "
++            "resolution_owner clause explicitly reserved, and that decision arrived "
++            "(BAR3_RATIFICATION_20260811.md) — the band is the frame AS AMENDED by newer owner "
++            "word, on the exact terms the clause pre-stated. It widens no fitting permission."
+         ),
+     }
+ 
+diff --git a/src/research_infra/lane_rematerialization.py b/src/research_infra/lane_rematerialization.py
+index 9f4706bba..bbfa36630 100644
+--- a/src/research_infra/lane_rematerialization.py
++++ b/src/research_infra/lane_rematerialization.py
+@@ -223,6 +223,18 @@ WINDOWS: dict[str, WindowSpec] = {
+     "may_2026": WindowSpec(
+         "may_2026", "2026-05-01", "2026-05-31", "lane_validation", "202605"
+     ),
++    # June/July 2026: the BAR-3 confirm windows (owner ratification 2026-08-11,
++    # BAR3_RATIFICATION_20260811.md). July ends 2026-07-28 — NOT month-end —
++    # because 2026-07-29 onward is the TEST live-forward band (first arming
++    # date) and stays unread; the registry entry carries the same bound. The
++    # July source manifest covers bars through 07-31; coverage beyond the
++    # window authority is source margin, not readable days.
++    "june_2026": WindowSpec(
++        "june_2026", "2026-06-01", "2026-06-30", "lane_validation", "202606"
++    ),
++    "july_2026": WindowSpec(
++        "july_2026", "2026-07-01", "2026-07-28", "lane_validation", "202607"
++    ),
+ }
+ 
+ 
+diff --git a/src/research_infra/replay_acceleration_attempt5_typed_sparse_runner.py b/src/research_infra/replay_acceleration_attempt5_typed_sparse_runner.py
+index 9b882b912..0ec8d8556 100644
+--- a/src/research_infra/replay_acceleration_attempt5_typed_sparse_runner.py
++++ b/src/research_infra/replay_acceleration_attempt5_typed_sparse_runner.py
+@@ -2227,6 +2227,20 @@ D1_ROOT_ORDER = (
+     "bridge_ftmo_deep_d1_2022_2026",
+     "bridge_ftmo_htf_20250601_20260610",
+     "bridge_ftmo_b7_4_static_20250501_20260620",
++    # Deep D1 lead-in supplement (JUNJUL_D1_SUPPLEMENT_MATERIALIZATION_V1), bound
++    # by the june_2026 manifest only, ordered BEFORE the junjul family so the
++    # deep series serves the WHOLE June window. Measured (V1_2 diagnostics): the
++    # engine's daily-context screens starve on junjul's shallow post-05-15 D1 —
++    # 2026-06-08 consumed 24/96 decision streams with 81 missed-candidate rows
++    # under shallow D1, and 96/96 with 5,648 under the deep lead-in, the exact
++    # Feb/Apr/May/July profile. July's manifest does not bind this family, so
++    # July's already-generated days are untouched.
++    "junjul_2026_d1_leadin_20260811",
++    # June/July 2026 BAR-3 confirm windows (JUNE_JULY_LANE_MATERIALIZATION_V1).
++    # Tail-append is a no-op for every earlier window: the lane accelerator only
++    # admits families present in the window's own manifest, and only the
++    # june_2026/july_2026 manifests bind this family.
++    "junjul_2026_lane_source_20260811",
+ )
+ H4_ROOT_ORDER = (
+     "deep_universe_h4d1_2014_2026",
+@@ -2235,6 +2249,12 @@ H4_ROOT_ORDER = (
+     "bridge_ftmo_deep_h4_2022_2026",
+     "bridge_ftmo_htf_20250601_20260610",
+     "bridge_ftmo_b7_4_static_20250501_20260620",
++    # Deep H4 lead-in supplement (June window only; the last of the three
++    # starving-screen repairs — measured threshold: the US/UK/JP index intraday
++    # families decline below ~72 pre-day H4 bars, and 2026-06-01 has 66 under
++    # the junjul family alone). Ordered BEFORE junjul, manifest-scoped to June.
++    "junjul_2026_h4_leadin_20260811",
++    "junjul_2026_lane_source_20260811",
+ )
+ H1_ROOT_ORDER = (
+     "gold_multitf_d1h1_2015_2026",
+@@ -2253,6 +2273,11 @@ M15_ROOT_ORDER = (
+     "bridge_ftmo_energy_h1m15_backfill_2020_2026",
+     "bridge_ftmo_crypto_h1m15_backfill_2024_2026",
+     "gold_multitf_m15_2015_2026",
++    # Deep M15 lead-in supplement (June window only; same starving-screen repair
++    # as the D1 lead-in — 2026-06-01 residual: the five index symbols' M15/H1
++    # streams on ~11 pre-June days of junjul M15). Ordered BEFORE junjul.
++    "junjul_2026_m15_leadin_20260811",
++    "junjul_2026_lane_source_20260811",
+ )
+ 
+ SYMBOL_ALIASES = {
+diff --git a/src/research_infra/trainer_partitions.py b/src/research_infra/trainer_partitions.py
+index eed998bc7..35e874698 100644
+--- a/src/research_infra/trainer_partitions.py
++++ b/src/research_infra/trainer_partitions.py
+@@ -1281,6 +1281,45 @@ DEFAULT_SURFACE_MAP = SurfaceMap(
+                 "reach."
+             ),
+         ),
++        SurfaceBand(
++            band_id="train_2026_junjul_funnel_confirm",
++            surface="TRAIN",
++            start="2026-06-01",
++            end="2026-07-28",
++            basis=(
++                "Owner decision 2026-08-11, recorded verbatim in docs/audits/"
++                "fable5-vision-audit-20260725/phase21/full_system_coherence/outcome_authority/"
++                "BAR3_RATIFICATION_20260811.md ('yes proceed as proposed and recommended with "
++                "bar-3'): the June/July BAR-3 confirm read of the frozen MARKET-top-choice "
++                "funnel rule. Opens exactly the range the former gap_2026H1_tail_pre_arming "
++                "declared, under that gap's own resolution_owner clause ('Opening this range "
++                "for lane iteration is an orchestrator/owner decision') and with the label the "
++                "clause mandates: TRAIN, never TEST. Sources: JUNE_JULY_LANE_MATERIALIZATION_"
++                "V1.md (june_2026 root 7498a9d5…, july_2026 root a6296474…)."
++            ),
++            prior_consumption=(
++                "NOT VIRGIN for estate claims, carried verbatim from the retired gap: GateSpec."
++                "global_span = ('1992-02-18','2026-07-27'), so every full-history gate walk in "
++                "the estate has already read 2026-06-01..2026-07-27. The partition registry "
++                "independently marks 2026-06-01..06-09 SEALED (sealed_june_fresh) and "
++                "2026-06-10 onward FORWARD. FUNNEL-VIRGIN by measurement: no funnel candidate "
++                "generation or rule scoring ever touched this range before the June/July read "
++                "(THREE_MONTH_POSTMORTEM_V1.md §5.5: 'no outcome beyond 2026-05-29 was read'; "
++                "postmortem/pm_regime.py drops every bar >= 2026-06-01 by construction)."
++            ),
++            used_once_disclosure=(
++                "Estate-consumed, funnel-virgin. TRAIN here means lane-iterable, not free for "
++                "estate confirmation: an estate claim must never cite this band as OOS. "
++                "Funnel-side the range is spent by the one frozen read "
++                "(JUNE_JULY_MARKET_TOP_CHOICE_PREREG_V1); any later funnel figure from it "
++                "carries that read's used-once status."
++            ),
++            tightened_from=(
++                "Replaces UncoveredGap gap_2026H1_tail_pre_arming (2026-06-01..2026-07-28, T3) "
++                "under its own resolution_owner clause. Ends 2026-07-28 so the TEST "
++                "live-forward band (2026-07-29 onward) is untouched and stays virgin."
++            ),
++        ),
+         SurfaceBand(
+             band_id="test_live_forward_stream",
+             surface="TEST",
+@@ -1311,29 +1350,4 @@ DEFAULT_SURFACE_MAP = SurfaceMap(
+             ),
+         ),
+     ),
+-    gaps=(
+-        UncoveredGap(
+-            gap_id="gap_2026H1_tail_pre_arming",
+-            start="2026-06-01",
+-            end="2026-07-28",
+-            reason=(
+-                "T3. The ratified frame declares no surface for it: VAL ends 2026-05-31 and TEST "
+-                "opens at the first arming date, 2026-07-29. Uncovered means REFUSED, which is the "
+-                "safe direction and is left in place deliberately rather than papered over."
+-            ),
+-            prior_consumption=(
+-                "NOT VIRGIN. GateSpec.global_span = ('1992-02-18','2026-07-27'), so every "
+-                "full-history gate walk in the estate has already read 2026-06-01..2026-07-27. "
+-                "Calling this range TEST would therefore be false and actively dangerous — it "
+-                "would invite a 'confirmation' on data the candidate was already scored against. "
+-                "The partition registry independently marks 2026-06-01..06-09 SEALED "
+-                "(sealed_june_fresh) and 2026-06-10 onward FORWARD."
+-            ),
+-            resolution_owner=(
+-                "Opening this range for lane iteration is an orchestrator/owner decision, not a "
+-                "session's. It is ~41 trading days of already-burned history; the honest label if "
+-                "it is ever opened is TRAIN, never TEST."
+-            ),
+-        ),
+-    ),
+ )
+diff --git a/tests/research_infra/test_train_engine_lane.py b/tests/research_infra/test_train_engine_lane.py
+index cd0c90500..aa8b9b19f 100644
+--- a/tests/research_infra/test_train_engine_lane.py
++++ b/tests/research_infra/test_train_engine_lane.py
+@@ -76,9 +76,20 @@ def test_the_live_forward_stream_is_refused_under_every_purpose(purpose: str) ->
+ 
+ 
+ @pytest.mark.parametrize("purpose", list(guard.PURPOSES))
+-def test_the_uncovered_gap_is_refused_under_every_purpose(purpose: str) -> None:
+-    with pytest.raises(guard.WindowRefused):
+-        guard.authorize_window(start="2026-06-05", end="2026-06-06", purpose=purpose)
++def test_the_former_gap_range_authorizes_for_iteration_but_never_for_training(purpose: str) -> None:
++    """Until 2026-08-11 this range was the uncovered gap and refused under every purpose.
++    The owner decision (BAR3_RATIFICATION_20260811.md) opened it as the junjul TRAIN band
++    under the gap's own resolution_owner clause — a SURFACE change only. The fitting axis
++    is untouched (T5): these days' partition roles are SEALED/FORWARD, so PURPOSE_TRAINING
++    must refuse exactly as before, and no purpose may fit on them."""
++    if purpose == guard.PURPOSE_TRAINING:
++        with pytest.raises(guard.WindowRefused):
++            guard.authorize_window(start="2026-06-05", end="2026-06-06", purpose=purpose)
++    else:
++        auth = guard.authorize_window(start="2026-06-05", end="2026-06-06", purpose=purpose)
++        assert set(auth.surfaces.values()) == {"TRAIN"}
++        assert auth.may_emit_training_evidence is False
++        assert auth.disclosures, "the band's used-once disclosure must travel"
+ 
+ 
+ @pytest.mark.parametrize("purpose", list(guard.PURPOSES))
+diff --git a/tests/research_infra/test_training_lane_protocol.py b/tests/research_infra/test_training_lane_protocol.py
+index 2ac857797..2a7307795 100644
+--- a/tests/research_infra/test_training_lane_protocol.py
++++ b/tests/research_infra/test_training_lane_protocol.py
+@@ -137,21 +137,35 @@ def test_the_live_test_band_equals_sealed_holdout_semantics_at_the_declared_cuto
+ 
+ 
+ def test_a_day_covered_by_no_band_is_refused_not_defaulted():
+-    for day in ("1900-01-01", "1992-02-17", "2026-06-01", "2026-07-28"):
++    # Since the 2026-08-11 junjul band (owner decision, BAR3_RATIFICATION_20260811)
++    # the map is gap-free from 1992-02-18 onward; only pre-archive days are uncovered.
++    for day in ("1900-01-01", "1992-02-17"):
+         d = DEFAULT_SURFACE_MAP.surface_for_day(day)
+         assert d.iterable is False
+         assert d.refusal == "day_outside_every_surface"
+         assert d.surface is None
+ 
+ 
+-def test_the_declared_gap_is_recorded_with_its_measured_prior_consumption():
+-    """A gap with a receipt is a decision; a gap without one gets filled permissively later.
+-    This one is measurably already-consumed, so it must never be mistaken for virgin."""
+-    gap = next(g for g in DEFAULT_SURFACE_MAP.gaps if g.gap_id == "gap_2026H1_tail_pre_arming")
+-    assert (gap.start, gap.end) == ("2026-06-01", "2026-07-28")
+-    assert "NOT VIRGIN" in gap.prior_consumption
+-    assert "global_span" in gap.prior_consumption
+-    assert gap.as_dict()["disposition"] == "refused_day_outside_every_surface"
++def test_the_junjul_band_replaced_the_gap_under_its_own_resolution_clause():
++    """The former gap_2026H1_tail_pre_arming carried resolution_owner text mandating that
++    opening it is an owner decision and the honest label is TRAIN, never TEST. The owner
++    decision exists (BAR3_RATIFICATION_20260811.md, 2026-08-11) and the band pins every
++    part of that contract: exact former-gap bounds, TRAIN label, the estate-consumed /
++    funnel-virgin dual disclosure, and an untouched TEST band from 2026-07-29."""
++    assert not DEFAULT_SURFACE_MAP.gaps
++    band = DEFAULT_SURFACE_MAP.band("train_2026_junjul_funnel_confirm")
++    assert (band.start, band.end) == ("2026-06-01", "2026-07-28")
++    assert band.surface == "TRAIN"
++    assert "NOT VIRGIN" in band.prior_consumption
++    assert "global_span" in band.prior_consumption
++    assert "FUNNEL-VIRGIN" in band.prior_consumption
++    assert band.used_once_disclosure
++    for day in ("2026-06-01", "2026-06-15", "2026-07-28"):
++        d = DEFAULT_SURFACE_MAP.surface_for_day(day)
++        assert (d.surface, d.iterable) == ("TRAIN", True)
++        assert d.disclosure == band.used_once_disclosure
++    edge = DEFAULT_SURFACE_MAP.surface_for_day("2026-07-29")
++    assert (edge.surface, edge.iterable) == ("TEST", False)
+ 
+ 
+ def test_april_16_to_30_is_not_opened_as_train_because_it_was_never_read():
+@@ -202,15 +216,22 @@ def test_the_surface_map_and_the_partition_registry_share_one_blackout():
+ 
+ 
+ def test_no_band_calls_a_blackout_or_forward_day_iterable():
+-    """The 'more restrictive wins' rule, mechanised across the whole surface map."""
++    """The 'more restrictive wins' rule, mechanised across the whole surface map.
++
++    One carve-out, and it is an owner decision rather than a session's: the junjul
++    confirm band (2026-06-01..07-28) covers days whose fitting role is FORWARD, exactly
++    as the retired gap's resolution_owner clause anticipated when it reserved opening
++    them for lane iteration to the owner (BAR3_RATIFICATION_20260811.md). The clause's
++    own limit is pinned separately: the TEST band from 2026-07-29 stays non-iterable."""
+     import datetime as dt
+ 
++    junjul = DEFAULT_SURFACE_MAP.band("train_2026_junjul_funnel_confirm")
+     day = dt.date(2025, 1, 1)
+     end = dt.date(2027, 12, 31)
+     while day <= end:
+         s = DEFAULT_SURFACE_MAP.surface_for_day(day)
+         f = DEFAULT_REGISTRY.disposition_for_day(day)
+-        if f.role in ("RESERVED_UNREAD", "FORWARD"):
++        if f.role in ("RESERVED_UNREAD", "FORWARD") and not junjul.covers(day):
+             assert s.iterable is False, f"{day} is fitting-{f.role} but lane-iterable"
+         day += dt.timedelta(days=1)
+ 
+@@ -291,26 +312,29 @@ def test_a_look_with_no_dates_has_no_surface_and_is_refused(ledger):
+         _look(ledger)
+ 
+ 
+-def test_crossing_the_declared_gap_needs_the_gap_named(ledger):
+-    with pytest.raises(IterationLedgerRefusal, match="no declared surface"):
+-        _look(ledger, start="2026-05-25", end="2026-06-10")
+-    row = _look(ledger, start="2026-05-25", end="2026-06-10",
+-                acknowledge_uncovered=("gap_2026H1_tail_pre_arming",))
+-    assert row["acknowledged_gaps"] == ["gap_2026H1_tail_pre_arming"]
+-    assert row["surface_stamp"]["clean_for_iteration"] is False
++def test_the_former_gap_span_now_records_without_acknowledgment(ledger):
++    """Before the 2026-08-11 junjul band this span crossed gap_2026H1_tail_pre_arming and
++    refused without an explicit acknowledgment. The band (owner decision,
++    BAR3_RATIFICATION_20260811) covers it as used-once-disclosed TRAIN, so the look records
++    cleanly — and the disclosures travel on the row instead of on a named gap."""
++    row = _look(ledger, start="2026-05-25", end="2026-06-10")
++    assert row["acknowledged_gaps"] == []
++    assert row["surface_stamp"]["uncovered_days"] == []
++    assert row["surface"] in ("VAL", "TRAIN")
++    assert row["disclosures"], "both crossed bands carry used-once disclosures"
+     assert row["surface"] == "VAL", "UNCOVERED is not a surface; the field must stay useful"
+ 
+ 
+ def test_the_estates_own_full_history_walk_is_recordable(ledger):
+-    """The acceptance test that keeps this ledger usable. `GateSpec.global_span` spans March
+-    and the declared gap; the gate does not CONSUME March (`panel.py:249` drops those trades),
+-    so declaring the engine's blackout must make the walk loggable."""
++    """The acceptance test that keeps this ledger usable. `GateSpec.global_span` spans March;
++    the gate does not CONSUME March (`panel.py:249` drops those trades), so declaring the
++    engine's blackout must make the walk loggable. Since the 2026-08-11 junjul band the span
++    crosses no uncovered day, so no gap acknowledgment is needed — or possible."""
+     row = _look(ledger, start=GATE_GLOBAL_SPAN[0], end=GATE_GLOBAL_SPAN[1],
+-                engine_reserved_blackout=MARCH,
+-                acknowledge_uncovered=("gap_2026H1_tail_pre_arming",))
++                engine_reserved_blackout=MARCH)
+     assert row["blackout_days_excluded"] == 31
+     assert row["surface_stamp"]["test_days"] == []
+-    assert set(row["surface_stamp"]["surfaces_present"]) == {"TRAIN", "VAL", "UNCOVERED"}
++    assert set(row["surface_stamp"]["surfaces_present"]) == {"TRAIN", "VAL"}
+ 
+ 
+ def test_the_engine_blackout_declaration_is_checked_in_both_directions(ledger):
+@@ -758,11 +782,12 @@ def test_the_contamination_audit_receipt_describes_the_live_surface_map():
+     )
+     assert set(doc["tightenings_vs_the_ratified_frame"]) == {"T1", "T2", "T3", "T4", "T5"}
+     # The coverage scan is the claim that the map has no silent hole. Assert its shape rather
+-    # than its prose: exactly one uncovered stretch inside the modern era, and it is the
+-    # declared gap.
++    # than its prose: since the 2026-08-11 junjul band the modern era has NO uncovered
++    # stretch — the former gap is covered TRAIN under the owner decision.
+     modern = [r for r in doc["coverage"]["runs"] if r["to"] >= "1992-02-18"]
+     holes = [r for r in modern if r["surface"] is None]
+-    assert [r["band_id"] for r in holes] == ["gap:gap_2026H1_tail_pre_arming"]
++    assert holes == []
++    assert any(r["band_id"] == "train_2026_junjul_funnel_confirm" for r in modern)
+ 
+ 
+ def test_the_lane_cannot_reach_the_live_config_or_the_vps():

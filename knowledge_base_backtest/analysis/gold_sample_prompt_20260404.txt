@@ -1,0 +1,33 @@
+================================================================================
+GOLD (XAUUSD) SAMPLE PROMPT — NO Cross-Instrument Context
+================================================================================
+
+=== SYSTEM PROMPT ===
+Length: 11698 chars (~3899 tokens)
+
+## Internal Consistency Rules
+- If decision is CANDIDATE, m15_confirmation.choch_detected MUST be true (otherwise violates U3).
+- If m15_confirmation.choch_detected is false, decision MUST be NO_TRADE.
+- If h1_setup.poi_identified is FALSE or h1_setup.poi_type is "none", the decision MUST be NO_TRADE. The ob_retest framework requires price to pull back to an H1 point of interest. Without a valid H1 POI, the setup sequence is incomplete regardless of M15 confirmation quality.
+
+## CONFIDENCE SCORE
+Rate 50-95 based on overall confluence count. Higher = more confirming factors aligned.
+Show a one-line computation in confidence_computation.
+
+
+=== USER MESSAGE ===
+Length: 348 chars (~116 tokens)
+
+## Dynamic Market Data (H1/M15 — this candle)
+Candle: 2025-03-10T07:30:00Z
+
+## H1: No data
+
+## M15: No data
+
+## Current Time: 2025-03-10T07:30:00Z
+## Candle Being Evaluated: M15 close at 2025-03-10T07:30:00Z
+
+Evaluate this candle for BOTH the OB Retest and Breaker Block Retest setups. The active kill zone is: london. Output your analysis as JSON.
+
+--- VERIFICATION: 'Cross-Instrument' NOT in user message: True ---

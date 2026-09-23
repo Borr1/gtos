@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gold-agent"
+version = "0.1.0"
+description = "XAUUSD Autonomous AI Trading Agent — Model A: London Open Liquidity Sweep"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = "test_*.py"
+python_functions = "test_*"
+markers = [
+    "replay: replay-based regression tests against live + historical data (no API cost)",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

@@ -1,0 +1,33 @@
+# TIER LOW — the reviewed deletion manifest, after two adversarial rounds.
+#
+# This file is the DELIVERABLE, not the pre-review candidate list. The 47-file and
+# 90-file versions are described in DELETION_MANIFEST.md §4 and are superseded.
+#
+# Admission required, for every entry: zero consumers on all five sweeps (import,
+# string, .hermes receipt, config, VPS-only), survival of the fixpoint (no surviving
+# importer, direct or transitive), a stem the reference index can actually see
+# (digit-initial basenames are invisible to an identifier tokenizer and are held out),
+# and survival of the producer-side sweep (nothing it WRITES is bound by a surviving
+# file, it is not a route's sole verifier, and it is not named in a surviving route
+# manifest).
+#
+# lines  path
+       8  research/operations/final_moonshot_wave2_final_master_after_hard_halt_2026_06_04/build_wave2_wave3_prompt_pack.py
+
+# ---------------------------------------------------------------------------------
+# HELD OUT after review, with the reason. These were in the 47-file version.
+#
+# build_wave1a_hard_halt_forensic_matrix.py
+#     :19 imports build_route from src/research_infra/wave1a_hard_halt_forensics.py,
+#     which SURVIVES and is covered by tests/test_wave1a_hard_halt_forensics.py.
+#     Deleting the only CLI driver orphans a live, tested module — an INVERSE import
+#     edge that a consumer-side index cannot see.
+#
+# 45 further files — blocked by the producer-side sweep. Named examples:
+#     build_wave_f_fillability_label_repair.py:690 is the sole writer of
+#       WAVE_F_ROW_BOUND_FILLABILITY_LABEL_REPAIR_LEDGER.jsonl, a required_input of
+#       replay_acceleration_attempt5_typed_sparse_runner.py:366-400 that fails closed.
+#     build_ultimate_system_repair_analysis.py:37 is the sole writer of
+#       ULTIMATE_WEAK_ACCEPTED_FILTER_LEDGER.jsonl, bound at agent_config.yaml:781.
+#     7 routes would lose their only verify_* script, flipping
+#       scripts/audit_goal_route_artifacts.py from ok=true to missing_required.

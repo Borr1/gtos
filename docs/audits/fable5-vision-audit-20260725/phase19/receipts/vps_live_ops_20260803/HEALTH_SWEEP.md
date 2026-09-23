@@ -1,0 +1,33 @@
+# Session LH — Phase 1 health sweep, 2026-08-03 ~14:54–15:20 UTC
+
+All reads over host-admin as `trader`; no armed-surface byte touched. Expected state derived from:
+`phase17/` CM/CN/CO ceremony packages + `OD_ALL_IN_20260801.md`, `phase15/receipts/SPREAD_FLOOR_ARMED_20260731.md`,
+`phase13/receipts/MX_ACTIVATION_20260731.md`, `phase8/receipts/` (ceremony/step-zero/FN-arming/five-sleeve/fxjpy-pull),
+`phase4/PACKET_UNBLOCK_VPS_RUNBOOK.md`.
+
+## Verdicts (checklist §4 of the commission)
+
+| # | check | verdict | evidence |
+|---|---|---|---|
+| 1 | Supervisor task + worker args | **PASS with finding F2** | `GTOS_W7_BookSupervisor` Running; supervisor heartbeat fresh (pid 2972). Worker cmdlines byte-checked: FTMO `--tags crypto,energy_agri,sub_xvol_pullback,sub_mid_dn_revert,mx_btcusd_d1_donchian_20_breakout --frontier-exits mx_btcusd_d1_donchian_20_breakout --spread-geometry-floor sub_mid_dn_revert,sub_xvol_pullback`; FN 4 tags, no frontier, same floor. These are the **2026-07-31 (`267cccc94`) contract** — correct for the last executed ceremony; the 08-02 ceremony args are absent because that ceremony never ran (F2). |
+| 2 | Heartbeats, gates, kill flags | **PASS** | `heartbeat.json` both namespaces < 60 s old at read (15:18:51Z / 15:18:21Z); launcher cycles today 09:00/13:00 UTC (H4) + 08-02 21:05/22:05 (D1) with `killed=false halted=false`; both kill flags absent (released); startup lines `authority_gates_ON=True halted=False`. |
+| 3 | Tokens valid + digest binding | **FTMO PASS / FN FAIL → incident F1** | FTMO token ns `operator_profile`, expires 2026-08-14, digest `ffe16657feaf` = book's declared digest. FN token expires 2026-08-14, digest `e184a81d3b1b` = book's declared digest, **but token `namespace` field = `redacted_account` while the book declares `namespace=redacted_account_live_bee34003`**. `activation_token.py:762-767` refuses on that mismatch (`activation_token_namespace_mismatch`); call site `mt5_real.py:490-494` passes the runtime namespace. **FN cannot open new positions until re-mint (Borhen only).** Latent since re-mint 2026-07-31T17:23Z because zero FN intents have fired since. Risk-reducing paths unaffected; both accounts flat. |
+| 4 | Terminals connected, trade_allowed, accounts | **PASS** | Read-only probe (monitor's own pattern): both `terminal_connected=true`, `terminal_trade_allowed=true`, `account_trade_allowed=true`, companies FTMO Global Markets / redacted_account Ltd, servers FTMO-Server3 / redacted_account-Server 2, login sha8 `310fcf06` / `bee34003` (= namespace identities), equity 107,872.28 / 96,229.28. |
+| 5 | Forward data flowing | **PASS** | Per-tick `heartbeat.json` fresh both books; `ultimate_book_launcher.jsonl` + `ultimate_book_runtime_learning_packets.jsonl` wrote at today's H4 boundaries (last 13:01:00Z = 16:00 broker H4 close; boundary-writes are the design); monitor daemon 5-min loop healthy on carried code (restarted 10:53Z by supervisor takeover); advisory refresher wrote 14:52Z. Re-verified at the 17:00Z boundary before session close (see result doc §re-verify). |
+| 6 | 2026-08-02 boundary ceremonies took effect | **FAIL — never executed (finding F2)** | Host HEAD `267cccc94` (07-31 spread floor); `execution_packets.py` at CM *before*-hash `06a301bff0db`/38,376 B; `lane_weights.py`, `scripts/gtos_lane_weights.py`, `src/costs/model.py` all ABSENT; `C:\ProgramData\GTOS\lane-weights` ABSENT; no `lane_weights_latch.json` either namespace; supervisor ps1 at spread-floor after-hash `63079cec1cb9`; `broker_net_cost_engine.py` pre-CN `5b5053cfd8ea`; packets carry no `lane_weight_provenance`. No partial carry — the host is coherently at the 07-31 contract, so no mixed-contract hazard. CO declarations effective 2026-08-02..08-08; next admissible latch boundary 2026-08-04 00:00:00–00:05:00 UTC. **Owner decision pending.** |
+| 7 | Host repo state | **PASS** | Branch `vps/ultimate-conditioned-expansion-minimal-2026-06-18`, HEAD `267cccc94`, history contains `d6c9c4b19`, `7017c6745`, `f855250cd`, `eb7c28516`, `118071eaa`. 30 dirty entries = runtime state + deliberate untracked backups (matches `VPS_CEREMONY_COMPLETED.md` "remaining dirt is runtime-only"); sole tracked-modified file is FN `notification_queue.jsonl` (runtime). `CARRIED_STATE.json` present, 8 entries, latest = spread-floor ceremony set. |
+| 8 | System health | **PASS with notes** | Clock drift −2.5 ms vs time.windows.com. No pending-reboot flags. RAM 5.19/8 GB free. App-event errors last 72 h: 13, **all `llama-server.exe`** (Hermes LLM stack crash-loop 07-31 21:42–21:46Z) — zero trading-stack faults; System log: 1 Schannel. Supervisor pid 7940 died silently ~10:48–10:53Z today (no WER/event trace); the 5-min task firing took over at 10:53:03Z, swept orphaned monitor/companion/advisory daemons, restarted them — books untouched throughout (created 07-31 11:00–11:01Z). The commissioning-noted "~1.5 GB python" is not present; advisory builder now 234 MB (transient build peak is the likely explanation). Disk was the one red light: 1.42 GB free at session start → Phase 2. |
+| 9 | Open positions (read-only) | **PASS** | 0 positions both accounts; equity = balance both; floating $0; gross 0.00 %. No trades placed since arming (within this book's ~7 book-days/month cadence). |
+| 10 | `GTOS_Watchdog` Disabled | **PASS — intended** | Task runs `wscript.exe scripts\watchdog_launcher.vbs` → `watchdog.bat`, which self-gates on `ALLOW_LEGACY_WATCHDOG.flag` (absent) and legacy halt flags — the **legacy run_agent-era watchdog**, last ran 2026-06-03. Superseded by the `GTOS_W7_BookSupervisor` 5-min single-instance task, which demonstrated the takeover path live this morning. Do not enable. |
+
+## Findings
+
+- **F1 (incident, owner's word required): FN activation token namespace mismatch** — see row 3. Fix is one re-mint by Borhen:
+  `gtos_activation_token.py mint --profile redacted_account --namespace redacted_account_live_bee34003` (+ expiry), then confirm the book's
+  next placement path or `status`. No restart needed (token file is read per request).
+- **F2 (pending ceremony, owner's word required): CM/CN/CO composed boundary ceremony unexecuted** — see row 6. If wanted:
+  next boundary 2026-08-04 00:00 UTC; after 2026-08-08 the CO declarations lapse and need fresh signatures.
+- **F3 (note): supervisor process died silently ~10:50Z 2026-08-03**; self-healed by design at 10:53Z. No trading impact; no
+  event-log cause. Watch item only.
+- **F4 (note, Hermes — not GTOS): Hermes's own backup job looks broken** — `hermes-backup-20260730T033005Z.zip` is 0 bytes
+  (the two good backups are 2026-07-04); `llama-server.exe` crash-looped 07-31. Owner's other-stack item, flagged for awareness.

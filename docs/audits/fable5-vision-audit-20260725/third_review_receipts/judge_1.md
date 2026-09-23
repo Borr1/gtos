@@ -1,0 +1,52 @@
+{
+ "scores": [
+  {
+   "architecture": "The Settled-Book Line \u2014 cost-true W7 survivor book to first payout",
+   "charter_fit": 9,
+   "evidence_honesty": 9,
+   "time_to_decision": 10,
+   "risk": 9,
+   "total": 37,
+   "strongest_element": "The first build: re-costing the in-tree D4 ledger (7,471 verified per-trade rows carrying sleeve/sym/R/resim.cost) against the measured G1b commission table \u2014 the cheapest decision-changing artifact in any plan, a genuine STOP/GO on the entire premise in 1-2 sessions and machine-minutes, with the F39 ambiguity published as a two-reading band instead of resolved by assertion. Everything downstream consumes it; nothing upstream blocks it (ledger, costs, and the CYCLE62 branch all verified reachable).",
+   "weakest_element": "Its own risk 1 \u2014 costs and liveness are anti-correlated: the sleeves measured cost-free (metals/index) are exactly the ones never observed firing live (zero placements from any train-validated sleeve in 38 days, B99b/G1b:187), so the survivor book's positive expectancy rests on generation that G4 may reveal broken or glacial; and its payout-first identity leaves the charter's compounding assets (feature/label stores, trained models) idle behind the canary if the edge proves thin."
+  },
+  {
+   "architecture": "SPINE \u2014 evidence-as-projection, decisions-as-policies (TRUTH_FIRST)",
+   "charter_fit": 7,
+   "evidence_honesty": 8.5,
+   "time_to_decision": 8.5,
+   "risk": 7,
+   "total": 31,
+   "strongest_element": "The proof-economics inversion made structural: the proof-budget rule (each projection's manifest names the decision it changes or it is not built) is the correct permanent cure for the measured 60.6%-CPU / 92%-of-bytes disease, and the gatehouse's typed owner-decision packet (decision/evidence/options/recommendation/explicitly-not-taken) is the best recommend-never-take formalism of the four.",
+   "weakest_element": "S5 \u2014 a 4-8 session evidence-architecture rebuild whose flagship payoffs (minutes-per-day iteration, BroadV4Policy extraction) serve the policy family with uniformly negative economics, and whose spine schema sits upstream of S7's capture v2, quietly placing the largest infrastructure item near the payout path. The claim that finishing the negative-family campaign 'IS activation movement' is the plan's one charter-bending move \u2014 the campaign answers a decomposition question that gates no payout."
+  },
+  {
+   "architecture": "FORWARD COURT \u2014 replay proposes, forward disposes",
+   "charter_fit": 7.5,
+   "evidence_honesty": 8,
+   "time_to_decision": 6.5,
+   "risk": 6,
+   "total": 28,
+   "strongest_element": "The capture contract plus the canary reframe: FEP-2's emit-time validation makes the F36 failure class (declared field, NULL on all 99,112 rows, discovered 38 days late) structurally impossible, and activation as pre-registered bounded measurement with evidence-based stop conditions is the sharpest safety/epistemics formalism in the panel \u2014 every trading day after deploy produces evidence whether or not money moves.",
+   "weakest_element": "The composition decision is gated behind an owner-scheduled VPS deployment (the largest live-host change of any plan, on the one-boolean-brake machine \u2014 its own named nightmare scenario) plus 2-4 forward weeks, and it activates on the thinnest pre-canary positive-expectancy evidence: no cost-true historical revalidation is ever produced as a claim, so the canary edge rests on the very prior class the architecture demotes \u2014 its own risk 1 names the contradiction."
+  },
+  {
+   "architecture": "GTOS-Kernel \u2014 the deletion-first architecture",
+   "charter_fit": 8,
+   "evidence_honesty": 9,
+   "time_to_decision": 7.5,
+   "risk": 6.5,
+   "total": 31,
+   "strongest_element": "Gate K1 \u2014 reproduce the 617 unit-bearing live cycles end-to-end from bars (generation \u2192 decision \u2192 units, zero disagreements), extending the verified B92 method to the full path. The sharpest single acceptance bar in any plan, and the correct falsification discipline for the keystone every candidate shares. Its in-sample disclosure (risk 4: K2 revalidates on the bars the sleeves were mined from; a positive K2 may still die forward) is the most honest line in the panel.",
+   "weakest_element": "Practically irreversible deletion of the monolith and campaign apparatus purchased mid-sequence for hygiene the payout path does not need: re-EXECUTION of sealed January arms is sold for repo hygiene (its own risk 5), parking achieves the same forward economics at zero irreversibility, and the plan's central economy is hostage to OD-R1 asking the owner to reverse a decision he made two days ago."
+  }
+ ],
+ "ranking": [
+  "The Settled-Book Line",
+  "GTOS-Kernel",
+  "SPINE",
+  "FORWARD COURT"
+ ],
+ "grafts": "Onto the Settled-Book Line: (1) From GTOS-Kernel \u2014 Gate K1 as the acceptance bar for S2's generation port: end-to-end bars\u2192candidates\u2192decision\u2192units reproduction of the 617 unit-bearing live cycles at zero disagreements. Settled-Book's 'fidelity proven the same way H proved sizing' is weaker than this end-to-end formulation, and S2 is the keystone. Also Kernel's JANUARY_BANK.md pattern \u2014 bank the factorial's three portable claims before parking the campaign (especially the design rule: no dynamic runtime sizing without factorial-grade evidence; sizing stays static-fraction under the governor) so the park does not orphan the lessons; the \u00d70.5/\u00d71/\u00d72 cost sensitivity bands on BROKER_TRUE_COSTS_V1; and Kernel's in-sample caveat carried verbatim into the activation dossier. (2) From FORWARD COURT \u2014 FEP-2's emit-time validation grafted into component D: a packet omitting a declared field fails at emit, the structural fix for the F36 class, instead of merely carrying F36 on the VPS list; the export-cadence silence alarm (the 07-02 ledger deaths prove exhaust dies silently); and the pre-registered canary formalism for S7 \u2014 evidence targets (which hypotheses this canary settles, at what n) and evidence-based stop conditions (measured-cost deviation from the table over n fills \u2192 halt), not just loss limits. (3) From SPINE \u2014 the S0a ordering: move the token carry-back package from S5 to the front of the sequence. It is half a session, the entire VPS brake is one YAML boolean on a running funded connected host [VERIFIED live_system_of_record.md \u00a76], and de-activation hardening should not wait behind five research steps. Also SPINE's typed owner-decision-packet form for the dossier's decision queue, its proof-budget rule stamped on every BOOK_ARM_RECEIPT field (each field names the decision it changes or is cut), and S0b \u2014 file the in-flight tracemalloc result as documentation when it lands so the memory question is never relitigated.",
+ "verdict_rationale": "All four candidates survive factual audit \u2014 I verified roughly twenty-five load-bearing claims directly against the tree (F38's five sites and circular gate, F39's sign and missing generator, the per-class commission table, B63/B99b silence, B92/B99c delegation fidelity, the missing generate_from_bars, the D4 ledger's per-row contents, the token carry-back list, the divergence-matrix wiring, B84/B85's negative memory result, the four negative January cells, OD-1) and found no false premise, only two citation imprecisions. That convergence means the four plans agree on the physics: GTOS holds one positively-validated family whose validation charged zero commission and credited erosion with the wrong sign, one family negative everywhere measured, a delegation-validated decision port, an unported generation half, and G4 as the question that decides whether the activation candidate is sound. The judgment is therefore purely strategic, and the charter decides it. The Settled-Book Line wins because it is the only plan whose every step is either a decision or an activation rung and whose FIRST artifact is a machine-minutes STOP/GO on the whole premise \u2014 re-cost arithmetic over a verified in-tree ledger that either creates the only honestly-positive activation candidate GTOS can name or kills the premise within the week. It refuses exactly the machinery the measurements say does not sit between today and a payout (monolith memory work: B84/B85 measured unreachable; re-seals: nothing on the path needs them; attribution firehose: 802 of 867 MB serving no decision), and it parks rather than deletes, preserving optionality at zero spend. Its honesty discipline (F39 two-reading band, coverage classes, explicit OD-3 reversal framing, months-not-weeks calendar) preserves the truth substrate without making truth the product. GTOS-Kernel is second: strategically the same book-first read with the sharpest acceptance gate (K1) and the most honest in-sample disclosure, but it pays an irreversibility bill mid-sequence (deleting re-execution capability for the sealed arms) that buys hygiene rather than activation movement, and its central economy hangs on OD-R1 more heavily than Settled-Book's demote-gracefully OD-3 posture. SPINE is third: the best long-run truth architecture and the correct permanent cure for the proof-economics disease, but its center of mass is the rebuild \u2014 the charter's named failure mode \u2014 its S5 serves the negative family, and its 'the campaign IS activation movement' framing bends the charter's meaning; its best parts graft cleanly onto the winner, which is where they belong. FORWARD COURT is fourth despite the panel's best capture and canary formalisms: it reaches the owner's economic decision slowest (owner-gated VPS deploy plus forward weeks), takes the largest early live-host risk on the one-boolean-brake machine, and activates on the thinnest positive-expectancy evidence \u2014 the internal contradiction its own risk register names. One caveat carried to the owner rather than scored against any plan: all four converge on a survivor book whose cost-favored sleeves are the ones never seen generating live; that risk belongs to the terrain, not to the winning architecture, and G4 \u2014 every plan's early step \u2014 is the move that prices it."
+}

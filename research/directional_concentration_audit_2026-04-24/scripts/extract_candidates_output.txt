@@ -1,0 +1,147 @@
+================================================================================
+CANDIDATE COUNTS PER INSTRUMENT (April 2026)
+================================================================================
+
+-- GBPJPY (35 candidates) --
+  daily_bias_direction distribution: {'bullish': 35}
+  direction inferred from reasoning: {'LONG': 34, 'LONG_MIXED': 1}
+
+-- GBPUSD (29 candidates) --
+  daily_bias_direction distribution: {'bullish': 29}
+  direction inferred from reasoning: {'LONG_MIXED': 4, 'LONG': 25}
+
+-- US30_cash (26 candidates) --
+  daily_bias_direction distribution: {'bullish': 26}
+  direction inferred from reasoning: {'LONG': 26}
+
+-- USDJPY (39 candidates) --
+  daily_bias_direction distribution: {'bullish': 39}
+  direction inferred from reasoning: {'LONG': 36, 'LONG_MIXED': 3}
+
+-- XAUUSD (12 candidates) --
+  daily_bias_direction distribution: {'bullish': 12}
+  direction inferred from reasoning: {'LONG': 12}
+
+================================================================================
+AGGREGATE — ALL 4 LIVE INSTRUMENTS (XAUUSD+US30+USDJPY+GBPJPY)
+  GBPUSD observer excluded
+================================================================================
+  LONG (bullish bias): 112/112 = 100.0%
+  SHORT (bearish bias): 0/112 = 0.0%
+  NEUTRAL/OTHER: 0/112 = 0.0%
+
+  Post-redacted_account-kickoff (2026-04-20 through 04-23):
+    LONG: 44/44 = 100.0%
+    SHORT: 0/44 = 0.0%
+    OTHER: 0/44
+
+================================================================================
+DAILY BIAS DISTRIBUTION (ALL EVALS, not only CANDIDATE) — April 2026
+================================================================================
+
+-- GBPJPY (n=286 evals) --
+   bullish: 144  (50.3%)
+   ranging: 123  (43.0%)
+   bearish: 19  (6.6%)
+
+-- GBPUSD (n=154 evals) --
+   bullish: 115  (74.7%)
+   ranging: 35  (22.7%)
+   bearish: 4  (2.6%)
+
+-- US30_cash (n=258 evals) --
+   bullish: 176  (68.2%)
+   ranging: 78  (30.2%)
+   bearish: 4  (1.6%)
+
+-- USDJPY (n=366 evals) --
+   bullish: 328  (89.6%)
+   ranging: 36  (9.8%)
+   bearish: 2  (0.5%)
+
+-- XAUUSD (n=219 evals) --
+   bullish: 138  (63.0%)
+   ranging: 79  (36.1%)
+   bearish: 2  (0.9%)
+
+================================================================================
+PER-DAY DOMINANT D1 BIAS (all evals, per-symbol)
+================================================================================
+
+-- GBPJPY --
+   2026-04-06: dominant=ranging (100%), total_evals=32, breakdown={'ranging': 32}
+   2026-04-07: dominant=ranging (100%), total_evals=27, breakdown={'ranging': 27}
+   2026-04-08: dominant=ranging (97%), total_evals=32, breakdown={'bullish': 1, 'ranging': 31}
+   2026-04-09: dominant=ranging (81%), total_evals=32, breakdown={'ranging': 26, 'bullish': 6}
+   2026-04-10: dominant=bearish (48%), total_evals=31, breakdown={'bullish': 9, 'ranging': 7, 'bearish': 15}  <-- BEARISH day
+   2026-04-13: dominant=bullish (96%), total_evals=27, breakdown={'bullish': 26, 'bearish': 1}
+   2026-04-14: dominant=bullish (100%), total_evals=15, breakdown={'bullish': 15}
+   2026-04-15: dominant=bullish (100%), total_evals=4, breakdown={'bullish': 4}
+   2026-04-16: dominant=bullish (100%), total_evals=5, breakdown={'bullish': 5}
+   2026-04-17: dominant=bullish (90%), total_evals=31, breakdown={'bullish': 28, 'bearish': 3}
+   2026-04-20: dominant=bullish (100%), total_evals=29, breakdown={'bullish': 29}
+   2026-04-21: dominant=bullish (100%), total_evals=15, breakdown={'bullish': 15}
+   2026-04-22: dominant=bullish (100%), total_evals=5, breakdown={'bullish': 5}
+   2026-04-23: dominant=bullish (100%), total_evals=1, breakdown={'bullish': 1}
+
+-- GBPUSD --
+   2026-04-06: dominant=ranging (100%), total_evals=30, breakdown={'ranging': 30}
+   2026-04-10: dominant=bullish (78%), total_evals=23, breakdown={'bullish': 18, 'ranging': 5}
+   2026-04-13: dominant=bullish (100%), total_evals=24, breakdown={'bullish': 24}
+   2026-04-14: dominant=bullish (100%), total_evals=6, breakdown={'bullish': 6}
+   2026-04-15: dominant=bullish (100%), total_evals=6, breakdown={'bullish': 6}
+   2026-04-16: dominant=bullish (83%), total_evals=23, breakdown={'bullish': 19, 'bearish': 4}
+   2026-04-17: dominant=bullish (100%), total_evals=16, breakdown={'bullish': 16}
+   2026-04-20: dominant=bullish (100%), total_evals=4, breakdown={'bullish': 4}
+   2026-04-21: dominant=bullish (100%), total_evals=17, breakdown={'bullish': 17}
+   2026-04-22: dominant=bullish (100%), total_evals=5, breakdown={'bullish': 5}
+
+-- US30_cash --
+   2026-04-06: dominant=ranging (100%), total_evals=19, breakdown={'ranging': 19}
+   2026-04-07: dominant=ranging (95%), total_evals=20, breakdown={'bullish': 1, 'ranging': 19}
+   2026-04-08: dominant=ranging (100%), total_evals=19, breakdown={'ranging': 19}
+   2026-04-09: dominant=ranging (53%), total_evals=19, breakdown={'ranging': 10, 'bullish': 9}
+   2026-04-10: dominant=ranging (58%), total_evals=19, breakdown={'bullish': 8, 'ranging': 11}
+   2026-04-13: dominant=bullish (100%), total_evals=20, breakdown={'bullish': 20}
+   2026-04-14: dominant=bullish (100%), total_evals=10, breakdown={'bullish': 10}
+   2026-04-15: dominant=bullish (100%), total_evals=19, breakdown={'bullish': 19}
+   2026-04-16: dominant=bullish (100%), total_evals=18, breakdown={'bullish': 18}
+   2026-04-17: dominant=bullish (100%), total_evals=19, breakdown={'bullish': 19}
+   2026-04-20: dominant=bullish (100%), total_evals=20, breakdown={'bullish': 20}
+   2026-04-21: dominant=bullish (80%), total_evals=20, breakdown={'bullish': 16, 'bearish': 4}
+   2026-04-22: dominant=bullish (100%), total_evals=16, breakdown={'bullish': 16}
+   2026-04-23: dominant=bullish (100%), total_evals=20, breakdown={'bullish': 20}
+
+-- USDJPY --
+   2026-04-06: dominant=bullish (83%), total_evals=30, breakdown={'ranging': 5, 'bullish': 25}
+   2026-04-07: dominant=bullish (100%), total_evals=28, breakdown={'bullish': 28}
+   2026-04-08: dominant=bullish (100%), total_evals=32, breakdown={'bullish': 32}
+   2026-04-09: dominant=ranging (81%), total_evals=32, breakdown={'ranging': 26, 'bullish': 6}
+   2026-04-10: dominant=bullish (90%), total_evals=31, breakdown={'bullish': 28, 'ranging': 3}
+   2026-04-13: dominant=bullish (93%), total_evals=27, breakdown={'ranging': 2, 'bullish': 25}
+   2026-04-14: dominant=bullish (100%), total_evals=32, breakdown={'bullish': 32}
+   2026-04-15: dominant=bullish (100%), total_evals=17, breakdown={'bullish': 17}
+   2026-04-16: dominant=bullish (100%), total_evals=29, breakdown={'bullish': 29}
+   2026-04-17: dominant=bullish (94%), total_evals=31, breakdown={'bullish': 29, 'bearish': 2}
+   2026-04-20: dominant=bullish (100%), total_evals=27, breakdown={'bullish': 27}
+   2026-04-21: dominant=bullish (100%), total_evals=13, breakdown={'bullish': 13}
+   2026-04-22: dominant=bullish (100%), total_evals=6, breakdown={'bullish': 6}
+   2026-04-23: dominant=bullish (100%), total_evals=31, breakdown={'bullish': 31}
+
+-- XAUUSD --
+   2026-04-06: dominant=ranging (90%), total_evals=21, breakdown={'bullish': 2, 'ranging': 19}
+   2026-04-07: dominant=ranging (100%), total_evals=26, breakdown={'ranging': 26}
+   2026-04-08: dominant=ranging (96%), total_evals=26, breakdown={'bullish': 1, 'ranging': 25}
+   2026-04-09: dominant=bullish (53%), total_evals=19, breakdown={'ranging': 9, 'bullish': 10}
+   2026-04-10: dominant=bullish (100%), total_evals=23, breakdown={'bullish': 23}
+   2026-04-15: dominant=bullish (100%), total_evals=23, breakdown={'bullish': 23}
+   2026-04-16: dominant=bullish (100%), total_evals=23, breakdown={'bullish': 23}
+   2026-04-17: dominant=bullish (100%), total_evals=14, breakdown={'bullish': 14}
+   2026-04-19: dominant=bullish (100%), total_evals=4, breakdown={'bullish': 4}
+   2026-04-20: dominant=bullish (100%), total_evals=23, breakdown={'bullish': 23}
+   2026-04-21: dominant=bullish (88%), total_evals=17, breakdown={'bullish': 15, 'bearish': 2}
+
+================================================================================
+BEARISH-BIAS DAYS — did any CANDIDATE emerge on those days?
+================================================================================
+  GBPJPY 2026-04-10: breakdown={'bullish': 9, 'ranging': 7, 'bearish': 15}, candidates_today=0, candidate_biases={}

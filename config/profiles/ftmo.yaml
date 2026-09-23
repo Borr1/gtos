@@ -1,0 +1,1279 @@
+profile_name: ftmo
+calendar_mode: prime
+calendar_mode_note: >-
+  FTMO alias. F5-only apply 2026-08-21. redacted_account stays block.
+profile_status: compatibility_pointer_to_account_specific_ftmo_profile
+profile_alias_for: operator_profile
+generated_by: research\operations\vnext_ftmo_local_profile_and_vps_dual_prod_prep_2026_06_02\build_vnext_ftmo_local_profile_and_vps_dual_prod_prep.py
+generated_at_utc: '2026-06-01T18:01:51.574890Z'
+source_authority:
+  broker_fact_authority: vps_ftmo_portable_mt5_readonly_probe_2026_06_02
+  vps_runtime_authority: vps_dual_broker_live_activation_verified_2026_06_02
+  github_local_repo_role: portable_profile_and_verifier_package
+runtime:
+  profile_namespace: operator_profile
+  broker_account_namespace: operator_profile
+  process_group: ftmo_challenge_live
+dual_broker:
+  architecture_id: final_moonshot_wave1c_dual_broker_v1
+  runtime_model: redacted_account_primary_full_ftmo_follower_projector
+  role: follower_projector_only
+  source_runtime_namespace: redacted_account_live_bee34003
+  target_runtime_namespace: operator_profile
+  intent_bus_enabled: true
+  intent_log_path: pipeline_state/dual_broker/canonical_trade_intents.jsonl
+  target_state_path: pipeline_state/operator_profile/dual_broker_target_trade_state.json
+  action_log_path: pipeline_state/operator_profile/dual_broker_execution_follower_actions.jsonl
+  target_authority:
+    order_source: canonical_trade_intents_only
+    broker_local_risk_gate: required
+    broker_local_lifecycle_management: required
+    broker_local_crash_recovery: required
+    full_run_agent_fleet: forbidden
+    primary_fill_price_copy: forbidden
+    primary_lot_copy: forbidden
+    primary_cash_pnl_copy: forbidden
+    primary_cost_swap_fee_copy: forbidden
+    primary_symbol_spec_session_copy: forbidden
+    primary_order_deal_position_lifecycle_copy: forbidden
+    source_brain_research_evidence_use: source_namespace_only
+    target_broker_truth_source: target_broker_local_only
+    target_broker_real_pnl_claims: forbidden_without_account_history_join
+mt5:
+  terminal_path: C:\MT5\FTMO\terminal64.exe
+  terminal_data_path: C:\MT5\FTMO
+  portable: true
+  terminal_path_source: vps_ftmo_portable_terminal_process_and_readonly_mt5_probe_2026_06_02
+broker_profile:
+  broker: ftmo
+  company: FTMO Global Markets Ltd
+  server: FTMO-Server3
+  account_name: $100k FTMO Challenge 2-Step
+  expected_account:
+    server: FTMO-Server3
+    company: FTMO Global Markets Ltd
+    currency: USD
+    login_sha256: "0000000000000000000000000000000000000000000000000000000000000000"
+    terminal_path: C:\MT5\FTMO
+    terminal_data_path: C:\MT5\FTMO
+  identity_secret_policy: account_login_redacted_sha256_only_no_credentials
+runtime_paths:
+  logs_root: logs/operator_profile
+  knowledge_base_root: knowledge_base/operator_profile
+  trade_records_root: knowledge_base/operator_profile/trade_records
+  pipeline_state_root: pipeline_state/operator_profile
+  shadow_logs_root: shadow_logs/operator_profile
+  m1_data_root: data/m1/operator_profile
+  tick_data_root: data/ticks/operator_profile
+notification_queue:
+  queue_path: pipeline_state/operator_profile/notification_queue.jsonl
+  identity_prefix: FTMO
+trade_capture:
+  base_path: knowledge_base/operator_profile/trade_records
+broker_truth_cost_capture_v2:
+  log_path: shadow_logs/operator_profile/broker_truth_cost_capture_v2.jsonl
+risk:
+  risk_per_trade_pct: 2.0
+  max_daily_loss_pct: 4.0
+  max_concurrent: null
+  max_concurrent_policy: disabled_for_vnext_dual_follower_aggregate_drawdown_budget
+  risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; aggregate_drawdown_budget_not_trade_count
+gtos_vnext_runtime:
+  prop_safe_selector_account_model_label: FTMO_100k_challenge_static_overall_loss
+  prop_safe_selector_initial_balance: 100000.0
+  prop_safe_selector_external_daily_loss_limit_pct: 5.0
+  prop_safe_selector_external_overall_max_loss_pct: 10.0
+  prop_safe_selector_phase1_target_pct: 10.0
+  prop_safe_selector_phase2_target_pct: 5.0
+  prop_safe_selector_daily_reset_timezone: Europe/Prague
+  prop_safe_selector_apply_internal_daily_overlay: true
+  prop_safe_selector_internal_daily_loss_limit_pct: 4.0
+  prop_safe_selector_overall_remaining_cushion_pct: 1.0
+  prop_safe_selector_min_reduced_risk_pct: 0.25
+drawdown_reduction:
+  threshold: 0.08
+  reduced_risk_pct: 0.5
+ftmo_rules:
+  account_product_inferred_from_local_account_name: $100k FTMO Challenge 2-Step
+  account_balance_initial_inferred_usd: 100000.0
+  challenge_model: 2-Step
+  profit_target_phase1_pct: 10.0
+  profit_target_phase2_pct: 5.0
+  maximum_daily_loss_pct: 5.0
+  maximum_loss_pct: 10.0
+  minimum_trading_days: 4
+  daily_reset_time: 00:00 CE(S)T
+  official_source_refs:
+  - OFFICIAL_FTMO_SOURCE_INDEX.json:ftmo_trading_objectives
+  - OFFICIAL_FTMO_SOURCE_INDEX.json:ftmo_faq_trading_objectives
+  owner_input_requirements:
+  - monitor paid challenge/account stage, swing/add-on status, and any account-specific
+    FTMO dashboard constraints during dual-broker live operation
+instruments:
+  AUDJPY:
+    market:
+      mt5_symbol: AUDJPY
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 0.6263858787567493
+      trade_tick_value_profit: 0.6263858787567493
+      trade_tick_value_loss: 0.6263976497560181
+      contract_size: 100000.0
+      trade_contract_size: 100000.0
+      volume_min: 0.01
+      volume_max: 50.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 11
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: 2.0
+      swap_short: -15.9
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200000.0
+      calculation_mode: 0
+      currency_base: AUD
+      currency_profit: JPY
+      currency_margin: AUD
+      description: Australian Dollar vs Japanese Yen
+      path: Forex\AUDJPY
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100000.0
+  BTCUSD:
+    market:
+      mt5_symbol: BTCUSD
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.01
+      trade_tick_value_profit: 0.01
+      trade_tick_value_loss: 0.01
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 5.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 5
+      swap_long: -30.0
+      swap_short: -30.0
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Bitcoin vs US Dollar, Spot CFD
+      path: Crypto I CFD\BTCUSD
+    risk:
+      risk_per_trade_pct: 0.25
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 1.0
+  CHFJPY:
+    market:
+      mt5_symbol: CHFJPY
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 0.6263858787567493
+      trade_tick_value_profit: 0.6263858787567493
+      trade_tick_value_loss: 0.6263976497560181
+      contract_size: 100000.0
+      trade_contract_size: 100000.0
+      volume_min: 0.01
+      volume_max: 50.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -10.4
+      swap_short: 0.6
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200000.0
+      calculation_mode: 0
+      currency_base: CHF
+      currency_profit: JPY
+      currency_margin: CHF
+      description: Swiss Franc vs Japanese Yen
+      path: Forex\CHFJPY
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100000.0
+  ETHUSD:
+    market:
+      mt5_symbol: ETHUSD
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.1
+      trade_tick_value_profit: 0.1
+      trade_tick_value_loss: 0.1
+      contract_size: 10.0
+      trade_contract_size: 10.0
+      volume_min: 0.01
+      volume_max: 5.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 5
+      swap_long: -30.0
+      swap_short: -30.0
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 20.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Ethereum vs US Dollar, Spot CFD
+      path: Crypto I CFD\ETHUSD
+    risk:
+      risk_per_trade_pct: 0.25
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 10.0
+  EURJPY:
+    market:
+      mt5_symbol: EURJPY
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 0.6263858787567493
+      trade_tick_value_profit: 0.6263858787567493
+      trade_tick_value_loss: 0.6263976497560181
+      contract_size: 100000.0
+      trade_contract_size: 100000.0
+      volume_min: 0.01
+      volume_max: 50.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: 0.89
+      swap_short: -11.44
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200000.0
+      calculation_mode: 0
+      currency_base: EUR
+      currency_profit: JPY
+      currency_margin: EUR
+      description: Euro vs Japanese Yen
+      path: Forex\EURJPY
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100000.0
+  GBPJPY:
+    market:
+      mt5_symbol: GBPJPY
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 0.6263858787567493
+      trade_tick_value_profit: 0.6263858787567493
+      trade_tick_value_loss: 0.6263976497560181
+      contract_size: 100000.0
+      trade_contract_size: 100000.0
+      volume_min: 0.01
+      volume_max: 50.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 18
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: 2.8
+      swap_short: -27.88
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200000.0
+      calculation_mode: 0
+      currency_base: GBP
+      currency_profit: JPY
+      currency_margin: GBP
+      description: Great Britain Pound vs Japanese Yen
+      path: Forex\GBPJPY
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100000.0
+  GER40:
+    market:
+      mt5_symbol: GER40.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.011634199999999999
+      trade_tick_value_profit: 0.011634199999999999
+      trade_tick_value_loss: 0.0116343
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -402.32
+      swap_short: -49.73
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: EUR
+      currency_profit: EUR
+      currency_margin: EUR
+      description: German 40 Index, Spot CFD
+      path: Cash CFD\GER40.cash
+    risk:
+      risk_per_trade_pct: 0.5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 1.0
+  JP225:
+    market:
+      mt5_symbol: JP225.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.0006263858787567494
+      trade_tick_value_profit: 0.0006263858787567494
+      trade_tick_value_loss: 0.0006263976497560182
+      contract_size: 10.0
+      trade_contract_size: 10.0
+      volume_min: 0.01
+      volume_max: 200.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -777.42
+      swap_short: -418.61
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 20.0
+      calculation_mode: 4
+      currency_base: JPY
+      currency_profit: JPY
+      currency_margin: JPY
+      description: Japan 225 Index, Spot CFD
+      path: Cash II CFD\JP225.cash
+    risk:
+      risk_per_trade_pct: 0.5
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 10.0
+  NAS100:
+    market:
+      mt5_symbol: US100.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.01
+      trade_tick_value_profit: 0.01
+      trade_tick_value_loss: 0.01
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -587.2
+      swap_short: -44.14
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: NASDAQ 100 Index, Spot CFD
+      path: Cash CFD\US100.cash
+    risk:
+      risk_per_trade_pct: 0.5
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 1.0
+  SPX500:
+    market:
+      mt5_symbol: US500.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.01
+      trade_tick_value_profit: 0.01
+      trade_tick_value_loss: 0.01
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -140.65
+      swap_short: -17.13
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: S&P 500 Index, Spot CFD
+      path: Cash CFD\US500.cash
+    risk:
+      risk_per_trade_pct: 0.5
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 1.0
+  UK100:
+    market:
+      mt5_symbol: UK100.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.0134637
+      trade_tick_value_profit: 0.0134637
+      trade_tick_value_loss: 0.013464
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -233.92
+      swap_short: 10.8
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: GBP
+      currency_profit: GBP
+      currency_margin: GBP
+      description: FTSE 100 Index, Spot CFD
+      path: Cash CFD\UK100.cash
+    risk:
+      risk_per_trade_pct: 0.5
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 1.0
+  UKOIL_cash:
+    market:
+      mt5_symbol: UKOIL.cash
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 0.1
+      trade_tick_value_profit: 0.1
+      trade_tick_value_loss: 0.1
+      contract_size: 100.0
+      trade_contract_size: 100.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: 27.64
+      swap_short: -129.84
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Crude Oil Brent, Spot CFD
+      path: Cash II CFD\UKOIL.cash
+    risk:
+      risk_per_trade_pct: 0.5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100.0
+  US30_cash:
+    market:
+      mt5_symbol: US30.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.01
+      trade_tick_value_profit: 0.01
+      trade_tick_value_loss: 0.01
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: 37.0
+      swap_short: -1099.03
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Dow Jones Industrial Average Index, Spot CFD
+      path: Cash CFD\US30.cash
+    risk:
+      risk_per_trade_pct: 1.0
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 1.0
+  USDJPY:
+    market:
+      mt5_symbol: USDJPY
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 0.6263858787567493
+      trade_tick_value_profit: 0.6263858787567493
+      trade_tick_value_loss: 0.6263976497560181
+      contract_size: 100000.0
+      trade_contract_size: 100000.0
+      volume_min: 0.01
+      volume_max: 50.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 3
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: 1.93
+      swap_short: -20.36
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200000.0
+      calculation_mode: 0
+      currency_base: USD
+      currency_profit: JPY
+      currency_margin: USD
+      description: US Dollar vs Japanese Yen
+      path: Forex\USDJPY
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100000.0
+  USOIL_cash:
+    market:
+      mt5_symbol: USOIL.cash
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 0.1
+      trade_tick_value_profit: 0.1
+      trade_tick_value_loss: 0.1
+      contract_size: 100.0
+      trade_contract_size: 100.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 0
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: 36.56
+      swap_short: -168.09
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: West Texas Intermediate Crude Oil, Spot CFD
+      path: Cash II CFD\USOIL.cash
+    risk:
+      risk_per_trade_pct: 0.5
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100.0
+  XAGUSD:
+    market:
+      mt5_symbol: XAGUSD
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 5.0
+      trade_tick_value_profit: 5.0
+      trade_tick_value_loss: 5.0
+      contract_size: 5000.0
+      trade_contract_size: 5000.0
+      volume_min: 0.01
+      volume_max: 100.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 59
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -17.36
+      swap_short: 0.69
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 10000.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Silver vs US Dollar, Spot CFD
+      path: Metals CFD\XAGUSD
+    risk:
+      risk_per_trade_pct: 1.0
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 5000.0
+  XAUUSD:
+    market:
+      mt5_symbol: XAUUSD
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 1.0
+      trade_tick_value_profit: 1.0
+      trade_tick_value_loss: 1.0
+      contract_size: 100.0
+      trade_contract_size: 100.0
+      volume_min: 0.01
+      volume_max: 100.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 36
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -71.64
+      swap_short: -4.6
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Gold vs US Dollar, Spot CFD
+      path: Metals CFD\XAUUSD
+    risk:
+      risk_per_trade_pct: 1.0
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: owner_authorized_dual_broker_live_profile_repair_2026_06_02; account_specific_ftmo_broker_geometry_not_mt5_risk_fact
+      contract_size: 100.0
+  XAUEUR:
+    market:
+      mt5_symbol: XAUEUR
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 1.16063
+      trade_tick_value_profit: 1.16063
+      trade_tick_value_loss: 1.16064
+      contract_size: 100.0
+      trade_contract_size: 100.0
+      volume_min: 0.01
+      volume_max: 100.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 70
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -32.13
+      swap_short: -13.45
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200.0
+      calculation_mode: 4
+      currency_base: EUR
+      currency_profit: EUR
+      currency_margin: EUR
+      description: Gold vs Euro, Spot CFD
+      path: Metals CFD\XAUEUR
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 100.0
+  XAGEUR:
+    market:
+      mt5_symbol: XAGEUR
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 5.8031500000000005
+      trade_tick_value_profit: 5.8031500000000005
+      trade_tick_value_loss: 5.8031999999999995
+      contract_size: 5000.0
+      trade_contract_size: 5000.0
+      volume_min: 0.01
+      volume_max: 100.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 46
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -4.97
+      swap_short: 0.6
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 10000.0
+      calculation_mode: 4
+      currency_base: EUR
+      currency_profit: EUR
+      currency_margin: EUR
+      description: Silver vs Euro, Spot CFD
+      path: Metals CFD\XAGEUR
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 5000.0
+  XAUAUD:
+    market:
+      mt5_symbol: XAUAUD
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.70722
+      trade_tick_value_profit: 0.70722
+      trade_tick_value_loss: 0.70725
+      contract_size: 100.0
+      trade_contract_size: 100.0
+      volume_min: 0.01
+      volume_max: 100.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 85
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -97.01
+      swap_short: -17.58
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 200.0
+      calculation_mode: 4
+      currency_base: AUD
+      currency_profit: AUD
+      currency_margin: AUD
+      description: Gold vs Australian Dollar, Spot CFD
+      path: Metals CFD\XAUAUD
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 100.0
+  XAGAUD:
+    market:
+      mt5_symbol: XAGAUD
+      tick_size: 0.001
+      point: 0.001
+      digits: 3
+      trade_tick_size: 0.001
+      trade_tick_value: 3.5361
+      trade_tick_value_profit: 3.5361
+      trade_tick_value_loss: 3.5362500000000003
+      contract_size: 5000.0
+      trade_contract_size: 5000.0
+      volume_min: 0.01
+      volume_max: 100.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 72
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -15.15
+      swap_short: 3.23
+      triple_rollover_day: 3
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 10000.0
+      calculation_mode: 4
+      currency_base: AUD
+      currency_profit: AUD
+      currency_margin: AUD
+      description: Silver vs Australian Dollar, Spot CFD
+      path: Metals CFD\XAGAUD
+    risk:
+      sl_buffer_atr_multiplier: 0.3
+      sl_buffer_min_ticks: 5
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 5000.0
+  DASHUSD:
+    market:
+      mt5_symbol: DASHUSD
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 10.0
+      trade_tick_value_profit: 10.0
+      trade_tick_value_loss: 10.0
+      contract_size: 1000.0
+      trade_contract_size: 1000.0
+      volume_min: 0.01
+      volume_max: 5.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 3
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 5
+      swap_long: -30.0
+      swap_short: -30.0
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2000.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Dash vs US Dollar, Spot CFD
+      path: Crypto I CFD\DASHUSD
+    risk:
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 10
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 1000.0
+  CORN_c:
+    market:
+      mt5_symbol: CORN.c
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.01
+      trade_tick_value_profit: 0.01
+      trade_tick_value_loss: 0.01
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 1.0
+      volume_max: 1000.0
+      volume_step: 1.0
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 96
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -21.15
+      swap_short: 3.87
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Corn vs US Dollar, Spot CFD
+      path: Agriculture\CORN.c
+    risk:
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 8
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 1.0
+  COTTON_c:
+    market:
+      mt5_symbol: COTTON.c
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.01
+      trade_tick_value_profit: 0.01
+      trade_tick_value_loss: 0.01
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 1.0
+      volume_max: 1000.0
+      volume_step: 1.0
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 45
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -4.04
+      swap_short: 0.75
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Cotton vs US Dollar, Spot CFD
+      path: Agriculture\COTTON.c
+    risk:
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 8
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 1.0
+  EU50_cash:
+    market:
+      mt5_symbol: EU50.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.0116063
+      trade_tick_value_profit: 0.0116063
+      trade_tick_value_loss: 0.0116064
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 126
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -99.16
+      swap_short: -12.26
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: EUR
+      currency_profit: EUR
+      currency_margin: EUR
+      description: Euro Stoxx 50 Index, Spot CFD
+      path: Cash II CFD\EU50.cash
+    risk:
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 8
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 1.0
+  FRA40_cash:
+    market:
+      mt5_symbol: FRA40.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.0116063
+      trade_tick_value_profit: 0.0116063
+      trade_tick_value_loss: 0.0116064
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 361
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -133.86
+      swap_short: -16.55
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: EUR
+      currency_profit: EUR
+      currency_margin: EUR
+      description: France 40 Index, Spot CFD
+      path: Cash II CFD\FRA40.cash
+    risk:
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 8
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 1.0
+  US2000_cash:
+    market:
+      mt5_symbol: US2000.cash
+      tick_size: 0.01
+      point: 0.01
+      digits: 2
+      trade_tick_size: 0.01
+      trade_tick_value: 0.01
+      trade_tick_value_profit: 0.01
+      trade_tick_value_loss: 0.01
+      contract_size: 1.0
+      trade_contract_size: 1.0
+      volume_min: 0.01
+      volume_max: 1000.0
+      volume_step: 0.01
+      volume_limit: 0.0
+      trade_stops_level: 0
+      trade_freeze_level: 0
+      spread: 119
+      spread_float: true
+      trade_mode: 4
+      execution_mode: 2
+      filling_mode: 3
+      order_mode: 127
+      expiration_mode: 15
+      swap_mode: 1
+      swap_long: -45.23
+      swap_short: -15.54
+      triple_rollover_day: 5
+      margin_initial: 0.0
+      margin_maintenance: 0.0
+      margin_hedged: 2.0
+      calculation_mode: 4
+      currency_base: USD
+      currency_profit: USD
+      currency_margin: USD
+      description: Russell 2000 Index, Spot CFD
+      path: Cash II CFD\US2000.cash
+    risk:
+      sl_buffer_atr_multiplier: 0.5
+      sl_buffer_min_ticks: 8
+      risk_policy_source: operator_seeded_curated_universe_expansion_2026_06_14_live_verified_market_specs__owner_review_sl_buffers
+      contract_size: 1.0

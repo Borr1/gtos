@@ -1,0 +1,33 @@
+POOLED CLEAN n=97802  gross +0.02718 toll 0.34262 net -0.31545
+
+[post-hoc, descriptive] RISK-DISTANCE DECILES, clean roster
+stop bps range            n    median     gross      toll       net
+   0.42-2.56          9781      1.97  +0.10653   0.72546  -0.61893
+   2.56-3.53          9780      3.04  +0.06013   0.44231  -0.38218
+   3.53-4.58          9780      4.05  +0.03131   0.34534  -0.31403
+   4.58-5.70          9780      5.13  +0.04809   0.29980  -0.25171
+   5.70-7.18          9780      6.39  +0.01339   0.32256  -0.30917
+   7.18-9.10          9780      8.07  -0.00799   0.30400  -0.31199
+   9.10-11.97         9780     10.38  +0.02461   0.29350  -0.26889
+  11.97-16.70         9780     13.95  +0.00992   0.27706  -0.26713
+  16.70-27.45         9780     21.03  +0.00066   0.25501  -0.25435
+  27.45-853.79        9781     43.03  -0.01488   0.16119  -0.17608
+
+[post-hoc, descriptive] structural_distance_extreme by risk-distance quintile
+Q1   0.42-1.76    n  1494 median   1.39 bps  gross +0.24687 toll  1.06093 net -0.81406  g/toll  0.233
+Q2   1.76-2.44    n  1494 median   2.08 bps  gross +0.13160 toll  0.66388 net -0.53228  g/toll  0.198
+Q3   2.44-3.34    n  1494 median   2.83 bps  gross +0.10362 toll  0.53448 net -0.43086  g/toll  0.194
+Q4   3.34-5.55    n  1494 median   4.13 bps  gross +0.03817 toll  0.50299 net -0.46483  g/toll  0.076
+Q5   5.55-61.92   n  1494 median   7.99 bps  gross +0.10586 toll  0.75340 net -0.64754  g/toll  0.141
+
+[post-hoc] price-unit view (bps of price, not R)
+clean roster                   gross +0.0119 bps  toll  3.0159 bps  net -3.0040 bps
+structural_distance_extreme    gross +0.4099 bps  toll  2.6856 bps  net -2.2757 bps
+
+[post-hoc] H6 cohort by window, real vs mirror
+ 202506 n   9486 real +0.02280 mirror -0.00297 signal +0.02577 toll 0.28793
+ 202508 n  15911 real +0.02175 mirror -0.00557 signal +0.02732 toll 0.36345
+ 202509 n  15616 real +0.01286 mirror -0.00644 signal +0.01929 toll 0.37855
+
+sealed emission totals: june 134726 august 168039 september 167707 (close-only) = 470472
+sealed POOL rows (from markers): 15578+22242+25051 = 62871  -> pool is 13.36% of generator output

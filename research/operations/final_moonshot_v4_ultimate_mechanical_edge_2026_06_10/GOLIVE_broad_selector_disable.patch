@@ -1,0 +1,54 @@
+From: GTOS go-live prep (Wave-7) — STAGED, NOT AUTO-APPLIED
+Subject: [STAGED PATCH] Disable the proven-losing broad V4 selector before go-live
+
+WHY
+  The native broad Selector V4 is the live loser confirmed by the hard halt:
+  -0.25R/fill, -113.4R over 454 fills, negative every month. Go-live is a NARROW
+  REPLACEMENT (the clean_3 11-sleeve book through ultimate_book_live_package.py),
+  NOT an augmentation of the existing broad selection. This patch turns the broad
+  selector OFF at the config triple-gate so the incumbent loser cannot place orders.
+
+SCOPE
+  config/agent_config.yaml only. Sets the broad V4 selector triple-gate flags to
+  false (enabled / apply_to_execution / live_activation_allowed). The hard-halt flag
+  files remain the physical deployment control regardless of this change.
+
+HOW TO APPLY (owner, deliberately, when ready — do NOT apply blindly)
+  ROOT=/Users/borr/Documents/gtos/repo/ai-trading-agent
+  cd "$ROOT"
+  git apply --check research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_broad_selector_disable.patch   # dry-run, must report clean
+  git apply         research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_broad_selector_disable.patch   # apply
+  # then re-run the pre-flight (broad-selector check should flip WARN -> PASS):
+  /opt/homebrew/bin/python3 research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_preflight_verify.py --require-broad-selector-off
+
+ROLLBACK
+  git apply -R research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_broad_selector_disable.patch
+  # (or: git checkout -- config/agent_config.yaml)
+
+NOTE ON LINE NUMBERS
+  The @@ hunk header below targets lines 737-743 as of HEAD on 2026-06-15. If
+  config/agent_config.yaml has shifted, run `git apply --check` first; if it fails,
+  the same edit is trivially applied by hand: set selector_v4_enabled,
+  selector_v4_apply_to_execution, and selector_v4_live_activation_allowed to false.
+
+--- a/config/agent_config.yaml
++++ b/config/agent_config.yaml
+@@ -737,9 +737,15 @@
+   # Selector V4 is the active broker-net admission authority after Wave3.5.
+   # Runtime halt files remain the physical deployment control; these flags make
+   # V4 the local final-say authority when the runtime path is exercised.
+-  selector_v4_enabled: true
+-  selector_v4_apply_to_execution: true
+-  selector_v4_live_activation_allowed: true
++  # GO-LIVE (Wave-7): the BROAD V4 selector is the proven-losing incumbent
++  # (-0.25R/fill, -113.4R over 454 fills, negative every month per the hard-halt
++  # forensics). Go-live is a NARROW REPLACEMENT via ultimate_book_live_package.py
++  # (clean_3 11-sleeve book), NOT an augmentation. Disable the broad selector at
++  # the triple-gate so the incumbent loser cannot place orders. The halt flag
++  # files remain the physical deployment control.
++  selector_v4_enabled: false
++  selector_v4_apply_to_execution: false
++  selector_v4_live_activation_allowed: false
+   selector_v4_min_broker_net_trade_ev_r: 0.10
+   selector_v4_min_no_trade_ev_r: 0.02
+   selector_v4_min_confluence_score: 0.15

@@ -1,0 +1,367 @@
+--- a/src/components/ultimate_book/execution_packets.py  (HOST today)
++++ b/src/components/ultimate_book/execution_packets.py  (after this carry)
+@@ -24,8 +24,51 @@
+ )
+ 
+ # ---- config-default constants (mirror the FTMO-merged live config; verified [RAN]) -------------
+ PROFILE_NAMESPACE = "operator_profile"          # operator_profile.yaml
++
++# ---- THE TIME-STOP UNIT, AND THE ONE WAY TO WRITE IT --------------------------------------------
++# `time_stop_bars` below is **M15 bars that PRINTED** -- trading bars, so nights, weekends and
++# holidays do not count -- for EVERY sleeve, whatever grid the sleeve decides on. The engine that
++# consumes it counts M15 stamps and compares the count to this integer:
++#     src/components/execution.py:8953-8958   ExecutionEngine._trading_m15_bars_since
++#     src/components/execution.py:9010-9014   check_time_stop_and_close
++# So an H4 or D1 sleeve MUST declare its horizon pre-scaled, and hand-scaling is exactly where it
++# has already gone wrong once: the fourteen `mx_*` D1 sleeves carried **96**, which is
++# `M15_BARS_PER["D1"]` -- the conversion RATIO written into the field that wants the converted
++# VALUE. Their live time stop was therefore 1 D1 bar against the 80-D1-bar research horizon every
++# published economic number for them was measured under: 80x tight, truncating 72-90 % of the
++# walked trades (Session AQ, B1400-B1404; measured per symbol in
++# `docs/audits/fable5-vision-audit-20260725/phase7/receipts/AD_TIMESTOP_UNITS_V1.json`).
++#
++# Write `time_stop_m15(n_native_bars, "<grid>")`, never a hand-multiplied literal. The conversion
++# is CALENDAR, because a spec is per sleeve while the printed-bar ratio is per symbol (96 on a
++# 24/7 symbol, 92 on a session index, 84 on UKOIL). On a session symbol the result therefore runs
++# ~4 % PAST the native horizon rather than short of it -- looser than research, never tighter,
++# which is the safe direction for a backstop.
++M15_BARS_PER: dict[str, int] = {"M15": 1, "H4": 16, "D1": 96}
++
++
++def time_stop_m15(n_native_bars: int, grid: str) -> int:
++    """`n_native_bars` of `grid` expressed in the M15 printed bars the engine counts."""
++    try:
++        per = M15_BARS_PER[grid]
++    except KeyError:  # pragma: no cover - a typo'd grid must not silently under-scale
++        raise ValueError(
++            f"unknown decision grid {grid!r}; known: {sorted(M15_BARS_PER)}. A time stop "
++            f"declared on an unknown grid would be charged in the wrong unit, which is the "
++            f"defect this helper exists to make unwriteable."
++        ) from None
++    n = int(n_native_bars)
++    if n < 1:
++        raise ValueError(f"n_native_bars must be >= 1, got {n_native_bars!r}")
++    return n * per
++
++
++#: The horizon every sleeve's published economics are measured under: `maxbars=80` bars of the
++#: sleeve's own grid (`AA_ESTATE_TRADES.json.gz` -> `maxbars`, and `ExitPolicy.maxbars`'s default).
++#: A sleeve whose time stop is meant to be "the research horizon" declares exactly this.
++RESEARCH_HORIZON_NATIVE_BARS = 80
+ 
+ # ---- PER-SLEEVE EXIT-PROFILE REGISTRY -----------------------------------------------------------
+ # Each W7 book sleeve carries its OWN validated native exit policy + geometry instead of a single
+ # forced momentum_exhaustion 2R. `final_from_intent=True` => the broker take-profit R is derived from
+@@ -52,9 +95,11 @@
+     # Runtime-executable candidate-book v2: fixed-target, capless trailing, and targetless time-stop
+     # candidates are represented by their native exit semantics. `broker_take_profit_mode="none"` means the
+     # broker request carries no TP; the book-owned runtime manages trail/time-stop from ticket-bound state.
+     "vol_compression":   dict(policy="time_stop", final_from_intent=True, final_target_r=3.0,
+-                              time_stop_bars=7680),  # D1 research horizon: 80 D1 bars ~= 7680 M15 bars
++                              # D1 research horizon: 80 D1 bars. Was the literal 7680; the helper
++                              # is the same number and makes the unit unmistakable.
++                              time_stop_bars=time_stop_m15(RESEARCH_HORIZON_NATIVE_BARS, "D1")),
+     "asian_fade":        dict(policy="trailing_runner", trigger_r=0.5, trail_gap_r=0.5,
+                               final_target_r=None, broker_take_profit_mode="none", time_stop_bars=48),
+     "ny_crypto_momentum": dict(policy="time_stop", final_target_r=None,
+                                broker_take_profit_mode="none", time_stop_bars=20),
+@@ -87,26 +132,245 @@
+     "mx_us100_cash_d1_atr_mean_reversion",
+     "mx_us30_cash_d1_volume_surge_reversal",
+     "mx_us500_cash_d1_atr_mean_reversion",
+ )
++#: REPAIRED 2026-07-30 (Session AQ, B1404). This block carried `time_stop_bars=96` -- one D1 bar,
++#: because 96 is `M15_BARS_PER["D1"]` and not a horizon. Every published economic number for these
++#: sleeves is measured at `maxbars=80` D1 bars with no time stop, so the live book was running an
++#: exit contract 80x tighter than the one the evidence describes and truncating 72-90 % of the
++#: trades. `vol_compression`, four lines above, had the same D1 horizon written correctly all
++#: along; the two now use the same expression so they cannot drift apart again.
++#: Nothing armed is in this cohort -- the three live sleeves are H4 -- and the repair moves no
++#: other sleeve's integer. Pinned by `tests/ultimate_book/test_time_stop_units.py`.
+ SLEEVE_EXIT_PROFILES.update({
+-    sleeve: dict(policy="time_stop", final_from_intent=True, final_target_r=2.0, time_stop_bars=96)
++    sleeve: dict(policy="time_stop", final_from_intent=True, final_target_r=2.0,
++                 time_stop_bars=time_stop_m15(RESEARCH_HORIZON_NATIVE_BARS, "D1"))
+     for sleeve in MARKET_EXPANSION_TARGET2_SLEEVES
+ })
+ DEFAULT_EXIT_PROFILE: dict = dict(policy="time_stop", final_target_r=2.0, time_stop_bars=1280)
+ 
+ 
+-def native_policy_instrumentation(sleeve) -> dict:
++# ---- THE FRONTIER EXIT CONTRACTS, DEFAULT-OFF AND SELECTABLE PER SLEEVE -------------------------
++# Session AU (B1550-B1599). Two exit cells in this estate carry a measured economic verdict that the
++# live engine could not run, so their published economics described a contract no book could execute
++# -- the defect class Session AQ found on the `mx_*` time stop, one layer up. These wire them.
++#
++#   `mx_btcusd_d1_donchian_20_breakout` @ target_5R   the estate's ONE standing admission
++#       (`phase11/MX_BTCUSD_CHALLENGE_DOSSIER.md`; p 0.0011, admits at two of three cost bands on
++#       the ratified RECORDED population). Its evidence is the 5R exit; the spec runs 2R.
++#   `sub_xvol_pullback` @ target_4R                   AK's frontier winner, +1.157 R/day against
++#       as-walked (`phase8/receipts/AK_*`; AD's estate sweep never covered this sleeve's exits).
++#       This sleeve is ARMED and trading real money on both accounts at 3R.
++#
++# WHY AN OVERRIDE AND NOT AN EDIT TO THE DICT ABOVE. `sub_xvol_pullback` is live on two funded
++# accounts. Editing its `final_target_r` in place would change armed-money behaviour the moment the
++# VPS carried the code -- no ceremony, no owner decision, no flat book. So the frontier value lives
++# in a separate, EMPTY-BY-DEFAULT selection: `resolve_exit_profile(sleeve)` with no selection returns
++# the committed profile object for every sleeve, asserted byte-identical by
++# `tests/ultimate_book/test_frontier_exit_contracts.py`.
++#
++# WHY PER SLEEVE AND NOT ONE BOOLEAN. The two sleeves are in opposite live states. `mx_btcusd` is not
++# in either account's `--tags`, so wiring its 5R exit is inert; `sub_xvol_pullback` is armed, so
++# wiring its 4R exit is a live risk change. One boolean would force the ceremony to change armed
++# money in order to make the admission's own contract runnable. The selection is therefore a set of
++# sleeve names, parsed by `parse_frontier_exits`, which REFUSES an empty string and REFUSES an
++# unknown name -- `--tags ""` is falsy and silently means "all BUILT sleeves" (B359), and an all-typo
++# `--tags` stands the book down every tick in silence (`registry.py:144`). Both fail-open shapes are
++# closed here rather than inherited.
++#
++# WHAT EACH OVERRIDE IS, AND THE MEASUREMENT THAT SAYS IT IS THE RESEARCH CELL. Both research cells
++# are `ExitPolicy(target_dist=k*stop, trail=None, partial=None, maxbars=80 own bars, time_stop=None)`
++# (`phase7/receipts/ad_exit_sweep.py:534-539`, `target_mode="fixed_r"`). The live contract they
++# resolve to is: broker SL at -1R, broker TP at k*R, no trail, no partial, and a time stop at the
++# sleeve's own 80-bar research horizon -- 7680 M15 bars for the D1 sleeve, 1280 for the H4 one, both
++# of which fire on the same bar `maxbars` does, at the same close. So the wiring is not an analogue
++# of the cell, it IS the cell, and `phase12/receipts/au_exit_contract_wiring.py` proves it by
++# replaying the live-resolved profile against AD's own variant over AA's stored intents and requiring
++# R-identity trade by trade.
++FRONTIER_EXIT_OVERRIDES: dict[str, dict] = {
++    "mx_btcusd_d1_donchian_20_breakout": dict(
++        final_target_r=5.0,
++        # The spec sets `final_from_intent=True`, so the broker TP tracks the GENERATOR's ratio
++        # (`market_expansion_d1.py:225 target_dist=TARGET_R*risk`, measured at exactly 2.0 on all
++        # 318 walked trades). A fixed 5R must therefore turn that off, or the override would be
++        # silently ignored on every intent that carries a target.
++        final_from_intent=False,
++        frontier_cell="target_5R",
++        frontier_evidence="phase11/MX_BTCUSD_CHALLENGE_DOSSIER.md",
++    ),
++    "sub_xvol_pullback": dict(
++        final_target_r=4.0,
++        final_from_intent=False,
++        frontier_cell="target_4R",
++        frontier_evidence="phase8/receipts/AK_EXIT_FRONTIER_V2.json",
++    ),
++}
++
++# ---- THE DELIBERATE SHORT HORIZONS (Session AU AU-3, B1570) --------------------------------------
++# AQ repaired the `mx_*` D1 cohort's `time_stop_bars` from 96 to 7680 -- 96 was `M15_BARS_PER["D1"]`,
++# the conversion RATIO written into the field that wants the converted value -- and then measured that
++# on FIVE of the ten generating sleeves the accidental one-bar stop was BETTER than the 80-bar research
++# horizon. Its own prescription: *"for those five the follow-up is to declare a short horizon
++# DELIBERATELY on the evidence rather than inherit one from a bug."*
++#
++# `phase12/receipts/au_d1_horizons.py` re-gated the horizon ladder {1,2,3,5,10,20,40,80} own D1 bars at
++# the RATIFIED rule (RECORDED, `B_balanced` alpha 0.10, band column alongside a flat control, family V5)
++# -- AD's existing grid could not answer it, being at the flat band on ALL_ERAS where `mx_btcusd`'s
++# delta reads 1.9x smaller. Six sleeves cleared all four pre-declared prescription clauses (best cell
++# shorter than 80; better at EVERY cost band; positive R/day; majority-positive chronological folds).
++#
++# READ THE NUMBER AND THEN READ THE NEXT PARAGRAPH. For four of them the declared value is
++# `time_stop_m15(1, "D1") == 96` -- the same integer AQ removed. That is not a revert. AQ's repair was
++# a UNIT repair and it was right: a field whose unit is M15 printed bars cannot hold the M15-per-D1
++# ratio and mean anything. What changes here is that 96 stops being an accident that nobody could
++# defend and becomes `time_stop_m15(1, "D1")`, with a gated measurement behind it, in a map whose
++# default is OFF.
++#
++# AND WHAT THESE ARE NOT. Every one of the eleven cells in the ladder REJECTS at the ratified rule, and
++# the min-p over the ladder is what the global null returns 22-92 % of the time (`p_min_over_grid` vs
++# `expected_min_p_under_global_null` in the artifact). So these are CONTRACT DECLARATIONS -- they make
++# the spec describe the evidence -- and NOT admissions, NOT edges, and NOT a recommendation to arm.
++# At h=1 the horizon is also the dominant exit (77-90 % of trades), so the sleeve is a one-day-hold
++# contract rather than a geometry that resolves; that is a property to know before arming, not a defect.
++# Arming any of them is Borhen's, and nothing in this cohort is armed today.
++FRONTIER_EXIT_OVERRIDES.update({
++    "mx_us100_cash_d1_atr_mean_reversion": dict(
++        time_stop_bars=time_stop_m15(1, "D1"),
++        frontier_cell="time_stop_1_d1", frontier_evidence="phase12/receipts/AU_D1_HORIZONS_V1.json"),
++    "mx_us500_cash_d1_atr_mean_reversion": dict(
++        time_stop_bars=time_stop_m15(1, "D1"),
++        frontier_cell="time_stop_1_d1", frontier_evidence="phase12/receipts/AU_D1_HORIZONS_V1.json"),
++    "mx_ger40_cash_d1_volume_surge_reversal": dict(
++        time_stop_bars=time_stop_m15(1, "D1"),
++        frontier_cell="time_stop_1_d1", frontier_evidence="phase12/receipts/AU_D1_HORIZONS_V1.json"),
++    "mx_us30_cash_d1_volume_surge_reversal": dict(
++        time_stop_bars=time_stop_m15(1, "D1"),
++        frontier_cell="time_stop_1_d1", frontier_evidence="phase12/receipts/AU_D1_HORIZONS_V1.json"),
++    "mx_ethusd_d1_donchian_20_breakout": dict(
++        time_stop_bars=time_stop_m15(10, "D1"),
++        frontier_cell="time_stop_10_d1", frontier_evidence="phase12/receipts/AU_D1_HORIZONS_V1.json"),
++    # The CONTROL sleeve of the ladder, and it is here because the rule prescribed it rather than
++    # because the cohort did. `vol_compression`'s 80-bar horizon was declared CORRECTLY all along
++    # (it is the sleeve whose right answer proved 96 was wrong), and its ladder is monotone RISING to
++    # h=20 with h=1 its worst cell -- the opposite shape to the mis-scaled cohort, which is what makes
++    # it a working control. Prescribing 20 for it is an optimisation on a REJECT cell, not a repair.
++    "vol_compression": dict(
++        time_stop_bars=time_stop_m15(20, "D1"),
++        frontier_cell="time_stop_20_d1", frontier_evidence="phase12/receipts/AU_D1_HORIZONS_V1.json"),
++})
++
++#: The declared vocabulary of frontier cells. A cell name outside this set is a typo or an undeclared
++#: kind of override, and `tests/ultimate_book/test_frontier_exit_contracts.py` refuses it.
++FRONTIER_CELL_KINDS: tuple[str, ...] = ("target_", "time_stop_")
++
++#: The keys `FRONTIER_EXIT_OVERRIDES` may carry that are PROVENANCE rather than contract. They ride
++#: in the placement's `source_event_details` so a ledger row says which contract placed it, and they
++#: are stripped before the profile reaches any geometry builder.
++_FRONTIER_PROVENANCE_KEYS: tuple[str, ...] = ("frontier_cell", "frontier_evidence")
++
++
++class FrontierExitSelectionError(ValueError):
++    """A frontier-exit selection that cannot be honoured. Raised at launch, never at a tick.
++
++    Fail-closed deliberately: the two shapes this forbids are the two the estate has already
++    measured on `--tags`. An empty selection that means "all" is fail-OPEN (B359); an unknown sleeve
++    name that is silently dropped leaves the operator believing a contract is armed when it is not.
++    """
++
++
++def parse_frontier_exits(raw) -> tuple[str, ...]:
++    """`"a,b"` / `("a",)` / None -> the validated sleeve tuple. Raises on empty or unknown."""
++    if raw is None:
++        return ()
++    items = [s.strip() for s in raw.split(",")] if isinstance(raw, str) else [str(s).strip() for s in raw]
++    named = [s for s in items if s]
++    if not named:
++        raise FrontierExitSelectionError(
++            "--frontier-exits was given but names no sleeve. An empty selection is refused rather "
++            "than read as 'all': the same shape on --tags means 'every BUILT sleeve' and is the "
++            f"fail-open the book already carries. Known frontier sleeves: "
++            f"{sorted(FRONTIER_EXIT_OVERRIDES)}"
++        )
++    unknown = [s for s in named if s not in FRONTIER_EXIT_OVERRIDES]
++    if unknown:
++        raise FrontierExitSelectionError(
++            f"no frontier exit contract is wired for {unknown!r}. A typo must not resolve to "
++            f"'no override' in silence -- that is an operator believing a contract is armed when "
++            f"the book is running the committed one. Wired: {sorted(FRONTIER_EXIT_OVERRIDES)}"
++        )
++    return tuple(dict.fromkeys(named))
++
++
++def describe_frontier_contract(sleeve) -> str:
++    """One human clause naming WHAT a wired frontier override changes, for the launch banner.
++
++    B1852. `run_book.py`'s banner rendered `float(_o["final_target_r"])` unconditionally, and SIX of
++    the eight wired sleeves are `time_stop_*` cells that carry no such key -- so
++    `--frontier-exits vol_compression` (or any of the five `mx_*` short horizons) raised
++    `KeyError('final_target_r')` at LAUNCH, after `parse_frontier_exits` had already accepted the
++    name. That is the fail shape the whole module exists to avoid, one layer further out: the worker
++    dies before `BookLauncher`, the supervisor restarts a missing book forever, and
++    `manage_open_positions` never runs on either namespace. The two cells that DO carry the key are
++    `mx_btcusd` and `sub_xvol_pullback`, which is why it survived AU's 43 tests.
++
++    Rendering lives here rather than in `run_book.py` so it is testable without a broker and so a
++    NEW kind of override cannot reintroduce the crash silently: an override carrying neither key
++    renders `"contract override"` and `test_frontier_exit_contracts.py` asserts every wired sleeve
++    renders a non-empty clause naming at least one contract key.
++    """
++    over = FRONTIER_EXIT_OVERRIDES.get(sleeve)
++    if not over:
++        return "no wired override"
++    parts = []
++    tgt = over.get("final_target_r")
++    if tgt is not None:
++        parts.append(f"broker TP {float(tgt):.1f}R")
++    bars = over.get("time_stop_bars")
++    if bars is not None:
++        parts.append(f"time stop {int(bars)} printed M15 bars")
++    return ", ".join(parts) if parts else "contract override"
++
++
++def resolve_exit_profile(sleeve, *, frontier_exits=()) -> dict:
++    """The exit profile the engine runs for `sleeve`, under the frontier selection `frontier_exits`.
++
++    With an empty selection this returns the committed `SLEEVE_EXIT_PROFILES` object itself (not a
++    copy), so the default path cannot diverge from the dict by construction. With `sleeve` selected
++    it returns a COPY carrying the frontier override.
++    """
++    prof = SLEEVE_EXIT_PROFILES.get(sleeve, DEFAULT_EXIT_PROFILE)
++    if not frontier_exits or sleeve not in frontier_exits:
++        return prof
++    over = FRONTIER_EXIT_OVERRIDES.get(sleeve)
++    if over is None:                      # unreachable via parse_frontier_exits; belt and braces
++        return prof
++    return {**prof, **over}
++
++
++def frontier_provenance(prof) -> dict:
++    """The provenance keys a frontier-overridden profile carries, `{}` for a committed one."""
++    return {k: prof[k] for k in _FRONTIER_PROVENANCE_KEYS if isinstance(prof, Mapping) and k in prof}
++
++
++def native_policy_instrumentation(sleeve, *, frontier_exits=()) -> dict:
+     """The per-sleeve NATIVE exit-policy fields (the gtos_vnext_dynamic_* subset of a book trade_params),
+     derived from SLEEVE_EXIT_PROFILES. Used to rehydrate an ADOPTED position whose on-disk trade record is
+     missing (adopt-missing-record): the sleeve identity (the W7:{sleeve} broker comment) is enough to
+     restore the validated time-stop / scale-out / target lifecycle, far better than the generic floor.
+ 
+     NOTE: a `final_from_intent` sleeve (metals) cannot recompute final_target_r without the original intent,
+     so it falls back to the profile/DEFAULT final_target_r -- harmless because the BROKER TP was already set
+     at placement and bounds the real target; the reconstructable trigger_r / partial_close_ratio / time-stop
+-    (the parts the engine actually re-drives) are restored exactly."""
+-    prof = SLEEVE_EXIT_PROFILES.get(sleeve, DEFAULT_EXIT_PROFILE)
++    (the parts the engine actually re-drives) are restored exactly.
++
++    `frontier_exits` MUST be the same selection the placement ran under, and the caller cannot know
++    that from this path -- by definition there is no trade record to read it off. So a position placed
++    at the committed 3R and adopted-without-record while the 4R contract is selected is rehydrated at
++    4R, and with `live_broker_authority` true that MOVES its broker TP. Narrow (adopt-missing-record
++    only; every position with a record is rehydrated from the record's own placement values) and
++    named rather than silent: the operating rule is FLIP THE SELECTION AT A FLAT BOOK, which is the
++    same rule arming a `--tags` change already needs (B365)."""
++    prof = resolve_exit_profile(sleeve, frontier_exits=frontier_exits)
+     policy = str(prof["policy"])
+     no_broker_tp = str(prof.get("broker_take_profit_mode", "final_target")).strip().lower() == "none"
+     raw_final_target_r = prof.get("final_target_r", DEFAULT_EXIT_PROFILE["final_target_r"])
+     final_target_r = 0.0 if no_broker_tp and raw_final_target_r in (None, "") else float(raw_final_target_r)
+@@ -165,9 +429,10 @@
+         facts, config=config, now_utc=now_utc
+     )
+ 
+ 
+-def build_book_trade_params(sized_unit, intent, geometry, account_state, *, profile_namespace) -> dict:
++def build_book_trade_params(sized_unit, intent, geometry, account_state, *, profile_namespace,
++                            frontier_exits=()) -> dict:
+     """Assemble the FULL V4 trade_params for one sized W7 book unit (per-sleeve native exit policy).
+ 
+     sized_unit : SizedUnit  (risk_pct_per_trade is a FRACTION -> *100 for percent)
+     intent     : TradeIntent(symbol, direction:int +1/-1, decision_day, stop_dist:PRICE, sleeve,
+@@ -176,17 +441,20 @@
+     geometry   : Mapping/obj resolved at decision tick; must provide entry_price; may provide
+                  stop_loss / risk_distance (else derived from intent). take_profit_1 is recomputed
+                  here from the sleeve's native final_target_r so the broker TP is self-consistent.
+     account_state : live broker reads for the prop-firm headroom snapshot (see above).
++    frontier_exits : the validated frontier-exit sleeve selection (see FRONTIER_EXIT_OVERRIDES).
++                 Empty by default, in which case every key of the returned dict is byte-identical to
++                 the pre-B1550 output -- asserted in tests/ultimate_book/test_frontier_exit_contracts.py.
+     """
+     symbol = str(intent.symbol)
+     direction = "LONG" if int(intent.direction) > 0 else "SHORT"
+     sign = 1.0 if direction == "LONG" else -1.0
+     entry_price = float(_g(geometry, "entry_price"))
+     risk_distance = float(_g(geometry, "risk_distance", intent.stop_dist))
+ 
+     # ---- per-sleeve native exit profile (replaces the forced momentum_exhaustion 2R) ----
+-    prof = SLEEVE_EXIT_PROFILES.get(getattr(intent, "sleeve", None), DEFAULT_EXIT_PROFILE)
++    prof = resolve_exit_profile(getattr(intent, "sleeve", None), frontier_exits=frontier_exits)
+     policy = str(prof["policy"])
+     execution_policy_id = f"emv4_{policy}_v1"
+     native_target = getattr(intent, "target_dist", None)
+     native_stop = getattr(intent, "stop_dist", None)
+@@ -226,8 +494,15 @@
+         "symbol": symbol, "direction": direction, "decision_day": decision_day,
+         "confidence": getattr(sized_unit, "confidence", None),
+         "n_trades": getattr(sized_unit, "n_trades", None),
+     }
++    # Provenance for a frontier-overridden placement, so a ledger row says WHICH exit contract placed
++    # it rather than leaving a reader to infer it from a launcher argument nobody recorded. Added ONLY
++    # when an override applied: `source_event_details` is hashed, so an unconditional key would move
++    # `gtos_vnext_source_event_hash` on every default placement and break byte-identity.
++    _frontier = frontier_provenance(prof)
++    if _frontier:
++        source_event_details["exit_contract"] = {"kind": "frontier_override", **_frontier}
+     source_event_hash = _sha(source_event_details)
+     selector_proof_hash = _sha([candidate_id, source_event_hash, cell_id])
+ 
+     headroom = build_prop_firm_headroom_snapshot(account_state, account_namespace=profile_namespace)

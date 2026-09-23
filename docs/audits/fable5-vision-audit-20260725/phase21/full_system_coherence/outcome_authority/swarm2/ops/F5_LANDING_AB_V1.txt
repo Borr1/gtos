@@ -1,0 +1,85 @@
+F5 LANDING — FULL-SUITE A/B AGAINST THE PARENT COMMIT
+=====================================================
+Method: two clean `git worktree` checkouts, `scripts/pytest_failset.py capture` on each,
+`pytest_failset.py diff` between them. `--continue-on-collection-errors` is load-bearing:
+without it the suite aborts at collection, executes ZERO tests, and still exits like a
+completed run.
+
+ATTEMPT 1 — METHODOLOGICALLY FLAWED, RECORDED BECAUSE ITS FAILURE MODE IS INSTRUCTIVE
+------------------------------------------------------------------------------------
+base : clean checkout of 3da95f915
+after: checkout of 3da95f915 with the changed files COPIED IN (dirty worktree)
+
+  before 3da95f915: 35 bad
+  after  3da95f915: 40 bad
+  unchanged 35   fixed 0   REGRESSED 5
+
+All five were run down individually and NONE is a regression of this change:
+
+  tests/phase21/test_wave21_verification.py::test_matching_fresh_receipt_establishes_current_parity
+      ARTIFACT OF THE STAGING METHOD. The test builds a receipt from the WORKING-TREE
+      launcher and verifies it against the launcher AT THE PRESERVED COMMIT, so any dirty
+      worktree fails it — including a file-copy staging. Verifier's own reason:
+      `host_launcher_vs_preservation_mismatch` on `launcher_sha256`. On a CLEAN checkout of
+      the landed commit the whole file passes 22/22.
+
+  tests/test_replay_differential_harness.py::test_a_sealed_arm_compared_with_itself_is_equivalent
+  tests/test_replay_differential_harness.py::test_two_different_sealed_arms_are_reported_as_differing
+  tests/test_replay_differential_harness.py::test_the_cold_shard_roles_are_readable_on_a_sealed_arm
+      ENVIRONMENT. They read the parked campaign's cold-evidence shards, which a concurrent
+      "Storage reclamation 2026-08-12: 27.0 -> 86.6 GB free" commit moved DURING this
+      session — between the base capture and the after capture. Verified by running the file
+      on BOTH clean checkouts afterwards: identical 3 failures on each
+      ('INCOMPLETE' == 'EQUIVALENT'; KeyError 'left_row_count'; 'absent' == 'raw').
+
+  tests/test_broad_origin_emission_repairs.py::test_armed_sleeves_matches_what_the_committed_launcher_actually_arms
+      WRONG BASELINE. A concurrent session committed 0e425e895 at 06:24:32 — 81 seconds
+      before this change's first commit — and that commit already calls
+      `_armed_sleeves(surface=None)`, a keyword that does not exist in `armed_set.py` at
+      0e425e895. It was written against this session's UNCOMMITTED working tree. So the
+      parent commit is broken on its own and this change is what completes it: in a correct
+      A/B this test moves from failing to passing.
+
+ATTEMPT 2 — THE CORRECT PAIR
+----------------------------
+base : 0e425e895  (this change's true parent)
+after: 56721dd5c  (this change's two commits)
+Both are real commits, both checked out clean, so neither staging artifact above can recur.
+
+  before 0e425e895: 34 bad   (13,945 passed / 127 skipped / 31 xfailed / 1 errored)
+  after  56721dd5c: 33 bad   (14,024 passed / 127 skipped / 31 xfailed / 0 errored)
+
+  unchanged: 33    fixed: 1    REGRESSED: 0        <-- NO REGRESSIONS
+
+  FIXED:
+    + tests/test_broad_origin_emission_repairs.py
+
+  Exactly the shape attempt 1 predicted once the baseline was corrected: the parent commit
+  0e425e895 is broken on its own (it calls a keyword argument this change introduces), and
+  this change is what completes it. +79 net new passing tests, one fewer collection error.
+  None of the five attempt-1 "regressions" appears — each was a staging or environment
+  artifact, as diagnosed above.
+
+TARGETED EVIDENCE, WHICH DOES NOT DEPEND ON THE FULL-SUITE RUN
+--------------------------------------------------------------
+  tests/ultimate_book/  ............ 1345 passed, 3 skipped, 2 xfailed, 0 failed
+  tests/safety/ .................... all passed (incl. both ceremony blockers)
+  tests/ultimate_book/test_f5_minimal_size.py + test_f5_status.py + tests/safety/
+                                     208 passed
+  tests/test_armed_set_mc.py ....... 2 failed — the SAME two as the baseline set, unchanged
+  tests/test_broad_origin_emission_repairs.py .. 19 passed on the landed tree
+
+ATTEMPT 3 — THE TRAIL-CAPTURE COMMIT, WHICH ATTEMPT 2's PAIR DOES NOT COVER
+--------------------------------------------------------------------------
+Attempt 2 compares 0e425e895 -> 56721dd5c, i.e. the first two commits. `ac8438f2b`
+(`f5_stop_move`) landed afterwards and adds a call site on the ARMED book's per-tick
+management path, so it earns its own pair rather than an argument:
+
+base : 56721dd5c
+after: ac8438f2b
+  RESULT: see F5_LANDING_AB_V1_TRAIL.txt in this directory.
+
+Its targeted coverage is already measured and green: `tests/ultimate_book/` (1,345 tests,
+which exercise `book_owner` management heavily) plus `tests/safety/` = 1,514 passed, 3
+skipped, 2 xfailed, 0 failed on the landed tree. The method returns on
+`self._f5_capture is None` before touching the trade, which is the armed book's path.

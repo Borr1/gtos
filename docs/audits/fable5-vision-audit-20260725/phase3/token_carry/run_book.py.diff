@@ -1,0 +1,60 @@
+--- a/run_book.py  (host-local)
++++ b/run_book.py  (phase3/safety-spine)
+@@ -21,7 +21,28 @@
+ import yaml
+ from dotenv import load_dotenv
+ 
++# The activation directory is machine state, not repository state, and `.env`
++# lives in the repository. `load_dotenv(override=True)` would let one untracked
++# line relocate the authorization root — and the token layer will happily mint a
++# fresh signing key wherever it is pointed, so relocation is not a broken
++# config, it is a self-issued authorization. Snapshot the value the MACHINE set
++# before `.env` is read, and put it back afterwards. See B103 and
++# `activation_token.token_dir_is_inside_repo`.
++_ACTIVATION_DIR_ENV = "GTOS_ACTIVATION_TOKEN_DIR"
++_activation_dir_from_machine = os.environ.get(_ACTIVATION_DIR_ENV)
++
+ load_dotenv(override=True)
++
++if os.environ.get(_ACTIVATION_DIR_ENV) != _activation_dir_from_machine:
++    _dotenv_value = os.environ.get(_ACTIVATION_DIR_ENV)
++    if _activation_dir_from_machine is None:
++        os.environ.pop(_ACTIVATION_DIR_ENV, None)
++    else:
++        os.environ[_ACTIVATION_DIR_ENV] = _activation_dir_from_machine
++    print(f"REFUSING the .env override of {_ACTIVATION_DIR_ENV} "
++          f"({_dotenv_value!r}); using the machine value "
++          f"{_activation_dir_from_machine!r}. The activation directory is machine state.",
++          file=sys.stderr, flush=True)
+ 
+ from src.security import install_runtime_monitoring
+ install_runtime_monitoring()
+@@ -29,6 +50,7 @@
+ from src.utils.config import apply_profile_overrides
+ from src.utils.broker_profile import assert_mt5_account_matches_profile
+ from src.mt5.mt5_real import RealMT5
++from src.safety.activation_token import config_digest_for, token_dir
+ from src.components.ultimate_book.book_owner import UltimateBookOwner
+ from src.components.ultimate_book.bridge import config_bool_value
+ from src.components.ultimate_book.symbol_map import build_broker_symbol_resolver
+@@ -229,6 +251,20 @@
+         except Exception:
+             pass
+         return 5
++    # ACTIVATION CONTEXT. The token at the order_send choke point may bind a
++    # namespace and a config digest; a binding this process cannot answer is a
++    # DENIAL, not a pass. So declare both here, after identity is proven and
++    # before the first cycle. Nothing is enabled by this call — it only lets a
++    # token that names this namespace/config recognise this process.
++    try:
++        _cfg_digest = config_digest_for(args.config, args.profile)
++        mt5.set_activation_context(namespace=args.namespace, config_digest_sha256=_cfg_digest)
++        logging.info("activation context declared (namespace=%s, config_digest=%s, token_dir=%s)",
++                     args.namespace, (_cfg_digest or "unavailable")[:12], token_dir())
++    except Exception:
++        logging.exception("activation context could not be declared — exposure-increasing orders "
++                          "will be refused until this is fixed.")
++
+     if _idchk.get("checked"):
+         logging.info("account identity verified (namespace=%s): fields=%s",
+                      args.namespace, _idchk.get("fields_checked"))

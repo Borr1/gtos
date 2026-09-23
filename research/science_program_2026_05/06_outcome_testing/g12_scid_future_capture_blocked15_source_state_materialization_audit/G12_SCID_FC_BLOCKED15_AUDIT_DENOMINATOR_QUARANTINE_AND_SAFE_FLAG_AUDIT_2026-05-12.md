@@ -1,0 +1,40 @@
+# Denominator Quarantine And Safe Flag Audit
+
+```json
+{
+  "accepted_40_denominator_unchanged": true,
+  "accepted_denominator_count": 40,
+  "artifact_family": "denominator_quarantine_and_safe_flag_audit",
+  "changes_trading_risk_safety_prompt_decision_behavior": false,
+  "credentials_touched": false,
+  "evidence_class": "G12_SCID_FUTURE_CAPTURE_BLOCKED15_SOURCE_STATE_AUDIT_ONLY",
+  "failures": [],
+  "forbidden_text_scan_passed": true,
+  "generated_at_utc": "2026-05-12T18:13:11Z",
+  "live_effect": false,
+  "ok": true,
+  "opens_ai_api": false,
+  "opens_broker_account_order_history_deal_position_evidence": false,
+  "opens_live_restart": false,
+  "opens_live_trading_behavior": false,
+  "opens_paid_or_vendor_access": false,
+  "opens_prompt_config_risk_safety_execution_canary_selector_edit": false,
+  "opens_raw_market_data_blob_commit": false,
+  "opens_registry_edit": false,
+  "opens_remote_push": false,
+  "opens_result_scoring": false,
+  "opens_strategy_edge_claims": false,
+  "opens_validation": false,
+  "outcome_review_opened": false,
+  "promotion_verdict": "NO_PROMOTION_VERDICT",
+  "r3_quarantined_observation_count": 3,
+  "route_id": "G12_SCID_FUTURE_CAPTURE_BLOCKED15_SOURCE_STATE_MATERIALIZATION_AUDIT",
+  "target_completion_can_mark_goal_complete": true,
+  "target_evidence_class": "SCID_FUTURE_CAPTURE_FIELD_SOURCE_STATE_MATERIALIZATION_ONLY",
+  "target_manifest_artifact_count": 20,
+  "target_manifest_raw_blob_artifacts": [],
+  "target_route_id": "SCID_FUTURE_CAPTURE_FIELD_SOURCE_STATE_MATERIALIZATION_FOR_BLOCKED15",
+  "upstream_quarantined_expansion_candidate_count": 12,
+  "validation_safe": false
+}
+```

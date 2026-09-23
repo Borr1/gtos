@@ -1,0 +1,70 @@
+--- host-before/src/components/ultimate_book/book_engine.py
++++ session-co/src/components/ultimate_book/book_engine.py
+@@ -32,6 +32,7 @@
+ from .symbol_map import build_broker_symbol_resolver
+ from .admission import StressDeriskState, compute_stress_derisk_state, resolve_market_expansion_sleeves
+ from .edge_reconciler import closed_book_deals
++from .lane_weights import neutral_snapshot
+
+
+ def _candidate_book_sleeves(config: dict) -> tuple[str, ...]:
+@@ -72,9 +73,15 @@
+ class UltimateBookLiveEngine:
+     def __init__(self, config: dict, mt5, repo_root: str, namespace: str = "ftmo_primary",
+                  account: str = "A", bar_count: int = 260, broker_symbol=None,
+-                 spread_geometry_floor=None):
++                 spread_geometry_floor=None, lane_weight_controller=None):
+         self.config = config or {}
+         self._mt5 = mt5
++        # Signed external learning-lane carrier. It reaches the existing sizing seam;
++        # no activation-token-bound config/profile byte moves.
++        self._lane_weight_controller = lane_weight_controller
++        self._last_lane_weights_snapshot = neutral_snapshot(
++            namespace, "unobserved", (), "lane_weights_not_observed", status="disabled"
++        )
+         # THE GENERATION-SIDE SPREAD-GEOMETRY FLOOR (Session AY, B1810; carried by Session CE,
+         # B2300). DEFAULT EMPTY -> not one tick of behaviour changes on this host.
+         #
+@@ -643,6 +650,8 @@
+         """Return {ok, decision, intents, meta, governor_state, reason}. NEVER raises."""
+         now = now_utc or datetime.now(timezone.utc)
+         try:
++            if self._lane_weight_controller is not None:
++                self._last_lane_weights_snapshot = self._lane_weight_controller.snapshot(now)
+             intents, meta = self._generate_intents(tags, now)
+             eq = self._equity()
+             if eq is None:
+@@ -664,14 +673,26 @@
+                                           self.config.get("ultimate_book_operator_circuit_breaker", False),
+                                           False,
+                                       ))
++            runtime_overrides = {}
++            if (
++                self._lane_weight_controller is not None
++                and bool(getattr(self._lane_weight_controller, "enabled", False))
++            ):
++                # An invalid/stale source is already a complete x1.00 vector here; partial
++                # application is impossible because validation is all-or-neutral.
++                runtime_overrides["ultimate_book_learning_rerate"] = dict(
++                    self._last_lane_weights_snapshot.get("weights") or {}
++                )
++            rt_cfg = dict(self.config, **runtime_overrides) if runtime_overrides else self.config
+             decision = evaluate_vnext_ultimate_book_admission(
+-                config={"gtos_vnext_runtime": self.config}, intents=intents,
++                config={"gtos_vnext_runtime": rt_cfg}, intents=intents,
+                 governor_state=gs, account=self._account,
+                 limits=self._joint_daily_limits(self._governor_limits(), gs),
+                 n_active_override=self._running_conviction_override(intents),
+                 stress_state=self._stress_derisk_state(now))
+             return {"ok": True, "decision": decision, "intents": intents, "meta": meta,
+                     "governor_state": gs, "n_intents": len(intents),
++                    "lane_weights": dict(self._last_lane_weights_snapshot),
+                     "generation": dict(getattr(self, "_last_generation_telemetry", {}) or {}),
+                     "generation_skips": list(getattr(self, "_last_generation_skips", []) or []),
+                     "runtime_effect_now": getattr(decision, "runtime_effect_now", False),
+@@ -713,4 +734,5 @@
+         return {"ok": False, "decision": None, "intents": intents or [], "meta": meta or [],
+                 "generation": dict(getattr(self, "_last_generation_telemetry", {}) or {}),
+                 "generation_skips": list(getattr(self, "_last_generation_skips", []) or []),
++                "lane_weights": dict(getattr(self, "_last_lane_weights_snapshot", {}) or {}),
+                 "governor_state": None, "n_intents": 0, "runtime_effect_now": False, "reason": reason}

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-16"?>
+<!--
+  GTOS_F5_JUDGE - Task Scheduler definition for the resident F5 judgment daemon.
+  STAGED: hand-import parity artifact for scripts/f5_desk/install_task.ps1 (the
+  ps1 is the preferred path; this XML exists so the task can be re-created
+  byte-identically with `schtasks /Create /TN GTOS_F5_JUDGE /XML scripts\f5_desk\GTOS_F5_JUDGE.xml`
+  if PowerShell registration is unavailable). Edit the two absolute paths below
+  if the F5 tree is not at host-local\redacted_host\repo.
+
+  Behavior: start at boot + every 5 minutes forever. The daemon is
+  single-instance via its heartbeat lock file, so repeated starts are inert
+  (exit 0 within ~1 s while a live instance holds the lock).
+  MultipleInstances=IgnoreNew is defense in depth on top of that.
+-->
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Description>GTOS F5 judgment daemon (composer+judge+shim). Single-instance via lock file; safe to fire repeatedly. Ceremony: scripts/f5_desk/install_task.ps1.</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <BootTrigger>
+      <Enabled>true</Enabled>
+    </BootTrigger>
+    <TimeTrigger>
+      <StartBoundary>2026-08-26T00:01:00</StartBoundary>
+      <Enabled>true</Enabled>
+      <Repetition>
+        <Interval>PT5M</Interval>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
+    </TimeTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>Administrator</UserId>
+      <LogonType>S4U</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Priority>7</Priority>
+    <RestartOnFailure>
+      <Interval>PT2M</Interval>
+      <Count>3</Count>
+    </RestartOnFailure>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>cmd.exe</Command>
+      <Arguments>/c cd /d "host-local\redacted_host\repo" &amp;&amp; ".venv\Scripts\python.exe" "scripts\f5_desk\judge_daemon.py" &gt;&gt; "pipeline_state\ultimate_book\operator\judgment\logs\daemon_task.log" 2&gt;&amp;1</Arguments>
+      <WorkingDirectory>host-local\redacted_host\repo</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>

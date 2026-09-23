@@ -1,0 +1,46 @@
+Session LR post-re-mint verification — scripts/verify_activation_authorization.py
+Run 2026-08-10T13:0xZ, after both re-mints. Read-only: order_check places NOTHING.
+
+########## FTMO ##########
+book               : ftmo
+token_dir          : host-local\.gtos\activation
+declared namespace : operator_profile
+declared cfg digest: ffe16657feaf
+account digest     : 0000000000000000000000000000000000000000000000000000000000000000
+
+=== the engine's own authorization path ===
+  [live runtime namespace] ALLOWED  reason=activation_token_valid classification=exposure_increasing_new_deal
+
+  -- negative controls: the gate must still discriminate --
+  [wrong namespace] REFUSED  broker mutation refused: activation_token_namespace_mismatch [exposure_increasing_new_deal] (operator_profile_not_the_namespace != operator_profile)
+  [namespace not declared] REFUSED  broker mutation refused: activation_token_namespace_unsatisfied [exposure_increasing_new_deal] (operator_profile)
+
+=== broker-side validation (order_check — places NOTHING) ===
+  retcode=0 comment='Done'
+
+=== VERDICT ===
+  live namespace authorizes         : True
+  wrong/undeclared still refused    : True
+  RESULT: PASS
+
+########## redacted_account ##########
+book               : fn
+token_dir          : host-local\.gtos\activation
+declared namespace : redacted_account_live_bee34003
+declared cfg digest: e184a81d3b1b
+account digest     : 0000000000000000000000000000000000000000000000000000000000000000
+
+=== the engine's own authorization path ===
+  [live runtime namespace] ALLOWED  reason=activation_token_valid classification=exposure_increasing_new_deal
+
+  -- negative controls: the gate must still discriminate --
+  [wrong namespace] REFUSED  broker mutation refused: activation_token_namespace_mismatch [exposure_increasing_new_deal] (redacted_account_not_the_namespace != redacted_account_live_bee34003)
+  [namespace not declared] REFUSED  broker mutation refused: activation_token_namespace_unsatisfied [exposure_increasing_new_deal] (redacted_account_live_bee34003)
+
+=== broker-side validation (order_check — places NOTHING) ===
+  retcode=0 comment='Done'
+
+=== VERDICT ===
+  live namespace authorizes         : True
+  wrong/undeclared still refused    : True
+  RESULT: PASS

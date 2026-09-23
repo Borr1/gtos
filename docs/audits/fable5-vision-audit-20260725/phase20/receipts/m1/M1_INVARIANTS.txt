@@ -1,0 +1,25 @@
+m1 — five arithmetic invariants of the corrected walk, measured on all 1,167,099 rows.
+Each one is a property the correction MUST have if it is implemented as the shipped
+quote_side module describes.  A violation would be a bug in this lane, not a finding.
+
+A. AT-MARKET rows: the correction can never help a single row (stop stays -1, target
+   stays +T but recedes, path_end loses exactly s/d). Any positive delta is a bug.
+   at-market rows: 141330  rows with delta>1e-12: 0  max delta: 0.0
+   at-market path_end rows: delta should equal EXACTLY -s/d
+   n=31401  max|delta - (-s/d)| = 5.659e-13
+
+B. AT-MARKET rows: stop->target is arithmetically IMPOSSIBLE (both levels move the
+   same way, so the stop can only fire earlier and the target later).
+   stop->target total: 175  of which at-market: 0  POI: 175
+
+C. Losing a fill is a LONG-only POI event (a buy limit's trigger drops one spread;
+   a sell limit's is unchanged).
+   lost fills: 5048  POI: 5048  LONG: 5048  SHORT: 0
+   gained fills: 0 (must be 0)
+
+D. POI SHORT rows keep their fill set exactly (trigger unchanged).
+   POI shorts: 463953  fill set changed: 0
+
+E. POI LONG rows that keep their fill BAR keep their R exactly (exits unchanged).
+   POI longs filled in both arms: 95985  unchanged R: 93618 (97.53%)
+   -- the remaining 2.47% filled on a LATER bar, which is the whole mechanism

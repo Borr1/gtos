@@ -1,0 +1,13 @@
+# One-hop F5 chair sit on the VPS. Proof file. No host-admin Write-Host dump.
+$ErrorActionPreference = "Continue"
+$py = "C:\Users\MSI\Documents\ai-trading-agent\.venv-gtos\Scripts\python.exe"
+$repo = "host-local\redacted_host\repo"
+$proof = "host-local\gtos-agent-sessions\chair_desk_proof.txt"
+$env:PYTHONPATH = $repo
+Set-Location $repo
+
+& $py host-local\gtos-agent-sessions\usdjpy_scrub.py 2>&1 | Out-Null
+& $py (Join-Path $repo "scripts\f5_desk\chair_desk.py") sit --mt5 --repo $repo --proof $proof
+# Fable M2: occupancy HOLD dead. stack_hold removed 2026-09-02.
+# & $py (Join-Path $repo "scripts\f5_desk\chair_stack_hold.py") --repo-root $repo
+"SIT_OK" | Out-File -FilePath $proof -Append -Encoding ascii

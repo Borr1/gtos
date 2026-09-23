@@ -1,0 +1,108 @@
+--- a/src/components/ultimate_book/book_engine.py
++++ b/src/components/ultimate_book/book_engine.py
+@@ -70,11 +70,35 @@
+ 
+ 
+ class UltimateBookLiveEngine:
+     def __init__(self, config: dict, mt5, repo_root: str, namespace: str = "ftmo_primary",
+-                 account: str = "A", bar_count: int = 260, broker_symbol=None):
++                 account: str = "A", bar_count: int = 260, broker_symbol=None,
++                 spread_geometry_floor=None):
+         self.config = config or {}
+         self._mt5 = mt5
++        # THE GENERATION-SIDE SPREAD-GEOMETRY FLOOR (Session AY, B1810; carried by Session CE,
++        # B2300). DEFAULT EMPTY -> not one tick of behaviour changes on this host.
++        #
++        # A stop narrower than a few multiples of the round-trip spread should never be
++        # PROPOSED. This book already refuses to PLACE one -- twice, at the send layer
++        # (`broker_net_cost_engine.pretrade_cost_refusal_reasons` and
++        # `book_owner._spread_cost_screen`, both at `selected_cell_pretrade_max_spread_r`) --
++        # and it fires: 198 legs refused on the two cost paths in this host's own launcher log
++        # over 5,237 cycles, at observed spread_r up to 16.543.
++        #
++        # But between generation and send the doomed intent has ALREADY BEEN COUNTED.
++        # `_running_conviction_override` below builds the day's distinct-firing-sleeve count
++        # from INTENTS, after `precount_intent_filter`'s drop rules -- and the cost screen is
++        # not one of them and cannot be, because it needs a tick and runs later.
++        # `admission.py` then takes `na = max(na, override)`, monotone upward. So a sleeve
++        # whose every leg the cost gate will refuse still raises the day's Kelly-lite
++        # multiplier for every sleeve that DOES place: measured on this host's own export at
++        # 16 contaminated account-days, 3 of which moved the multiplier, worst +25.227 % on
++        # every unit that day (`AY_LIVE_SCREEN_EVIDENCE_V1.json`).
++        #
++        # Refusing at generation closes that by construction. Turning it ON for a sleeve is an
++        # owner decision: it CHANGES WHICH TRADES AN ARMED BOOK PROPOSES.
++        self._spread_geometry_floor = dict(spread_geometry_floor or {})
+         self._account = account
+         self._bar_count = bar_count
+         # Governor anchoring (broker-correct, config-overridable; deploy defaults below):
+         #  - static_initial_balance: the broker max-DD floor is STATIC from the initial balance
+@@ -377,8 +401,17 @@
+                 except Exception:
+                     intent = None     # a single sleeve error never kills the batch
+                 if intent is None:
+                     continue
++                # THE SPREAD-GEOMETRY FLOOR (default-OFF; see __init__). Applied here, after
++                # the generator has proposed a stop and before the intent exists as far as
++                # anything downstream is concerned -- which is the whole point: an intent
++                # refused here never reaches `_running_conviction_override`, so it cannot
++                # raise the day's Kelly-lite multiplier for the sleeves that do place.
++                refusal = self._spread_geometry_refusal(intent, spec, symbol, generation)
++                if refusal is not None:
++                    generation_skips.append(refusal)
++                    continue
+                 intents.append(intent)
+                 meta.append({"symbol": symbol, "timeframe": spec.timeframe, "tag": spec.tag,
+                              "last_close": bars[-1].c, "decision_day": day,
+                              # the decision bar's UTC timestamp — the idempotency key granularity so a
+@@ -387,8 +420,50 @@
+         generation["broker_unsupported_unique_symbols"] = sorted(unsupported_seen)
+         self._last_generation_telemetry = generation
+         self._last_generation_skips = generation_skips
+         return intents, meta
++
++    def _spread_geometry_refusal(self, intent, spec, symbol, generation) -> Optional[dict]:
++        """The generation-side spread-geometry floor for ONE intent. None => keep it.
++
++        Returns a `generation_skips` row on refusal, so the decision is visible in the same
++        place every other generation skip is rather than in a log line nobody greps.
++
++        FAIL-CLOSED, INCLUDING ON THIS METHOD'S OWN BUGS. An exception here would otherwise
++        propagate to `evaluate`'s catch-all and stand the whole book down for the tick, so
++        it is caught -- and caught as a REFUSAL of this one intent, not as a pass. That
++        matches the authoritative gate (`missing_current_quote_spread_or_sl_distance` is a
++        refusal reason, not a warning), and it fails in the direction that costs one trade
++        rather than the direction that takes the pathological one. The skip row names the
++        exception so a persistent internal fault reads as a fault, not as a quiet sleeve.
++        """
++        if not self._spread_geometry_floor:
++            return None
++        try:
++            from .spread_geometry import evaluate_intent, resolve_floor_limit
++            limit = resolve_floor_limit(self.config, spec.tag, self._spread_geometry_floor)
++            if limit is None:
++                return None
++            tick = None
++            try:
++                tick = self._mt5.get_tick(self._broker_symbol(symbol))
++            except Exception:   # noqa: BLE001 -- an unreadable quote is a REFUSAL, below
++                tick = None
++            reason, obs = evaluate_intent(intent, tick, limit)
++            counts = generation.setdefault("spread_geometry_floor", {
++                "evaluated": 0, "refused": 0, "sleeves": []})
++            counts["evaluated"] += 1
++            if reason is None:
++                return None
++            counts["refused"] += 1
++            if spec.tag not in counts["sleeves"]:
++                counts["sleeves"].append(spec.tag)
++            return {"symbol": symbol, "sleeve": spec.tag, "cluster": spec.cluster,
++                    "timeframe": spec.timeframe, "reason": reason,
++                    "spread_geometry": {k: v for k, v in obs.items() if v is not None}}
++        except Exception as exc:   # noqa: BLE001 -- never break the cycle; never fail open
++            return {"symbol": symbol, "sleeve": getattr(spec, "tag", None),
++                    "reason": f"spread_geometry_floor_error:{type(exc).__name__}:{exc}"}
+ 
+     # ---------------- equity / open-risk ----------------
+     def _equity(self) -> Optional[float]:
+         try:

@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.astra.jev_fluid_gate_v1",
+  "title": "jev_fluid_gate_v1",
+  "description": "Shadow-only Challenge fluid-gate cycle log (ALIVE_MENU + CONF_GATE + DONE_OUTSIDE). Never place, remint, flatten, move SL, write chair inbox, or invent NEWS_PROTOCOL. Challenge 0 is the sole payout writer. APPLY is default-off and writes LABEL drafts only behind A1/A2/A3/W_named prove receipts.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "mode",
+    "shadow_log_only",
+    "never_place",
+    "never_remint",
+    "never_flatten",
+    "account_surface",
+    "alive_menu",
+    "conf_gate",
+    "broker_effect"
+  ],
+  "properties": {
+    "schema": {"const": "jev_fluid_gate_v1"},
+    "mode": {"const": "shadow_log_only"},
+    "shadow_log_only": {"const": true},
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_move_sl": {"const": true},
+    "never_write_chair_inbox": {"const": true},
+    "namespace": {"const": "gtos.astra.jev_trial.fluid_gate.v1"},
+    "broker_effect": {"const": false},
+    "account_surface": {
+      "type": "object",
+      "required": ["login", "pass_target", "role"],
+      "properties": {
+        "login": {"const": "0"},
+        "pass_target": {"const": "$110k"},
+        "magic": {"const": "0"},
+        "ns": {"const": "operator"},
+        "role": {"const": "challenge_calibration"},
+        "verification_login_quarantined": {"const": "0"}
+      }
+    },
+    "alive_menu": {
+      "type": "object",
+      "required": ["rebuilt", "inventory_fingerprint", "criteria"],
+      "properties": {
+        "rebuilt": {"const": true},
+        "inventory_fingerprint": {"type": "string", "minLength": 16}
+      }
+    },
+    "conf_gate": {
+      "type": "object",
+      "required": ["band", "broker_effect"],
+      "properties": {
+        "band": {"enum": ["LOW", "MED", "HIGH", "VETO"]},
+        "vendor_0_85_forbidden_as_truth": {"const": true},
+        "conf_gate_band": {
+          "type": ["string", "null"],
+          "enum": ["CONF_GATE_STRICT", "CONF_GATE_SESSION", "CONF_GATE_EVENT", "CONF_GATE_REVIEW", null]
+        },
+        "conf_floor": {
+          "type": ["string", "null"],
+          "enum": ["HIGH", "MED_HIGH", "HIGH_EVENT_STAMP", "KEEP_SURFACE", null]
+        },
+        "broker_effect": {"const": false}
+      }
+    },
+    "cost_of_error": {
+      "type": ["object", "null"],
+      "description": "S15 COST_OF_ERROR shadow row. Tape-authority costs + YES/NO/UNSURE pick. Never place.",
+      "properties": {
+        "steal": {"const": "S15"},
+        "chosen": {"type": ["string", "null"], "enum": ["YES", "NO", "UNSURE", "VETO", null]},
+        "broker_effect": {"const": false},
+        "never_place": {"const": true},
+        "g4_x_g6_overshrink": {"const": false},
+        "new_hard_off": {"const": false},
+        "review_keep_offhours": {"type": "boolean"},
+        "news_protocol": {"const": "stamps_only_never_invent"},
+        "tape_authority": {
+          "type": "object",
+          "required": [
+            "false_abstain",
+            "false_admit_n",
+            "false_admit_tape_R",
+            "false_admit_shadow_R",
+            "cost_avoided_by_reject_n",
+            "cost_avoided_by_reject_tape_R",
+            "g4_x_g6_overshrink",
+            "place"
+          ]
+        }
+      }
+    },
+    "s15_tape_authority": {
+      "type": "object",
+      "description": "Close Loop tape-authority key facts baked onto every SHADOW/--force admit row.",
+      "required": [
+        "false_abstain",
+        "false_admit_n",
+        "false_admit_tape_R",
+        "false_admit_shadow_R",
+        "cost_avoided_by_reject_n",
+        "cost_avoided_by_reject_tape_R",
+        "g4_x_g6_overshrink",
+        "place",
+        "new_hard_off"
+      ],
+      "properties": {
+        "false_abstain": {"const": 0},
+        "false_admit_n": {"const": 29},
+        "false_admit_tape_R": {"const": -28.9172},
+        "false_admit_shadow_R": {"const": -13.5428},
+        "cost_avoided_by_reject_n": {"const": 23},
+        "cost_avoided_by_reject_tape_R": {"const": -24.6586},
+        "g4_x_g6_overshrink": {"const": false},
+        "place": {"const": "infinity_veto"},
+        "new_hard_off": {"const": false}
+      }
+    },
+    "disposition": {
+      "type": "string",
+      "enum": ["log_only", "label_draft"]
+    },
+    "steal": {
+      "type": ["string", "null"],
+      "description": "S14 when REGIME_GATE_SHADOW composed on this sidecar row."
+    },
+    "regime": {
+      "type": ["object", "null"],
+      "description": "S14 shadow compose. Labels only. broker_effect always false.",
+      "properties": {
+        "steal": {"const": "S14"},
+        "gate_decision": {
+          "type": ["string", "null"],
+          "enum": ["stand_down", "half_size", "admit_ok_label", null]
+        },
+        "size_factor": {"type": ["number", "null"], "enum": [0.0, 0.5, 1.0, null]},
+        "broker_effect": {"const": false},
+        "never_place": {"const": true},
+        "cache_key": {"type": "string"}
+      }
+    },
+    "s14_jev_state": {
+      "type": ["object", "null"],
+      "description": "Bucketed + identity only. VETO if raw_ohlcv/ticks/expost present."
+    }
+  }
+}

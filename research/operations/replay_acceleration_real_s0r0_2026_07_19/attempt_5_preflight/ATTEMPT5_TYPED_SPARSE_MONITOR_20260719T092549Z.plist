@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+		<key>PYTHONPATH</key>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719</string>
+		<key>PYTHONUNBUFFERED</key>
+		<string>1</string>
+		<key>zstd_resolved_path</key>
+		<string>/opt/homebrew/bin/zstd</string>
+	</dict>
+	<key>KeepAlive</key>
+	<false/>
+	<key>Label</key>
+	<string>com.gtos.attempt5.s0r0.20260719t092549z.monitor</string>
+	<key>LowPriorityIO</key>
+	<false/>
+	<key>ProcessType</key>
+	<string>Adaptive</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/opt/homebrew/opt/python@3.14/bin/python3.14</string>
+		<string>-m</string>
+		<string>src.research_infra.replay_acceleration_attempt5_parity_monitor</string>
+		<string>--runner-pid</string>
+		<string>83696</string>
+		<string>--namespace</string>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20/attempt_5_typed_sparse/ATTEMPT5_S0R0_JAN1_7_PARITY_20260719T092549Z</string>
+		<string>--git-root</string>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719</string>
+		<string>--golden-manifest</string>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/replay_acceleration_partial_golden_2026_07_19/PARTIAL_GOLDEN_MANIFEST.json</string>
+		<string>--gate-request</string>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20/attempt_5_typed_sparse/ATTEMPT5_S0R0_JAN1_7_PARITY_20260719T092549Z/GATE_REQUEST.json</string>
+		<string>--report-output</string>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20/attempt_5_typed_sparse/ATTEMPT5_S0R0_JAN1_7_PARITY_20260719T092549Z/PARITY_REPORT.json</string>
+		<string>--receipt-output</string>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20/attempt_5_typed_sparse/ATTEMPT5_S0R0_JAN1_7_PARITY_20260719T092549Z/PARITY_RECEIPT.json</string>
+		<string>--monitor-receipt</string>
+		<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20/attempt_5_typed_sparse/ATTEMPT5_S0R0_JAN1_7_PARITY_20260719T092549Z/PARITY_MONITOR_RECEIPT.json</string>
+		<string>--timeout-seconds</string>
+		<string>604800</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/replay_acceleration_real_s0r0_2026_07_19/attempt_5_preflight/ATTEMPT5_TYPED_SPARSE_MONITOR_20260719T092549Z.stderr.log</string>
+	<key>StandardOutPath</key>
+	<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719/research/operations/replay_acceleration_real_s0r0_2026_07_19/attempt_5_preflight/ATTEMPT5_TYPED_SPARSE_MONITOR_20260719T092549Z.stdout.log</string>
+	<key>WorkingDirectory</key>
+	<string>/Users/borr/GTOSActive/worktrees/replay-accel-attempt5-20260719</string>
+</dict>
+</plist>

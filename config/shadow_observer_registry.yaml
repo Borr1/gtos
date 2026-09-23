@@ -1,0 +1,164 @@
+schema_version: shadow_observer_registry_v1
+description: >
+  Research-only registry for no-AI, no-execution live shadow observers.
+  Entries here are not live trading approvals. The observer may only read
+  market data, compute MSO snapshots, and append forward-shadow/context rows.
+defaults:
+  poll_seconds: 20
+  m15_grace_seconds: 8
+  output_path: shadow_logs/strategy_follow_evaluations.jsonl
+  status_path: shadow_logs/shadow_observer_status.jsonl
+  state_path: pipeline_state/shadow_observer_state.json
+  no_ai_calls: true
+  no_execution: true
+
+instruments:
+  - observer_id: eurusd_6e_mso_shadow_v1
+    enabled: false
+    activation_state: ACTIVE_MSO_SHADOW
+    symbol: EURUSD
+    broker_symbol: EURUSD
+    config_symbol: EURUSD
+    family: EURUSD/6E
+    evidence_class: FORWARD_SHADOW
+    source_status: LABEL_STATUS_ONLY_NO_REGISTERED_OUTCOME_COHORT
+    pre_registered_question_id: SHADOW-EURUSD-6E-MSO-NO_OUTCOME-V1
+    allowed_rows:
+      - strategy_follow_evaluation_v1
+    forbidden:
+      - ai_api_call
+      - order_send
+      - execution_engine
+      - permission_gate
+      - outcome_opening
+    notes: >
+      EURUSD/6E was data-ready but not strategy/outcome-ready. This observer
+      only captures as-of MSO strategy snapshots; it does not open outcomes.
+
+  - observer_id: ger40_tier2_mso_shadow_v1
+    enabled: false
+    activation_state: ACTIVE_MSO_SHADOW
+    symbol: GER40
+    broker_symbol: GER30
+    config_symbol: GER40
+    family: GER40 tier-2 backtest follow-up
+    evidence_class: FORWARD_SHADOW
+    source_status: TIER2_BACKTEST_ONLY_NO_PROMOTION
+    pre_registered_question_id: SHADOW-GER40-TIER2-MSO-NO_OUTCOME-V1
+    allowed_rows:
+      - strategy_follow_evaluation_v1
+    forbidden:
+      - ai_api_call
+      - order_send
+      - execution_engine
+      - permission_gate
+      - outcome_opening
+    notes: >
+      GER40 was tested in the tier-2 expansion batch but was not promoted live.
+      Broker symbol is redacted_account GER30; registry override is explicit.
+
+  - observer_id: uk100_tier2_mso_shadow_v1
+    enabled: false
+    activation_state: ACTIVE_MSO_SHADOW
+    symbol: UK100
+    broker_symbol: UK100
+    config_symbol: UK100
+    family: UK100 tier-2 backtest follow-up
+    evidence_class: FORWARD_SHADOW
+    source_status: TIER2_BACKTEST_ONLY_NO_PROMOTION
+    pre_registered_question_id: SHADOW-UK100-TIER2-MSO-NO_OUTCOME-V1
+    allowed_rows:
+      - strategy_follow_evaluation_v1
+    forbidden:
+      - ai_api_call
+      - order_send
+      - execution_engine
+      - permission_gate
+      - outcome_opening
+    notes: >
+      UK100 was tested in the tier-2 expansion batch but was not promoted live.
+      This observer only captures as-of MSO strategy snapshots.
+
+  - observer_id: spx500_es_prereg_required_v1
+    enabled: false
+    activation_state: PRE_REGISTRATION_REQUIRED
+    symbol: SPX500
+    broker_symbol: SPX500
+    config_symbol: null
+    family: ES/MES
+    evidence_class: FORWARD_SHADOW
+    source_status: LABEL_STATUS_ONLY_NO_REGISTERED_FROZEN_COHORT
+    required_before_enable:
+      - define_cohort
+      - define_session
+      - define_side
+      - define_comparator
+      - add_or_select_config_template
+    notes: >
+      ES/MES was source/data-ready but not strategy-ready. Do not enable until
+      a cohort/question and config mapping are registered before outcomes.
+
+  - observer_id: uko_usd_cl_context_only_v1
+    enabled: false
+    activation_state: CONTEXT_CONTROL_ONLY
+    symbol: UKOUSD
+    broker_symbol: UKOUSD
+    config_symbol: null
+    family: CL macro/liquidity proxy/control
+    evidence_class: CONTROL_ONLY
+    source_status: LABEL_STATUS_ONLY_CONTROL_NO_DIRECT_TRADE_COHORT
+    required_before_enable:
+      - named_cross_instrument_context_question
+      - asof_join_rule
+      - context_value_schema
+    notes: >
+      CL remains context/control only. It is not a direct GTOS trade-label
+      validation source.
+
+  - observer_id: zn_rates_context_only_v1
+    enabled: false
+    activation_state: CONTEXT_CONTROL_ONLY
+    symbol: ZN_CONTROL
+    broker_symbol: null
+    config_symbol: null
+    family: ZN rates/control
+    evidence_class: CONTROL_ONLY
+    source_status: LABEL_STATUS_ONLY_CONTROL_NO_DIRECT_TRADE_COHORT
+    required_before_enable:
+      - named_cross_instrument_context_question
+      - asof_join_rule
+      - context_value_schema
+    notes: >
+      ZN is a rates/control context source only unless a named context question
+      is registered.
+
+  - observer_id: vix_vxm_context_only_v1
+    enabled: false
+    activation_state: CONTEXT_CONTROL_ONLY
+    symbol: VIX_VXM
+    broker_symbol: null
+    config_symbol: null
+    family: VIX/VXM volatility controls
+    evidence_class: CONTROL_ONLY
+    source_status: LABEL_STATUS_ONLY_CONTROL_NO_DIRECT_TRADE_COHORT
+    required_before_enable:
+      - named_cross_instrument_context_question
+      - asof_join_rule
+      - context_value_schema
+      - sparse_source_warning_policy
+    notes: >
+      VIX/VXM is volatility/regime context only. VXMM sparsity must remain
+      visible if this lane is later enabled.
+
+  - observer_id: nzdusd_historical_excluded_v1
+    enabled: false
+    activation_state: EXCLUDED_KILLED_HISTORICAL
+    symbol: NZDUSD
+    broker_symbol: NZDUSD
+    config_symbol: NZDUSD
+    family: historical killed expansion lane
+    evidence_class: DISCOVERY_ONLY
+    source_status: DO_NOT_FOLLOW_WITHOUT_NEW_OWNER_DECISION
+    notes: >
+      Kept in the registry only to prevent accidental resurrection of a killed
+      historical lane during broad "all tested instruments" requests.

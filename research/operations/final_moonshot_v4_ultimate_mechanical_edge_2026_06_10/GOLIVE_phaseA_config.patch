@@ -1,0 +1,52 @@
+# GO-LIVE PHASE A — STAGED config patch (DO NOT auto-apply; owner review + explicit go).
+#
+# This patch is PREPARED, NOT APPLIED. The system is hard-halted; GTOS_HARD_PRODUCTION_HALT.flag
+# remains the physical control. Applying this patch does NOT place an order — it only DISABLES the
+# proven-losing BROAD selector_v4 + scheduler_v4 best-trade-allocator execution authority (the
+# go-live REPLACEMENT, not augmentation). It does NOT add the ultimate_book block here (append that
+# separately from GOLIVE_ultimate_book_config_block.yaml so the diff stays a pure, robust two-flag-pair
+# change). Going live still requires: (1) appending + flipping the ultimate_book_* triple-gate,
+# (2) clearing Phase C broker/runtime authority, (3) removing the halt flag. This patch does NONE of those.
+#
+# VERIFIED: `git apply --check` passes against the current config (generated mechanically, not hand-typed).
+# APPLY (only on explicit owner go):  git apply <thisfile>
+# REVERSE:                            git apply -R <thisfile>
+#
+# It disables BOTH broad execution surfaces; `enabled` stays true so packets remain computable for
+# live-vs-replay parity monitoring. Replacement sizer/allocator = ultimate_book_live_package.py.
+# ---------------------------------------------------------------------------------------------------
+diff --git a/config/agent_config.yaml b/config/agent_config.yaml
+index d36bf5a14..df7b82ba5 100644
+--- a/config/agent_config.yaml
++++ b/config/agent_config.yaml
+@@ -737,9 +737,13 @@ gtos_vnext_runtime:
+   # Selector V4 is the active broker-net admission authority after Wave3.5.
+   # Runtime halt files remain the physical deployment control; these flags make
+   # V4 the local final-say authority when the runtime path is exercised.
++  # GO-LIVE PHASE A (ultimate_book replacement): the BROAD selector_v4 is the proven-losing surface
++  # (-0.25R/fill). It is DISABLED from execution as part of the REPLACEMENT (not augmentation). Kept
++  # `enabled` so its packets stay computable for live-vs-replay parity, but no execution / live
++  # activation authority. The ultimate_book_* block (appended) is the replacement deploy book.
+   selector_v4_enabled: true
+-  selector_v4_apply_to_execution: true
+-  selector_v4_live_activation_allowed: true
++  selector_v4_apply_to_execution: false
++  selector_v4_live_activation_allowed: false
+   selector_v4_min_broker_net_trade_ev_r: 0.10
+   selector_v4_min_no_trade_ev_r: 0.02
+   selector_v4_min_confluence_score: 0.15
+@@ -910,9 +914,12 @@ gtos_vnext_runtime:
+   scheduler_v3_enabled: false
+   scheduler_v3_apply_to_execution: false
+   scheduler_v3_default_off_package_path: "research/operations/vnext_absolute_moonshot_scheduler_v3_2026_06_01/SCHEDULER_V3_DEFAULT_OFF_PACKAGE.json"
++  # GO-LIVE PHASE A: the broad scheduler allocator routes the broad selector's candidates -> DISABLED
++  # from execution alongside the broad selector (the ultimate_book deploy book is the replacement
++  # sizer/allocator). Kept `enabled` for parity computation; no execution / live activation authority.
+   scheduler_v4_best_trade_allocator_enabled: true
+-  scheduler_v4_best_trade_allocator_apply_to_execution: true
+-  scheduler_v4_best_trade_allocator_live_activation_allowed: true
++  scheduler_v4_best_trade_allocator_apply_to_execution: false
++  scheduler_v4_best_trade_allocator_live_activation_allowed: false
+   scheduler_v4_best_trade_allocator_route_manifest_path: "research/operations/wave3_scheduler_v4_best_trade_allocator_2026_06_04/WAVE3_OUTPUT_MANIFEST.json"
+   scheduler_v4_best_trade_allocator_portfolio_ceiling_pct: 4.0
+   scheduler_v4_best_trade_allocator_correlation_cluster_ceiling_pct: 1.5

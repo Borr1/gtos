@@ -1,0 +1,6 @@
+# Per-day TRAIN replay ledgers are bulk research payloads (~215 days x 16 files).
+# Evidence lives in the day-progress ledger + materialization summary + training
+# frame artifacts. Keep the bulk out of git per repo cleanup/staleness policy.
+*
+!.gitignore
+!ULTIMATE_EDGE_TRAIN_DAY_PROGRESS_LEDGER.jsonl

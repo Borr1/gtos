@@ -1,0 +1,14 @@
+# NOFILL Residual Blocker Blocked Or Impossible Ledger
+
+Promotion posture: `NO_PROMOTION_VERDICT`. No results or labels opened.
+
+| Packet row | Family | Symbol | Status | Exact next source |
+| --- | --- | --- | --- | --- |
+| NOFILL-CAT-ROW-0049 | OTI4_G6_OPENING_DRIVE | NAS100 | STILL_BLOCKED_WITH_EXACT_NEXT_SOURCE | Read-only NAS100 broker/same-market tick parquet or M1/lower OHLC source covering 2026-05-03T13:00:00Z through 2026-05-03T13:30:00Z, or an owner-approved source contract proving the frozen range is non-trading/empty without using account/order/history labels. |
+| NOFILL-CAT-ROW-0050 | OTI4_G6_OPENING_DRIVE | XAUUSD | STILL_BLOCKED_WITH_EXACT_NEXT_SOURCE | Read-only XAUUSD broker/same-market tick parquet or M1/lower OHLC source covering 2026-05-03T13:00:00Z through 2026-05-03T13:30:00Z, or an owner-approved source contract proving the frozen range is non-trading/empty without using account/order/history labels. |
+| NOFILL-CAT-ROW-0051 | OTI4_G6_OPENING_DRIVE | XAUUSD | STILL_BLOCKED_WITH_EXACT_NEXT_SOURCE | Read-only XAUUSD broker/same-market tick parquet or M1/lower OHLC source covering 2026-05-03T13:00:00Z through 2026-05-03T13:30:00Z, or an owner-approved source contract proving the frozen range is non-trading/empty without using account/order/history labels. |
+| NOFILL-CAT-ROW-0130 | OTI3_G3_GEOMETRY | USDJPY | SOURCE_IMPOSSIBLE_FROM_APPROVED_ROUTES | Higher-resolution USDJPY bid/ask event-order source with a sequence ID or sub-row timestamp for the first-touch quote event, without account/order/history labels. Current tick/M1/proxy routes cannot order it. |
+| NOFILL-CAT-ROW-0143 | OTI3_G3_GEOMETRY | USDJPY | SOURCE_IMPOSSIBLE_FROM_APPROVED_ROUTES | Higher-resolution USDJPY bid/ask event-order source with a sequence ID or sub-row timestamp for the first-touch quote event, without account/order/history labels. Current tick/M1/proxy routes cannot order it. |
+| NOFILL-CAT-ROW-0165 | OTI3_G3_GEOMETRY | USDJPY | SOURCE_IMPOSSIBLE_FROM_APPROVED_ROUTES | Higher-resolution USDJPY bid/ask event-order source with a sequence ID or sub-row timestamp for the first-touch quote event, without account/order/history labels. Current tick/M1/proxy routes cannot order it. |
+| NOFILL-CAT-ROW-0178 | OTI3_G3_GEOMETRY | USDJPY | SOURCE_IMPOSSIBLE_FROM_APPROVED_ROUTES | Higher-resolution USDJPY bid/ask event-order source with a sequence ID or sub-row timestamp for the first-touch quote event, without account/order/history labels. Current tick/M1/proxy routes cannot order it. |
+| NOFILL-CAT-ROW-0241 | OTI2_RISKBANK | XAUUSD | STILL_BLOCKED_WITH_EXACT_NEXT_SOURCE | Side-aware XAUUSD bid/ask quote or tick coverage from 2026-05-06T00:00:00Z through the observed cancel at 2026-05-06T00:00:37.024315Z, plus the same active-window parser/hash contract; no broker/account/order/history labels. |

@@ -1,0 +1,307 @@
+# Session HDB builder-head adversarial A/B
+
+**82 bad → 0 bad · 82 fixed · 0 regressed. No regressions.**
+
+Compared by **failure set**, not by count — counts are not portable across worktrees.
+
+| | before | after |
+|---|---|---|
+| commit | `db447a217` | `54b608691` |
+| captured (UTC) | 2026-08-01T14:16:39Z | 2026-08-01T14:19:31Z |
+| working tree | dirty | dirty |
+| failed | 82 | 0 |
+| errored | 0 | 0 |
+| **bad** | **82** | **0** |
+| passed | 42 | 124 |
+| skipped | 0 | 0 |
+
+## Fixed (82)
+
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_conflicting_packet_aliases_refuse_instead_of_selecting_first`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_conflicting_recorded_total_aliases_refuse`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_downstream_projection_and_accessor_refuse_incomplete_capture`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_explicit_repaired_fallback_redecodes_in_historical_order`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_flat_component_and_capture_value_conflict_refuses_both`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[bool-multiplier]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[effective-only]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[marker-only]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[string-effective]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[string-marker]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-effective]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-multiplier]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-original]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[false]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[negative]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[numeric-string]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[padded-string]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[true]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_recorded_total_never_falls_through_to_component_sum[numeric-string]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_recorded_total_never_falls_through_to_component_sum[padded-string]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[commission_cost-malformed3]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[swap_cost-malformed2]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[tick_cost-malformed1]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[total_cost_components-not-a-map]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_packet_container_cannot_fall_back_to_flat_authority`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_named_point_twelve_fallback_requires_current_capture_binding`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_and_flattened_forms_are_deterministic_and_idempotent`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_packet_with_all_source_evidence_is_authoritative`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[commission]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[slippage]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[spread]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[swap]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-commission_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-expected_slippage_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-spread_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-swap_cost_r]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[1]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[bad]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[malformed3]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[blank-source]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[bool]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[measured-charge-conflict]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[negative]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[numeric-string]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[untrusted-source]`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_is_idempotent_after_complete_redecode`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_preserves_exact_order_and_legitimate_fallback`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_refuses_unexplained_existing_total`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_applied_label_without_capture_evidence_is_not_authority`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_fallback_field_cannot_waive_complete_component_conflict`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_v2_complete_fields_cannot_override_lost_capture`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_top_level_and_nested_component_conflict_refuses_both`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_top_level_and_nested_measured_commission_conflict_refuses`
+- `tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_unnamed_point_twelve_mismatch_is_not_a_legacy_fallback`
+
+## Embedded captures
+
+Embedded, not referenced. A receipt that points at a scratchpad path is as unverifiable as
+no receipt at all, because that file is gone by the time anyone reads this.
+
+```json
+{
+ "schema": "gtos-ab-receipt-v1",
+ "scope": [
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py"
+ ],
+ "before": {
+  "commit": "db447a217a939898edb3d7122058737f63d78828",
+  "commit_subject": "audit(phase20): close Session HB cost completeness",
+  "captured_utc": "2026-08-01T14:16:39Z",
+  "dirty": true,
+  "totals": {
+   "failed": 82,
+   "passed": 42
+  }
+ },
+ "after": {
+  "commit": "54b608691f6aa5e842cd8369c169387163daed15",
+  "commit_subject": "fix(train): bind cost authority to captured components",
+  "captured_utc": "2026-08-01T14:19:31Z",
+  "dirty": true,
+  "totals": {
+   "passed": 124
+  }
+ },
+ "bad_before": 82,
+ "bad_after": 0,
+ "unchanged": 0,
+ "fixed": [
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_conflicting_packet_aliases_refuse_instead_of_selecting_first",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_conflicting_recorded_total_aliases_refuse",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_downstream_projection_and_accessor_refuse_incomplete_capture",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_explicit_repaired_fallback_redecodes_in_historical_order",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_flat_component_and_capture_value_conflict_refuses_both",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[bool-multiplier]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[effective-only]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[marker-only]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[string-effective]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[string-marker]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-effective]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-multiplier]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-original]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[false]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[negative]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[numeric-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[padded-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[true]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_recorded_total_never_falls_through_to_component_sum[numeric-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_recorded_total_never_falls_through_to_component_sum[padded-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[commission_cost-malformed3]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[swap_cost-malformed2]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[tick_cost-malformed1]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[total_cost_components-not-a-map]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_packet_container_cannot_fall_back_to_flat_authority",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_named_point_twelve_fallback_requires_current_capture_binding",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_and_flattened_forms_are_deterministic_and_idempotent",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_packet_with_all_source_evidence_is_authoritative",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[commission]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[slippage]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[spread]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[swap]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[1]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[bad]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[malformed3]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[blank-source]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[bool]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[measured-charge-conflict]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[negative]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[numeric-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[untrusted-source]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_is_idempotent_after_complete_redecode",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_preserves_exact_order_and_legitimate_fallback",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_refuses_unexplained_existing_total",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_applied_label_without_capture_evidence_is_not_authority",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_fallback_field_cannot_waive_complete_component_conflict",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_v2_complete_fields_cannot_override_lost_capture",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_top_level_and_nested_component_conflict_refuses_both",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_top_level_and_nested_measured_commission_conflict_refuses",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_unnamed_point_twelve_mismatch_is_not_a_legacy_fallback"
+ ],
+ "regressed": [],
+ "bad_before_nodeids": [
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[false-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[numeric-string-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[padded-string-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[true-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_bool_and_numeric_strings_never_create_component_authority[zero-string-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_conflicting_packet_aliases_refuse_instead_of_selecting_first",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_conflicting_recorded_total_aliases_refuse",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_downstream_projection_and_accessor_refuse_incomplete_capture",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_every_component_requires_independent_capture_evidence[swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_explicit_repaired_fallback_redecodes_in_historical_order",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_flat_component_and_capture_value_conflict_refuses_both",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[bool-multiplier]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[effective-only]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[marker-only]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[string-effective]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[string-marker]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-effective]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-multiplier]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_incomplete_or_contradictory_rebase_evidence_refuses[wrong-original]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[false]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[negative]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[numeric-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[padded-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_measured_commission_cannot_bind_matching_component[true]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_recorded_total_never_falls_through_to_component_sum[numeric-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_invalid_recorded_total_never_falls_through_to_component_sum[padded-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[commission_cost-malformed3]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[swap_cost-malformed2]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[tick_cost-malformed1]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_nested_maps_fail_closed_without_top_level_rescue[total_cost_components-not-a-map]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_malformed_packet_container_cannot_fall_back_to_flat_authority",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_named_point_twelve_fallback_requires_current_capture_binding",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_negative_cost_components_are_domain_invalid[swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_and_flattened_forms_are_deterministic_and_idempotent",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_packet_with_all_source_evidence_is_authoritative",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[commission]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[slippage]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[spread]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_nested_totals_do_not_replace_missing_component_authority[swap]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-commission_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-expected_slippage_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-spread_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_null_and_blank_components_stay_incomplete[whitespace-swap_cost_r]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[1]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[bad]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_handles_malformed_component_map[malformed3]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[blank-source]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[bool]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[measured-charge-conflict]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[negative]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[numeric-string]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_commission_repair_rejects_invalid_or_untrusted_capture[untrusted-source]",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_is_idempotent_after_complete_redecode",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_preserves_exact_order_and_legitimate_fallback",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_packet_repair_refuses_unexplained_existing_total",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_applied_label_without_capture_evidence_is_not_authority",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_fallback_field_cannot_waive_complete_component_conflict",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_stale_v2_complete_fields_cannot_override_lost_capture",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_top_level_and_nested_component_conflict_refuses_both",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_top_level_and_nested_measured_commission_conflict_refuses",
+  "tests/research_infra/test_wave20_cost_completeness_falsifier.py::test_unnamed_point_twelve_mismatch_is_not_a_legacy_fallback"
+ ],
+ "bad_after_nodeids": []
+}
+```

@@ -1,0 +1,77 @@
+=== Canonical K54 v1 Re-run — 2026-04-28T06:48:24.738204+00:00 ===
+
+[1/5] Loading cohort + v2 paths...
+  Cohort: 528 rows, max_date=2026-04-24, win_rate=0.580
+  Loaded 15 v2 paths
+
+[2/5] Preparing canonical v1 design matrix (17 features)...
+  Shape: (528, 17), cols: ['hour_utc', 'day_of_week', 'counter_direction_flag', 'ob_distance_atr', 'ob_age_candles', 'displacement_quality_score', 'fvg_present', 'touch_count', 'ai_confidence', 'walk_level_signal', 'framework', 'instrument_class', 'direction_long_short', 'kill_zone', 'setup_grade', 'regime_tag', 'cross_instrument_xau_dir']
+
+[3/5] Building CPCV folds + paths (matches v2)...
+  K=6, N=2, n_paths=15
+    Fold 0: n=88, dates 2024-04-01 -> 2025-12-18
+    Fold 1: n=88, dates 2025-12-19 -> 2026-01-22
+    Fold 2: n=88, dates 2026-01-22 -> 2026-02-13
+    Fold 3: n=88, dates 2026-02-13 -> 2026-03-10
+    Fold 4: n=88, dates 2026-03-10 -> 2026-03-31
+    Fold 5: n=88, dates 2026-04-01 -> 2026-04-24
+  Splits match v2: confirmed.
+
+[4/5] Running Config A (canonical v1 global)...
+
+=== CONFIG A — Canonical v1 (17 features, global) ===
+  [A] Path 1/15 t=0.3s
+  [A] Path 4/15 t=1.4s
+  [A] Path 7/15 t=2.6s
+  [A] Path 10/15 t=3.6s
+  [A] Path 13/15 t=4.6s
+  [A] Path 15/15 t=5.3s
+  [A] Selected HP idx=1: {'n_estimators': 50, 'max_depth': 3, 'learning_rate': 0.05}
+  [A] auc_v1_mean=0.5286, auc_v2_mean=0.5429, diff_mean=+0.0143, p_stouffer=0.195705, PASS=False
+
+[5/5] Running Config B (per-regime v1 ensemble)...
+
+=== CONFIG B — Per-regime v1 (17 features, ensemble) ===
+  Regime distribution: {'UNTAGGED': np.int64(215), 'bearish': np.int64(68), 'bullish': np.int64(135), 'transitional': np.int64(110)}
+  Unique regimes: ['UNTAGGED', 'bearish', 'bullish', 'transitional']
+  [B] Path 1/15 t=21.7s
+  [B] Path 4/15 t=81.0s
+  [B] Path 7/15 t=140.8s
+  [B] Path 10/15 t=199.0s
+  [B] Path 13/15 t=250.0s
+  [B] Path 15/15 t=273.7s
+  [B] Selected HP idx=3: {'n_estimators': 50, 'max_depth': 5, 'learning_rate': 0.01}
+  [B] auc_v1_mean=0.5293, auc_v2_mean=0.5429, diff_mean=+0.0136, p_stouffer=0.032428, PASS=False
+  [B] Per-regime aggregate AUC:
+      UNTAGGED: n=215, AUC=0.4349648458626284
+      bearish: n=68, AUC=0.4362790697674418
+      bullish: n=135, AUC=0.48311111111111105
+      transitional: n=110, AUC=0.5149551345962113
+Traceback (most recent call last):
+  File "C:\Users\MSI\Documents\ai-trading-agent\research\ml_program\models\k54_v1_canonical\run_canonical_v1_rerun.py", line 1335, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\MSI\Documents\ai-trading-agent\research\ml_program\models\k54_v1_canonical\run_canonical_v1_rerun.py", line 1120, in main
+    out_b = run_config_b(X_v1_canon, y, dates, df_cohort, folds, paths, v2_paths)
+  File "C:\Users\MSI\Documents\ai-trading-agent\research\ml_program\models\k54_v1_canonical\run_canonical_v1_rerun.py", line 960, in run_config_b
+    json.dump(out, f, indent=2)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\json\__init__.py", line 179, in dump
+    for chunk in iterable:
+                 ^^^^^^^^
+  File "C:\Python313\Lib\json\encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "C:\Python313\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Python313\Lib\json\encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "C:\Python313\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Python313\Lib\json\encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "C:\Python313\Lib\json\encoder.py", line 439, in _iterencode
+    o = _default(o)
+  File "C:\Python313\Lib\json\encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+                    f'is not JSON serializable')
+TypeError: Object of type int64 is not JSON serializable

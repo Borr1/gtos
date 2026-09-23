@@ -1,0 +1,43 @@
+=== K54 v2 Architecture A — per-fold screening — 2026-04-28T06:44:44.606300+00:00 ===
+
+[1/7] Loading scout feature matrix + applying v2 prune...
+  Pre-prune 1247 -> post-prune 1234
+
+[2/7] Building K54 v1 paired baseline (528-row cohort)...
+  V1: (528, 15), win-rate 0.580
+  V2 full: (528, 1234) (NaN rate 17.080%)
+
+[3/7] Building CPCV K=6, N=2...
+  CPCV paths: 15
+
+[4/7] Per-fold screening + 27-HP grid × 15 paths × 2 models...
+  Screening: LightGBM (200 est, depth 5, lr 0.05, mdl 10) -> top-100 by gain
+  Path 3/15 done; elapsed 9s
+  Path 6/15 done; elapsed 19s
+  Path 9/15 done; elapsed 27s
+  Path 12/15 done; elapsed 35s
+  Path 15/15 done; elapsed 44s
+
+  Selected HP: idx=4, {'n_estimators': 100, 'max_depth': 5, 'learning_rate': 0.05}, OOS mean AUC = 0.5625
+
+[5/7] Re-running fixed-HP paired final pass for paired DeLong + Brier...
+  Gate (a): diff_mean=+0.0492, combined p=0.000094, PASS=True
+
+[6/7] PBO computation (Bailey & López de Prado 2014)...
+  PBO = 0.2000
+
+[7/7] Cross-instrument breakdown (CPCV pred aggregation)...
+  GBPJPY: n=62, AUC_a=0.4495798319327732, AUC_v1=0.463235294117647, diff=-0.013655462184873846 [FAIL]
+  GBPUSD_USDJPY: n=138, AUC_a=0.5258201058201059, AUC_v1=0.535978835978836, diff=-0.010158730158730145 [FAIL]
+  NAS_US30: n=113, AUC_a=0.5219435736677115, AUC_v1=0.44200626959247646, diff=0.07993730407523503 [PASS]
+  XAU_XAG: n=215, AUC_a=0.5155244225672094, AUC_v1=0.4823930329420674, diff=0.033131389625142005 [PASS]
+  Cross-instrument: 2/4 positive lift
+
+[Final] Aggregating per-path top-100 -> top features by frequency, fitting global model...
+
+=== Architecture A DONE in 46s ===
+
+Gate verdicts (Arch A):
+  (a) CPCV paired: diff_mean=+0.0492, p_combined=0.000094, PASS=True
+  (b) PBO: 0.2000
+  (d) Cross-instrument (4-group): 2/4

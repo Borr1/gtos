@@ -1,0 +1,11 @@
+# Large regenerable forensic artifacts stay OUT of git — CLAUDE.md §8 puts the inline
+# non-LFS blob threshold at 5 MB, and 97 % of the tracked tree is already generated
+# evidence. Every excluded file is recorded with its sha256, size and regeneration
+# command in LARGE_ARTIFACTS.md, which IS committed. Restore by re-running the builder.
+*.parquet
+*.pkl.gz
+__pycache__/
+*.pyc
+
+# Named exclusions above the threshold that are not covered by an extension rule.
+g2_replay/receipts/G2_M1_ROWS.json

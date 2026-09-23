@@ -1,0 +1,36 @@
+--- a/src/components/ultimate_book/order_router.py  (HOST today)
++++ b/src/components/ultimate_book/order_router.py  (after this carry)
+@@ -19,11 +19,20 @@
+ from . import execution_packets as EP
+ 
+ 
+ class UltimateBookOrderRouter:
+-    def __init__(self, config: dict, namespace: str = "operator_profile"):
++    def __init__(self, config: dict, namespace: str = "operator_profile",
++                 frontier_exits: tuple = ()):
+         self.config = config or {}
+         self.namespace = namespace
++        # The frontier-exit sleeve selection (Session AU, B1550). An EXPLICIT constructor argument
++        # and NOT a config key, deliberately, following `--recover-pre-gap-bar` rather than
++        # `--vol-level-tilt`: this flag is consumed here, on the placement path, so it never reaches
++        # `bridge._bool` and therefore cannot produce the KeyError-against-DEFAULT_CONFIG failure AR
++        # measured -- an armed book standing down every tick with a healthy heartbeat. A key that is
++        # never read cannot be read wrong. Pinned by
++        # `test_frontier_exit_contracts.py::test_the_selection_is_not_a_config_key_anywhere`.
++        self.frontier_exits = tuple(frontier_exits or ())
+ 
+     # ---- live account_state for the prop-firm headroom snapshot ----
+     def account_state(self, mt5, *, day_start_baseline: float, reset_window_id: str,
+                       account_login: Optional[int] = None) -> Optional[dict]:
+@@ -68,9 +77,10 @@
+         geom = self._geometry(intent, tick)
+         if geom is None:
+             return None
+         return EP.build_book_trade_params(sized_unit, intent, geom, account_state,
+-                                          profile_namespace=self.namespace)
++                                          profile_namespace=self.namespace,
++                                          frontier_exits=self.frontier_exits)
+ 
+     # ---- placement (open_trade builds the cost model + runs the 3 gates + sends) ----
+     def place(self, execution_engine, sized_unit, intent, tick, account_state,
+               account_balance: float) -> dict:

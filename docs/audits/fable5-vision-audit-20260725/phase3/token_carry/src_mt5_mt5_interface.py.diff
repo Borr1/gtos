@@ -1,0 +1,14 @@
+--- a/src/mt5/mt5_interface.py  (host-local)
++++ b/src/mt5/mt5_interface.py  (phase3/safety-spine)
+@@ -62,6 +62,11 @@
+ TRADE_ACTION_DEAL = 1
+ TRADE_ACTION_PENDING = 5
+ TRADE_ACTION_SLTP = 6
++# Added 2026-07-26 for the activation-token request classifier, which has to
++# reason about every action the runtime can send — not just the three it
++# currently sends. Values are MetaTrader5's own enum.
++TRADE_ACTION_MODIFY = 7
++TRADE_ACTION_REMOVE = 8
+ 
+ 
+ class MT5Interface(ABC):

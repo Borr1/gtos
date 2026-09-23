@@ -1,0 +1,278 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.astra.jev_admit_v1",
+  "title": "jev_admit_v1",
+  "description": "Jev admit sidecar for a slate candidate plus surface-law digest. Shadow log only. Code combines atomic TypeSafe answers; this schema never authorizes place, remint, flatten, or SL moves. Calibration surface is Challenge 0 / $110k.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "mode",
+    "shadow_log_only",
+    "never_place",
+    "never_remint",
+    "never_flatten",
+    "never_move_sl",
+    "account_surface",
+    "state",
+    "answers",
+    "code_policy"
+  ],
+  "properties": {
+    "schema": {"const": "jev_admit_v1"},
+    "mode": {"const": "shadow_log_only"},
+    "shadow_log_only": {"const": true},
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_move_sl": {"const": true},
+    "audit_id": {"type": "string", "minLength": 1},
+    "logged_at_utc": {"type": "string", "format": "date-time"},
+    "account_surface": {"$ref": "#/$defs/account_surface"},
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "surface_law_digest"],
+      "properties": {
+        "candidate": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["candidate_id", "symbol", "side"],
+          "properties": {
+            "candidate_id": {"type": "string", "minLength": 1},
+            "symbol": {"type": "string", "minLength": 1},
+            "side": {"type": "string", "enum": ["long", "short"]},
+            "family": {"type": "string"},
+            "sleeve": {"type": "string"},
+            "order_type": {"type": "string", "enum": ["MARKET", "LIMIT"]},
+            "stop_distance_atr": {"type": "number"},
+            "target_distance_atr": {"type": "number"}
+          }
+        },
+        "surface_law_digest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "us30_off",
+            "hard_off_families",
+            "keep_families",
+            "circuit"
+          ],
+          "properties": {
+            "us30_off": {"const": true},
+            "hard_off_families": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "bleed",
+                  "orb_crypto",
+                  "idxrev",
+                  "xa_huge",
+                  "mx_us30"
+                ]
+              }
+            },
+            "keep_families": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "enum": ["spring", "vss"]}
+            },
+            "circuit": {"const": "2-stop"}
+          }
+        }
+      }
+    },
+    "typesafe_questions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Atomic TypeSafe questions issued together over the same state. Not a mega-question.",
+      "properties": {
+        "admit": {
+          "type": "object",
+          "const": {
+            "primitive": "choice",
+            "criteria": ["admit", "abstain", "hard_refuse"]
+          }
+        },
+        "surface_ok": {"type": "object", "const": {"primitive": "noul"}},
+        "toxic_family": {"type": "object", "const": {"primitive": "noul"}},
+        "geometry_quality": {
+          "type": "object",
+          "const": {
+            "primitive": "score",
+            "levels": {
+              "0": "Poor — stop too tight or TP unreachable vs tape",
+              "1": "Acceptable — house default ~1R/6R with known fast-stop risk",
+              "2": "Good — stop width and TP fit current volatility"
+            }
+          }
+        }
+      }
+    },
+    "answers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["admit"],
+      "properties": {
+        "admit": {
+          "allOf": [
+            {"$ref": "#/$defs/choice_answer"},
+            {
+              "properties": {
+                "choice": {
+                  "type": "string",
+                  "enum": ["admit", "abstain", "hard_refuse"]
+                }
+              }
+            }
+          ]
+        },
+        "surface_ok": {"$ref": "#/$defs/noul_answer"},
+        "toxic_family": {"$ref": "#/$defs/noul_answer"},
+        "geometry_quality": {"$ref": "#/$defs/score_answer"}
+      }
+    },
+    "code_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "admit_confidence_min",
+        "on_low_confidence",
+        "on_admit_below_min"
+      ],
+      "properties": {
+        "admit_confidence_min": {
+          "const": 0.55,
+          "description": "v0 lab gate. Validate on Challenge data before Nightly Decide."
+        },
+        "on_low_confidence": {"const": "abstain_escalate"},
+        "on_admit_below_min": {
+          "const": "abstain_escalate_even_if_choice_admit"
+        }
+      }
+    },
+    "disposition": {
+      "type": "string",
+      "enum": ["log_only", "abstain_escalate", "chair_ignore"],
+      "description": "Code disposition after gates. Never place."
+    }
+  },
+  "$defs": {
+    "account_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["login", "pass_target", "role"],
+      "properties": {
+        "login": {"const": "0"},
+        "pass_target": {"const": "$110k"},
+        "magic": {"const": "0"},
+        "role": {"const": "challenge_calibration"},
+        "verification_login_quarantined": {"const": "0"}
+      }
+    },
+    "choice_answer": {
+      "type": "object",
+      "required": ["choice", "confidence", "probabilities"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "choice": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "noul_answer": {
+      "type": "object",
+      "required": ["noul"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "noul": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "score_answer": {
+      "type": "object",
+      "required": ["score", "confidence"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "score": {"type": "number", "minimum": 0, "maximum": 2},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "legend": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "jev_admit_v1",
+      "mode": "shadow_log_only",
+      "shadow_log_only": true,
+      "never_place": true,
+      "never_remint": true,
+      "never_flatten": true,
+      "never_move_sl": true,
+      "account_surface": {
+        "login": "0",
+        "pass_target": "$110k",
+        "magic": "0",
+        "role": "challenge_calibration",
+        "verification_login_quarantined": "0"
+      },
+      "state": {
+        "candidate": {
+          "candidate_id": "example-slate-1",
+          "symbol": "XAUUSD",
+          "side": "long",
+          "family": "spring",
+          "order_type": "MARKET"
+        },
+        "surface_law_digest": {
+          "us30_off": true,
+          "hard_off_families": [
+            "bleed",
+            "orb_crypto",
+            "idxrev",
+            "xa_huge",
+            "mx_us30"
+          ],
+          "keep_families": ["spring", "vss"],
+          "circuit": "2-stop"
+        }
+      },
+      "answers": {
+        "admit": {
+          "type": null,
+          "choice": "admit",
+          "confidence": 0.33,
+          "probabilities": {
+            "admit": 0.56,
+            "abstain": 0.13,
+            "hard_refuse": 0.31
+          }
+        },
+        "surface_ok": {"type": null, "noul": 0.75},
+        "toxic_family": {"type": null, "noul": 0.61},
+        "geometry_quality": {
+          "type": null,
+          "score": 1.01,
+          "confidence": 0.95
+        }
+      },
+      "code_policy": {
+        "admit_confidence_min": 0.55,
+        "on_low_confidence": "abstain_escalate",
+        "on_admit_below_min": "abstain_escalate_even_if_choice_admit"
+      },
+      "disposition": "abstain_escalate"
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.rates_dxy_funding.v0",
+  "title": "RATES_DXY_FUNDING_V0",
+  "description": "Research-only typed impulses for USD / rates / funding / risk. Missing Challenge-true feeds stay null. Never invents NEWS_PROTOCOL, FRED, ICE DXY, or raw X. Intelligence only — never place/remint/flatten/resize.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "never_place",
+    "never_resize",
+    "never_apply_size",
+    "never_invent_news_protocol",
+    "usd_impulse",
+    "rates_impulse",
+    "funding_stress",
+    "risk_on_off",
+    "dxy",
+    "completeness"
+  ],
+  "properties": {
+    "schema": {"const": "gtos.judgment.rates_dxy_funding.v0"},
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_resize": {"const": true},
+    "never_apply_size": {"const": true},
+    "never_invent_news_protocol": {"const": true},
+    "never_ingest_raw_x": {"const": true},
+    "usd_impulse": {
+      "type": "object",
+      "description": "USD-strengthening impulse from named FX last-bar returns. DXY is not used on this clone.",
+      "required": ["noul", "value", "assembled", "challenge_true_target"],
+      "properties": {
+        "noul": {"const": "usd_impulse"},
+        "value": {"type": ["boolean", "null"]},
+        "assembled": {"type": "boolean"},
+        "feed_class": {"enum": ["challenge_true", "lab_or_fixture", "sierra_control", "unassembled"]},
+        "challenge_true": {"type": "boolean"},
+        "challenge_true_target": {"type": ["boolean", "null"]},
+        "source": {"enum": ["usd_fx_basket", "unassembled"]},
+        "dxy_used": {"const": false}
+      }
+    },
+    "rates_impulse": {
+      "type": "object",
+      "description": "Named yield impulse. USD FX basket is not a rates print. Sierra ZN control is not this Noul.",
+      "required": ["noul", "value", "assembled"],
+      "properties": {
+        "noul": {"const": "rates_impulse"},
+        "value": {"type": ["boolean", "null"]},
+        "assembled": {"type": "boolean"},
+        "challenge_true_target": {"type": ["boolean", "null"]},
+        "usd_fx_is_not_a_yield": {"const": true}
+      }
+    },
+    "funding_stress": {
+      "type": "object",
+      "description": "Named TED/SOFR/FRA-OIS stress. Gold spread and VIX are not funding.",
+      "required": ["noul", "value", "assembled"],
+      "properties": {
+        "noul": {"const": "funding_stress"},
+        "value": {"type": ["boolean", "null"]},
+        "assembled": {"type": "boolean"},
+        "challenge_true_target": {"type": ["boolean", "null"]},
+        "gold_spread_is_not_funding": {"const": true},
+        "vix_is_not_funding": {"const": true}
+      }
+    },
+    "risk_on_off": {
+      "type": "object",
+      "description": "Yes-event is named risk_off. Null when mixed or unassembled.",
+      "required": ["noul", "value"],
+      "properties": {
+        "noul": {"const": "risk_on_off"},
+        "value": {"type": ["boolean", "null"]},
+        "yes_event": {"const": "risk_off"},
+        "stance": {"enum": ["risk_on", "risk_off", "mixed", "unassembled"]},
+        "vix_used": {"const": false}
+      }
+    },
+    "dxy": {
+      "type": "object",
+      "properties": {
+        "series": {"type": "null"},
+        "usable_as_ice_dxy": {"type": "boolean"},
+        "challenge_true": {"const": false}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "required": ["dxy", "missing_fields"],
+      "properties": {
+        "dxy": {"const": false},
+        "missing_fields": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

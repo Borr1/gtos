@@ -1,0 +1,49 @@
+========================================================================
+BACKTEST REPORT
+========================================================================
+
+── Overview ──────────────────────────────────────────────
+  Total sessions:           38
+  Sessions with errors:     0
+  Trades taken:             0
+  No-trade sessions:        38
+  Trade frequency:          0.0%
+
+── Trade Outcomes ────────────────────────────────────────
+  Wins:                     0
+  Losses:                   0
+  Breakeven:                0
+  Win rate:                 0.0%
+
+── R-Multiple Analysis ───────────────────────────────────
+  Total R:                  +0.00R
+  Avg winner:               0.00R
+  Avg loser:                0.00R
+  Expectancy:               0.00R per trade
+  Profit factor:            0.00
+
+── Risk Metrics ──────────────────────────────────────────
+  Max consecutive losses:   0
+  Max drawdown (R):         0.00R
+
+── Section 9.1 Targets ───────────────────────────────────
+  False positive rate:      0.0%  (target: <30%)
+  Debate false approval:    0.0%  (target: <20%)
+  Combined expectancy:      0.00R  (target: >0.5R)
+  False negative rate:      [requires manual review]
+  Debate false rejection:   [requires manual review]
+
+── Candle Decision Breakdown ─────────────────────────────
+  Total candles evaluated:  380
+  CANDIDATE:                0
+  NO_TRADE:                 380
+
+── API Usage ─────────────────────────────────────────────
+  Total API calls:          380
+  Estimated cost:           $5.02
+  Avg cost per session:     $0.1321
+  Input tokens:             0
+  Output tokens:            0
+  Malformed retries:        0
+
+========================================================================

@@ -1,0 +1,473 @@
+# Complete QuantLabsNet Tour - Trading Bot Development Showcase
+URL: https://www.youtube.com/watch?v=MuZI1UJsAps
+Video ID: MuZI1UJsAps
+Duration: 1270s
+Fetched: 2026-04-18T13:22:09Z
+---
+
+Good day. Good day everybody. Brian here
+from quantlabset.com.
+My last video I goofed up um just all
+audio. I'm going to show you a complete
+tour where we're at with pretty well
+everything in terms of development,
+futures and options trading and all
+that. So at the top here at
+quantabsnet.com
+you can find um
+basically like Yeah, audio is all good.
+Uh all right. So at the top here you'll
+find here a start here
+and uh a career section. So this is for
+the first for the people that want to
+start getting into algo trading. So this
+thing at hft do hftcode.com
+is where you get a codebase to work from
+in Python with four sample strategies,
+forex pairs, stock,
+commodities and so on. And you can use
+Visual Studio Cloud Code and the like to
+get started. Okay. Also, I've added
+another one duplicate product, but it
+also has an AI interview preparation
+platform to it. We'll call it lots of
+PDF examples. how to prompt, how to role
+play, how to get through all phases of
+recruiting for high-paying jobs in the
+quant trading, HFT trading space.
+Okay, so just we know that the next
+thing is we have our membership called
+the Quant
+Analytics. In here we have a trial for 7
+days. This will be going up in the next
+few days by 50% and I'm going to show
+you why. So jump on it now for that
+price before it goes up per month.
+That's if you're obviously interested.
+So my job here is to show you that. We
+also have a discord now. Um and we also
+have a private section for all my paying
+members once we get enough people uh to
+contribute in that as well. So also as
+part part of this membership we're
+talking about is the group section in
+here. This is the core of everything the
+back end. So I'm going to show you the
+evolution of where we're at where we're
+trading. So as you know we've been I've
+been working with quant u sorry uh
+futures and options mostly CME related
+Chicago mercantile exchange over the
+last uh couple of months been working on
+automated
+creating keyword here dynamics
+uh trading bots where I can generate
+between 10 to 12 trading bots or
+strategies uh based off of news. So, I'm
+going to show you that as well and how
+all the different types of AI models
+that you can use and the critical
+difference it makes. So, I've been doing
+online events every Tuesday night on
+YouTube, 7 p.m. This is the newest one
+that's coming up. So, April 21st, what
+does it include? Okay, let's check it
+out. So, the last few days I've been
+tweaking. Everything seems to work
+really good, but what matters is a we're
+trading creating trading bots that are
+profitable and b the more we create the
+more opportunity we have. So in this
+there's about eight models we could talk
+about all of these Chinese ones,
+US-based ones including quad and open AI
+and a various set of Chinese ones.
+General consensus is is that the Chinese
+ones are not going to create the kind of
+quality code you need to be profitable
+doing this. Okay. So, if they're trying
+to be on the cheap side of things, not
+paying for AI like $100 a month, let's
+say with a US-based one, specifically in
+something like flawed mode or using the
+GPT codecs for because everything I do
+is now Python. um I think you're not
+going to succeed at all. And I'm going
+to show you why.
+Okay. So, if you go back to my group
+section here that I I talked about,
+um I can go here.
+So, in the in the group section, what
+we've got here, actually, just go under
+more. Once you sign up, you get access
+to three different groups. Uh but
+there's this one, the quant finance
+group, which is the private one. Um,
+there's this. So, since yesterday, I've
+been playing around with different
+Chinese uh AI. They don't give you what
+you want. Okay. Also, I can generate
+everything driven off of news. So, we
+have here this thing called a trading
+report. So if you look at the style of
+these reports, this is all what
+institutions are doing, meaning banks,
+hedge funds, firms, quant funds, HFT
+firms, family offices, and the like. If
+you don't understand what they're doing,
+as you can see here, based around
+futures and options, you're not going to
+be a successful trader over the long
+run. you'll just be most likely trading
+in the spot market and getting killed
+off and you be put in the bucket of what
+they call money. It's because the smart
+money, which is this, is going to take
+advantage of you. And about 90% of the
+people that are in the not smart money
+camp lose money and they lose bad. So
+what we're dealing with is right now
+coming off of uh the Iran war uh with
+the US and everything's been focused on
+energy, oil, gas, heating, oil. Uh also
+there's gold, silver as well involve
+treasuries has an impact and it's just
+basically derived around what comes out
+of President Trump's head and how he
+tweets things and then the markets react
+to it. also has impact on currencies,
+market indices, and crypto. And there's
+a whole flow of relationships between
+all of these different assets and how
+it's all loaded up impacted by arbitrage
+opportunities and hedging and blah blah
+blah blah blah. This is where you need
+to spend a lot of your time to
+understand how this works. That's what
+this quantit is really built for. So,
+you can see this one, this is fairly
+easy to go through. It's fairly plain
+English and blah blah blah, which is
+fine. Doesn't work for the AI, though.
+So, if you follow into a more recent one
+from earlier today as an example,
+um, like this one that I can download,
+it's using a US-based AI to generate it.
+So, here it is. And you'll see the stark
+difference between the two.
+Um, namely that this one's more targets,
+more percentages, and is very precise on
+what the firms are doing and giving you
+actual
+hard-coded hard numbers, okay? And
+exactly what they're doing in option
+chains and all forward-looking data. Any
+person that's successful and has been in
+the game for a long time knows perfectly
+well the only proper data to use is
+forwardlooking data. That's why it's
+called futures with options that gives
+you the ability to watch open interest
+on a variety of different chains. I've
+gone over it last week or so. We got
+that part portion working very expensive
+to do. That's why everything's going up
+now because it works.
+On top of that, um everything's all
+forward looking in the options world.
+It's open interest
+along with Greek analysis as well. So in
+a nutshell, that's what we're looking
+at. So this works better than the prior
+style and this is generated by codeex
+from open AAI.
+All right. So what I want to show you
+here is a typical
+set of bots. As I said, we're going to
+generate 10 to 12 well 10 to 12 trading
+bots in a trading session.
+Okay. Um here is uh the source code
+right here. Okay. all of this. I'm going
+to show you some examples of the
+codebase and how it works. I don't put
+this out there into the public domain or
+even behind my pay wall. It's that
+valuable. But people can use what I
+generate as example the uh trading sorry
+the PDFs that are generated. So I'm
+going to show you some more. So here
+I've talked about this trading report.
+We also have a uh a uh grading what we
+call bot plan. What are the available
+current uh bots that will get traded
+based on on that news and it can range
+from Bitcoin
+to the market indices, oil, gold, all
+some of the currencies and so on and so
+forth. So here's an example what I'm
+talking about. So I'll load in the
+earlier set of data
+um in here.
+What I want to show
+is um this is a standard HTML dashboard
+that is everything I'm showing you is
+created by by uh AI. Okay, so we have 11
+trading bots. Eight of them are
+operational. Now this win ratio may not
+look good but there's something I want
+you to take away from. So we have 11
+different um trading bots. Here's what
+they trade in. Brent, crude, Bitcoin,
+copper, Ethereum, Euro, USD,
+uh Euro dollar, gold, silver, sofr,
+which is the overnight rate,
+uh the P500, wheat, and WTI crude oil.
+So, if I go under the charts, see what
+was traded right here is what matters.
+Okay, see here we traded Bitcoin, no
+winners. Here we try to trade uh S&P
+500. This is over a couple hours, all
+losers. losers. But if you've been
+watching, what we want to see is the
+winners here. So, this one's something
+different that you may not have seen.
+Right now, over the last few hours, this
+was a 50/50
+uh win ratio of about 50%. As you can
+see, some instances
+these assets to get traded could be very
+close to 70 80% win ratio. So, this is
+all generated by AI. What we could do is
+if we get that kind of scenario of 80%
+win ratio on something, we can
+automatically move it into a environment
+and live trade it real money pretty well
+very quickly. So we can take advantage
+of the opportunity. Sometimes depending
+upon the assets being traded in this
+case euro, we could trade it overnight
+into the overnight markets as well. So
+we could theoretically trade this
+overnight and and and profit off of this
+even more if the win ratio maintains at
+a very high rate of like like I said 70
+80%. And then we can apply things like
+options other types of leverage and
+maximize proh profit opportunity. Only
+these kind of bot strategies would be
+moved into a live trading environment. A
+fine one is pretty rare but it happens
+and it happens times a week. We just
+don't know about it, okay? Because the
+financial institutions are not talking
+about their live trading results. They
+can't. It's not allowed. But we can't
+because we don't have these
+restrictions.
+So, that's what we're after right there.
+Okay. So, um let's jump into our
+programming editor. Now, what I'm going
+to show you is something unique. So,
+what we're talking about because today
+is April
+17. This set of data was launched on uh
+11:55 p.m. today. And these were all the
+bots that were traded, the ones I just
+talked about. The one that we're really
+interested in is is this one right here.
+This is the code. And this will
+interface with that Python trading
+server. Um and then that will combine
+all the ability of all the communication
+with a message bus sitting on Reddus
+message queuing kind of database I guess
+call in memory and then turn around and
+interface all the calls requests live
+trading through rhythmic one of the data
+providers that popular uh that will
+connect you not just into um into uh the
+uh CME environment Um, yeah. So, you can
+you can trade all of these instruments
+and then it's just one server that will
+be the hub to all of these bots. That's
+how it works. So, here's a simple source
+code.
+And this one could have worked pretty
+good. Um, but this is where we're going
+with this. Okay. So, I just want to show
+you that. So um one of the things we
+need to do is when we generate these
+bots sometimes just sometimes
+the uh bots may not connect live into
+the markets. Okay. So when it comes down
+to prompting
+um
+let's see here if I could find an
+example.
+Okay. Uh so what we can do is we can
+generate um what is running and
+connecting live into the market data
+also we can figure out how's how are the
+trading how how is the live trading
+based upon looking at all the logs. Okay
+sometime it'll it'll explain what the
+data is information the market
+conditions the price if it's going to
+trade or not. So that's typical what you
+find in the log. From that we can assess
+what we can trade and what we can't
+trade. So in this case based just only
+on logs I asked it right here. How are
+the potential trading opportunity with
+P&L? Again this is claw code. Uh how are
+the trading opportunities with P&L
+profit loss with logs? Which strategy
+has most potential and why? This is what
+it came back with. So it ranks among all
+those Bitcoin
+because of this.
+Plus it gives you the projections from a
+portfolio metric standpoint. Sharp
+ratio, win ratio, profit factor, max
+draw down within tolerance, riskreward
+and uh why this this has the most
+potential right here. Plus, you know,
+might have some data connectivity
+problems. And then the numbers or the
+second one was the uh HG or or uh copper
+based upon AI demand breakout because
+more that that involves data centers and
+wiring involves copper. Okay. So these
+are the win ratio 55% blah blah blah
+blah. Um and then here's all the other
+ones but I know the ones from the early
+uh would be this one eurousd.
+Okay. limits on uh profitability
+recommendations. So then I turned around
+and said, "Can you give me a
+recommendation of potential on this
+strategy, the one I just talked about,
+the EuroUSD?"
+Okay. Um and the logic of that strategy,
+just to make sure we understand it, um
+is
+uh this one right here. So it trades
+long EuroUSD futures to capitalize on
+the Euro uh ETB Euro Central Bank
+hawkish repricing EuroUSD rallying to
+1.12 Fed cut expectation with macro
+funds exceeding Euro calls versus US
+puts risk reversal comes out of that and
+turning positive for the euro upside and
+that's kind of what happened. Um, and as
+I said, if that continued, today's
+Friday, overnight, that may have
+continued uh to profit potentially. Not
+saying it would have, but we could have
+set up an automated bot to go into the
+um live trading mode.
+Um, so we asked about the potential of
+this one and how do we improve it? So,
+this is what it said. So looked at all
+the trading, four losses, two wins,
+uh win ratio very low, uh profit
+negative. But here were some of the
+issues that it had
+market data on uh problems. And again,
+this is from native English
+prompting one log. And I and I just
+showed you um also with uh I you could
+do this against a Python script, any
+programming script really or isle and
+then there's these entry signal problems
+um because there's uh hits a loss rather
+than a target
+um poor entry timing. ATI is too ATR
+apture range on the exit's too too
+tight. Um here's some examples. So we
+need to look at half half a pip which is
+too strong uh too too too tight.
+So it also gives me a rating all these
+win ratio timeline profit factor here's
+the root causes and then
+to make this viable it gives me a
+suggestion again in raw native English
+prompting against an AI this time again
+in flawed this is why I think it's
+beyond critical that if you want to
+succeed you have to work with something
+very easy that's highly intelligent
+gives you high quality answers you may
+get this out of the Chinese AIS, but so
+far they're not quite there yet of
+compared to Claude and somewhat open AI
+is okay as well. The US ones seem to
+work better because I've spent a lot
+quite a bit of time this week on it and
+I've lost about three days, but now
+this seems to work. Not just that, but
+I'm able to get three trading
+opportunities out of it versus well, the
+Chinese ones, it's only one and they all
+lose money as well. and just synopsis of
+what to expect on that on that live
+stream. All right, so coming back to
+this um you can see I ask it now based
+on your recommendations create a new
+trading bot Python script to maximize
+the profit potential. Look what it does.
+It gives me seven improvements based
+upon that right here. This this this
+script right here 700 plus lines. Okay.
+And again, I keep mentioning the tip. If
+you want to save money, uh, always go
+with the lowest quality um or lowest
+tier flawed model, okay? Which I, okay?
+And you'll save quite a bit of money.
+It's just as effective as the other uh
+other tiers like uh Claw uh Claude Opus
+and Sonnet. You'll just pay more for the
+same results, I find. Anyway, so here's
+some of the um solutions. Here's what's
+expected on the improvements. Uh, so
+we're going from a 33% win ratio now to
+60 to 70%. So that's all built around
+what I suspected that we would like to
+see here or any of these bots. But I can
+improve it, run it alone on Monday and
+see what happens. If I want to do that,
+I could do that.
+Okay. So um, let me just go back to you.
+So there's all these things here and
+also
+allows for better execution on the stop
+distance as well. Okay. Um so the the
+trade duration is a little better as
+well. Um blah blah blah blah. Okay. So
+this is one of the enhancements that you
+can do using AI. And again again again
+again again again again again when it
+comes to these things on hftcode.com
+you can do the same thing put you in um
+flaw and use the codebase I give you and
+that will work in um interactive bro
+using uh the trader workstation with uh
+it's work it works right out of the gate
+um in python so you're trying to get to
+that level it take you days and days and
+and that's AI generated So, so that's
+why uh this this is kind of valuable I
+would think. But what makes it more
+valuable this is more for retail spot
+market money stuff I mentioned but this
+stuff more focuses on smart money all
+features and options. So I just want to
+make sure uh this is known where we're
+going with it and what we're trying to
+achieve as well. Okay. So, uh, again, if
+you want to take full advantage of this
+current rate, give it a try on this Quan
+Analytics cuz this is going to go up $97
+to $97 per month as of Wednesday, April
+22nd. Thanks for watching. Have a good
+day.

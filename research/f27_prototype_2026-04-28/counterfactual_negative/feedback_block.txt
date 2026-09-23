@@ -1,0 +1,23 @@
+## Recent trade outcomes (most recent 10 closed; treat as historical signal, not session memory)
+
+In your last 10 closed trades on this account: 2W / 8L, mean realized R = -0.65R, sum -6.5R.
+
+Recent losing setups (8 of last 10):
+- 2026-04-14 NY ob_retest LONG XAUUSD trending_bull -> -1.0R (SL hit, similar A+ grade)
+- 2026-04-14 London ob_retest LONG XAUUSD trending_bull -> -1.0R (SL hit, similar setup signature)
+- 2026-04-13 NY ob_retest LONG XAUUSD trending_bull -> -1.0R (SL hit, A+ grade)
+- 2026-04-13 NY ob_retest LONG XAUUSD trending_bull -> -1.0R (SL hit, similar fresh-OB pattern)
+- 2026-04-12 London ob_retest LONG XAUUSD trending_bull -> -1.0R (SL hit)
+- 2026-04-12 NY ob_retest LONG XAUUSD trending_bull -> -0.8R (BE-stopped after partial)
+- 2026-04-11 NY ob_retest LONG XAUUSD chop -> -1.0R (SL hit on counter-trend)
+- 2026-04-10 London ob_retest LONG XAUUSD trending_bull -> -1.0R (SL hit, displacement faded)
+
+Recent winning setups (2 of last 10):
+- 2026-04-09 NY ob_retest LONG XAUUSD trending_bull -> +1.5R (TP1)
+- 2026-04-08 NY ob_retest LONG XAUUSD trending_bull -> +1.5R (TP1)
+
+Per-regime breakdown of last 10:
+- trending_bull / LONG / ob_retest / NY: 1W 5L mean -0.81R
+- trending_bull / LONG / ob_retest / London: 1W 2L mean -0.50R
+
+Use this as a calibration signal on your decision-making, not as a substitute for evaluating this candle's MSO. The outcomes above are HISTORICAL telemetry from previously-closed trades, NOT the current session's reasoning context.

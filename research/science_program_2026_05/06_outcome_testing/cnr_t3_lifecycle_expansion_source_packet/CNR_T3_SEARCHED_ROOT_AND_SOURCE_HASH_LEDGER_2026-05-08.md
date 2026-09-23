@@ -1,0 +1,41 @@
+# CNR T3 Searched Root And Source Hash Ledger - 2026-05-08
+
+## Searched Roots
+- `C:\tmp\gtos_otb\CNRT3LIFE\data\ticks` exists=True
+- `C:\Users\MSI\Documents\ai-trading-agent\data\ticks` exists=True
+- `C:\tmp\gtos_otb\CNRT3LIFE\data\ticks` exists=True
+
+## Consumed Tick Files
+- `C:\Users\MSI\Documents\ai-trading-agent\data\ticks\XAGUSD\2026-05-05.parquet` sha256=`ad451c922db79a8643e32b7b9c5f55e6d5cd417834ef0fbf5b20b5799d004237` size=2892270
+- `C:\Users\MSI\Documents\ai-trading-agent\data\ticks\XAGUSD\2026-05-06.parquet` sha256=`c824a97a603940424ad43dc1a1263ae998053b5df262d3c3ab53dd83ccdab36e` size=3842206
+
+## Upstream Artifacts
+- `.context/LIVE_STATE.md` exists=True sha256=`40ebcb7c2a46e3da92cb81a34ea2291f7d7ecbb29250eb1332b65eb78089c0d0`
+- `.context/00_core/quick_reference_card.md` exists=True sha256=`e09d71390f6862a97fe7d40223e1acd1a7914f5350ea6f954e4a84521f6d9ffd`
+- `.context/00_core/research_operating_doctrine.md` exists=True sha256=`27901cd44d28dc159efd487f4717f295f4089afa34bb0bba14a171dc0f769ebe`
+- `.context/00_core/research_current_state.md` exists=True sha256=`eadac5b3ca7dd965d109f6b7df7af6073995213fa895c293e0f572195a2b44fe`
+- `.context/00_core/goal_session_research_discipline.md` exists=True sha256=`d8637b6e9809801cb8e28d0c2b633bfac9b22f74196d9b3c43c55856fe9ca994`
+- `.context/00_core/local_heavy_data_inventory.md` exists=True sha256=`fad850db93ce63f2ccf599cb4a54047b40db852b14c9be2711a362beab0584d0`
+- `.context/02_session_handoffs/SESSION_54_WEEKEND_GOAL_HANDOFF_2026-05-02.md` exists=True sha256=`0662139cbae0ef3ee6a0282af14136b02a9e5c49d5e462b62fd16243a4645235`
+- `research/science_program_2026_05/06_outcome_testing/cnr_t3_lifecycle_expansion_source_packet/CNR_T3_LIFECYCLE_EXPANSION_SOURCE_PACKET_GOAL_PROMPT_2026-05-08.md` exists=True sha256=`6ef6d22d5d40fec3e316fb428cca0551cea04df38303fa1082bc2f34658dd887`
+- `research/science_program_2026_05/06_outcome_testing/g12_cnr_next_model_control_audit/G12_CNR_NEXT_PROMPT_PACK_2026-05-08.md` exists=True sha256=`e960856786f772da98cb2d599dc0f25c98c80ff1f788480d63387cd1d33e4676`
+- `research/science_program_2026_05/06_outcome_testing/g12_cnr_next_model_control_audit/G12_CNR_NEXT_BLOCKER_AND_NEXT_ROUTE_LEDGER_2026-05-08.json` exists=True sha256=`4e19c4d4296a04708893c5d7e4885bdc1d6054bbb0338714f801cbec19213220`
+- `research/science_program_2026_05/06_outcome_testing/g12_cnr_next_model_control_audit/G12_CNR_NEXT_DECISION_LEDGER_2026-05-08.json` exists=True sha256=`0104517f0f996ce8d4452636b6142297ab49c3a81038f8543166a1cc84552048`
+- `research/science_program_2026_05/06_outcome_testing/g12_cnr_next_model_control_audit/G12_CNR061_LIFECYCLE_PACKET_AUDIT_2026-05-08.json` exists=True sha256=`4d2222f422348a74bf0ab85b780b89a1421dfac51b1436274511e73671452be9`
+- `research/science_program_2026_05/06_outcome_testing/g12_cnr_next_model_control_audit/G12_CNR_XAGUSD_STOP_AFTER_HORIZON_FORENSICS_2026-05-08.json` exists=True sha256=`57af927a6d5ae65ed5d46c06598a0bd18b819e0f2f76f271864f14af9d1ea0e6`
+- `research/science_program_2026_05/06_outcome_testing/g12_cnr_next_model_control_audit/G12_CNR_SOURCE_NOLEAK_DUPLICATE_AUDIT_2026-05-08.json` exists=True sha256=`9bc2152a735958db720c880bb31409d6c692bebaf5e9f7a9cf28ff80b93e85bd`
+- `research/science_program_2026_05/06_outcome_testing/cnr_next_model_control_pack/CNR061_NO_TERMINAL_TIMEBOX_LIFECYCLE_PACKET_2026-05-08.json` exists=True sha256=`eb715b7927c2dc2694322c8dfea058efb5f42c971f989ab10a442628ce5df615`
+- `research/science_program_2026_05/06_outcome_testing/cnr_next_model_control_pack/CNR061_NO_TERMINAL_TIMEBOX_LIFECYCLE_PACKET_2026-05-08_ROWS.jsonl` exists=True sha256=`89ad396b2d980eed75eee9ff747c73b074c3bfecc28a1b2b4f7961f49751e6f6`
+- `research/science_program_2026_05/06_outcome_testing/oti8_cnr061_quarantined_results/OTI8_CNR061_RESULT_LEDGER_2026-05-08_ROWS.jsonl` exists=True sha256=`3b68d942a34f386ab5a5a315f01685e5c7ef76b71c3b5841ee80f5f29217e3b3`
+- `research/science_program_2026_05/06_outcome_testing/oti8_cnr061_quarantined_results/OTI8_CNR061_ACCEPTED_ROW_MANIFEST_2026-05-08.json` exists=True sha256=`9bb05095ff41d8f4addda4e5fc6a4592332caf44a37de88d1199e80db7e41bfe`
+- `research/science_program_2026_05/06_outcome_testing/g12_oti8_cnr061_post_result_audit/G12_OTI8_CNR061_RESULT_INTEGRITY_AUDIT_2026-05-08.json` exists=True sha256=`08a74a5ce9166591b51a90f87a2dc704316b28bf9a812d0e13b5ff1687c9c84b`
+- `research/science_program_2026_05/06_outcome_testing/g12_oti8_cnr061_post_result_audit/G12_OTI8_CNR061_SOURCE_HASH_NOLEAK_AUDIT_2026-05-08.json` exists=True sha256=`352eb1aa726f63ac3fcdd60082dbe82a9394e5cddd3dc0a3b9cc228641faaa4d`
+- `research/science_program_2026_05/06_outcome_testing/oti7_cnr_accepted_quarantined_results/OTI7_CNR_RESULT_LEDGER_2026-05-08.jsonl` exists=True sha256=`cc0cfaaec0da40a6995415b82211a5d092fc928342f49568e61cb5d841ea205a`
+- `research/science_program_2026_05/06_outcome_testing/g12_oti7_cnr_post_result_audit/G12_OTI7_CNR_POST_RESULT_DECISION_LEDGER_2026-05-08.json` exists=True sha256=`1fafbfe21e8df31ecc6b2463e231e4e4c5b99713d88d7f9c128f8a5b621a1162`
+- `research/science_program_2026_05/06_outcome_testing/oti5_g6_cusum_changepoint_quarantined_results/OTI5_G6_CUSUM_RESULT_LEDGER_ROWS_2026-05-07.jsonl` exists=True sha256=`22c71896a12735def2ce065167ab12f779e7aaad92412ab23288d52bbc07a0a6`
+- `research/science_program_2026_05/06_outcome_testing/g12_oti5_otr061_post_audit/G12_OTI5_OTR061_DECISION_LEDGER_2026-05-07.json` exists=True sha256=`bcb354240d38f484c1610a2fa2eced76f5b9b732029f80611f03b8a49e952b7a`
+- `research/science_program_2026_05/06_outcome_testing/oti3_g3_geometry_quarantined_results/OTI3_G3_GEOMETRY_RESULT_LEDGER_ROWS_2026-05-07.jsonl` exists=True sha256=`a2b7c790bba3a16d6762f7be7e4a81b790b35c3bc3c91acfb9d703a186f44847`
+- `research/science_program_2026_05/06_outcome_testing/oti4_g6_opening_drive_quarantined_results/OTI4_RESULT_LEDGER_ROWS_2026-05-07.jsonl` exists=True sha256=`34d74c308ae696bb001c7fa791fe38ee62665d2511d56f84ce94cf1bbfdd9b2a`
+- `research/science_program_2026_05/06_outcome_testing/oti1_lifecycle_quarantined_results/OTI1_RESULT_LEDGER_2026-05-07.json` exists=True sha256=`e8c3d1d885e7bce194540e35b5cfae194204e5847899dfff91e17d157fbde4b8`
+- `research/science_program_2026_05/06_outcome_testing/oti2_riskbank_quarantined_results/OTI2_RISKBANK_RESULT_LEDGER_ROWS_2026-05-07.jsonl` exists=True sha256=`bc8bfc56c9929d9378c50579a78d665c58d12d748376547bd5cae4773e8f1631`
+- `research/science_program_2026_05/06_outcome_testing/oti6_otr061_cnr_quarantined_results/OTI6_CNR_RESULT_LEDGER_2026-05-07.json` exists=True sha256=`efc3dd9f188014163b64f2911a27b08d6dc149556c3966aa795470c0cb6baf55`

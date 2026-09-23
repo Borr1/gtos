@@ -1,0 +1,52 @@
+# Denominator Quarantine Gate Ledger
+
+```json
+{
+  "accepted_40_denominator_count": 40,
+  "accepted_40_equation": "8 ready + 15 future-capture blocked + 17 LTF/orderflow/proxy blocked = 40",
+  "accepted_40_result_denominator_unblocked_by_recovered_rows": false,
+  "anti_boxing_domain_count": 10,
+  "anti_boxing_route_family_count": 40,
+  "artifact_family": "denominator_quarantine_source_state_gate_ledger",
+  "blocked15_count": 15,
+  "blocked17_count": 17,
+  "blocked_cards_may_score_results_now": false,
+  "changes_trading_risk_safety_prompt_decision_behavior": false,
+  "credentials_touched": false,
+  "evidence_class": "G0_SCID_BLOCKED_CARD_UNBLOCKING_SYNTHESIS_AFTER_G12_FUTURE_CAPTURE_SOURCE_AUDIT_ONLY",
+  "expansion_accepted40_overlap_count": 0,
+  "expansion_candidate_count_quarantined": 24,
+  "generated_at_utc": "2026-05-13T01:18:09Z",
+  "live_effect": false,
+  "opens_ai_api": false,
+  "opens_broker_account_order_history_deal_position_evidence": false,
+  "opens_live_restart": false,
+  "opens_live_trading_behavior": false,
+  "opens_paid_or_vendor_access": false,
+  "opens_prompt_config_risk_safety_execution_canary_selector_edit": false,
+  "opens_raw_market_data_blob_commit": false,
+  "opens_registry_edit": false,
+  "opens_remote_push": false,
+  "opens_result_scoring": false,
+  "opens_strategy_edge_claims": false,
+  "opens_validation": false,
+  "outcome_review_opened": false,
+  "promotion_verdict": "NO_PROMOTION_VERDICT",
+  "ready8_count": 8,
+  "recovered_rows_are_result_denominator_rows": false,
+  "recovered_source_state_rows": 1213,
+  "route_id": "G0_SCID_BLOCKED_CARD_UNBLOCKING_SYNTHESIS_AFTER_G12_FUTURE_CAPTURE_SOURCE_AUDIT",
+  "safe_flags_preserved": true,
+  "schema_version": "g0_scid_blocked_unblocking_synthesis_v1",
+  "source_state_gate_before_any_future_result": [
+    "candidate-attached source fields frozen",
+    "as-of and source hash verified",
+    "duplicate denominator policy frozen",
+    "baseline/control assignment frozen",
+    "forbidden fields absent",
+    "G12 packet/source audit accepted",
+    "G0 future result gate explicitly authorizes outcome opening"
+  ],
+  "validation_safe": false
+}
+```

@@ -1,0 +1,29 @@
+A1 filled: 75
+
+(dir_aware_touch, max_h1_obs_touch_in_mso) — gate uses MATCHED OB only
+  dir_t=-1, max_mso_t=1: 2
+  dir_t=-1, max_mso_t=2: 2
+  dir_t=1, max_mso_t=1: 12
+  dir_t=1, max_mso_t=2: 12
+  dir_t=1, max_mso_t=3: 5
+  dir_t=1, max_mso_t=4: 3
+  dir_t=2, max_mso_t=2: 23
+  dir_t=2, max_mso_t=3: 2
+  dir_t=3, max_mso_t=3: 7
+  dir_t=3, max_mso_t=4: 1
+  dir_t=4, max_mso_t=4: 6
+
+--- Bound gate's reach ---
+Gate's lower-bound reach (dir_t>=2): 39/75 = 52.0%
+Gate's upper-bound reach (dir_t>=2 OR max_mso_t>=2 — overcounts): 61/75 = 81.3%
+
+Upper-bound rejected set realized: n=61, WR=42.6%, Exp=+0.066R, totR=+4.02
+Lower-bound rejected set realized: n=39, WR=48.7%, Exp=+0.218R, totR=+8.52
+
+Discrepancy rate (dir_t != max_mso_t, ignoring no_obs): 27/75 = 36.0%
+
+Breakdown — direction-aware says PASS but max_mso says might-reject:
+  Cases dir_t<2 AND max_mso_t>=2: 22
+
+Sample case: dir_t=-1, max_mso_t=2, direction=LONG, outcome=LOSS, R=-1.0
+  mso_h1_ob_touch_counts: [2]

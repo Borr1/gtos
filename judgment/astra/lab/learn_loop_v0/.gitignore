@@ -1,0 +1,4 @@
+# Local harness exhaust. Fixtures stay tracked.
+last_run.jsonl
+last_run.summary.json
+store.jsonl

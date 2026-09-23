@@ -1,0 +1,49 @@
+# Wave-21 forward-shadow lane — standalone config (NOT agent_config).
+#
+# The live book never reads this file and the shadow never writes anywhere but
+# its own namespace_dir.  The DECISION config (features/generation/costs) is
+# not here: it is built in memory each start via the frozen merge-310 pattern
+# (config/agent_config.yaml deep-merged under config/profiles/
+# operator_profile.yaml, truth mode forced on) and fingerprinted into
+# every heartbeat.
+forward_shadow:
+  # Own namespace. The runner REFUSES to start if this resolves into a
+  # live-book-owned tree (pipeline_state/*, shadow_logs/gtos_vnext*).
+  namespace_dir: shadow_logs/funnel_shadow
+
+  # Day-zero model artifact (committed; produced once by fit_shadow_ridge_model.py).
+  model_artifact: docs/audits/fable5-vision-audit-20260725/phase21/full_system_coherence/outcome_authority/forward_shadow/SHADOW_RIDGE_MODEL_V1.json
+
+  # Prequential daily refit (owner directive 2026-08-12) — ON.  At each new
+  # trading day's first cycle the ridge is refitted on the frozen corpus plus
+  # all shadow-observed resolved-eligible outcome rows to date, emitting a
+  # dated artifact under <namespace>/models/.  With zero forward rows the
+  # refit provably equals the V1 artifact, which is used directly.
+  daily_refit_enabled: true
+  frozen_corpus: docs/audits/fable5-vision-audit-20260725/phase21/full_system_coherence/outcome_authority/forward_shadow/FROZEN_TRAINING_CORPUS_V1.npz
+  # models_dir: defaults to <namespace_dir>/models
+
+  # Decision cadence: every M15 close + settle delay (successor-witness needs
+  # the next bar's first tick to have printed).
+  cycle_grid_minutes: 15
+  settle_delay_seconds: 30
+
+  # Live cost tick staleness bound; beyond it the quote chain falls to the
+  # era/hour-aware spread model, then fail-closed (candidate ineligible).
+  max_tick_staleness_seconds: 900
+
+  # M1 bars fetched per open would-be order per cycle (2h15m horizon + margin).
+  m1_fetch_bars: 420
+
+  # Empty list = the full GTOS 24-symbol surface from the research loop.
+  symbols: []
+
+  # Frozen rule config inputs (relative to repo root).
+  base_config_relpath: config/agent_config.yaml
+  profile_relpath: config/profiles/operator_profile.yaml
+
+  # Optional: pin the MT5 terminal the read-only session attaches to
+  # (recommended on the VPS: the FTMO terminal path). null = default terminal.
+  mt5_terminal_path: null
+
+  heartbeat_echo: true

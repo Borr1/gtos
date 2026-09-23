@@ -1,0 +1,19 @@
+# Market Expansion Commission Schedule Closure Successor Prompt
+
+Created: 2026-06-18T12:31:50.720153+00:00
+
+Mandatory context use: run GTOS preflight, regenerate `.context/LIVE_STATE.md`, and read `.context/00_core/goal_session_research_discipline.md`, `.context/00_core/research_operating_doctrine.md`, `.context/00_core/orchestrator_successor_operating_brief.md`, `.context/00_core/orchestrator_methodology_hardening_controls.md`, `.context/00_core/parallel_goal_merge_playbook.md`, this prompt, and the commission family-transfer artifacts from disk as active instructions, not background. Do not rely on chat memory. After compaction/resume/interruption/uncertainty, reread the prompt, doctrine, and latest route artifacts before continuing and record instruction-coverage in the completion audit.
+
+Lane posture: constructive source-repair and deployment-authority closure. Keep market expansion default-off until all authority gates close. Use maximum practical reasoning inside the evidence class, no arbitrary top-N, and no conservative brake. Preserve all material rows and pursue same-evidence-class repair before declaring a blocker.
+
+Literal impossibility means exactly every executable read, export, search, parser, repair, proxy, ablation, metric, audit, and review action inside this evidence class has been attempted, repaired, recomputed, or reduced to an exact owner/source/capture requirement. Full same-evidence-class pursuit is mandatory; a clean blocker ledger is not completion when a same-class read-only source-capture, source completeness check, branch decision, implementation decision, exact-R/proxy-R/expectancy recomputation, or result materialization step is still executable.
+
+Input route: `research/operations/final_moonshot_market_expansion_commission_family_transfer_2026_06_18/`.
+
+Objective: close or exactly bound broker-exact commission schedule authority. The current route gives direct or family-proxy account-history commission evidence for all 14 market-expansion targets. Continue from those artifacts. Search for exact broker/platform commission schedules, direct broker-history/export evidence for family-proxy targets, and a G12/owner-acceptable rule for whether family-transfer can be used in a default-off packet. If exact schedule authority remains open, keep market expansion default-off and preserve the family-transfer proxy only as cost-model input candidate, not live authority.
+
+Result materialization standard: every branch decision and implementation decision must preserve result-use-status/evidence-class boundaries, exact-R/proxy-R/expectancy values where lawful, source-capture/source completeness status, row counts, denominator rules, no-leak/as-of controls, and unresolved owner/source/capture requirements.
+
+Approved read-only evidence surfaces in this lane: aggregate `history_deals_get`, `symbol_info`, already committed broker-authority/fill-session route artifacts, and local config/test files. Forbidden unless the owner explicitly opens a deployment/live-operation lane: production-change, live trading, broker operation, broker/account/order/history/deal/position mutation beyond the approved aggregate read-only evidence class, order send/check, symbol selection, open positions/orders state reads, market book/depth/orderflow, prompt/config/risk/execution/safety/canary/selector live activation, credential mutation/disclosure, paid API/vendor calls, remote push, live config activation, and VPS restart/reload.
+
+Completion requires: result JSON, decision ledger, promotion-boundary ledger, unresolved/blocker-repair ledgers, verifier result, focused test record, output manifest, saturation/self-red-team audit, completion audit with instruction coverage, and a scoped commit. Mark complete only when the completion standard is satisfied with no vague blockers or hidden live-action assumptions.

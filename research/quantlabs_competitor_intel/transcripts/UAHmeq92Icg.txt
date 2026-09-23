@@ -1,0 +1,291 @@
+# Xiaomi's Secret AI: DeepSeek V4  EXPOSED - The $0.01 Model That Will CRUSH OpenAI & US Providers?
+URL: https://www.youtube.com/watch?v=UAHmeq92Icg
+Video ID: UAHmeq92Icg
+Duration: 651s
+Fetched: 2026-04-18T13:22:39Z
+---
+
+Hey, good day everybody.
+Ryan here.
+Some big news
+has come out earlier today.
+So,
+what's been happening is I'm going to
+show you the history of where we're at,
+but basically the new Deep Seek 4
+appears to be
+out there, but it's not under the brand
+name Deep Seek. It's under Xiaomi.
+So, let me show you what I'm talking
+about here.
+Okay.
+So, earlier today I posted this article
+on my website quantlabs.net.com.
+And it's called new Deep Seek 4 building
+a HFT system in Python and why USA
+providers should
+panic or whatever you want to call it.
+Um,
+so
+in this article I've done a few tests,
+okay?
+Um, first let's take a look at the
+history of everything just to verify
+that this is the new Deep Seek 4.
+Um, a friend of mine post sent me this
+article
+yesterday.
+Uh, on um
+on a mystery AI model revealed to be
+Xiaomi's following suspicions it was
+Deep Seek 4.
+All right. So, that's all fine and good.
+And um
+it was originally called
+uh
+something hunter, okay? And then it
+appeared
+for
+a few days, a day, a week ago on open
+router.
+Right. So, um
+there's that. Okay, so then
+I did some searching
+this morning on this website here.
+Um
+and uh let me just pull up. So, this is
+now Xiaomi Mimo version 2.
+If I can pull it up.
+There it is. All right, so this is now
+the introduction, okay? This is this is
+now
+Mimo V2 Pro. So, there's now a pro
+an open version, which is the open
+source version,
+and the light version, okay? So, here's
+all the stats. I've got the links there
+as I showed you.
+in here
+there's a mention of uh
+of um
+the hunter
+is now live. Let me just see if I can
+find that.
+But, nonetheless
+the actually this is a different page
+now that just in the last hour or so.
+Anyways, there's a link to it that
+verified that that was the new live
+version of the hunter.
+Okay?
+So, essentially this is
+in no doubt in my mind that this is the
+new Deep Seek.
+So, couple things here that you could
+take away from this
+is um
+I put a just a tested
+put in a simple request on the AI, write
+me a Deep One HFT system in Python to
+test with charting.
+So, this is the code that it generated.
+let me let me take you to the actual
+application so you could see it.
+everything
+works fine. Let me just see if I can get
+through it.
+Um and I'm also just so you know, I have
+got it testing
+and working
+under my uh
+over here. So, this is now replaced all
+the modeling that I was using
+that I've shown before, but it's using
+this new Xiaomi Deep Seek 4 model or
+whatever you want to call it.
+So, um if you go under this is now my
+Linux environment.
+So, in here I've got
+uh this little app here that I created.
+Let me just show you the source code or
+where to go.
+So, this is it running here. So, this is
+the result. It took one there's one
+error.
+And it's fairly easy to um
+get through. Now, my system's crawling
+right now and I think it's something to
+do with one of these requests going out
+to
+uh the Deep Seek, so it's it chews up a
+lot of processing and plus my streaming
+lab software as well doesn't help. So,
+let's see if it runs. So, now now it's
+going to run this little simulation.
+Just the one prompt that I showed you.
+And here it is. Um it's really fast.
+And uh pretty straightforward. There's
+not much to it.
+Um but it's simulating the data for
+Bitcoin and USD.
+And uh it's pretty well it on that
+little simple prompt, but in there
+you'll find all the basics
+of a very basic HFT system. So, I was
+somewhat impressed with that in a way.
+Um but here's the code as I said. So,
+we're now running this uh new
+thing here. So, let's take a look at
+what comparing
+this
+against
+what I've shown in the past last few
+days.
+So, again this is using um
+agents.
+Now, here's all of the available
+symbols [snorts] for this latest batch
+of news, okay?
+So, again it's nothing special
+um
+created. What what I would be interested
+in
+is the um so, I have here new project
+with the ending of China, which is all
+the Chinese
+APIs. So, I've got this new report here,
+which I am going to
+check out. Let me just give me give me a
+second here.
+Okay. So,
+let's try this out.
+Okay, I have here.
+Oh, here comes the PDF. So, this is the
+news generated PDF
+um by Deep Seek. So, it looks pretty
+similar. Now,
+this is just my first time seeing this,
+so I do know
+that this uh
+this is very capable
+this new model Deep Seek 4 or
+Xiaomi
+Mido or whatever it's called.
+It's very capable. The surprising thing
+is the cost.
+The cost is virtually nothing. Penny
+peanuts.
+Against a pen a pennies. Now, when you
+factor in if you're getting the same
+level of performance
+as with a very very expensive quad 4
+Quinta 4.6.
+Um but then I just responded with a new
+chat GPT
+nano and they're trying to keep their
+expenses down now, too. I just tried it.
+It's capable as well.
+Pretty cheap.
+Um and all the latest new ones I've
+tried out, the MiniMax uh
+uh 2.7 and what's the other one? Uh
+whatever.
+Um this one
+for Deep Seek, I I don't know how any
+any of these providers are going to be
+able to compete with this.
+Um when you have the cost, which is
+nothing, and on top of that on top of
+that, which is
+kind of scary in a way.
+which is kind of scary in a way, it's
+how are the
+AI providers going to compete against
+this?
+How are they going to stay in business
+when you have a very very low cost
+uh AI model Deep Seek 4 essentially. And
+I think what they're doing is they're
+taking the technology and licen
+licensing it out to specific
+um Chinese companies or
+or companies like Xiaomi as an example
+or maybe some of the more similar
+bot
+uh robot humanoid robot companies and
+the like and maybe the the military, I
+don't know, whatever they're doing.
+Um but the point is I don't know how
+they
+any, including other Chinese
+providers, are going to compete against
+this.
+Let alone
+um if this is as capable as I think it
+is,
+I think people in white collar jobs
+should be put on notice as well because
+many companies that would get access to
+this would have to
+would rather spend money on using this
+type of AI
+uh for the cost
+and banging out more productivity from
+it. And and again, same with uh in the
+finance world as well. That's important
+as well. So, all the trading systems,
+all the programming, all the quant
+research that I focus on and other
+people,
+uh they got to ask themselves, how are
+you going to make a career out of that?
+Um like myself independents that are
+using AI for our own development and our
+own
+usage and productivity, it's it's a boom
+dog for sure because
+we're not paying a lot for that type of
+productivity we're benefiting from. Not
+just that, but the quality of the code,
+the quality of the content coming out of
+this Deep Seek 4
+um is mind-blowing. And um it's good for
+people like myself.
+So, that's a interesting question I'd
+like to
+understand and how people are going to
+be able to
+be able to uh respond to this because
+this is a big deal.
+anyways, now that we have this out,
+things are going to radically change and
+I have access to it. I'm testing it now
+as I said.
+Um as I said, it's very very slow,
+um but nonetheless it's new, okay? So,
+I'll run this and see
+what happens to this uh
+capability. If it runs, I'll keep your
+eyes out my sub stack, my LinkedIn, my
+YouTube.
+You need post cuz I'll I'll update all
+that um as we go. But, I'm I'm very
+curious to see
+how this works and the cost of it. Um,
+but I just wanted to do a
+a video on this. This is like that big
+of a deal. As I said, if you
+like this, go to quantlabs.net.com.
+So, it said you can get the article
+right here. This name right here, new
+deep seek for building an HFT system in
+Python and why USA providers should be
+scared now.
+Um, if you want to learn more, hit the
+learn tab as well.
+Um, to get the free C++ HFT ebook and
+um, looking service is going to be
+removed soon.
+Um, and the like. Anyways, we'll leave
+it that. Thanks for
+watching.

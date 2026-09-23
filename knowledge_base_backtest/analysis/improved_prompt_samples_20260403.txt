@@ -1,0 +1,50 @@
+================================================================================
+GOLD (XAUUSD) — System Prompt
+================================================================================
+Length: 11420 chars (~3806 tokens)
+
+## CONFIDENCE SCORE
+Rate 50-95 based on overall confluence count. Higher = more confirming factors aligned.
+Show a one-line computation in confidence_computation.
+
+## Internal Consistency Rules
+- If decision is CANDIDATE, m15_confirmation.choch_detected MUST be true (otherwise violates U3).
+- If m15_confirmation.choch_detected is false, decision MUST be NO_TRADE.
+
+## Data Grounding Rules
+- Base ALL analysis on the price data provided in the Market State Object. If a price level, swing, or pattern is not present in the Market State Object, it does not exist.
+- If you cannot determine a structure direction with high confidence from the data provided, state 'unclear' — do not force a classification.
+- Respond with ONLY valid JSON matching the schema. Your response MUST start with { and end with }. No preamble, no markdown fences, no explanation outside the JSON.
+
+GBPUSD config not found — using gold config as reference
+
+================================================================================
+SESSION MEMORY INJECTION EXAMPLE
+================================================================================
+## Dynamic Market Data (H1/M15 — this candle)
+Candle: 2025-03-03T07:45:00Z
+
+## H1: No data
+
+## M15: No data
+
+## Prior Candle Assessments (this session)
+The following are your assessments of prior candles in this kill zone.
+Consider the progression: Is a setup developing across candles? Did a prior candle show a sweep or displacement that sets up the current candle? If you said WAIT or noted a developing pattern on a prior candle, check if the trigger has now occurred.
+
+- 07:15 UTC: NO_TRADE — D1 ranging, unclear bias
+- 07:30 UTC: NO_TRADE — H4 conflicting with D1
+
+## Current Time: 2025-03-03T07:45:00Z
+## Candle Being Evaluated: M15 close at 2025-03-03T07:45:00Z
+
+Evaluate this candle for BOTH the OB Retest and Breaker Block Retest setups. The active kill zone is: london. Output your analysis as JSON.
+
+================================================================================
+CHANGES SUMMARY
+================================================================================
+1. Confidence rubric: 500-token point-by-point rubric -> 2-line instruction (~470 tokens saved)
+2. Session memory: Added 3-line instruction header for AI to use progression context
+3. m15_confirmation.choch_detected: Added inline comment requiring TRUE for CANDIDATE
+4. Internal Consistency Rules: Added to anti-hallucination guardrails
+5. WAIT: Kept in schema (zero cost), no changes

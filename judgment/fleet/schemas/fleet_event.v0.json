@@ -1,0 +1,42 @@
+{
+  "schema": "gtos.fleet_event.v0",
+  "source_login": 0,
+  "kinds": [
+    "fill",
+    "close",
+    "mfe",
+    "high",
+    "candidate"
+  ],
+  "required": [
+    "ts_utc",
+    "kind",
+    "ticket",
+    "symbol",
+    "source_login"
+  ],
+  "fields": {
+    "ts_utc": "ISO-8601 Z (or producer stamp; relay does not rewrite)",
+    "kind": "enum",
+    "ticket": "int|string",
+    "symbol": "string",
+    "side": "buy|sell|null",
+    "sleeve": "string|null",
+    "r_orig": "float|null",
+    "mfe": "float|null",
+    "exit_class": "close_loop.exit_class_enum|null",
+    "note": "string|null",
+    "ns": "operator",
+    "fleet_event_id": "uuid",
+    "relay_ts_utc": "ISO-8601 Z stamped by the relay",
+    "volume": "Challenge lot; observer copies this, never invents 0.01",
+    "sl": "Challenge stop; observer copies on open and TRADE_ACTION_SLTP",
+    "tp": "Challenge target; observer copies on open and TRADE_ACTION_SLTP"
+  },
+  "never": [
+    "place_on_observer",
+    "remint",
+    "invent_ticket"
+  ],
+  "producer": "Challenge book_event ledger / spoken ledger / close-row unwrap. Subscribe only."
+}

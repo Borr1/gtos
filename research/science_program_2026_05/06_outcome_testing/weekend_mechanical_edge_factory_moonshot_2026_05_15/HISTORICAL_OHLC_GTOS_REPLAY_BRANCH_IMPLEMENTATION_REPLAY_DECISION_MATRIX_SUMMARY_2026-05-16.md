@@ -1,0 +1,111 @@
+# Historical OHLC GTOS Replay Branch Implementation/Replay Decision Matrix
+
+Generated UTC: `2026-05-16T11:13:35Z`
+
+Branch implementation/replay decision matrix only. It consumes the full router-application spec packet and emits same-resource replay/work-unit requirements for every branch. It does not change live behavior and does not claim broker R/PnL, realized expectancy, win-rate, live-readiness, promotion, or live effect.
+
+## Counts
+
+- `input_router_branch_rows`: `386`
+- `input_router_family_rows`: `1930`
+- `input_router_source_rows`: `138`
+- `input_router_m15_rows`: `186`
+- `input_router_m1_rows`: `110`
+- `input_router_positive_rows`: `243`
+- `input_router_entry_adverse_rows`: `386`
+- `input_router_binding_rows`: `2`
+- `input_full_outcome_branch_rows`: `386`
+- `branch_decision_rows`: `386`
+- `family_decision_rows`: `1930`
+- `source_decision_rows`: `138`
+- `m15_decision_rows`: `186`
+- `m1_decision_rows`: `110`
+- `positive_decision_rows`: `243`
+- `entry_adverse_decision_rows`: `386`
+- `binding_decision_rows`: `2`
+- `work_unit_rows`: `386`
+- `bucket_rows`: `168`
+- `question_rows`: `5`
+- `source_manifest_rows`: `10`
+
+## Key Distributions
+
+### primary_export_family
+- `BINDING`: `2`
+- `ENTRY_ADVERSE`: `6`
+- `M1`: `70`
+- `M15`: `119`
+- `POSITIVE`: `51`
+- `SOURCE`: `138`
+
+### immediate_action_class
+- `ENTRY_ADVERSE_AVOID_REDESIGN_OR_REPAIR_ACTION`: `1`
+- `ENTRY_ADVERSE_REPLAY_WITH_RESIDUAL_LIMITS_ACTION`: `5`
+- `M15_AVOID_REDESIGN_OR_REPAIR_ACTION`: `53`
+- `M15_CHALLENGER_REPLAY_ACTION`: `58`
+- `M15_REPLAY_WITH_RESIDUAL_LIMITS_ACTION`: `8`
+- `M1_CHALLENGER_REPLAY_ACTION`: `47`
+- `M1_REPLAY_WITH_RESIDUAL_LIMITS_ACTION`: `23`
+- `POSITIVE_AVOID_REDESIGN_OR_REPAIR_ACTION`: `8`
+- `POSITIVE_CHALLENGER_REPLAY_ACTION`: `21`
+- `POSITIVE_REPLAY_WITH_RESIDUAL_LIMITS_ACTION`: `22`
+- `PRESERVE_BINDING_PROVENANCE_NO_SCALAR_ACTION`: `2`
+- `SOURCE_AVOID_REDESIGN_OR_REPAIR_ACTION`: `45`
+- `SOURCE_CHALLENGER_REPLAY_ACTION`: `75`
+- `SOURCE_REPLAY_WITH_RESIDUAL_LIMITS_ACTION`: `18`
+
+### replay_builder_class
+- `BINDING_PROVENANCE_ONLY_NO_REPLAY_BUILDER`: `2`
+- `ENTRY_ADVERSE_AVOID_OR_REDESIGN_REPLAY_BUILDER`: `1`
+- `ENTRY_ADVERSE_RESIDUAL_LIMITS_REPLAY_BUILDER`: `5`
+- `M15_AVOID_OR_REDESIGN_REPLAY_BUILDER`: `53`
+- `M15_CHALLENGER_REPLAY_BUILDER`: `58`
+- `M15_RESIDUAL_LIMITS_REPLAY_BUILDER`: `8`
+- `M1_CHALLENGER_REPLAY_BUILDER`: `47`
+- `M1_RESIDUAL_LIMITS_REPLAY_BUILDER`: `23`
+- `POSITIVE_AVOID_OR_REDESIGN_REPLAY_BUILDER`: `8`
+- `POSITIVE_CHALLENGER_REPLAY_BUILDER`: `21`
+- `POSITIVE_RESIDUAL_LIMITS_REPLAY_BUILDER`: `22`
+- `SOURCE_AVOID_OR_REDESIGN_REPLAY_BUILDER`: `45`
+- `SOURCE_CHALLENGER_REPLAY_BUILDER`: `75`
+- `SOURCE_RESIDUAL_LIMITS_REPLAY_BUILDER`: `18`
+
+### work_unit_status
+- `NO_SCALAR_BINDING_PRESERVED`: `2`
+- `READY_FOR_AVOID_REDESIGN_OR_REPAIR_BUILDER_SPEC`: `323`
+- `READY_FOR_SAME_RESOURCE_REPLAY_BUILDER_SPEC`: `61`
+
+### source_requirement
+- `ACQUIRE_EXACT_SOURCE_OR_USE_COST_CAP_LOWER_BOUND_BEFORE_REPLAY`: `87`
+- `AVOID_OR_REPAIR_EXACT_SOURCE_BEFORE_REPLAY`: `31`
+- `NO_SOURCE_SPEC_REQUIREMENT`: `248`
+- `SPLIT_LOW_HIGH_COST_BOUNDS_AND_ACQUIRE_EXACT_SOURCE`: `20`
+
+### m15_requirement
+- `M15_SIDE_CAR_BOUNDS_CONTEXT`: `12`
+- `M15_SIDE_CAR_STOP_FIRST_CONTEXT`: `22`
+- `M15_SIDE_CAR_TARGET_FIRST_CONTEXT`: `33`
+- `M15_STOP_FIRST_AVOID_OR_REDESIGN_REPLAY_WITH_BOUNDS`: `36`
+- `M15_TARGET_FIRST_CHALLENGER_REPLAY_WITH_BOUNDS`: `58`
+- `M15_TARGET_STOP_BOUNDS_SELECTOR_SPLIT`: `25`
+- `NO_M15_REQUIREMENT`: `200`
+
+### m1_requirement
+- `M1_SIDE_CAR_CONFLICT_CONTEXT`: `17`
+- `M1_SIDE_CAR_SUPPORT_STABLE_CONTEXT`: `23`
+- `M1_SUPPORT_POSITIVE_BRANCH_AGGREGATE_SPLIT_REPLAY`: `23`
+- `M1_SUPPORT_STABLE_CHALLENGER_REPLAY`: `47`
+- `NO_M1_REQUIREMENT`: `276`
+
+### positive_requirement
+- `NO_POSITIVE_REQUIREMENT`: `143`
+- `POSITIVE_REPLAY_NOW__CONTROL_CONCENTRATION_STRESS`: `51`
+- `POSITIVE_SIDE_CAR_REPAIR_FIRST_CONTEXT`: `87`
+- `POSITIVE_SIDE_CAR_REPLAY_CONTEXT__CONTROL_CONCENTRATION_STRESS`: `105`
+
+### entry_adverse_requirement
+- `ENTRY_ADVERSE_SIDE_CAR_BOTH_REDESIGN_CONTEXT`: `148`
+- `ENTRY_ADVERSE_SIDE_CAR_ENTRY_REDESIGN_CONTEXT`: `150`
+- `ENTRY_ADVERSE_SIDE_CAR_PRESERVE_CONTEXT`: `82`
+- `ENTRY_AND_ADVERSE_REDESIGN_REPLAY`: `5`
+- `ENTRY_REDESIGN_REPLAY_ADVERSE_PRESERVED`: `1`

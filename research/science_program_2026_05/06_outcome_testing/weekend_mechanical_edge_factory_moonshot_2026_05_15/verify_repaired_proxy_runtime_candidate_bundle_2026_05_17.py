@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""Verify repaired-proxy runtime candidate bundle artifacts."""
+
+from __future__ import annotations
+
+import json
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+
+ROUTE_DIR = Path(__file__).resolve().parent
+PREFIX = "HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_RUNTIME_CANDIDATE_BUNDLE"
+INPUT_PREFIX = "HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_REGISTRATION_SPECS"
+BOUNDARY_SCHEMA = "concrete_branch_local_research_boundary_v1"
+
+RESULT_PATH = ROUTE_DIR / f"{PREFIX}_RESULT_2026-05-17.json"
+RUNTIME_CANDIDATE_LEDGER = ROUTE_DIR / f"{PREFIX}_RUNTIME_CANDIDATE_LEDGER_2026-05-17.jsonl"
+GUARD_CHECK_LEDGER = ROUTE_DIR / f"{PREFIX}_GUARD_CHECK_LEDGER_2026-05-17.jsonl"
+SYMBOL_CANDIDATE_BUNDLE_LEDGER = ROUTE_DIR / f"{PREFIX}_SYMBOL_CANDIDATE_BUNDLE_LEDGER_2026-05-17.jsonl"
+NONREGISTRATION_REVIEW_LEDGER = ROUTE_DIR / f"{PREFIX}_NONREGISTRATION_REVIEW_LEDGER_2026-05-17.jsonl"
+BUCKET_LEDGER = ROUTE_DIR / f"{PREFIX}_BUCKET_LEDGER_2026-05-17.jsonl"
+SYSTEM_ACTION_LEDGER = ROUTE_DIR / f"{PREFIX}_SYSTEM_ACTION_LEDGER_2026-05-17.jsonl"
+SOURCE_MANIFEST_LEDGER = ROUTE_DIR / f"{PREFIX}_SOURCE_MANIFEST_LEDGER_2026-05-17.jsonl"
+SUMMARY_PATH = ROUTE_DIR / f"{PREFIX}_SUMMARY_2026-05-17.md"
+
+REGISTRATION_SPEC_LEDGER = ROUTE_DIR / f"{INPUT_PREFIX}_REGISTRATION_SPEC_LEDGER_2026-05-17.jsonl"
+RUNTIME_GUARD_LEDGER = ROUTE_DIR / f"{INPUT_PREFIX}_RUNTIME_GUARD_LEDGER_2026-05-17.jsonl"
+NONREGISTRATION_CONTEXT_LEDGER = ROUTE_DIR / f"{INPUT_PREFIX}_NONREGISTRATION_CONTEXT_LEDGER_2026-05-17.jsonl"
+BUILDER_MODULE = ROUTE_DIR / "build_branch_local_repaired_proxy_runtime_candidate_bundle_2026_05_17.py"
+HELPER_MODULE = ROUTE_DIR.parents[3] / "src/research_infra/moonshot_repaired_proxy_runtime_candidate_bundle.py"
+
+
+def long_path(path: Path) -> str:
+    text = str(path)
+    if len(text) >= 240 and not text.startswith("\\\\?\\"):
+        return "\\\\?\\" + text
+    return text
+
+
+def read_json(path: Path) -> dict[str, Any]:
+    with open(long_path(path), "r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def read_jsonl(path: Path) -> list[dict[str, Any]]:
+    with open(long_path(path), "r", encoding="utf-8", errors="replace") as handle:
+        return [json.loads(line) for line in handle if line.strip()]
+
+
+def blocked_boundary_terms() -> list[str]:
+    return [
+        "NO_" + "PROMOTION_VERDICT",
+        "validation" + "_safe",
+        "outcome_" + "review_opened",
+        "live_" + "effect",
+        "safe_" + "flags",
+    ]
+
+
+def boundary_ok(row: dict[str, Any]) -> bool:
+    boundary = row.get("research_boundary") or {}
+    return (
+        boundary.get("boundary_schema") == BOUNDARY_SCHEMA
+        and boundary.get("artifact_scope") == "branch_local_research"
+        and boundary.get("production_import_path") is False
+        and boundary.get("mutates_order_risk_prompt_safety_or_mt5") is False
+        and boundary.get("runtime_candidate_use_permitted") is False
+        and boundary.get("unconditional_scalar_use_permitted") is False
+    )
+
+
+def scan_blocked_terms(paths: list[Path]) -> dict[str, list[str]]:
+    blocked = blocked_boundary_terms()
+    hits: dict[str, list[str]] = {}
+    for path in paths:
+        with open(long_path(path), "r", encoding="utf-8", errors="replace") as handle:
+            text = handle.read()
+        found = [term for term in blocked if term in text]
+        if found:
+            hits[path.name] = found
+    return hits
+
+
+def main() -> None:
+    issues: list[str] = []
+    result = read_json(RESULT_PATH)
+    input_spec_rows = read_jsonl(REGISTRATION_SPEC_LEDGER)
+    input_guard_rows = read_jsonl(RUNTIME_GUARD_LEDGER)
+    input_nonregistration_rows = read_jsonl(NONREGISTRATION_CONTEXT_LEDGER)
+    ledgers = {
+        "runtime_candidate_rows": read_jsonl(RUNTIME_CANDIDATE_LEDGER),
+        "guard_check_rows": read_jsonl(GUARD_CHECK_LEDGER),
+        "symbol_candidate_bundle_rows": read_jsonl(SYMBOL_CANDIDATE_BUNDLE_LEDGER),
+        "nonregistration_review_rows": read_jsonl(NONREGISTRATION_REVIEW_LEDGER),
+        "bucket_rows": read_jsonl(BUCKET_LEDGER),
+        "system_action_rows": read_jsonl(SYSTEM_ACTION_LEDGER),
+        "source_manifest_rows": read_jsonl(SOURCE_MANIFEST_LEDGER),
+    }
+    counts = result.get("counts", {})
+    for key, rows in ledgers.items():
+        if counts.get(key) != len(rows):
+            issues.append(f"{key} count mismatch result={counts.get(key)} ledger={len(rows)}")
+
+    candidate_family_counts = Counter(str(row.get("runtime_candidate_family")) for row in ledgers["runtime_candidate_rows"])
+    guard_status_counts = Counter(str(row.get("guard_check_status")) for row in ledgers["guard_check_rows"])
+    expected = {
+        "input_registration_spec_rows": len(input_spec_rows),
+        "input_runtime_guard_rows": len(input_guard_rows),
+        "input_nonregistration_context_rows": len(input_nonregistration_rows),
+        "runtime_candidate_rows": len(input_spec_rows),
+        "guard_check_rows": len(input_spec_rows),
+        "guard_check_passed_rows": len(input_spec_rows),
+        "guard_check_blocked_rows": 0,
+        "nonregistration_review_rows": len(input_nonregistration_rows),
+        "system_action_rows": 1,
+        "default_off_runtime_candidate_rows": candidate_family_counts.get(
+            "branch_local_default_off_repaired_proxy_scorer_candidate", 0
+        ),
+        "avoid_redesign_runtime_candidate_rows": candidate_family_counts.get(
+            "branch_local_avoid_redesign_repaired_proxy_comparator_candidate", 0
+        ),
+    }
+    for key, value in expected.items():
+        if counts.get(key) != value:
+            issues.append(f"{key} expected {value} got {counts.get(key)}")
+    if candidate_family_counts.get("branch_local_default_off_repaired_proxy_scorer_candidate", 0) != 75:
+        issues.append("default-off runtime candidate count drifted")
+    if candidate_family_counts.get("branch_local_avoid_redesign_repaired_proxy_comparator_candidate", 0) != 148:
+        issues.append("avoid/redesign runtime candidate count drifted")
+    if guard_status_counts.get("RUNTIME_CANDIDATE_GUARD_CHECK_PASSED_BRANCH_LOCAL", 0) != len(input_spec_rows):
+        issues.append("guard-check pass count drifted")
+    if any(row.get("production_import_path") for row in ledgers["runtime_candidate_rows"]):
+        issues.append("runtime candidate row exposes production import path")
+    if any(row.get("mutates_order_risk_prompt_safety_or_mt5") for row in ledgers["runtime_candidate_rows"]):
+        issues.append("runtime candidate row exposes order/risk/prompt/safety/MT5 mutation")
+    if any(row.get("guard_check_passed") is not True for row in ledgers["guard_check_rows"]):
+        issues.append("one or more guard-check rows did not pass")
+
+    bundle_candidate_total = sum(int(row.get("candidate_rows") or 0) for row in ledgers["symbol_candidate_bundle_rows"])
+    if bundle_candidate_total != len(input_spec_rows):
+        issues.append(f"symbol bundle candidate total expected {len(input_spec_rows)} got {bundle_candidate_total}")
+    nonregistration_bridge_total = sum(int(row.get("bridge_rows") or 0) for row in ledgers["nonregistration_review_rows"])
+    if nonregistration_bridge_total <= 0:
+        issues.append("nonregistration review rows lost bridge-row surface")
+
+    for key, rows in ledgers.items():
+        sample = rows[:100] if key == "source_manifest_rows" else rows
+        if not all(boundary_ok(row) for row in sample):
+            issues.append(f"{key} has rows outside concrete branch-local boundary")
+
+    files_to_scan = [
+        RESULT_PATH,
+        RUNTIME_CANDIDATE_LEDGER,
+        GUARD_CHECK_LEDGER,
+        SYMBOL_CANDIDATE_BUNDLE_LEDGER,
+        NONREGISTRATION_REVIEW_LEDGER,
+        BUCKET_LEDGER,
+        SYSTEM_ACTION_LEDGER,
+        SOURCE_MANIFEST_LEDGER,
+        SUMMARY_PATH,
+        BUILDER_MODULE,
+        HELPER_MODULE,
+        Path(__file__),
+    ]
+    blocked_hits = scan_blocked_terms(files_to_scan)
+    if blocked_hits:
+        issues.append(f"blocked boundary terms present: {blocked_hits}")
+
+    verdict = {
+        "ok": not issues,
+        "issues": issues,
+        "counts": {key: counts.get(key) for key in sorted(counts)},
+        "runtime_candidate_family_counts": dict(sorted(candidate_family_counts.items())),
+        "guard_check_status_counts": dict(sorted(guard_status_counts.items())),
+    }
+    print(json.dumps(verdict, indent=2, sort_keys=True))
+    raise SystemExit(0 if not issues else 1)
+
+
+if __name__ == "__main__":
+    main()

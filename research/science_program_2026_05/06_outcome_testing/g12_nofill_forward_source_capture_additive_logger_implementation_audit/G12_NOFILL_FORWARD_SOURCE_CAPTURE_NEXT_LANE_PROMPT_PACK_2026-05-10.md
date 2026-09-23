@@ -1,0 +1,3 @@
+# Next Lane Prompt Pack
+
+/goal Follow the full controlling prompt for a future shadow-only observation/readiness review or G0 synthesis; do mandatory preflight and context refresh first; do not rely on chat memory; stay source/control-only with no result/cost scoring, validation, promotion, registry edit, paid/API route, remote push, prompts, config, risk, permissions, safety, selectors, canaries, MT5 order/account/history/deal/position behavior, credentials, or live trading behavior changes; preserve NO_PROMOTION_VERDICT, validation_safe=false, outcome_review_opened=false, live_effect=false; split into a separate owner-approved evidence-class lane before any scoring or promotion work.

@@ -1,0 +1,17 @@
+{
+  "schema": "gtos.fleet_registry.v0",
+  "source_login": 0,
+  "observers": [],
+  "invite_policy": "owner_issues_token; observer installs MT5 Free Trial / demo only; store token hash never plaintext",
+  "ftmo_challenge_default": "VETO",
+  "place_policy": {
+    "free_trial_demo": "ON",
+    "ftmo_challenge_copy": "VETO",
+    "micro_lot_default": 0.01,
+    "forbidden_logins": [0, 0],
+    "forbidden_path_needle": "\\\\MT5\\\\FTMO\\\\",
+    "path_allow_markers": ["_Trial", "_redacted_account", "demo"],
+    "secrets": "password_env refs only; never git"
+  },
+  "notes": "Schema lock file (empty). Live VPS registry is judgment/fleet/mirror/registry/observers.v0.json with observer_friend_a / observer_redacted_account / observer_redacted_account and mirror_fanout.targets."
+}

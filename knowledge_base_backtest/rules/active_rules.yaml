@@ -1,0 +1,10 @@
+rules:
+  debate_required: true
+  max_risk_pct: 1.0
+  max_spread_cents: 30
+  max_trades_per_day: 1
+  min_debate_confidence: 50
+  min_rr: 3.0
+  session_end_utc: 09:30
+  session_start_utc: 07:00
+version: 1

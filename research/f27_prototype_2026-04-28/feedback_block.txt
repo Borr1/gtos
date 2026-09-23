@@ -1,0 +1,7 @@
+## Recent trade outcomes (most recent 10 closed; treat as historical signal, not session memory)
+
+In your last 10 closed trades, the system recorded 6 wins, 4 losses for a mean of +0.31R per trade.
+- Recent wins: LONG ob_retest XAUUSD on 2026-02-03 (ny, bullish bias, R +2.69); SHORT ob_retest XAUUSD on 2026-02-04 (london, bullish bias, R +0.08); LONG ob_retest XAUUSD on 2026-02-05 (london, bullish bias, R +0.20); LONG session_sweep XAUUSD on 2026-03-06 (ny, bullish bias, R +3.03); LONG ob_retest XAUUSD on 2026-03-09 (london, bullish bias, R +0.23); LONG ob_retest XAUUSD on 2026-03-10 (ny, bullish bias, R +0.15).
+- Recent losses: SHORT ob_retest XAUUSD on 2026-02-04 (ny, bullish bias, R -1.00); LONG ob_retest XAUUSD on 2026-02-05 (ny, bullish bias, R -0.32); LONG ob_retest XAUUSD on 2026-03-12 (london, bullish bias, R -1.00); SHORT session_sweep XAUUSD on 2026-03-13 (ny, bullish bias, R -1.00).
+
+Use this as a calibration signal on your decision-making, not as a substitute for evaluating this candle's MSO. The outcomes above are HISTORICAL telemetry from previously-closed trades, NOT the current session's reasoning context.

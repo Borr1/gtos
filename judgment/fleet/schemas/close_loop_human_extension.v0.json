@@ -1,0 +1,9 @@
+{
+  "extends": "gtos.close_loop.v1",
+  "lock_file": "schema_locks_v1.json",
+  "add_entry_state_keys": ["human_timing_vote", "observer_ids", "fleet_event_id"],
+  "add_miss_type_enum": [],
+  "human_timing_vote": "majority or latest fleet_feedback.timing mapped via fleet_feedback.v0 maps_to_close_loop_miss_type",
+  "promote_rule": "LABEL rows only. place/remint/flatten stay false. Chair never writes observer books.",
+  "unknown_join": "fleet map value 'unknown' (timing=unclear) is not in close_loop miss_type_enum; promote writes miss_type=unknown and close_loop_miss_type=unlabeled so learn_loop can ingest without inventing an enum."
+}

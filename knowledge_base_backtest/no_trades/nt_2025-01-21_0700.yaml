@@ -1,0 +1,15 @@
+candle_time: '2025-01-21T07:00:00Z'
+data_quality_ok: true
+date: '2025-01-21'
+decision: NO_TRADE
+reason: No valid H1 pullback to POI - price in premium territory without retracement
+  setup
+reasoning:
+  daily_bias: null
+  full_explanation: 'Session produced 0 candidates. Primary reasons: No H1 pullback
+    to POI - price at session highs without retracement, No H1 pullback to POI in
+    correct zone - price in extreme premium, No valid H1 pullback to POI - price in
+    premium territory without retracement setup'
+  h4_alignment: null
+  stopped_at_step: null
+record_id: nt_2025-01-21_0700

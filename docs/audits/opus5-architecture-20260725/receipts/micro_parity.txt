@@ -1,0 +1,9 @@
+real authority payloads extracted from BROAD_LIVE_AS_IF_REPLAY_B7_5_2026_01_SELECTION_SIZING_S1R1_SOURCE_REPAIRED_R3_CAP_R2_ORDER_LEDGER.jsonl: 296
+digest mismatches: 0 / 296  ->  EXACT PARITY
+
+original :    0.474s for 296 payloads (41.6 MB canonical)
+optimised:    0.301s
+speedup  : 1.58x   (36.6% of this stage removed)
+
+  canonicalise only : 0.315s -> 0.144s  (2.19x)   [concrete-type fast path]
+  encode only       : 0.459s -> 0.460s  (1.00x)   [reused JSONEncoder]

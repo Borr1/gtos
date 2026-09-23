@@ -1,0 +1,14 @@
+# GTOS go-live — monitoring timer. Runs the monitor cycle every minute during
+# market hours. Owner can tighten OnCalendar. Pairs with gtos-monitor.service.
+
+[Unit]
+Description=Run GTOS monitoring cycle on a schedule
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=60s
+AccuracySec=10s
+Unit=gtos-monitor.service
+
+[Install]
+WantedBy=timers.target

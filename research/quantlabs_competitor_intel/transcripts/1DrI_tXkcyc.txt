@@ -1,0 +1,478 @@
+# A Glimpse into Hedge Fund Jobs and the World of Quantitative Finance
+URL: https://www.youtube.com/watch?v=1DrI_tXkcyc
+Video ID: 1DrI_tXkcyc
+Duration: 1254s
+Fetched: 2026-04-18T13:24:40Z
+---
+
+Hello everybody, Brian here from
+quantabs.net.
+In this podcast episode, I want to go
+over um a pretty good article again from
+quantinsty.com.
+Uh this article is entitled um it's
+quite lengthy
+uh hedge fund jobs
+at a hedge fund. So I'm going to take
+the highlights from this. This will be
+in my post.
+Uh,
+all right. So,
+most of you already know what a hedge
+fund is. You I'm not going to go over
+too much detail here, but there's a lot
+of detail in the article, but um,
+basically basic requirement to get a job
+at a hedge fund is a bachelor's degree
+from finance, accounting, statistics, or
+economics or engineering or math.
+uh certifications really help you
+uh you know be a cut above the rest. So
+these certifications include the CFA
+which is quite difficult to get get an
+MBA
+um an FRM
+also a master of finance, master of
+science in finance or a PhD which is
+even better. Some of the jobs I've seen
+in England want you to have at least a
+minimum uh masters and then on top of
+that maybe a PhD and a CFA especially in
+this market the way it's really um it's
+really competitive now and fewer jobs.
+Yeah, just so a note here March 15,
+2024.
+Um
+so some of the skills you'll need uh I
+think this is pretty evident a lot of
+soft skills
+decision-m communication skill skills
+adaptability attention and detail
+teamwork
+ethical conduct which I think is kind of
+funny um ability to work in a fast-paced
+environment. When you hear fast-paced
+environment, think of it as high high
+pressure like a pressure cooker. Uh
+specific skills,
+analytical, quantitative, that's where
+the math comes in, the financial acumen,
+which means the trading experience. So
+hopefully you've got uh projects on
+GitHub and the like to show that risk
+management skills. Those are all your
+strategies and models that you may have
+developed on a GitHub.
+and most importantly the programming
+skills.
+Um,
+so, uh, this article mentions that you
+need to know Python or Mat Lab. I think
+it's more than that. You could probably
+throw in or that's for the quantitative
+I'd agree with. Um,
+so ways to get in if you're young coming
+out of school or or you are in
+university, internships the best. Uh
+there's a lot more opportunity than I
+ever saw, but at the same time, it's a
+lot more competitive, though.
+Obviously, you have to continuously
+learn
+uh by listening to podcasts like this or
+just joining whatever services are out
+there.
+Um but a lot of it is just doing not
+just copying and understanding but
+actually doing something new creative
+uh that will put you above the rest.
+again as I said a GitHub
+uh project or a GitHub repository
+uh and you would market yourself as a
+brand and you can do that through GitHub
+because a lot of companies will look at
+um look at uh coding skills more
+importantly than ever. I mean the great
+example I keep using is Goldman Sachs is
+no longer a bank. It's a technology
+company because a high very high
+percentage probably 30 40% of their
+staff now are all coders.
+Another area to get into is networking.
+Mentions here LinkedIn. I find LinkedIn
+kind of useless. I just don't see high
+people in positions hanging out on
+LinkedIn to answer questions to people
+trying to get in the market. Uh usually
+how they'll figure that out is by
+probably
+networking through graduation
+or the uh what do you call it the uh
+schools uh services that they come from
+especially the founders managing
+directors so on
+they will have uh access to those
+networks of of those up and cominging
+students that are top dogs in their
+programs so that's more who uh hedge
+funds would be interested in plus I
+mentioned other and this these podcast
+over the last few weeks. One was at IMC
+doing a contest online.
+Those teams will usually get hired as a
+intern, but a nice well the top
+internship you'll get. So, that's
+another way they do that. Some very
+unique ways to find talent. Uh, and
+these competitions are are getting
+bigger and better as time passes and
+more competition steps in. So, what are
+the larger uh hedge funds out there?
+Uh Bridgewater,
+Renaissance Tech Technologies, that's uh
+Jim Simons.
+Uh Jim Simmons uh fund Two Sigma
+Investments, De Shaw, just so you know.
+I mean, that's where uh Jeff Bezos came
+out of De Shaw, Citadel, Ken Griffin's
+uh company, they're pretty prolific. AQR
+management, uh, 72 asset management,
+that's Steve Cohen, Elliot management.
+so there's those. Now, there's different
+jobs available in the hedge funds. Uh,
+they have analyst, which is entry level,
+uh, associate, senior, associate,
+portfolio manager. Then it gets into the
+management which is where a lot of these
+funds want you to go um executive roles,
+leadership roles, operation manager,
+risk manager, and creator. So again,
+you'll find more detailed descriptions
+in those, but here's some of the
+salaries you can expect to get. I do
+think that these are somewhat realistic
+with this bad economy we're in. Again,
+March 15, 2024.
+Hedge fund sales 100 grand to half a
+million plus uh big bonus. Commodities
+trader 100 to half a million. These are
+base
+uh plus a heavy bonus. So wise is going
+to be a good space to be in I think
+especially as a futures trader or an
+options trader uh and doing a lot of the
+uh high frequency stuff in there. I've
+also seen, oddly enough, ETF
+uh as well now used the market making
+and arbitrage, not just uh futures and
+options. There's still crypto, but I
+think as people start to realize I'm
+going to I'm going to leave that for
+another podcast, but
+um you know, I think crypto, namely
+Bitcoin, is more controlled now. So, uh
+yeah, I'll talk about that in another
+podcast.
+Hedge fund analyst, quant analyst, 75 to
+200k possible bonus. That's more of a
+junior role. Quant researcher, these are
+the guys uh people that make uh the
+models 100 to 300k with possible bonus.
+And uh the fund manager, these are
+probably the founders
+um and the portfolio managers.
+They make the big bucks. So it it takes
+a while to get into that level. $300,000
+to $20 million plus performance base.
+That's pretty pretty big. So if you're
+in that level, that's where the big
+money is. Some will just say screw it,
+I'll start my own fund.
+so these are they make notes that these
+pay pay uh these salaries are from
+Indeed, LinkedIn, Paycale, and Glass
+Door.
+Um, so here's some of the pros at a
+hedge fund. Uh, it is an entrepreneurial
+culture, but it is
+uh a real sweat shop. If you can
+succeed, you can do well. If you fail
+and fail maybe once or twice, you're
+out. And that probably means you're out
+of the career as well. Performance-based
+compensation.
+Uh, so if the economy is good, the
+trading is good, the trading performance
+is good, you'll do well.
+as it says here, steep learning curve
+and intellectually challenged. So, if
+you're one of these high performing type
+of peoples, high intellect, you probably
+do pretty good here. Uh, diverse asset
+classes. So, here they talk about uh
+equity, fixed income, derivative, and
+real estate.
+Uh, so it broadens your financial
+knowledge and skill set, which I agree
+with, but I I guess you might start to
+see more fixed income coming down the
+pipes with a bad economy, but the
+derivatives markets where it's at. Plus,
+uh, that's futures options, plus the
+equities as well. Plus, there's a whole
+lot of other instruments that we don't
+have access to as as as retail traders,
+uh, private equity,
+uh, private credit, all that,
+uh, dark pools, there's lots of other
+things we don't know about. Uh, then
+there's networking, which is very good.
+Uh, so they get a lot of talented people
+in there. So, you could you you can open
+up a lot of doors.
+And if you're working with a large
+well-known
+company, uh recruiters will fall over uh
+themselves to get your attention. Uh so
+there's that as well. Now, the cons
+of these are funny. Okay, we know about
+long hours and high pressure. We know
+it's stressful. Um, I can speak at one
+place I was at, uh, where I got to know
+one of the trading desk leads. He was
+not even 35. He was already taking all
+kinds of medication
+at that age to make money. So, imagine
+where he's at, 50.
+uh job security. Yeah, as I said, it's
+very cutthroat because as the more young
+graduates come out of school at whatever
+level, EP, masters,
+they're bushy eye, very uh
+learning the latest technology and math
+concepts, whatever, and they're willing
+to do it for next to nothing. So, as you
+move up the ladder, hedge funds know
+that. And if you're just a questionable
+performer, they'll replace you with
+somebody making half of what you're
+earning and uh they may be able to fill
+the void that you're not providing in a
+in a job. Uh and again, limited work
+life balance. Like you'll be literally
+pitching tents under your desk to to get
+by in these jobs. And don't forget, a
+lot of these environments are probably
+going to exploit you. Um, for example,
+back in the day, if you're doing co-ops
+at at uh places like Goldman Sachs and
+some of the other bigger banks and hedge
+funds, probably you'll just end up
+working weekends working on some
+spreadsheet. Nothing exciting, some
+spreadsheet presentation. You become the
+grunt of of of the industry for these
+people. Um, there's lots of f frequently
+asked questions here, which I'm not
+going to go into. Um,
+so the other um
+area I want to cover are the different
+types of quants. This was originally
+another article I posted a few days ago
+on my Discord, but it's been removed
+now. So the question was the different
+types of quants being from banks, prop
+shops, and hedge funds. So I've already
+kind of talked about good description of
+the hedge funds. with the prop shops
+you're dealing with the Jane Street uh
+likes opt and then you get the banks uh
+like let's say Barclays these are from
+the standpoint in the UK and the
+employers there
+um so here we're dealing with different
+positions within these companies now
+this is an article
+from last year from quant
+types of quantitative analysts
+uh first is the trader
+food, top of the food chain. Well,
+because you're in a quant financial
+community, that that means you're the
+top analyst out there. Um, and as I
+said, doesn't matter what level, prop
+shop, bank, hedge fund,
+um, you're going to be involving a lot
+of the modeling,
+uh, using a PhD and now artificial
+intelligence and applied math as as your
+major.
+Here it says as a quant trader can be
+extremely lucrative if the firm and
+trading group has a run of good trading
+years. I've said that already based upon
+performance.
+So it says here it's not uncommon for
+the best quant traders to be retiring in
+their mid to late 20s. That's how uh
+good it can be. And they they go out and
+there they do their own thing. They
+start their own fund. Um, some,
+well, I'd say a good chunk of them don't
+do too well, but there's the odd one
+that does well in a startup.
+Quant researchers, these are the guys
+that do the pure math, uh, PhD and
+stochastic calculus.
+Um, they're more in coming in from a
+role of academia, not not practice. Um
+so they could be in alternative research
+firms uh larger hedge funds
+uh and their approach is uh what they
+call a blue sky or open sky
+approaches like open ideas with no
+limitation how to get a return in the
+markets. So you won't be limited. Uh
+quant researchers are also at investment
+banks. They'll be in the middle office
+and they usually don't implement the
+models. They just come up with the
+ideas. They just pass their work on to
+here's the difference between the two.
+Uh either to a financial engineer or a
+quant developer.
+So financial engineers
+they are a quant analyst. Now now this
+is coming from an experienced person. To
+me, a quant developer and a financial
+engineer would have been the same thing.
+But here, they're saying it's different.
+So, what's the difference? Uh, they're
+tasked with a product often sold by
+sales team to to clients within a large
+bank and figuring out how to correctly
+price it.
+uh this will involve tools of uh
+stochastic calculus or riskneutral
+pricing
+with the ability to implement the model
+into an existing uh library with C++ C
+or Java. So that's coming from the prior
+position of the quant researcher.
+Uh so these people are found in uh these
+financial engineers are found in fixed
+income foreign exchange asset class
+and uh derivative products are
+prevalent. So that comes back to what I
+said earlier the futures and options
+market
+um but you'll you'll hear more about
+fixed income as the economy gets worse
+because that's one of the areas uh
+you'll get a return not in the equity
+space. financial uh engineer will have
+background in physics or engineering
+utilizing their modeling skills to
+implement new financial products.
+Usually
+for any of these from what I hear
+uh they want people that can think like
+a person from the background of physics
+uh on the math front. So that might
+actually could be applied to more a
+quant researcher
+for the physics. Okay, now we get into
+the quant developer.
+So these are two types. Um,
+quant devs in the financial industry.
+The first type will work closely with
+quant analysts to implement or optimize
+their financial model.
+Uh, they do a prototype coding, mat lab,
+R or Python and they rewrite it for
+another language like C or C++ or Java.
+They work closely to the money and
+reside in the front office of a
+investment bank. So they could be
+working in on the trading desk. So I've
+seen job descriptions where if they give
+you a model idea on late Friday
+uh they want it done by the Sunday. The
+deadlines are very tight.
+Uh again quant developer the second type
+of quant developer deal with financial
+pricing data and trading system
+architecture.
+They code up the raw infrastructure
+allowing the quant trader analysts to
+run their model and make money.
+This means hooking up databases to
+business logic and brokerage APIs.
+Uh investment banks can be mean working
+on maintaining a large scale legacy
+system. Those are usually written in
+Java or C++. That's why you see a lot of
+the C++
+or uh Java out there because of the
+legacy trading systems that they use.
+These quants will offer me close to the
+money will reside. Oh, I just did that.
+yeah. Okay. So the second type of quant
+developer blah blah blah. So continuing
+from this, this means hooking up
+databases to business logic and
+brokerage API investments banks mean
+they can be working on maintaining a
+largecale system or if employed by a
+font uh a fund they work on green field
+projects related to new algorithms. So
+when you see green field it's brand new.
+Uh in banks this will be typically a
+middle office role.
+Okay.
+uh and again uh extremely high-paying
+role that sits in the quant development
+arena
+is that of the star C C++ developer who
+understands Unix network programming
+low latency in the ins and outs of the
+the kernel. These are the people that
+you hear about are making half a million
+600 up to a million and beyond. Uh these
+are the people we're talking about here.
+the extremely high paying as it says.
+These individuals can be found working
+in the secretive world of ultra
+uh high high frequency trading where
+trade orders are now measured in
+milliseconds.
+If an individual pres possesses this
+particular skill, they can uh command a
+base compensation package of 250 or
+more.
+No, I've it depends on the firm and your
+experience. I've seen it as I said up to
+a million plus.
+um depending upon the firm run you're
+at, you you got to realize you'll be
+signing all kinds of very tightly bound
+um
+NDAs, non-disclosure agreements. So when
+you move on to another fund, they need
+to make sure that you're not taking
+those ideas with you to a new fund and
+they may actually go to court over it.
+So you have to be careful here if you go
+into these type of rules.
+Anyways, um it's interesting there. Uh
+I'll probably put one more article and
+we'll leave it at that. Again, if you
+want to know more, go over to the
+Discord link I'll provide. Get on my uh
+email list for uh some free trading
+technical stuff along with uh our uh
+with our um uh substock. if you're
+interested in what I'm trading. Other
+than that, thanks for watching or
+listening I should say and we will talk
+to you later.

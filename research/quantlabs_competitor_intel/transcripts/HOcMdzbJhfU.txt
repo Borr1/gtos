@@ -1,0 +1,198 @@
+# Building an HFT System with AI: Claude 4.5 vs Gemini 3 Workflow (2026 Demo)
+URL: https://www.youtube.com/watch?v=HOcMdzbJhfU
+Video ID: HOcMdzbJhfU
+Duration: 540s
+Fetched: 2026-04-18T13:24:22Z
+---
+
+Good day. Good day everybody. Brian here
+from quatlabsnet.com.
+This is kind of our first milestone
+video for 2026.
+What I'm about to show you um
+is the first real demo of this
+architecture I've been working on for
+this call it high-speed trading system
+with rhythmic data connections into it
+for futures and options. We're just
+focus on futures for now. keeping it
+simple. We have multiple strategies as
+I've shown before and we also have a
+server addition as well to handle all
+the communication between
+um the uh server that I've talked about
+in past videos and three separate client
+strategies using uh Reddus and the
+publisher sub subscriber pattern with uh
+each client being a separate
+um a separate
+um strategy. So let's get to that.
+Boom, boom, boom. Okay, so right now, as
+I said, we're going to have multiple
+PowerShell terminal sessions, I guess
+you could call them, here on Windows.
+Now, before I show you that, um, this is
+probably not the best way to display
+this, there's a product here. It's free
+download actually called Con EMU. So you
+can see everything consolidate in one
+view. So I just want to mention that.
+All right. So as I said we have here
+four separate terminal sessions. Um this
+is the first one I can show you. So this
+is using the U strategy. Um and this is
+all connecting into rhythmic right here.
+Uh trader pro. Um and as I've said
+before it's this is the first uh client
+server strategy I am sorry client
+strategy I'm showing you. U you can see
+here it's actually working. Uh, it's
+focusing on I believe
+um I'm not sure which one this is.
+Probably the NY sorry the um the S&P or
+NASDAQ, one of the two. [snorts] Here we
+have another one. This one is probably
+the server. Um so this one is working a
+MACD mean reversion.
+I do believe this one is
+uh you can see it's signaling each each
+client strategy is different. Um so
+they're going to have different output
+um based upon how I design it, but the
+communication is pretty well the same.
+Um not sure. Well, we'll see. Let's see
+what else we got here. So, we have
+another one here. Um yeah, I just showed
+you that one.
+Uh let's see [snorts] here. So this
+right here is the actual build process.
+Okay. So we have four different products
+here. We've got the rhythmic server that
+I've kind of showed you and then three
+separate um strategies here. One for the
+VWAP, one for the MACD, and the other
+one was the um OU, which I just showed
+you. So let's see if we can show you.
+So this one right here uh is kind of
+working. the oil price as well. So this
+is using the VWAP. This is all
+highspeed. So in there somewhere should
+be the um
+the uh server
+um
+as well. Not sure which one that would
+be, but my point is is I ran this
+overnight and um it seems to work okay.
+Okay. Um so
+yeah so that that's kind of working kind
+of that's just a demo of it. It's like
+three separate strategies
+uh using Reddus and let me just show you
+that.
+So if I was to show you um Reddus. Okay.
+So as I said we have reddis client which
+is the test for this and just to see if
+the um reddis server is running. You can
+see it's ping and then it's ponging
+back. So it is running. So um actually
+no it's pinging back and ponging. Uh
+anyways uh so that's what it's doing and
+um uh it's working pretty good. I think
+it's pretty robust. Uh my next set set
+of steps are to relaunch everything.
+I'll probably do another separate video
+showing that software that con
+what's it called? Uh
+uh con emu uh where everything's running
+in one window. I guess all the different
+strate
+um powershell terminal sessions running
+all in one. There'll be five in total.
+Um so there's that. And um the next
+thing is I forgot to mention the server.
+I put in a big parameter in there uh
+because right now with the rhythmic pro
+uh I am testing it against the rhythmic
+test. So this is all test as well. I put
+in the rhythmic um server edition a
+parameter where it will block orders. So
+if there's any orders triggered, it'll
+block them. Because this is important to
+know is that when you have uh against a
+a live environment like the rhythmic 01
+production, which is they're Chicago
+servers, those are where you can do live
+orders. So if you have these type of
+strategies under development and for
+whatever reason the testing uh against
+real life money, you could lose a lot of
+money very quickly. Um so you have to do
+thorough testing. So that's a big phase
+I'll have to go through. But my point
+here is I just want to showcase what it
+looks like. Uh progress has now been
+guess a breakthrough on everything's
+working with the actual server now
+having uh the uh multi-threading and as
+I haven't mentioned but everything's
+built in.net.
+Uh how it was built net was C. how it
+was built was with a combination using
+AI between Claude 4.5
+and um Gemini
+3 Pro. So the problem with
+Claude 4.5 right now I can't confirm or
+I'm not using Claude code which everyone
+seems to be raging about is the context
+window. Um not sure if it's maintained.
+So uh you have to be aware of that
+because as you go through debugging with
+a larger project with five let's say C#
+files that I'm using the context loses
+the history of the original file uh
+context. So as you debug uh new code
+will be generate and will replace the
+older code. So you have to retain that
+code in in place. So that's a problem
+I've been experiencing for the last
+month or so as I've been getting more
+and more complicated with the coding. Um
+this is another reason to go with C
+sharp over C++ to minimize the number of
+files needed to maintain the whole uh
+project. Um, so my next steps is I will
+say that the Claude 4.5 is just way
+better quality in terms of debugging and
+to actually build more complicated
+projects. So Claude 4.5 is very good for
+that. Gemini 3 Pro is more to lay down a
+simple project, get it working and then
+at the same time you can uh debug it.
+So, I'm going to try out uh and get a
+Gemini AI Pro subscription. So, that may
+should enable me to fool around with the
+anti-gravity
+IDE from Google, which is fairly new.
+Um, and then that should help alleviate
+this context history problem. But again,
+you're restricted to um the Gemini 3
+models as far as I know. I don't know. I
+have to verify that. I might get access
+to the and the the claw models, but uh
+for now with this, the anticipation is
+just to use Gemini 3. Um but that's kind
+of where we're at. So, um yeah, I just
+wanted to highlight everything, show you
+a real demo. Um, and if you want to know
+more where to go, uh, there's two
+options now I can give is go to
+quantabsnet.com
+and register your email, get a free book
+on C++ trading infrastructure where a
+lot of HFT chops use and or if you want
+to see Bitcoin marketmaking in C++ with
+ultra low latency, you can go to the new
+website at HFO.com.
+There's another architecture there you
+get free as well. We shall end it now.
+Thanks for watching.

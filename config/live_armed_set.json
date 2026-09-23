@@ -1,0 +1,186 @@
+{
+  "schema": "gtos-live-armed-set-v1",
+  "declared": "2026-08-12",
+  "declared_by": "host reconciliation: sub_mid_dn_revert DISARMED on both production books by owner instruction (host commit 47d0960e6, 2026-08-12). This file and the committed launcher both still declared FOUR while the host ran THREE, and reconcile() passed because it compares the two repo files to each other, never to the running host. The F5 experiment surfaces are unchanged and deliberately still carry the sleeve at minimal size.",
+  "what": "The DECLARED armed set per live account. This file is the owner-decision side of the invariant; scripts/run_book_supervisor.ps1 is the mechanism side. src/safety/armed_set.py reconciles the two and tests/safety/test_armed_set_single_source.py enforces that they agree. Three wave-20 artifacts each hard-coded an armed set from memory and all three were wrong; this file plus that test is the thing that makes that class of error fail loudly instead of silently.",
+  "authority": {
+    "mechanism": "scripts/run_book_supervisor.ps1 supplies run_book.py --tags / --frontier-exits / --spread-geometry-floor. There is no confidence floor that can express the armed set (CLAUDE.md section 4; admission.py:218-219), so --tags IS the arming mechanism.",
+    "declaration": "this file",
+    "rule": "an owner arming decision changes THIS FILE and the launcher in the same commit; a launcher edit with no matching declaration fails the test, and a declaration the launcher does not implement fails the same test."
+  },
+  "safety_notes": {
+    "empty_tags_is_fail_open": "run_book.py:383 -- `args.tags.split(...) if args.tags else None` -- so tags=\"\" is falsy and the book runs ALL BUILT sleeves. An empty tag list is therefore UNBOUNDED, never empty. armed_set.py models this as tags=None and the reconciler reports it as a fail-open, not as a four-sleeve match.",
+    "all_typo_tags_is_fail_closed_but_mute": "registry.py:144 drops unknown tags with no fallback and no error, so an all-typo --tags stands the book down silently every tick.",
+    "tags_can_only_subset": "book_engine.py:452-453 intersects --tags with the include-flag registry, so --tags can never add back a sleeve the config removed.",
+    "this_file_does_not_enter_the_activation_token_digest": "activation_token.config_digest_for (activation_token.py:1089-1116) hashes config/agent_config.yaml plus the active profile file BYTES only. Adding or editing this file does NOT invalidate either account's token and does NOT require a re-mint.",
+    "this_file_does_not_enter_the_r2_execution_seal": "replay_acceleration_attempt5_typed_sparse_runner.py:1502-1511 declares config_file_hashes as an explicit two-entry dict (config/agent_config.yaml, config/profiles/operator_profile.yaml). It does not glob config/, so this file is outside the seal.",
+    "surface_production_vs_experiment": "An account row carries `surface`: `production` is the armed book at the production risk dial under broker identity magic 20260401; `experiment` is a minimal-size surface (run_book.py --f5-minimal-size-usd) that places a fixed few dollars per trade under its own broker identity (magic 0, comment prefix 'F5:') in its own namespace. armed_set.armed_sleeves() unions PRODUCTION rows only, because that is what every caller has ever meant by 'armed'. The launcher side derives the surface from whether the row passes --f5-minimal-size-usd, so a production row that quietly gained that flag is a reconcile() surface_mismatch and a build failure -- it would otherwise place 1/200th lots while every published figure still priced it at the dial.",
+    "f5_ladder_and_fn_f5_removal_20260825": "2026-08-25 (owner word, docs/audits/fable-20260825/OWNER-GRANT-20260825.md + JUDGE-DAY-RECEIPT-20260825.md): operator unit $75 -> $250 (ladder step 1 of 250/350-at-$102k), tag surface = the 62-tag host wrapper argv (token d9872ae4... binds it), and the committed supervisor F5 row updated to HOST TRUTH so reconcile() carries zero deliberate divergence. redacted_account_f5_minimal REMOVED: pair down by decision (CEREMONY-RECEIPT-20260825), 7 of its symbols do not exist on the FN terminal; a committed row that could re-arm it on supervisor restart was a hazard. Re-add only with a fresh owner word + receipt."
+  },
+  "accounts": {
+    "operator_profile": {
+      "profile": "operator_profile",
+      "surface": "production",
+      "armed_sleeves": [
+        "crypto",
+        "energy_agri",
+        "sub_xvol_pullback"
+      ],
+      "frontier_exits": [],
+      "spread_geometry_floor": [
+        "sub_mid_dn_revert",
+        "sub_xvol_pullback"
+      ]
+    },
+    "redacted_account_live_bee34003": {
+      "profile": "redacted_account",
+      "surface": "production",
+      "armed_sleeves": [
+        "crypto",
+        "energy_agri",
+        "sub_xvol_pullback"
+      ],
+      "frontier_exits": [],
+      "spread_geometry_floor": [
+        "sub_mid_dn_revert",
+        "sub_xvol_pullback"
+      ]
+    },
+    "operator": {
+      "profile": "operator_profile",
+      "surface": "experiment",
+      "minimal_size_usd": "250",
+      "armed_sleeves": [
+        "crypto",
+        "dsp_bleed_accept_fresh_20low_second_push",
+        "dsp_climax_2atr_onto_20high_then_fade",
+        "dsp_climax_onto_20high_then_fade_cashhole",
+        "dsp_climax_onto_20high_then_fade_london",
+        "dsp_close_on_20low_not_a_cascade_then_up",
+        "dsp_expanding_two_bar_run_tokyo",
+        "dsp_expanding_up_staircase",
+        "dsp_first_cash_bar_spike_and_flush",
+        "dsp_high_vol_doji_after_reclaimed_flush_fx",
+        "dsp_huge_down_hold_then_spring",
+        "dsp_isolated_spike_high",
+        "dsp_london_bounce_fails_overnight_midpoint",
+        "dsp_london_two_up_into_20high_reverses",
+        "dsp_walked_high_accepted_through",
+        "dsp_weekend_gap_then_bleed_into_20low",
+        "dsp_wide_down_then_micro_bounce_then_through",
+        "energy_agri",
+        "idxrev",
+        "kz_london_crypto_low",
+        "liq_asia_up_low_metal",
+        "metal_session_reversion",
+        "metals_core",
+        "metals_ob_micro",
+        "metals_softband",
+        "mx_avausd_d1_donchian_20_breakout",
+        "mx_btcusd_d1_donchian_20_breakout",
+        "mx_cadjpy_d1_volume_surge_reversal",
+        "mx_ethusd_d1_donchian_20_breakout",
+        "mx_eu50_cash_d1_volume_surge_reversal",
+        "mx_fra40_cash_d1_volume_surge_reversal",
+        "mx_ger40_cash_d1_volume_surge_reversal",
+        "mx_jp225_cash_d1_volume_surge_reversal",
+        "mx_nzdjpy_d1_donchian_20_breakout",
+        "mx_us100_cash_d1_atr_mean_reversion",
+        "mx_us30_cash_d1_volume_surge_reversal",
+        "mx_us500_cash_d1_atr_mean_reversion",
+        "orb_crypto_london",
+        "sub_mid_dn_revert",
+        "sub_xvol_pullback",
+        "vol_compression",
+        "vp_euidx_pocgrav",
+        "vss_fxcross_london_up_low",
+        "xa_climax_spring",
+        "xa_huge_20_extreme",
+        "xa_isolated_opposite",
+        "xa_prior_huge",
+        "xa_second_leg",
+        "xa_wide_extreme",
+        "asian_fade_widen",
+        "orb_crypto_london_widen"
+      ],
+      "frontier_exits": [],
+      "spread_geometry_floor": []
+    }
+  },
+  "host_observation": {
+    "why": "reconcile() compares this file to the COMMITTED launcher. On 2026-08-12 those two agreed with each other and BOTH disagreed with the running host: the host had run three sleeves since 47d0960e6 while the repo declared four, and every guard passed. Two files that agree with each other prove nothing about the machine that trades. This block is the third party -- the host's OWN launcher, as a git object, so the assertion is checkable with no VPS access and cannot be a transcription error.",
+    "branch": "vps/ultimate-conditioned-expansion-minimal-2026-06-18",
+    "commit": "47d0960e6",
+    "commit_subject": "Live sleeve pull: sub_mid_dn_revert DISARMED on both accounts (owner 2026-08-12)",
+    "commit_authored_utc": "2026-08-11T11:49:33+00:00",
+    "observed_by": "read over host-admin at the host, then pushed to origin (bba5a38ae..47d0960e6) so the observation is durable rather than one unpushed local commit on the VM",
+    "launcher_path": "scripts/run_book_supervisor.ps1",
+    "launcher_bytes": 19458,
+    "production_tags": {
+      "operator_profile": "crypto,energy_agri,sub_xvol_pullback",
+      "redacted_account_live_bee34003": "crypto,energy_agri,sub_xvol_pullback"
+    },
+    "note": "The host row uses the key `floor`, not `spreadFloor`, and both host rows still carry `floor=\"sub_mid_dn_revert,sub_xvol_pullback\"` -- a spread-geometry floor for a sleeve that is no longer armed is inert, and the committed launcher matches it, so this is agreement and not a loose end. See `known_divergence_committed_launcher_vs_host`: the two files are 7,828 vs 19,458 bytes and must never be carried wholesale."
+  },
+  "decision_log": [
+    {
+      "date": "2026-07-29",
+      "account": "operator_profile",
+      "change": "ARM crypto, energy_agri, sub_xvol_pullback (metals_core armed 12:55 and pulled 14:25)",
+      "authority": "owner, OD-AI-2",
+      "receipt": "docs/audits/fable5-vision-audit-20260725/phase8/receipts/VPS_STEP_ZERO_VERIFIED.md"
+    },
+    {
+      "date": "2026-07-30",
+      "account": "redacted_account_live_bee34003",
+      "change": "ARM the same three sleeves",
+      "authority": "owner, OD-AI-2",
+      "receipt": "docs/audits/fable5-vision-audit-20260725/phase8/receipts/FN_ARMING_20260730.md"
+    },
+    {
+      "date": "2026-07-30",
+      "account": "both",
+      "change": "5-sleeve expansion, then fx_jpy pulled ~14:57Z; sub_mid_dn_revert retained",
+      "authority": "owner, explicit risk acceptance on the record",
+      "receipt": "docs/audits/fable5-vision-audit-20260725/phase8/receipts/FIVE_SLEEVE_EXPANSION_20260730.md"
+    },
+    {
+      "date": "2026-07-31",
+      "account": "operator_profile",
+      "change": "ARM mx_btcusd_d1_donchian_20_breakout at registry confidence 0.025 with --frontier-exits target_5R",
+      "authority": "owner",
+      "receipt": "docs/audits/fable5-vision-audit-20260725/phase13/receipts/MX_ACTIVATION_20260731.md"
+    },
+    {
+      "date": "2026-08-05",
+      "account": "operator_profile",
+      "change": "DISARM mx_btcusd_d1_donchian_20_breakout; --frontier-exits removed entirely",
+      "authority": "owner instruction, verbatim 'disable the mx_btcusd'; D-2 CLOSED",
+      "host_commit": "2fa77722d",
+      "receipt": "docs/audits/fable5-vision-audit-20260725/phase19/receipts/vps_live_ops_20260805/MX_DISABLE_RECEIPT.md (branch ops/vps-live-mx-disable-20260805, commit edb240459); decision sheet phase19/SESSION_FA_CONTINUATION_RESULT.md:108-119",
+      "note": "The committed launcher was NOT updated at the time. Wave-20 lane p4 carried this decision into scripts/run_book_supervisor.ps1 on 2026-08-07 so that a book restarted from the committed launcher can no longer re-arm a sleeve the owner disarmed."
+    },
+    {
+      "date": "2026-08-12",
+      "account": "operator + redacted_account_f5_minimal",
+      "change": "DECLARE the two F5 minimal-size experiment workers: the FULL 32-sleeve registry, named explicitly, at a fixed $10 risk per trade via run_book.py --f5-minimal-size-usd. No frontier exits, no spread-geometry floor, no lane weights -- the raw full system, so the measurement is of the system and not of a partially-overlaid variant. These are SEPARATE namespaces and a SEPARATE broker identity (magic 0, comment prefix 'F5:'); the two ARMED accounts above are UNCHANGED in every respect -- same tags, same tokens, same config, no restart.",
+      "authority": "owner, verbatim 'yes i do, proceed all the way' (2026-08-12)",
+      "receipt": "docs/audits/fable5-vision-audit-20260725/phase21/full_system_coherence/outcome_authority/swarm2/ops/F5_LANDING_V1.md",
+      "note": "Declared with an EXPLICIT 32-name list, never by omission: run_book.py treats an empty --tags as 'all BUILT sleeves' (fail-open) and armed_set.py classifies that launcher_tags_fail_open/CRITICAL. --tags can only ever subset (book_engine.py:452-453), so an explicit list is strictly safer and equally complete."
+    },
+    {
+      "date": "2026-08-12",
+      "account": "operator_profile + redacted_account_live_bee34003",
+      "change": "DISARM sub_mid_dn_revert on BOTH production books. The two F5 experiment surfaces are unchanged and still run it deliberately, at a fixed $10 on a separate broker identity.",
+      "authority": "owner instruction, on measured evidence: corrected expectancy -0.2446 R/trade with the confidence interval entirely below zero, failing the survivor predicate 300/300 on both accounts",
+      "host_commit": "47d0960e6",
+      "receipt": "host branch vps/ultimate-conditioned-expansion-minimal-2026-06-18 commit 47d0960e6 'Live sleeve pull: sub_mid_dn_revert DISARMED on both accounts (owner 2026-08-12)', pushed to origin (bba5a38ae..47d0960e6); the host launcher's own bytes are the receipt and are read by tests/safety/test_armed_set_single_source.py::test_the_declaration_matches_the_host_launcher",
+      "note": "The repo lagged the host, in the direction that matters least but by the mechanism that matters most: this file and the committed launcher both declared FOUR while the host ran THREE, and reconcile() returned clean throughout because it compares those two to each other. `host_observation` above is the third party that closes it."
+    }
+  ],
+  "known_divergence_committed_launcher_vs_host": {
+    "status": "OPEN, owner-facing",
+    "measured": "The committed scripts/run_book_supervisor.ps1 is 7828 bytes (blob 357d01a26601, identical on all 40 local branches including main). The host file measured at the 2026-08-05 ceremony was 19575 bytes before the edit and 19495 after (sha256 63079cec... -> ff9299bd...), with the books array at line 140 rather than 86 and the spread-floor key named 'floor' rather than 'spreadFloor'.",
+    "consequence": "The committed launcher is NOT the file that runs. It must never be carried wholesale to the host; the host file is ~2.5x larger and has diverged in key names. Carry individual argument changes, not the file."
+  }
+}

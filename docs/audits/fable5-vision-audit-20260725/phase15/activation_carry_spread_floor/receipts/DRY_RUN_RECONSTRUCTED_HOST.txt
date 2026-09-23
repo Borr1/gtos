@@ -1,0 +1,91 @@
+### --check all (against the reconstructed host tree, CE carry applied)
+
+repo root : /private/tmp/claude-501/-Users-borr-GTOSActive-worktrees-wave15-activation-package-20260731/0d25a092-4852-4866-aae8-728602713211/scratchpad/hostsim
+python    : 3.14.4 (/opt/homebrew/opt/python@3.14/bin/python3.14)
+manifest  : MANIFEST.json (CE, B2300-B2349)
+
+== postflight: is every carried file at its after-bytes? ==
+[  ok  ] src/components/ultimate_book/spread_geometry.py: 1ea1b6bc70c5 (== after 1ea1b6bc70c5)
+[  ok  ] src/components/ultimate_book/book_engine.py: 42c1bd6c78f3 (== after 42c1bd6c78f3)
+[  ok  ] src/components/ultimate_book/book_owner.py: b7a82dc3d241 (== after b7a82dc3d241)
+[  ok  ] run_book.py: 39ddfd513d97 (== after 39ddfd513d97)
+
+== deps: the copy ORDER, which is this carry's whole safety argument ==
+[  ok  ] src/components/ultimate_book/book_owner.py after src/components/ultimate_book/book_engine.py: satisfied (both carried)
+[  ok  ] run_book.py after src/components/ultimate_book/spread_geometry.py: satisfied (both carried)
+[  ok  ] run_book.py after src/components/ultimate_book/book_owner.py: satisfied (both carried)
+
+== imports: does the carried code load under this interpreter? ==
+[  ok  ] src.components.ultimate_book.spread_geometry imports
+[  ok  ] src.components.ultimate_book.book_engine imports
+[  ok  ] src.components.ultimate_book.book_owner imports
+[  ok  ] src.components.ultimate_book.execution_packets imports
+[  ok  ] src.components.ultimate_book.sleeves.registry imports
+[  ok  ] run_book.py compiles
+
+== behaviour: does the floor do what AY measured, and nothing else? ==
+
+-- (a) the floor resolves for AY's two REPAIR sleeves, at the LIVE limit --
+[  ok  ] parse('sub_mid_dn_revert,sub_xvol_pullback') -> {'sub_mid_dn_revert': None, 'sub_xvol_pullback': None} (None == inherit the send gate's limit)
+[  ok  ] config/agent_config.yaml: selected_cell_pretrade_max_spread_r = 0.1
+[  ok  ] resolve_floor_limit(sub_mid_dn_revert) = 0.1 == the send gate's own limit (0.1) — AY-1b measured the REPAIR at exactly this threshold (+0.426 R/day at mid)
+[  ok  ] resolve_floor_limit(sub_xvol_pullback) = 0.1 == the send gate's own limit (0.1) — AY-1b measured the REPAIR at exactly this threshold (+0.264 R/day at mid)
+[  ok  ] per-sleeve override honoured: fx_jpy -> 0.35 (config says 0.35); a floor that ignored it would be stricter at generation than the send gate
+
+-- (b) NEUTRAL sleeves and mx_btcusd's frontier contract are untouched --
+[  ok  ] resolve_floor_limit(crypto) is None — not in the selection, so the floor is a no-op for it. AY measured it NEUTRAL (inside the 20-seed random envelope at every band), which is why this is a per-sleeve map and not a boolean
+[  ok  ] resolve_floor_limit(energy_agri) is None — not in the selection, so the floor is a no-op for it. AY measured it NEUTRAL (inside the 20-seed random envelope at every band), which is why this is a per-sleeve map and not a boolean
+[  ok  ] an engine built with no selection has an EMPTY floor map (default-inert)
+[  ok  ] a NEUTRAL sleeve's intent is not evaluated at all — no refusal, no tick fetched, no telemetry row. The floor cannot change a sleeve nobody selected
+[  ok  ] mx_btcusd frontier contract still resolves to target_5R — the estate's one standing admission is untouched by this carry
+[  ok  ] describe_frontier_contract renders: broker TP 5.0R
+
+-- (c) the kwargs compose at the call sites (hand-merged at the wave-13 train) --
+[  ok  ] owner._spread_geometry_floor == the parsed selection (['sub_mid_dn_revert', 'sub_xvol_pullback'])
+[  ok  ] owner._frontier_exits survives alongside it — the two selections do not overwrite each other (the wave-13 train hand-merged these signatures)
+[  ok  ] the OWNER's selection reached the ENGINE — this is the call site the ordering invariant in --check deps protects
+[  ok  ] the router still received the frontier selection
+[  --  ] no weekend_policy kwarg on this tree — expected on the host, which has never been carried BA's policy. The floor's anchored edits are placed so a later weekend carry appends to the same signature without conflict.
+
+-- (d) the refusal fires, and lands where an operator can see it --
+[  ok  ] an intent at spread_r 0.1500 > 0.1000 is REFUSED: spread_geometry_floor:0.1500>0.1000 (spread 1.50000 vs stop 10.00000; 
+[  ok  ] generation telemetry counts it: {'evaluated': 1, 'refused': 1, 'sleeves': ['sub_mid_dn_revert']}
+[  ok  ] an intent at spread_r 0.0500 is KEPT and still counted as evaluated: {'evaluated': 1, 'refused': 0, 'sleeves': []} — evaluated-vs-refused is what the dossier's stop condition 1 watches
+
+-- (e) fail-closed, matching the authoritative gate --
+[  ok  ] a raising terminal REFUSES the intent (not admits it), matching broker_net_cost_engine's own missing_current_quote_spread_or_sl_distance
+[  ok  ] a non-positive stop REFUSES rather than dividing by it
+[  ok  ] a CROSSED quote (ask < bid) refuses too
+
+-- (f) a refused intent never enters the day's conviction count --
+[  ok  ] the override is a per-day map, as `RunningConvictionLedger.update_and_count` documents: {'2026-07-31': 2} / {'2026-07-31': 1}
+[  ok  ] na for 2026-07-31 with the doomed intent = 2, without it = 1. Under the live half-Kelly bins ((1,1,0.748),(2,3,0.991),(4,99,1.241)) a difference of one crossing a bin edge is worth up to +32.487 % on EVERY unit that day — this is the half of the repair that is about the OTHER sleeves, and it is true whether or not the filter improves any sleeve's expectancy
+[  ok  ] the two arms wrote to different throwaway ledgers, so neither read the other's union
+
+-- (g) launch-time refusals (a floor you think is on and is not) --
+[  ok  ] parse('') refused at launch: the empty string (--tags reads its empty string as ALL)
+[  ok  ] parse('no_such_sleeve') refused at launch: an unknown sleeve name
+[  ok  ] parse('sub_mid_dn_revert:1.5') refused at launch: a limit at/above 1.0 (permits the pathology)
+[  ok  ] parse('sub_mid_dn_revert:0') refused at launch: a zero limit (refuses every trade)
+[  ok  ] parse('sub_mid_dn_revert,sub_mid_dn_revert') refused at launch: a sleeve named twice
+[  ok  ] parse('sub_mid_dn_revert,,crypto') refused at launch: a stray comma
+[  ok  ] parse(None) -> {} — omitting the flag is the default and is OFF
+[  ok  ] all four armed-relevant sleeves are in the registry union (34 sleeves), so the ceremony's command line will validate
+
+RESULT: PASS
+
+### --check rollback (reconstructed host restored to pre-carry state)
+
+repo root : /private/tmp/claude-501/-Users-borr-GTOSActive-worktrees-wave15-activation-package-20260731/0d25a092-4852-4866-aae8-728602713211/scratchpad/hostsim
+python    : 3.14.4 (/opt/homebrew/opt/python@3.14/bin/python3.14)
+manifest  : MANIFEST.json (CE, B2300-B2349)
+
+== rollback: is every file back at its BEFORE bytes? ==
+[  ok  ] src/components/ultimate_book/spread_geometry.py: removed
+[  ok  ] src/components/ultimate_book/book_engine.py: b6a9ef7d98d2 (== before b6a9ef7d98d2)
+[  ok  ] src/components/ultimate_book/book_owner.py: c6e762e946ee (== before c6e762e946ee)
+[  ok  ] run_book.py: c416f4205294 (== before c416f4205294)
+
+  NOTE: the floor writes nothing, holds nothing and touches no position, so a rollback unwinds NO state. A position already open is unaffected — the floor runs in _generate_intents and every exit path reads the trade record.
+
+RESULT: PASS

@@ -1,0 +1,66 @@
+Per-instrument H4 regime distribution (Jan 2 - Apr 10, 2026)
+================================================================================
+
+XAUUSD: total classified H4 candles = 399
+  trending_bull        121  ( 30.3%)
+  reversal             103  ( 25.8%)
+  chop                  96  ( 24.1%)
+  trending_bear         78  ( 19.5%)
+  breakout               1  (  0.3%)
+    2026-01: n=46 trending_bull=44(96%), breakout=1(2%), reversal=1(2%)
+    2026-02: n=120 reversal=50(42%), chop=32(27%), trending_bull=25(21%), trending_bear=13(11%)
+    2026-03: n=132 trending_bear=50(38%), reversal=36(27%), chop=27(20%), trending_bull=19(14%)
+    2026-04: n=101 chop=37(37%), trending_bull=33(33%), reversal=16(16%), trending_bear=15(15%)
+
+US30_cash: total classified H4 candles = 402
+  reversal             113  ( 28.1%)
+  chop                 108  ( 26.9%)
+  trending_bear         92  ( 22.9%)
+  trending_bull         89  ( 22.1%)
+    2026-01: n=45 reversal=18(40%), chop=12(27%), trending_bear=9(20%), trending_bull=6(13%)
+    2026-02: n=119 reversal=38(32%), chop=37(31%), trending_bear=27(23%), trending_bull=17(14%)
+    2026-03: n=132 trending_bear=56(42%), reversal=40(30%), chop=33(25%), trending_bull=3(2%)
+    2026-04: n=106 trending_bull=63(59%), chop=26(25%), reversal=17(16%)
+
+USDJPY: total classified H4 candles = 405
+  chop                 128  ( 31.6%)
+  trending_bull        122  ( 30.1%)
+  reversal             109  ( 26.9%)
+  trending_bear         46  ( 11.4%)
+    2026-01: n=46 reversal=19(41%), trending_bear=18(39%), chop=9(20%)
+    2026-02: n=120 trending_bull=44(37%), reversal=36(30%), chop=30(25%), trending_bear=10(8%)
+    2026-03: n=132 chop=56(42%), trending_bull=54(41%), reversal=14(11%), trending_bear=8(6%)
+    2026-04: n=107 reversal=40(37%), chop=33(31%), trending_bull=24(22%), trending_bear=10(9%)
+
+GBPJPY: total classified H4 candles = 405
+  trending_bull        138  ( 34.1%)
+  reversal             126  ( 31.1%)
+  chop                 101  ( 24.9%)
+  trending_bear         40  (  9.9%)
+    2026-01: n=46 reversal=37(80%), trending_bull=6(13%), chop=3(7%)
+    2026-02: n=120 trending_bull=40(33%), chop=36(30%), trending_bear=24(20%), reversal=20(17%)
+    2026-03: n=132 trending_bull=45(34%), reversal=41(31%), chop=37(28%), trending_bear=9(7%)
+    2026-04: n=107 trending_bull=47(44%), reversal=28(26%), chop=25(23%), trending_bear=7(7%)
+
+GBPUSD: total classified H4 candles = 405
+  reversal             131  ( 32.3%)
+  chop                  97  ( 24.0%)
+  trending_bull         90  ( 22.2%)
+  trending_bear         87  ( 21.5%)
+    2026-01: n=46 trending_bull=31(67%), reversal=8(17%), chop=7(15%)
+    2026-02: n=120 trending_bear=42(35%), reversal=41(34%), chop=31(26%), trending_bull=6(5%)
+    2026-03: n=132 reversal=50(38%), chop=35(27%), trending_bear=26(20%), trending_bull=21(16%)
+    2026-04: n=107 reversal=32(30%), trending_bull=32(30%), chop=24(22%), trending_bear=19(18%)
+
+Fleet aggregate (5 instruments):
+  reversal             582  ( 28.9%)
+  trending_bull        560  ( 27.8%)
+  chop                 530  ( 26.3%)
+  trending_bear        343  ( 17.0%)
+  breakout               1  (  0.0%)
+
+Fleet by month:
+  2026-01: n=229 trending_bull=87(38%), reversal=83(36%), chop=31(14%), trending_bear=27(12%), breakout=1(0%)
+  2026-02: n=599 reversal=185(31%), chop=166(28%), trending_bull=132(22%), trending_bear=116(19%)
+  2026-03: n=660 chop=188(28%), reversal=181(27%), trending_bear=149(23%), trending_bull=142(22%)
+  2026-04: n=528 trending_bull=199(38%), chop=145(27%), reversal=133(25%), trending_bear=51(10%)

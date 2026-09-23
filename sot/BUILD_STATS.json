@@ -1,0 +1,188 @@
+{
+  "files": 125583,
+  "closure_loaded": 157,
+  "mode": "build",
+  "venv_dirs": 3,
+  "secret_names": 8,
+  "exclude_n": 89562,
+  "exclude_bytes": 28541884582,
+  "exclude_by_reason": {
+    "json-not-config": 58504,
+    "data-ext": 14734,
+    "unknown-binary": 1,
+    "large-json": 98,
+    "runtime-tree": 16145
+  },
+  "stat_errors": 4603,
+  "host_path_also_elsewhere": 20804,
+  "host_size_diff": 539,
+  "closure_missing_on_host": [],
+  "closure_pinned": 157,
+  "include_by_hold": {
+    "vps-f5-live": 14673,
+    "vps-msi": 349,
+    "vps-p0-prep": 167
+  },
+  "include_n": 15189,
+  "include_bytes": 283312904,
+  "manifest_rows": 89565,
+  "seconds": 218.3,
+  "disk_free": 23729799168,
+  "disk_total": 214641405952,
+  "largest_include": [
+    {
+      "path": "research/sierrachart_data_source_research_2026-05-02/raw/upstream/databento_docs_main_bundle.js",
+      "size": 4369876,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "src/research_infra/v4_timewarp_simulated_live_research_loop.py",
+      "size": 4323499,
+      "hold": "vps-f5-live",
+      "reason": "closure-pin"
+    },
+    {
+      "path": "research/science_program_2026_05/01_domain_syntheses/raw/G8_options_vol_sources_2026-05-06/cboe_delayed_quotes_api.html",
+      "size": 4110465,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/science_program_2026_05/06_outcome_testing/oti4_opening_drive_source_correction_or_contract_revision/OTI4_OPENING_DRIVE_SOURCE_CONTRACT_PACKET_2026-05-08.md",
+      "size": 3741447,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "tests/test_v4_timewarp_simulated_live_research_loop.py",
+      "size": 2785308,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/verify_weekend_moonshot_initial_artifacts_2026_05_15.py",
+      "size": 2336759,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_readonly_monitoring_alignment_expansion/SCID_FORWARD_CAPTURE_READONLY_ALIGNMENT_EXPANSION_SHAPE_FINGERPRINT_HASH_MANIFEST_2026-05-12.md",
+      "size": 2122243,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20/verify_denominator_to_deployment_execution.py",
+      "size": 1734190,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "scripts/build_gtos_vnext_master_conversion_ledger.py",
+      "size": 1721066,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": ".context/00_core/research_current_state.md",
+      "size": 1628814,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "docs/audits/fable5-vision-audit-20260725/IMPLEMENTATION_STATE.md",
+      "size": 1497322,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20/build_denominator_to_deployment_execution.py",
+      "size": 1397048,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/primitive_orderflow_sources_2026-05-02/raw/cme_mdp3_client_systems.html",
+      "size": 1330355,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "src/research/moonshot_scheduler_v4_best_trade_allocator.py",
+      "size": 1299435,
+      "hold": "vps-f5-live",
+      "reason": "closure-pin"
+    },
+    {
+      "path": "tests/test_moonshot_scheduler_v4_best_trade_allocator.py",
+      "size": 1188480,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/science_program_2026_05/06_outcome_testing/otx_g6_tick_aware_end_to_end_resolution/OTX_G6_REBUILT_PACKET_PROPOSALS_2026-05-07.md",
+      "size": 1184208,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "src/research_infra/replay_acceleration_attempt5_typed_sparse_runner.py",
+      "size": 845735,
+      "hold": "vps-f5-live",
+      "reason": "closure-pin"
+    },
+    {
+      "path": "research/science_program_2026_05/00_control/g4_source_evidence_raw/vpin_counterevidence_sciencedirect.html",
+      "size": 832789,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "src/components/gtos_vnext_runtime.py",
+      "size": 747181,
+      "hold": "vps-f5-live",
+      "reason": "closure-pin"
+    },
+    {
+      "path": "tests/test_denominator_to_deployment_verifier.py",
+      "size": 710172,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/primitive_orderflow_sources_2026-05-02/raw/rithmic_home.html",
+      "size": 702001,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "tests/research_infra/test_moonshot_unified_execution_scorer.py",
+      "size": 665836,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "src/components/orchestrator.py",
+      "size": 653962,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/science_program_2026_05/06_outcome_testing/g0exp_r1_local_heavy_root_parser_hash_lineage_source_control/G0EXP_R1_SOURCE_ROOT_SEARCH_HASH_DEFERRAL_LEDGER_2026-05-13.md",
+      "size": 653001,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    },
+    {
+      "path": "research/science_program_2026_05/06_outcome_testing/g0exp_r1_local_heavy_root_parser_hash_lineage_source_control/G0EXP_R1_PARSER_VERSION_SHAPE_FINGERPRINT_MATRIX_2026-05-13.md",
+      "size": 642892,
+      "hold": "vps-f5-live",
+      "reason": "text"
+    }
+  ],
+  "content_scanned": 15150,
+  "content_hits": 235,
+  "version_conflicts": 539,
+  "dest": "C:\\Users\\Administrator\\sot-main-candidate"
+}

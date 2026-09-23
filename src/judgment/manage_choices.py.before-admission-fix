@@ -1,0 +1,384 @@
+"""Challenge manage sends are one Choice each.
+
+SL modify, TP modify, close, and the pending REMOVE send each ask Jev
+for that exact act. The decision is the option with the highest
+probability among leave_orig, move_sl, move_tp, close, and hold. A tie
+is not a decision. This module never calls order_send. Persist stays
+0.00. Friends copy the recorded result.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Callable, Mapping
+
+CHALLENGE_NS = "operator"
+CHALLENGE_LOGIN = 0
+MODEL = "jev-1.13.0"
+PERSIST = None
+SCHEMA = "gtos.judgment.manage_choices.v1"
+
+ACTS = ("move_sl", "move_tp", "close", "remove")
+OPTIONS = ("leave_orig", "move_sl", "move_tp", "close", "hold")
+
+CRITERIA = {
+    "leave_orig": "Leave the original broker SL and TP. Do not send this manage.",
+    "move_sl": "Move the stop to the proposed SL. This is the SL-modify send.",
+    "move_tp": "Move the target to the proposed TP. This is the TP-modify send.",
+    "close": "Close this position, or cancel this pending on a REMOVE send.",
+    "hold": "Hold. Do not send a modify or a close on this act.",
+}
+
+QUESTION_ID = {
+    "move_sl": "manage_sl",
+    "move_tp": "manage_tp",
+    "close": "manage_close",
+    "remove": "manage_remove",
+}
+
+INSTRUCTIONS = {
+    "move_sl": (
+        "Challenge manage act: SL modify on this exact ticket. "
+        "Pick one option. The send happens only if move_sl has the single "
+        "highest probability. leave_orig and hold do not move the stop. "
+        "Do not flatten the book as a gesture. Close only when close wins."
+    ),
+    "move_tp": (
+        "Challenge manage act: TP modify on this exact ticket. "
+        "Pick one option. The send happens only if move_tp has the single "
+        "highest probability. leave_orig and hold do not move the target. "
+        "Do not flatten the book as a gesture. Close only when close wins."
+    ),
+    "close": (
+        "Challenge manage act: close this exact ticket. "
+        "Pick one option. The send happens only if close has the single "
+        "highest probability. leave_orig and hold keep the position. "
+        "This ticket is live. close is a legal winner."
+    ),
+    "remove": (
+        "Challenge manage act: TRADE_ACTION_REMOVE of this stale pending. "
+        "Pick one option. The cancel send happens only if close has the "
+        "single highest probability. leave_orig and hold leave the pending. "
+        "move_sl and move_tp are not this send. Do not flatten from fear."
+    ),
+}
+
+AUTHORIZES = {
+    "move_sl": "move_sl",
+    "move_tp": "move_tp",
+    "close": "close",
+    "remove": "close",
+}
+
+_CACHE: dict[tuple[Any, ...], tuple[float, dict[str, Any]]] = {}
+_CACHE_TTL_S = 20.0
+_MISS_TTL_S = 3.0
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def record_path() -> Path:
+    override = (os.environ.get("GTOS_MANAGE_CHOICES_RECORD") or "").strip()
+    if override:
+        return Path(override)
+    return (
+        _repo_root()
+        / "pipeline_state"
+        / "ultimate_book"
+        / CHALLENGE_NS
+        / "judgment"
+        / "manage_choices.jsonl"
+    )
+
+
+def armed_path() -> Path:
+    return record_path().with_name("manage_choices_armed.json")
+
+
+def clear_cache() -> None:
+    _CACHE.clear()
+
+
+def _ticket(value: Any) -> int | None:
+    try:
+        if value in (None, ""):
+            return None
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _jsonable(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {str(key): _jsonable(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(item) for item in value]
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, (str, int, float, bool)) or value is None:
+        return value
+    return str(value)
+
+
+def _append(path: Path, row: Mapping[str, Any]) -> None:
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(_jsonable(dict(row)), sort_keys=True) + "\n")
+    except OSError:
+        return
+
+
+def _base(act: str, *, ticket: int | None, symbol: Any, reason: str, proposed: Any) -> dict[str, Any]:
+    return {
+        "schema": SCHEMA,
+        "logged_at_utc": _now(),
+        "login": CHALLENGE_LOGIN,
+        "ns": CHALLENGE_NS,
+        "act": act,
+        "question_id": QUESTION_ID[act],
+        "ticket": ticket,
+        "symbol": symbol,
+        "reason": reason,
+        "proposed": proposed,
+        "choice": None,
+        "probability": None,
+        "probabilities": {},
+        "probability_source": None,
+        "decision_emitted": False,
+        "send": False,
+        "model": MODEL,
+        "persist": PERSIST,
+        "persist_weight": None,
+        "agent_order_send": False,
+        "friends_copy_result": True,
+        "extra_pass": False,
+        "activation_token": "stays",
+        "error": None,
+    }
+
+
+def decide(
+    act: str,
+    *,
+    ticket: Any = None,
+    symbol: Any = None,
+    reason: str = "",
+    proposed: Any = None,
+    facts: Mapping[str, Any] | None = None,
+    ask: Callable[..., dict[str, Any]] | None = None,
+    use_cache: bool = True,
+    record: bool = True,
+    record_to: Path | None = None,
+) -> dict[str, Any]:
+    """Ask one manage Choice. ``send`` is true only for the winning act.
+
+    Never raises. Never sends an order. No ticket is exempt from close.
+    """
+
+    if act not in QUESTION_ID:
+        row = _base("close", ticket=_ticket(ticket), symbol=symbol, reason=reason, proposed=proposed)
+        row["act"] = act
+        row["question_id"] = None
+        row["error"] = "unknown_act"
+        return row
+    ticket_i = _ticket(ticket)
+    row = _base(act, ticket=ticket_i, symbol=symbol, reason=reason, proposed=proposed)
+    key = (act, ticket_i, str(proposed), str(reason), str(symbol))
+    now = time.monotonic()
+    if use_cache:
+        hit = _CACHE.get(key)
+        if hit is not None and hit[0] > now:
+            cached = dict(hit[1])
+            cached["logged_at_utc"] = row["logged_at_utc"]
+            cached["cache"] = True
+            return cached
+    state = {
+        "login": CHALLENGE_LOGIN,
+        "ns": CHALLENGE_NS,
+        "act": act,
+        "ticket": ticket_i,
+        "symbol": symbol,
+        "reason": reason or act,
+        "proposed": proposed,
+        "persist": PERSIST,
+        "model": MODEL,
+        "facts": dict(facts or {}),
+    }
+    try:
+        from .jev_questions import prior_outcomes
+
+        state["prior_outcomes"] = prior_outcomes(
+            state=state,
+            questions={
+                QUESTION_ID[act]: {
+                    "type": "choice",
+                    "instructions": INSTRUCTIONS[act],
+                    "criteria": dict(CRITERIA),
+                }
+            },
+        )
+    except Exception:
+        pass
+    try:
+        if ask is None:
+            from .rung_choice import ask_choice
+
+            ask = ask_choice
+        hop = ask(
+            state,
+            question_id=QUESTION_ID[act],
+            instructions=INSTRUCTIONS[act],
+            criteria=CRITERIA,
+        ) or {}
+    except Exception as exc:  # noqa: BLE001 — manage must not raise into the writer
+        hop = {"error": type(exc).__name__, "decision_emitted": False}
+    if not isinstance(hop, dict):
+        hop = {"error": "ask_not_a_dict", "decision_emitted": False}
+    row["choice"] = hop.get("choice")
+    row["probability"] = hop.get("probability")
+    probs = hop.get("probabilities") if isinstance(hop.get("probabilities"), dict) else {}
+    row["probabilities"] = {str(name): value for name, value in probs.items() if str(name) in CRITERIA}
+    row["probability_source"] = hop.get("probability_source")
+    row["decision_emitted"] = bool(hop.get("decision_emitted")) and row["choice"] in OPTIONS
+    row["error"] = hop.get("error")
+    winner = row["choice"] if row["decision_emitted"] else None
+    row["send"] = winner == AUTHORIZES[act]
+    if hop.get("model"):
+        row["model"] = hop.get("model")
+    if use_cache:
+        ttl = _CACHE_TTL_S if row["decision_emitted"] else _MISS_TTL_S
+        _CACHE[key] = (now + ttl, dict(row))
+    if record:
+        _append(record_to or record_path(), row)
+        try:
+            from .jev_questions import land_choice_return
+
+            land_choice_return('manage', row, facts)
+        except Exception:
+            pass
+    return row
+
+
+def emit_manage(
+    act: str,
+    *,
+    ticket: Any = None,
+    symbol: Any = None,
+    reason: str = "",
+    proposed: Any = None,
+    facts: Mapping[str, Any] | None = None,
+    namespace: str | None = None,
+    ask: Callable[..., dict[str, Any]] | None = None,
+    use_cache: bool = True,
+    record: bool = True,
+    record_to: Path | None = None,
+) -> bool:
+    """True only when this exact Challenge act's Choice authorizes the send."""
+
+    if namespace is not None and str(namespace) != CHALLENGE_NS:
+        return True
+    row = decide(
+        act,
+        ticket=ticket,
+        symbol=symbol,
+        reason=reason,
+        proposed=proposed,
+        facts=facts,
+        ask=ask,
+        use_cache=use_cache,
+        record=record,
+        record_to=record_to,
+    )
+    return bool(row.get("send"))
+
+
+class _NotSent:
+    """REMOVE was not sent. retcode is not the broker success code."""
+
+    retcode = None
+    success = False
+    comment = "manage_choice_not_sent"
+
+
+def _is_remove(request: Any) -> bool:
+    if not isinstance(request, dict):
+        return False
+    try:
+        return int(request.get("action") or 0) == 8
+    except (TypeError, ValueError):
+        return False
+
+
+def arm_pending_remove(
+    mt5: Any,
+    *,
+    ask: Callable[..., dict[str, Any]] | None = None,
+    write_stamp: bool = True,
+    record: bool = True,
+    record_to: Path | None = None,
+    use_cache: bool = True,
+) -> bool:
+    """Wrap one mt5 object's order_send so action 8 asks the remove Choice.
+
+    The original order_send still runs when the Choice authorizes the cancel,
+    so the activation token on that method stays in front of the broker.
+    """
+
+    if mt5 is None or getattr(mt5, "_gtos_manage_remove_armed", False):
+        return False
+    original = getattr(mt5, "order_send", None)
+    if not callable(original):
+        return False
+
+    def order_send(request, *args, **kwargs):
+        if _is_remove(request):
+            ticket = request.get("order", request.get("position", request.get("ticket")))
+            allowed = emit_manage(
+                "remove",
+                ticket=ticket,
+                symbol=request.get("symbol"),
+                reason="TRADE_ACTION_REMOVE",
+                namespace=CHALLENGE_NS,
+                ask=ask,
+                use_cache=use_cache,
+                record=record,
+                record_to=record_to,
+            )
+            if not allowed:
+                return _NotSent()
+        return original(request, *args, **kwargs)
+
+    mt5.order_send = order_send
+    mt5._gtos_manage_remove_armed = True
+    if write_stamp:
+        try:
+            payload = {
+                "schema": SCHEMA,
+                "logged_at_utc": _now(),
+                "ns": CHALLENGE_NS,
+                "armed": True,
+                "hook": "pending_remove",
+                "pid": os.getpid(),
+                "persist": PERSIST,
+                "agent_order_send": False,
+                "activation_token": "stays",
+                "model": MODEL,
+                "gold_close_pin": False,
+            }
+            path = armed_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(payload, sort_keys=True), encoding="utf-8")
+        except OSError:
+            pass
+    return True

@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.world_state.v0",
+  "title": "WORLD_STATE_V0",
+  "description": "Closed desk object for Jev Choice/Score/Noul. One world per as-of. Does not replace gold_state.v0. Never invents NEWS_PROTOCOL endpoints, DXY, US10Y, or raw-X narratives. Intelligence only — never place/remint/flatten.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "as_of_clock",
+    "never_place",
+    "never_remint",
+    "never_flatten",
+    "never_invent_news_protocol",
+    "never_ingest_raw_x",
+    "clock",
+    "focus",
+    "usd",
+    "rates",
+    "risk",
+    "corr",
+    "liquidity",
+    "occupancy",
+    "news",
+    "host_news",
+    "narrative",
+    "completeness"
+  ],
+  "properties": {
+    "schema": {"const": "gtos.judgment.world_state.v0"},
+    "as_of_clock": {
+      "type": "string",
+      "enum": ["live_intent", "as_of_open_study", "as_of_close_illegal_for_live"]
+    },
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_invent_news_protocol": {"const": true},
+    "never_ingest_raw_x": {"const": true},
+    "clock": {
+      "type": "object",
+      "required": ["as_of_utc", "rule"],
+      "properties": {
+        "as_of_utc": {"type": "string"},
+        "broker_epoch": {"type": ["number", "null"]},
+        "rule": {"const": "new_york_plus_7"},
+        "weekday": {"type": "integer", "minimum": 0, "maximum": 6},
+        "weekday_name": {"type": "string"},
+        "is_friday": {"type": "boolean"}
+      }
+    },
+    "focus": {
+      "type": "object",
+      "description": "The gold (or later metals) fire this desk object is answering for.",
+      "properties": {
+        "candidate_id": {"type": ["string", "null"]},
+        "symbol": {"type": "string"},
+        "side": {"type": ["string", "null"]},
+        "sleeve": {"type": ["string", "null"]},
+        "family_class": {"type": ["string", "null"]},
+        "origin_organism": {"type": ["string", "null"]}
+      }
+    },
+    "usd": {
+      "type": "object",
+      "description": "USD stance from named FX tapes. DXY is unassembled on this clone.",
+      "required": ["stance", "source"],
+      "properties": {
+        "stance": {"enum": ["stronger", "weaker", "mixed", "unassembled"]},
+        "source": {"enum": ["usd_fx_basket", "unassembled"]},
+        "present": {"type": "array", "items": {"type": "string"}},
+        "dxy": {
+          "type": "object",
+          "properties": {
+            "series": {"type": "null"},
+            "source": {"const": "unassembled"},
+            "reason": {"type": "string"}
+          }
+        }
+      }
+    },
+    "rates": {
+      "type": "object",
+      "description": "Yield path. V0 cannot assemble a named yield series. USD FX basket is not a rates print.",
+      "required": ["path_named", "named_yield", "assembled"],
+      "properties": {
+        "path_named": {"enum": ["usd_proxy_basket", "named_yield", "unassembled"]},
+        "assembled": {"type": "boolean"},
+        "usd_proxy_only": {"type": "boolean"},
+        "named_yield": {
+          "type": "object",
+          "properties": {
+            "series": {"type": "null"},
+            "source": {"const": "unassembled"},
+            "reason": {"type": "string"},
+            "sierra_zn": {"const": "control_only_absent"}
+          }
+        }
+      }
+    },
+    "risk": {
+      "type": "object",
+      "properties": {
+        "stance": {"enum": ["risk_on", "risk_off", "mixed", "unassembled"]},
+        "source": {"enum": ["named_index_tapes", "unassembled"]}
+      }
+    },
+    "metals_cross": {"type": "object"},
+    "corr": {
+      "type": "object",
+      "required": ["gold_vs_usd"],
+      "properties": {
+        "gold_vs_usd": {
+          "type": "object",
+          "properties": {
+            "relation": {"enum": ["against_usd", "with_usd", "uncorrelated", "unassembled"]},
+            "corr_20d": {"type": ["number", "null"]},
+            "corr_60d": {"type": ["number", "null"]},
+            "regime_broken": {"type": ["boolean", "null"]},
+            "source": {"enum": ["named_d1_returns", "unassembled"]}
+          }
+        },
+        "code_gold_sold_into_usd_strength": {"type": ["boolean", "null"]}
+      }
+    },
+    "liquidity": {
+      "type": "object",
+      "description": "Spread/session proxies from gold_state. No Sierra depth, no invented order book.",
+      "properties": {
+        "spread_r_of_stop": {"type": ["number", "null"]},
+        "vol_ratio": {"type": ["number", "null"]},
+        "session_named": {"type": ["string", "null"]},
+        "sierra_zn": {"const": "control_only_absent"},
+        "sierra_cl": {"const": "control_only_absent"},
+        "order_book": {"const": "unassembled"},
+        "source": {"enum": ["gold_cost_and_session", "unassembled"]}
+      }
+    },
+    "occupancy": {
+      "type": "object",
+      "properties": {
+        "focus_cluster": {"type": ["string", "null"]},
+        "focus_cluster_crowded": {"type": ["boolean", "null"]},
+        "source": {"enum": ["challenge_deals", "unassembled"]}
+      }
+    },
+    "news": {
+      "type": "object",
+      "description": "Reuse news_spine.attach_news. spine_empty means we do not have a calendar, not 'no HIGH'.",
+      "required": ["spine_empty", "events"],
+      "properties": {
+        "spine_empty": {"type": "boolean"},
+        "events": {"type": "array"},
+        "high_in_f5_window": {"type": ["boolean", "null"]},
+        "high_in_w7_window": {"type": ["boolean", "null"]}
+      }
+    },
+    "host_news": {
+      "type": "object",
+      "description": "host_events.news_inventory_at. Unread inventory stays named. Not a NEWS_PROTOCOL client."
+    },
+    "narrative": {
+      "type": "object",
+      "properties": {
+        "source": {"const": "unassembled"},
+        "raw_x_forbidden": {"const": true}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "required": [
+        "named_yield",
+        "dxy",
+        "news_spine",
+        "state_sufficient_for_desk",
+        "missing_fields"
+      ],
+      "properties": {
+        "named_yield": {"const": false, "description": "V0: always false until a yield tape is ingested."},
+        "dxy": {"const": false},
+        "narrative": {"const": false},
+        "state_sufficient_for_desk": {"type": "boolean"},
+        "missing_fields": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

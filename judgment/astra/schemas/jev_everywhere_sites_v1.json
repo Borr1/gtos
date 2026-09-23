@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.everywhere.surface_map.v1",
+  "title": "jev_everywhere_sites_v1",
+  "description": "Surface map for Jev-everywhere Challenge sidecar fan-out. Labels only. Never place.",
+  "type": "object",
+  "required": [
+    "schema",
+    "login",
+    "sidecar",
+    "new_hard_off",
+    "never_place"
+  ],
+  "properties": {
+    "schema": {"const": "gtos.judgment.everywhere.surface_map.v1"},
+    "login": {"const": "0"},
+    "sidecar": {"const": "jev_fluid_gate_v1"},
+    "hypothesis": {"const": "extend_jev_fluid_gate_v1_sidecar_fanout_not_parallel_place_path"},
+    "new_hard_off": {"const": false},
+    "never_place": {"const": true},
+    "chair_cf": {
+      "type": "object",
+      "properties": {
+        "religion_index_crypto_xa_size0": {"const": "revoked"},
+        "regime_unknown": {"const": "honest_until_features"}
+      }
+    }
+  }
+}

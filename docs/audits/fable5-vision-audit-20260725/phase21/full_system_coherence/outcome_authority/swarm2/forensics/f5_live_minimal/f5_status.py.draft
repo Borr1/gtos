@@ -1,0 +1,207 @@
+"""F5 operator view — one command, both accounts, everything that matters, no grepping.
+
+DRAFT — not applied. Intended destination: `scripts/f5_status.py` (repo root scripts/, FREE of the
+R2 contract). Read-only: it opens MT5 for `account_info()` and `positions_get()` and nothing else.
+It never sends an order and imports no execution code.
+
+    python scripts/f5_status.py                 # console table, both accounts
+    python scripts/f5_status.py --write         # also writes shadow_logs/f5_minimal/STATUS.md
+    python scripts/f5_status.py --watch 300     # refresh every 5 minutes
+
+WHY THIS IS A FIRST-CLASS DELIVERABLE. The owner removed the automatic loss budget: "there should
+be no limit set as i'll be there to witness it". With no cap, **the reporting IS the control**.
+Everything below is chosen so that one screen answers "should I intervene?".
+
+The four things that can only be seen here, and nowhere in any existing log:
+
+  1. DISTANCE TO THE DE-RISK KNEE. The one place the experiment can touch the ARMED book is
+     shared real equity. `admission._governor_decision` derisks when
+     dd = (governor_static_initial_balance - equity) / governor_static_initial_balance >= 0.07,
+     and shrinks linearly to zero at 0.10 (admission.py:1345-1356; the reference is
+     `governor_static_initial_balance`, default 100_000.0, book_engine.py:202,209 ->
+     governor_state.py:60,298). On a $100,000 reference the knee is at equity $93,000 and the
+     slope inside the band is 1/(0.03 x 100000) -- **every $100 of loss costs 3.33 percentage
+     points of the ARMED book's size**. Above the knee it costs exactly nothing. So the number
+     the operator needs is not "how much have I lost", it is "how far is this account from
+     $93,000". This tool prints it in dollars and in months at the current burn.
+  2. NOTIONAL vs ACTUAL. If `notional_actual_ratio` is not ~= dial/target (e.g. 2000/10 = 200x),
+     the notional ledger is not wired and the book is sizing off broker equity. That is the
+     single failure mode that would silently invalidate the whole month.
+  3. THE ISOLATION INVARIANT, live. Book positions grouped by magic: the armed surface must be
+     MAGIC_ARMED only and the experiment MAGIC_F5 only, with zero crossover. One line, checked
+     every time the operator looks.
+  4. STAND-DOWNS. Notional epochs closed, with the governor reason that closed each one -- the
+     record of every stand-down production would have made.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[1]
+
+# (label, terminal, login, armed namespace, F5 namespace, firm floor, dd reference)
+ACCOUNTS = [
+    ("FTMO",       r"C:\MT5\FTMO\terminal64.exe",       531325516,
+     "operator_profile",      "operator",       90000.0, 100000.0),
+    ("redacted_account", r"C:\MT5\redacted_account\terminal64.exe",  0,
+     "redacted_account_live_bee34003",   "redacted_account_f5_minimal", 90000.0, 100000.0),
+]
+DERISK_START = 0.07
+MAXDD_LIMIT = 0.10
+DAILY_LIMIT_USD = 5000.0          # both firms: 5% of the INITIAL balance, a fixed cash amount
+MAGIC_ARMED = 20260401
+MAGIC_F5 = 0
+
+
+def _read_json(p: Path, default=None):
+    try:
+        return json.loads(p.read_text())
+    except Exception:
+        return default
+
+
+def _read_jsonl(p: Path):
+    try:
+        return [json.loads(l) for l in p.read_text().splitlines() if l.strip()]
+    except Exception:
+        return []
+
+
+def account_block(label, terminal, login, ns_armed, ns_f5, floor, dd_ref):
+    import MetaTrader5 as mt5
+    out = {"label": label, "login": login, "read_utc": datetime.now(timezone.utc).isoformat()}
+    ok = mt5.initialize(path=terminal)
+    if not ok:
+        out["error"] = f"mt5.initialize failed: {mt5.last_error()}"
+        return out
+    try:
+        ai = mt5.account_info()
+        if ai is None or int(ai.login) != int(login):
+            out["error"] = f"WRONG ACCOUNT: terminal reports {getattr(ai,'login',None)}, expected {login}"
+            return out
+        eq, bal = float(ai.equity), float(ai.balance)
+        positions = list(mt5.positions_get() or [])
+    finally:
+        mt5.shutdown()
+
+    dd = (dd_ref - eq) / dd_ref
+    knee_equity = dd_ref * (1.0 - DERISK_START)
+    cap_mult = 1.0 if dd <= DERISK_START else max(0.0, 1.0 - (dd - DERISK_START) / (MAXDD_LIMIT - DERISK_START))
+
+    led = _read_json(REPO / "pipeline_state" / "ultimate_book" / ns_f5 / "f5_notional_ledger.json", {}) or {}
+    ev = _read_jsonl(REPO / "shadow_logs" / "f5_minimal" / ns_f5 / "events.jsonl")
+    fills = [e for e in ev if e.get("event") == "f5_fill"]
+    closes = [e for e in ev if e.get("event") == "f5_trade_closed"]
+    standdowns = [e for e in ev if str(e.get("event", "")).endswith("standdown")]
+    rounded = [f for f in fills if ((f.get("f5_round_up") or {}).get("f5_round_up") == "applied")]
+    ratios = [c["f5_scalar_effective"] for c in closes if c.get("f5_scalar_effective")]
+
+    out.update({
+        "equity": eq, "balance": bal,
+        "open_positions_total": len(positions),
+        "open_armed": sum(1 for p in positions if p.magic == MAGIC_ARMED),
+        "open_f5": sum(1 for p in positions if p.magic == MAGIC_F5),
+        "open_other": sum(1 for p in positions if p.magic not in (MAGIC_ARMED, MAGIC_F5)),
+        # --- the firm ---
+        "floor": floor,
+        "to_floor_usd": eq - floor,
+        "to_floor_pct_of_equity": 100.0 * (eq - floor) / eq,
+        "daily_limit_usd": DAILY_LIMIT_USD,
+        # --- the coupling to the ARMED book ---
+        "dd_vs_reference_pct": 100.0 * dd,
+        "armed_size_multiplier_now": cap_mult,
+        "derisk_knee_equity": knee_equity,
+        "to_derisk_knee_usd": eq - knee_equity,
+        "armed_pp_cost_per_100usd": 0.0 if eq > knee_equity else 100.0 * (100.0 / (dd_ref * (MAXDD_LIMIT - DERISK_START))),
+        # --- the experiment ---
+        "f5_epoch": led.get("epoch"),
+        "f5_notional_equity": led.get("notional_equity"),
+        "f5_real_pnl_cumulative": led.get("real_pnl_usd_cumulative"),
+        "f5_fills": len(fills), "f5_closes": len(closes),
+        "f5_rounded_up": len(rounded),
+        "f5_rounded_up_pct": (100.0 * len(rounded) / len(fills)) if fills else None,
+        "f5_notional_actual_ratio_median": (sorted(ratios)[len(ratios) // 2] if ratios else None),
+        "f5_standdowns": len(standdowns),
+        "f5_epochs_closed": led.get("epochs_closed", []),
+        "f5_permanent_standdown": led.get("standdown_permanent", False),
+    })
+    return out
+
+
+def render(blocks) -> str:
+    L = []
+    L.append(f"F5 STATUS  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%SZ')}")
+    L.append("=" * 96)
+    for b in blocks:
+        if b.get("error"):
+            L.append(f"\n{b['label']}  ** {b['error']} **")
+            continue
+        L.append(f"\n{b['label']}  (login {b['login']})")
+        L.append(f"  equity ${b['equity']:>12,.2f}   balance ${b['balance']:>12,.2f}"
+                 f"   open: armed {b['open_armed']}  F5 {b['open_f5']}  other {b['open_other']}")
+        # 1. the firm
+        L.append(f"  FIRM      to $90,000 floor  ${b['to_floor_usd']:>11,.2f}"
+                 f"     daily line  ${b['daily_limit_usd']:>9,.0f} (fixed, 5% of initial)")
+        # 2. the coupling -- the number that decides whether to intervene
+        knee = b['to_derisk_knee_usd']
+        flag = "SAFE " if knee > 0 else "COUPLED"
+        L.append(f"  ARMED     size multiplier now {b['armed_size_multiplier_now']:.4f}"
+                 f"   to de-risk knee (${b['derisk_knee_equity']:,.0f})  ${knee:>10,.2f}   [{flag}]")
+        if knee <= 0:
+            L.append(f"            ** INSIDE THE DE-RISK BAND: every $100 the experiment loses now costs"
+                     f" {b['armed_pp_cost_per_100usd']:.2f} pp of the ARMED book's size **")
+        # 3. the experiment
+        L.append(f"  F5        epoch {b['f5_epoch']}   notional ${b['f5_notional_equity'] or 0:>11,.2f}"
+                 f"   REAL P&L ${b['f5_real_pnl_cumulative'] or 0:>+10,.2f}")
+        L.append(f"            fills {b['f5_fills']:>5}   closes {b['f5_closes']:>5}"
+                 f"   rounded up {b['f5_rounded_up']:>4}"
+                 f" ({(b['f5_rounded_up_pct'] or 0):.1f}%)"
+                 f"   notional/actual x{(b['f5_notional_actual_ratio_median'] or 0):.0f}")
+        # 4. the invariants
+        bad = []
+        if b['open_other']:
+            bad.append(f"{b['open_other']} position(s) with an unexpected magic")
+        r = b['f5_notional_actual_ratio_median']
+        if b['f5_closes'] >= 5 and r is not None and not (50 <= r <= 500):
+            bad.append(f"notional/actual ratio {r:.0f} is outside 50-500 -- IS THE NOTIONAL LEDGER WIRED?")
+        if b['f5_permanent_standdown']:
+            bad.append("F5 is in PERMANENT stand-down")
+        L.append("  CHECK     " + ("OK" if not bad else " | ".join(bad)))
+        for e in (b['f5_epochs_closed'] or [])[-3:]:
+            L.append(f"  STANDDOWN epoch {e['epoch']} closed {e['closed_utc'][:19]}  "
+                     f"reason {e['reason']}  notional DD ${e['notional_drawdown_usd']:,.0f}  "
+                     f"{e['trades_in_epoch']} trades")
+    L.append("")
+    L.append("Read order: to-floor (the firm), then to-de-risk-knee (the ARMED book), then F5 real P&L.")
+    L.append("The experiment can only touch the armed book through shared equity, and only below the knee.")
+    return "\n".join(L)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--write", action="store_true", help="also write shadow_logs/f5_minimal/STATUS.md")
+    ap.add_argument("--json", action="store_true")
+    ap.add_argument("--watch", type=float, default=0.0)
+    a = ap.parse_args()
+    while True:
+        blocks = [account_block(*x) for x in ACCOUNTS]
+        text = json.dumps(blocks, indent=1, default=str) if a.json else render(blocks)
+        print(text)
+        if a.write:
+            p = REPO / "shadow_logs" / "f5_minimal" / "STATUS.md"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text("```\n" + render(blocks) + "\n```\n")
+            (REPO / "shadow_logs" / "f5_minimal" / "STATUS.json").write_text(
+                json.dumps(blocks, indent=1, default=str))
+        if a.watch <= 0:
+            return 0
+        time.sleep(a.watch)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

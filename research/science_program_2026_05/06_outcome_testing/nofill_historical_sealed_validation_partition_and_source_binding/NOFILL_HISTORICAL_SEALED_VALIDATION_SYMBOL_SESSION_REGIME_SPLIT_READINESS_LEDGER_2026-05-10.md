@@ -1,0 +1,12 @@
+# NOFILL Symbol Session Regime Split Readiness Ledger
+
+Route: `NOFILL_HISTORICAL_SEALED_VALIDATION_PARTITION_AND_SOURCE_BINDING`
+Promotion posture: `NO_PROMOTION_VERDICT`
+
+## Summary
+
+```json
+{
+  "regime_split_status": "BLOCKED_FOR_VALIDATION_UNTIL_SOURCE_SAFE_ASOF_REGIME_SNAPSHOT_IS_BOUND"
+}
+```

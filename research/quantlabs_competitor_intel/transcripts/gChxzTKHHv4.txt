@@ -1,0 +1,719 @@
+# AI Options Trading Strategies: Automate Your Profits in 2026!  (Futures & Options)
+URL: https://www.youtube.com/watch?v=gChxzTKHHv4
+Video ID: gChxzTKHHv4
+Duration: 2011s
+Fetched: 2026-04-18T13:22:27Z
+---
+
+Good day. Good day everybody. Today is
+uh April 2nd, 2025. This is Brian here
+from uh fontlabsnet.com.
+I just wanted to go over and recap what
+I've been doing all week. Uh I've been
+probably going through one of the most
+complicated processes I've done since I
+started using AI. Um going to show you
+what it's involving. This is using now
+options trading has been added into the
+set of bots that I've written uh outside
+of the futures but also added in options
+now. It's quite revealing what I've got.
+So I am going to show you that now.
+So
+let's get to it. Okay. So the first
+thing is um in here I've been posting as
+much as I can. I've been talking about
+it through my streams.
+and all that fun stuff in here. If you
+go into my quant analytics
+um been talking about all this stuff
+uh in the last number of days and what I
+can do so let me show you the packages I
+can now work with. Um, so if you don't
+know, we have the ability to meet the
+markets via news, create PDFs and an
+analyze uh what's going on in the
+markets from that news. generate now
+100% no problem generate dynamic
+uh trading bots related around the new
+and specifically designed now for both
+the futures andor
+options on top of that we have um other
+new capabilities that sometimes using
+the AI that I use now is with a quad
+um okay so the first thing I've built
+out is the ability to generate
+spreadsheets
+um for my current provider that I host
+the site quantet is hosted on cannot
+generate or sorry support excel. So I
+have a PDF version of this is what I'm
+about to show you. Um so essentially we
+have here again all simulated. Now, what
+I want to show you, I really have to put
+these disclaimers out because this is
+just for educational purposes only.
+Um, you really want to get serious,
+always seek professional help on it from
+investment advisors or wherever you feel
+comfortable. But nonetheless,
+the last batch that I've been running
+and testing for the last few hours, um,
+as they are running here in the
+background, these PowerShell sessions,
+we have one that's unified that goes up
+against rhythmic um, data order
+execution
+and
+um, we have the multiple different bots
+interfacing into that Python server
+essentially. So, what we got here is we
+have nine um bots that are running um
+simulating at 372
+uh starting capital because now as I
+move into this live trading, I have to
+know what my outlay would may be needing
+to be uh in the account um for live
+trading. Obviously, I'm not going to
+start with 372.
+Um, but just to give you an idea what's
+required here, what we're looking at,
+it's it's suggesting here $372,000.
+This is nothing to do with micros. So,
+this is like full-on contracts. Don't be
+scared by this. We'll never get to this
+point. If we do, that'd be awesome. But
+right now, we're starting out very, very
+tiny, under like $2,000. But
+nonetheless, it's all simulated. out of
+that to do these type of bots that I'm
+about to show you is going to cost about
+estimated about $200,000
+in margin requirements as part of the
+futures requirement with a CME and all
+that. Uh total costs uh of these trips
+will be $175 in commission. Uh and we're
+looking at a a sharp ratio 1.5. So if I
+go over to the markets right now, um
+markets are not doing well with this
+Iran war. Let's face that. So you can
+see there's a lot of red has been red.
+Last two days have been good. Um and as
+a result uh the bots are very
+conservative. So if you're pulling in
+expected uh sharp ratio of 1.5 or more,
+you're doing pretty good. Um, Certino at
+2.1% average win ratio probably real
+estate at 55%.
+Max draw down 11 and a half% is pretty
+good because it's within that 15%
+um uh tolerance
+on top of what are we looking at here?
+So potentially the kind of bots that are
+coming out in the last batch based upon
+news we have here uh if there's
+deescalation uh we have a bot for that.
+Um for oil we have a bitcoin near far
+contango
+uh a gas one uh for storage risk. Um the
+gold safe haven is a momentum based
+overnight interest uh eurousds.
+Um there's a term structure short. So I
+guess they're anticipating a market to
+calm down. Um and general markets stock
+market's going to move up. Um and then
+we have another one uh but on the button
+the German bond. Um now I don't have
+subscriptions certain um instruments
+here. Um so they're not going to work.
+Uh I'm very only CME related and uh as a
+result all the certain ones will not be
+running. No data is collect because I
+just don't have the subscription for it.
+So here's the exchanges. So as I said
+we're looking at erect as an example I
+don't have access to or CBOE
+um so as I said some of them will be uh
+options of futures we have multitude of
+long or short or long only short only um
+we have here where it's portioned out on
+that 397 or whatever 367 and allocated.
+So, right now it's allocating $140,000
+potentially for $3,000 return, which is
+kind of high risk, low return, but this
+is very conservative for the different
+types.
+If it's an option, we know what kind of
+option structure it'll be. Um, and the
+focus on it's a commodity, crypto, or
+whatever. Very little equities right
+now. If the market bombs out and starts
+to move up, you'll see more equities.
+All right, so here's some of the costs.
+I think these are really important to
+understand for each of these bots. Um we
+have here exchange fee per side,
+commission per side, round trip total.
+Um the contract size for each of these
+trades. You can see here Bitcoin is the
+most expensive at 85K or uh RBO for gas
+at 12 so on with the margin requirement
+and the total return cost. So we can
+assess that from a portfolio management
+side and again this is 100% AI that's
+doing this. So that that is what I've
+put out um on each snapshot I'm going to
+call it or or downloading
+of um this stuff. So out of that um I've
+kind of introduced you to the um
+portfolio the fleet of bots as they call
+it now or fleet of agents as they call
+it. It all comes out of this report uh
+that's analyzed. It's usually about 25
+pages and this is all from the news.
+It's very detailed now um giving you
+what a lot of the institutions are
+doing. You don't want to trade in the
+spot market where the retail market's
+going to be. You want to focus in where
+the institutions are. Why? Because in
+this market, these market conditions,
+you want to follow what they call hot
+order capital flow. wherever the capital
+order flow will go in terms of
+volatility or sorry for volume liquidity
+you'll be able to capture those profit
+potential moves.
+So you can see here what they're doing.
+They could be in futures only. They
+could be in a combination of futures and
+options. I have a whole course on this.
+This is what the institutions are doing
+outside of um what we're able to do
+because of it's US and CME only. But
+this this report will cover everything.
+Um in fact um there's some of these
+suggested uh ETFs
+uh that institutions will use as well as
+part of their arbitrage strategy
+correlation other um ETFs as well. So
+I'm able to add those down the line um
+using interactive brokers to trade those
+automatically as well. So that potential
+is there for that if it's going to be
+ETF. Uh, a lot of them may be volatility
+related, blah blah blah blah, but
+there's a big big report generated on
+each each download session. I've seen
+enough of them. They're very detailed,
+okay? And they're very useful. So, you
+can see here some of the suggestions,
+uh, long, gold, short, BTC, and, you
+know, it gives very specific based upon
+news. And this changes every time I
+download the news. I could do it as
+often as I want as long as I'm willing
+to pay for the AI costs from it. So,
+there's that report as well. Um, also
+I've put in here um the EDF version of
+that spreadsheet that I just highlighted
+here um as well. Okay. Um and there's
+also a chart of potential forecasting
+um as well. Well, it's not very useful I
+find but it's there that I've generated
+this one right here for the trading
+analysis
+um as well. Okay. So you could see that
+now that there are now options added in
+and and as I said before when it's done
+right um because that you you can lose
+huge amount of money when it comes to
+options either well on the downside but
+on the upside there's in an unlimited
+way you can do very well with options
+and that's where a lot of the traders
+that do this well earn their keep as
+they say. So part of this from a career
+perspective, if you're going to do this
+sort of thing, as I keep saying over
+time, what we'll see more of is
+systematic portfolio managers and we'll
+eventually do away with a lot of the
+quant teams and truckloads because
+everything now can be done through cla
+okay. Um here you can see I'm running
+now quad desktop some of the sessions
+that I run. Um very powerful to be able
+to um let's see interface it with native
+English like that's where we're at.
+Okay. Um so there's all that fun stuff.
+Okay. So here we have our risk met
+metrics as well. And this is the port
+from a portfolio standpoint.
+If you're using a very sophisticated LLM
+model for AI like watt 4.6
+um and that's opus you could do very
+well as as a hint
+just to generate this level of portfolio
+uh in a spreadsheet if I just use sonnet
+4.6 six, you'll get one tap one one
+worksheet within this spreadsheet. But
+because I'm using
+claude and the difference between claude
+and sonnet, it's going to generate me
+four worksheets with all this fun stuff.
+And that's the difference between using
+claude versus sonnet. So if you're using
+anything but claude okus 4.6,
+um you'll know that there's a massive
+difference. So if you really want to do
+well at this and and bang out really
+professional level, institutional level
+reports,
+spreadsheets, whatever, you can only
+really use the latest of Claude Opus
+4.6. And and apparently now that there's
+new 5.0 coming out soon, too, in the
+next maybe month, I don't know. Still
+waiting on Deep Seek 4. Um so this is a
+spreadsheet here. Um I've shown you the
+uh PDFs.
+So out of that I'm going to show you as
+I said we're running the um bots live
+testing the markets with real live
+market futures and options market data.
+Um so the powerful thing I've shown this
+before
+uh actually this one here um with this
+log analyzer
+this is pretty powerful stuff again this
+is generated by flawed opus 4.6 six. Big
+difference. Okay. So, the funny thing is
+I should mention this. I have when I did
+start doing my reports about a month
+ago, I get I started getting some
+high-profile folks um from the big
+firms, Black Rockck, State Street, and
+the like. The last two days, I've been
+trolled by this one guy from Black
+Rockck who used to work at Black Rockck,
+and he's been putting the face pal on my
+my videos, and that's the response I
+got.
+Um, so I guess he's questioning what I'm
+doing. That's fine. I don't need
+permission from Black Rockck. Uh, do
+this. Maybe it's too advanced. I don't
+know. But this stuff works because it's
+real market data. So, let me load in the
+latest uh, logs and everything's all log
+driven. Very big logs, too. I just
+notice every data set that I have within
+my VS code, uh, each one of these that
+are generated on the timestamp with the
+date, they're about a gigabase from the
+amount of logs they generate. It's huge.
+Um, anyways, um, let me go back to that
+spread or the backboard here. So, I'm
+going to load in all the newest logs.
+Okay. Um,
+so what are we doing here? We've got
+this all these logs here. So, I'm going
+to load them in. So, here's what we're
+talking about. We have uh 6,000 and I've
+only run it for the last maybe two
+hours. So, you can see here we have over
+6,000 log events. That's anything data
+related. Everything's running clean now
+um as well.
+And uh from what I'm seeing
+um we are moving into the markets to
+close out as it's Thursday Friday. So
+right now no trades have taken place um
+as well but everything's been running to
+get view. I'm just showing you what's in
+this report. There's a new options tab
+here uh right here. So there's a few of
+these um option bots now that include
+both futures
+and options or options only. Um so these
+are some of them.
+uh and uh they seem to be kind of
+working the connection
+into um with either rhythmic via
+whoopset or reddus can be I don't know
+we'll use the word challenging and also
+if you're requesting so much data
+rhythmic will also throttle the response
+so if I'm if I'm constantly pulling
+which I am and I know I am because I've
+got 6,000 quest in the last few hours.
+Rhythmic will throttle that just so you
+know. So I may have to throw that down
+which is why I'm thinking you know zero
+bots now collecting dicks is just too
+much especially when you add in the
+futures as well. So um
+this is where it's at. All fairly new. I
+still have to diagnose where this is at.
+Um, and you can see here it'll it'll
+give you the pricing on something like
+Bitcoin
+um overall performance. You can see it's
+dipping on price and uh you can see the
+general price be moving up and uh same
+with this one which could be uh um I
+don't even know which one this is but
+you get the idea. Okay. Um so generally
+this is pretty good. Um as I said we
+have the options now we have a signal
+score measured um the chain contracts
+that it's downloading
+and and if there's any diagnosis it
+needs to fit. Now I have to say with the
+option chain data it does connect into
+it. Um but if you're doing futures I
+don't seem to have any connectivity
+problems if it's futures alone. But once
+you start adding in options, there's a
+lot more involved. So I it's new to try
+to understand what how how frequent
+should I be pulling rhythmic before it
+starts throttling my account because
+it's doing it, you know, pretty well
+multiple times a minute. I may need to
+slow it down every five minutes or
+something. Here's a ranking on the bots.
+Okay. So, some of them uh can do better
+uh the FX one on the EuroUSD, but
+nothing's trading. I I did see some
+trading uh last night and the prior
+night. So, here you can see there's no
+uh win loss, but you can see a lot of
+the data is is being reported. Um so,
+this Bitcoin
+uh strategy um this one I'm not even
+subscribed to. This one natural gas, I
+don't know why, but I should be able to
+pick up data from that. That might be
+closed early because of the time of in
+the market. And then the VX, which is
+seems to be the wrong symbol, but
+um the the I might need to slow down the
+downloading. That that's kind of what's
+what it's telling me. Maybe even down
+every 10 minutes or 15 minutes or so.
+And you can see here here's the
+breakdown on the type of uh strategies.
+So we have here um options only, futures
+only, blah blah blah. It's kind of
+sophisticated and you see here all the
+data was no problem being collected, no
+problem. Now it was for the CL page six
+now. So it's saying there's very little
+data being downloaded in this chart
+here. Again, it could be the market
+data. I don't know. I have to look into
+it. Um, and then I can export everything
+into a uh into a uh into a uh PDF.
+Again, this is all built out with using
+clawed focus 4.6 and I think um anything
+less than that, you're not going to get
+the sophisticated you're seeing here as
+well. Um so that there's that. Um when I
+started working with uh the quad code
+extension for VS code um with the
+options
+I was able to I don't know break it over
+virtually in the responses when it was
+doing something it was haunted out
+meaning it stopped or it was not
+collecting anything. because I was
+overwhelming it with all this stuff to
+collect. Uh, and being able to generate
+this to get to this point is a hard has
+been a hard process, but I'm past it. It
+does work. Um, but I'm going to have to
+from what I'm seeing in this report, I'm
+going to have to slow down the requests,
+which is fine. I have no problem with
+that. And I might need to if I want to
+be able to do this high level number of
+requests to rhythmic I may need to move
+up to the let's say the diamond API but
+we know that that's a big big API set of
+requirements including the account size.
+So I'm not there. So I'm still retail um
+and as a result I have to probably uh
+slow down my request for data. I've
+never seen this and and and as I said
+it's all obviously to do with um to do
+with uh option data. It's a lot. So I
+just wanted to talk about that. Um let
+me just go back to
+me.
+So that's where everything's at. Um with
+the options it it does work. Um but I
+have to slow everything down. Um and uh
+it's very powerful. Um if I was to show
+you the code uh which I can actually
+so let's take a look at um usually a
+good one would be oil. Um so in here
+what will happen is there's not a lot of
+quant stuff in there because in my
+prompting I'm not asking for quant
+stuff. As I said before, the quant
+typically complicates the process, but
+from what I'm seeing in terms of algos,
+we're doing bid and ask stuff. Um,
+on top of that, it's the usual ATR,
+um, moving average. You can see here
+just some sample code here. We got a
+ruling window
+um, picking on the momentum.
+uh again all of the Greek analysis which
+is quite a bit and it's also asking for
+implied volatility because as I said the
+difference between futures only and
+futures with options the insight is just
+so different. If I was to pull up again
+um that report
+um
+this one right here,
+you could see here what institutions are
+doing. Okay, even in the world of
+Bitcoin, I mentioned this in my last
+stream. If you understand this with what
+the big money managers are doing and
+that's going to have a huge impact on
+the pricing
+and the price action of Bitcoin itself
+unless you don't know you're just kind
+of like guessing. Okay. But here it's
+telling you what they're assuming. So if
+you got oil okay um what there's going
+to be some impact on other instruments.
+So here we have oil
+um and it's telling you exactly what
+institutions are doing and it actually
+tells you what um things like market
+makers are doing. Okay, they're shorting
+blah blah blah based upon price with the
+targeting. That's how advanced the AI
+is. Same thing can be said about gas.
+But if you're just a a uh a um
+Bitcoin or an Ethereum trader and you're
+not understanding this, you're getting
+killed. And there are opportunities in
+Bitcoin and Ethereum, but you're not
+going to get it in a spot market with a
+questionable exchange now with in this
+case they'll always mention Bybit and
+Binance. Okay, they have the volume but
+those are retail traders
+uh from Asia that's driving that but the
+core
+um drivers that will impact Bitcoin are
+institutions. So you can see here
+Bitcoin okay so right now based around
+some events again was a Trump you know
+it it impacts open interest of of um
+Bitcoin. So because you have open
+interest that's telling you to test the
+market of what's happening in Bitcoin on
+the pricing front through the options
+market.
+Okay. So here typically there's always
+uh if they're out of Asia they can do
+this. Um they could do arbitrage trading
+between the different exchanges of
+things like Binance and the CME. Very
+common. I'm seeing um you see here we
+demand and cash and carry arbitrage
+between the two exchanges. Um you know
+there can be perpetual and again you can
+see they're using bybit andor Binance
+only. Don't ask me why they're not using
+Coinbase. They're not using any of the
+other exchanges but it's always
+typically by bit and Binance. Okay. I
+don't see a lot of Coinbase anymore.
+I just don't know. But you can see here
+it measures volatility the skewess
+um can even do the Greek uh analysis. So
+here you know we're looking at gamma as
+well again that's option under the Greek
+analysis and here it's telling you what
+it's doing here okay at the dealer
+level. So and that's the dealers, the
+brokers, the hedge funds, the quan
+shops, the institutions, the big
+multi-million dollar hedge hedge funds
+or institutions what they're doing. So
+they're anticipating here hedging
+could accelerate the downside but
+because you know that and you know that
+potentially there's going to be a
+downside risk
+intraday level uh the spot market the
+retail traders aren't going to know this
+and here you know why okay because of
+exactly what I'm highlighting here funds
+being bought at 60k put blah blah blah
+call overwrite structure notes blah blah
+blah and they're losing the order flow
+from the folks in Binance, Bybit, and
+all these retail exchanges to kind of
+like
+I don't know, it's not manipulating
+Bitcoin, the price of Bitcoin, but
+they're able to drive the majority of
+the price because they have such an
+impact because they're buying so much
+volume. They'll be the first ones to
+impact the price of Bitcoin just on one
+example. And it's the same thing when it
+comes to Ethereum as well. Okay. Um so
+you can see here open interest has
+dropped on Sena let's say. Okay. And
+then the funding rate on FTX goes
+negative. Okay. Very minor event but it
+tells you on what's happening with these
+other exchanges. And this is what a lot
+of the hedging opportunities come out of
+it. Again you you can trade Bitcoin
+against gold. So here's some
+opportunities that come out out of that
+and it has also impact on treasury as
+well. This is what the in institutions
+are looking at as well. And then we have
+the in interest rate futures as well on
+the macro because of what the Fed will
+do potentially on a cut or a raise on
+interest rates. And again that's why you
+start to see these impacts on prices of
+most likely Bitcoin and maybe Ethereum
+as well. Okay, people don't like to see
+that. That's the truth and what's
+driving the pricing in Bitcoin. Okay, so
+um again these things can have an effect
+on Bitcoin as well. Okay, so here you
+know there's a risk here on where do we
+put our money? Bitcoin USD or do we put
+it into the dollar uh index, US dollar
+index and they measure the correlation
+blah blah blah and then they price
+authority okay among other major
+currencies and this is how it this is
+how it work and this is how you analyze
+this and you can also see the volatility
+here as well the VIX and how it impacts
+all these major um major uh instruments
+in the futures and options space. Okay.
+So here we have um XRP on top of that as
+well. Clarity act that has an impact as
+well has an impact as well on USDC and
+USDT as well.
+futures basis again institutional talk
+right um and it goes on and we're only
+on page five of 25ations just I'm just
+showing you the crypto stuff but it's
+very important to know that okay anyways
+um yeah so I got that also posted in my
+groups on the website um at
+quantlabset.com
+because I have futures now added into
+this
+um this pricing on this trial is going
+to go up. It's going to go up to at
+least 120 a month. Right now it's 67. Um
+but it's going to go more because of the
+value it's bringing. Um plus the
+suggested bots as well. Um so that's for
+the Quan Analytics stuff. And then if
+you just want to follow what I'm doing,
+get on my email list as well. I have
+Discord as well. We're adding some new
+people. We just broke through 300
+members, which is not bad. Um, but
+because we're now moving in options and
+futures and all of the um bots I just
+showed you the first session, let me
+show you the trading plans for um for
+those bots that I'm just showing you
+now. I I could rerun this whole process
+um automatically. And again, it's it's
+all gent uh all identified now um truly
+identified. Uh, let me just see if I can
+load this up.
+Uh, we want a better faster editor.
+Let's pull up the notepad here. Um, at
+least again, I must say, but here it
+gives you the bot plan of what was
+generated. Okay, again, you can see
+estimated costs. Okay, starting capital
+at 25K, expected return, profit horizon
+as well. and that will do it for every
+single strategy and or bot whatever you
+want to call it. Okay. So, it's more
+weird understanding from a portfolio
+perspective cost and the expected return
+as well. Does that for every single one
+as well and I'm just trying to see
+anything else out of this. So, um yeah,
+it's very skate. So alone on that prices
+will go up. You will not see a report
+like this anywhere. You won't get it in
+news, mainstream financial news. You'll
+not get it in third party services at
+all because you're not doing what I'm
+doing on the AI front. So that's why
+it's more and more valuable now. And as
+I said, uh we just see as an example on
+the ETF uh
+front. So you can see here some of the
+other ETFs uh as examples. A lot of
+people are don't want to move into um
+options because it's so sophisticated
+but yet a lot of these institutions are
+using um ETF as metric as well. So I
+might add that piece in later on. Um
+that's for the equity via interactive
+brokers. You can automate that on top of
+it. um so and so forth but it's very
+sophisticated what's being built out
+here covers all the currencies treasury
+uh commodity
+the equity indices in in the CME and the
+crypto and agriculture as well just to
+give you a temp with everything moving
+now with energy the cost of it and the
+calamity it's turning into a lot of the
+um doom and gloom uh old bug traders
+are moving into food because they
+anticipate the cost of food is going to
+move up uh because of the lack of
+fertilizers globally. Those result
+futures and options and and the anything
+to do with food production is going to
+go up and that's another smart way to
+counteract inflation. Personally, when
+your food costs go up, you can actually
+circumvent that by getting back a return
+via options and futures trading as well.
+That's one of the other things. And you
+could s say the same thing about energy
+as well. If you're going to go to fill
+up your car with with oil or sorry with
+gas and the costs are going up. If
+you're going to trade oil and or gas or
+natural gas and you're getting return
+from that, you're you're actually
+equalizing your cost of the gas pump
+because you're getting return from the
+cost of gas trading it in the futures
+and options market. Um and same soon
+with food. That's a smart way to do it,
+>> I would think. We'll leave it at that.
+Thanks for watching and uh have a a good
+day wherever you are. Bye-bye.

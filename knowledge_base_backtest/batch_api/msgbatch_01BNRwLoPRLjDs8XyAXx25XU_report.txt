@@ -1,0 +1,35 @@
+========================================================================
+BATCH BACKTEST REPORT
+========================================================================
+  Billing mode:             Batch API (50% discount)
+
+── Overview ──────────────────────────────────────────────
+  Total sessions:           56
+  Trades taken:             0
+  No-trade sessions:        56
+  Trade frequency:          0.0%
+
+── Trade Outcomes ────────────────────────────────────────
+  Wins:                     0
+  Losses:                   0
+  Breakeven:                0
+  Win rate:                 0.0%
+
+── R-Multiple Analysis ───────────────────────────────────
+  Total R:                  +0.00R
+  Avg winner:               0.00R
+  Avg loser:                0.00R
+  Expectancy:               0.00R per trade
+
+── Candle Decision Breakdown ─────────────────────────────
+  Total candles submitted:  560
+  CANDIDATE:                2
+  NO_TRADE:                 558
+
+── Batch API Cost ────────────────────────────────────────
+  Total LLM calls:          560
+  Batch cost (50% off):     $5.1285
+  Cost per session:         $0.0916
+  vs sequential API est:    ~$10.2569 (2x batch)
+
+========================================================================

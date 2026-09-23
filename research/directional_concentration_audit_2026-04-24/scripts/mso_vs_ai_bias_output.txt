@@ -1,0 +1,93 @@
+Total candidate-feature rows (April 2026): 384
+
+================================================================================
+MSO D1 STRUCTURE DIRECTION (deterministic) vs AI daily_bias_direction
+Per instrument, April 2026
+================================================================================
+
+-- GBPJPY (n=81) --
+  MSO D1 direction: {'transitional': 60, 'bullish': 21}
+  MSO H1 direction: {'bullish': 81}
+  MSO M15 direction: {'bullish': 81}
+  AI daily_bias_direction: {'bullish': 78, 'bearish': 3}
+
+  Cross-tab MSO D1 x AI daily_bias:
+    MSO D1=transitional & AI=bullish: 57
+    MSO D1=bullish & AI=bullish: 21
+    MSO D1=transitional & AI=bearish: 3
+
+  Cross-tab MSO H1 x AI daily_bias (prompt says AI should report H1 as bias):
+    MSO H1=bullish & AI=bullish: 78
+    MSO H1=bullish & AI=bearish: 3
+
+-- GBPUSD (n=42) --
+  MSO D1 direction: {'transitional': 42}
+  MSO H1 direction: {'bullish': 42}
+  MSO M15 direction: {'bullish': 42}
+  AI daily_bias_direction: {'bullish': 42}
+
+  Cross-tab MSO D1 x AI daily_bias:
+    MSO D1=transitional & AI=bullish: 42
+
+  Cross-tab MSO H1 x AI daily_bias (prompt says AI should report H1 as bias):
+    MSO H1=bullish & AI=bullish: 42
+
+-- US30_cash (n=95) --
+  MSO D1 direction: {'transitional': 95}
+  MSO H1 direction: {'bullish': 95}
+  MSO M15 direction: {'bullish': 95}
+  AI daily_bias_direction: {'bullish': 91, 'bearish': 4}
+
+  Cross-tab MSO D1 x AI daily_bias:
+    MSO D1=transitional & AI=bullish: 91
+    MSO D1=transitional & AI=bearish: 4
+
+  Cross-tab MSO H1 x AI daily_bias (prompt says AI should report H1 as bias):
+    MSO H1=bullish & AI=bullish: 91
+    MSO H1=bullish & AI=bearish: 4
+
+-- USDJPY (n=108) --
+  MSO D1 direction: {'transitional': 108}
+  MSO H1 direction: {'bullish': 108}
+  MSO M15 direction: {'bullish': 108}
+  AI daily_bias_direction: {'bullish': 106, 'bearish': 2}
+
+  Cross-tab MSO D1 x AI daily_bias:
+    MSO D1=transitional & AI=bullish: 106
+    MSO D1=transitional & AI=bearish: 2
+
+  Cross-tab MSO H1 x AI daily_bias (prompt says AI should report H1 as bias):
+    MSO H1=bullish & AI=bullish: 106
+    MSO H1=bullish & AI=bearish: 2
+
+-- XAUUSD (n=58) --
+  MSO D1 direction: {'bullish': 58}
+  MSO H1 direction: {'bullish': 58}
+  MSO M15 direction: {'bullish': 58}
+  AI daily_bias_direction: {'bullish': 56, 'bearish': 2}
+
+  Cross-tab MSO D1 x AI daily_bias:
+    MSO D1=bullish & AI=bullish: 56
+    MSO D1=bullish & AI=bearish: 2
+
+  Cross-tab MSO H1 x AI daily_bias (prompt says AI should report H1 as bias):
+    MSO H1=bullish & AI=bullish: 56
+    MSO H1=bullish & AI=bearish: 2
+
+================================================================================
+AGGREGATE — ALL INSTRUMENTS — MSO direction distributions (April 2026)
+================================================================================
+  MSO D1: {'transitional': 305, 'bullish': 79}
+  MSO H1: {'bullish': 384}
+  MSO M15: {'bullish': 384}
+  AI daily_bias: {'bullish': 373, 'bearish': 11}
+
+================================================================================
+FOCUS — MSO D1 direction == 'bearish'
+================================================================================
+  Total rows with MSO D1=bearish: 0
+
+================================================================================
+FOCUS — MSO H1 direction == 'bearish' (prompt says report H1 as bias)
+================================================================================
+  Total rows with MSO H1=bearish: 0

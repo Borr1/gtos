@@ -1,0 +1,73 @@
+--- a/src/components/ultimate_book/execution_packets.py
++++ b/src/components/ultimate_book/execution_packets.py
+@@ -203,6 +203,17 @@
+         frontier_cell="target_4R",
+         frontier_evidence="phase8/receipts/AK_EXIT_FRONTIER_V2.json",
+     ),
++    # Session CM (B2700-B2749): AD's measured-best stop-width cell, re-read through the
++    # production crypto generator on CJ's true-UTC TRAIN/VAL lane. FTMO RECORDED improves by
++    # +0.2527 R/day at the mid band, the latest fold remains +0.0355 better, and 4/5 paired
++    # folds improve at every cost band. redacted_account's latest fold is negative, so the ceremony
++    # selects this name on FTMO only. The multiplier rebuilds BOTH broker SL and TP from the
++    # scaled risk unit, exactly matching AD's stop_1.5x_tgtscale cell.
++    "crypto": dict(
++        stop_distance_multiplier=1.5,
++        frontier_cell="stop_1p5x_target_scale",
++        frontier_evidence="phase17/receipts/CM_REVERIFY_V1.json",
++    ),
+ }
+ 
+ # ---- THE DELIBERATE SHORT HORIZONS (Session AU AU-3, B1570) --------------------------------------
+@@ -260,7 +271,8 @@
+ 
+ #: The declared vocabulary of frontier cells. A cell name outside this set is a typo or an undeclared
+ #: kind of override, and `tests/ultimate_book/test_frontier_exit_contracts.py` refuses it.
+-FRONTIER_CELL_KINDS: tuple[str, ...] = ("target_", "time_stop_")
++#: ``stop_`` is a stop-width contract: both broker SL and TP must be rebuilt from R.
++FRONTIER_CELL_KINDS: tuple[str, ...] = ("target_", "time_stop_", "stop_")
+ 
+ #: The keys `FRONTIER_EXIT_OVERRIDES` may carry that are PROVENANCE rather than contract. They ride
+ #: in the placement's `source_event_details` so a ledger row says which contract placed it, and they
+@@ -327,6 +339,9 @@
+     bars = over.get("time_stop_bars")
+     if bars is not None:
+         parts.append(f"time stop {int(bars)} printed M15 bars")
++    stop_mult = over.get("stop_distance_multiplier")
++    if stop_mult is not None:
++        parts.append(f"stop distance x{float(stop_mult):g} with target scaled")
+     return ", ".join(parts) if parts else "contract override"
+ 
+ 
+@@ -450,10 +465,16 @@
+     direction = "LONG" if int(intent.direction) > 0 else "SHORT"
+     sign = 1.0 if direction == "LONG" else -1.0
+     entry_price = float(_g(geometry, "entry_price"))
+-    risk_distance = float(_g(geometry, "risk_distance", intent.stop_dist))
++    base_risk_distance = float(_g(geometry, "risk_distance", intent.stop_dist))
+ 
+     # ---- per-sleeve native exit profile (replaces the forced momentum_exhaustion 2R) ----
+     prof = resolve_exit_profile(getattr(intent, "sleeve", None), frontier_exits=frontier_exits)
++    stop_distance_multiplier = float(prof.get("stop_distance_multiplier", 1.0))
++    if stop_distance_multiplier <= 0:
++        raise ValueError(
++            f"stop_distance_multiplier must be > 0, got {stop_distance_multiplier!r}"
++        )
++    risk_distance = base_risk_distance * stop_distance_multiplier
+     policy = str(prof["policy"])
+     execution_policy_id = f"emv4_{policy}_v1"
+     native_target = getattr(intent, "target_dist", None)
+@@ -478,7 +499,13 @@
+     pullback_r = prof.get("pullback_r")
+     time_stop_bars = prof.get("time_stop_bars")
+ 
+-    stop_loss = float(_g(geometry, "stop_loss", entry_price - sign * risk_distance))
++    # A selected width cell must rebuild the broker SL from scaled R. With multiplier
++    # 1.0 the caller-supplied stop_loss still wins, preserving the exact default path.
++    stop_loss = (
++        float(_g(geometry, "stop_loss", entry_price - sign * risk_distance))
++        if stop_distance_multiplier == 1.0
++        else entry_price - sign * risk_distance
++    )
+     take_profit_1 = 0.0 if no_broker_take_profit else entry_price + sign * final_target_r * risk_distance
+     risk_pct = round(float(sized_unit.risk_pct_per_trade) * 100.0, 8)  # FRACTION -> PERCENT
+ 

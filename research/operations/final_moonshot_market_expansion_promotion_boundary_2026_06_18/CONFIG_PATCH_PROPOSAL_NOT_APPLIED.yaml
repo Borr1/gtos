@@ -1,0 +1,19 @@
+# NOT APPLIED. Owner-action proposal only.
+gtos_vnext_runtime:
+  ultimate_book_include_market_expansion_book: true
+  ultimate_book_market_expansion_profile: default_off_market_expansion_d1_target2_v1
+  ultimate_book_market_expansion_sleeves:
+  - mx_aus200_cash_d1_volume_surge_reversal
+  - mx_avausd_d1_donchian_20_breakout
+  - mx_btcusd_d1_donchian_20_breakout
+  - mx_cadjpy_d1_volume_surge_reversal
+  - mx_ethusd_d1_donchian_20_breakout
+  - mx_eu50_cash_d1_volume_surge_reversal
+  - mx_fra40_cash_d1_volume_surge_reversal
+  - mx_ger40_cash_d1_volume_surge_reversal
+  - mx_jp225_cash_d1_volume_surge_reversal
+  - mx_nzdjpy_d1_donchian_20_breakout
+  - mx_spn35_cash_d1_volume_surge_reversal
+  - mx_us100_cash_d1_atr_mean_reversion
+  - mx_us30_cash_d1_volume_surge_reversal
+  - mx_us500_cash_d1_atr_mean_reversion

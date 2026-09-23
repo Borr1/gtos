@@ -1,0 +1,43 @@
+=== K54 v2 Architecture B — per-group ensemble — 2026-04-28T06:47:47.716520+00:00 ===
+
+[1/3] Loading scout matrix + applying v2 prune...
+  1247 -> 1234 features
+
+[2/3] Building K54 v1 paired baseline...
+  V1: (528, 15), win-rate 0.580
+
+[3/3] Training per-group...
+
+--- Group XAU_XAG: K=6, N=2 ---
+  Rows in group: 215, win-rate: 0.647
+  Dropped 123 columns with >50% NaN on group -> kept 1111
+  CPCV paths: 15 (K=6, N=2)
+  Selected HP: idx=1, {'n_estimators': 100, 'max_depth': 3, 'learning_rate': 0.05}, OOS mean AUC = 0.5100
+  Group XAU_XAG summary: AUC_b=0.5100, AUC_v1=0.4935, diff=+0.0165, p_combined=0.3919, PBO=0.4000
+
+--- Group NAS_US30: K=6, N=2 ---
+  Rows in group: 113, win-rate: 0.513
+  Dropped 95 columns with >50% NaN on group -> kept 1139
+  CPCV paths: 15 (K=6, N=2)
+  Selected HP: idx=1, {'n_estimators': 100, 'max_depth': 3, 'learning_rate': 0.05}, OOS mean AUC = 0.6379
+  Group NAS_US30 summary: AUC_b=0.6379, AUC_v1=0.5131, diff=+0.1248, p_combined=0.0004, PBO=0.5333
+
+--- Group GBPUSD_USDJPY: K=6, N=2 ---
+  Rows in group: 138, win-rate: 0.543
+  Dropped 64 columns with >50% NaN on group -> kept 1170
+  CPCV paths: 15 (K=6, N=2)
+  Selected HP: idx=1, {'n_estimators': 100, 'max_depth': 3, 'learning_rate': 0.05}, OOS mean AUC = 0.5321
+  Group GBPUSD_USDJPY summary: AUC_b=0.5321, AUC_v1=0.5297, diff=+0.0024, p_combined=0.8753, PBO=0.4667
+
+--- Group GBPJPY: K=4, N=2 ---
+  Rows in group: 62, win-rate: 0.548
+  Dropped 80 columns with >50% NaN on group -> kept 1154
+  CPCV paths: 6 (K=4, N=2)
+  Selected HP: idx=0, {'n_estimators': 100, 'max_depth': 3, 'learning_rate': 0.01}, OOS mean AUC = 0.4815
+  Group GBPJPY summary: AUC_b=0.4815, AUC_v1=0.4383, diff=+0.0431, p_combined=0.8917, PBO=0.3333
+
+=== Architecture B DONE in 73s ===
+  Weighted B AUC = 0.5398 (k54_v2 global = 0.5429)
+  Diff vs k54_v2 global: -0.0031
+  Groups with B>v1: 4/4
+  Groups with B>k54_v2 (per-group): 3/4

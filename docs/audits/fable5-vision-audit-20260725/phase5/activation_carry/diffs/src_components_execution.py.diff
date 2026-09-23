@@ -1,0 +1,58 @@
+# src/components/execution.py
+# a/ = the running host, redacted_host87668c5d503b52925d10be7dfb66540 (sha256 012c8b9336a73c94fdd9b8d66528f9ec8e74c9729490372f88375e1f74663b6b)
+# b/ = the activation carry, Session AC (sha256 d0d367877dfb6cde52f886a93623238dfaa788e5d7f14b8e19451e3c62938445)
+# applies with `patch -p1 -F 0` and with `git apply -p1`, zero fuzz.
+--- a/src/components/execution.py
++++ b/src/components/execution.py
+@@ -68,6 +68,13 @@
+ 
+ logger = logging.getLogger(__name__)
+ 
++#: Step-count tolerance for broker volume-step alignment. See `_normalize_volume`:
++#: a quotient that is mathematically an exact integer can land a few ULPs below one in
++#: binary floating point, and truncating it strands a position that cannot be closed.
++#: Sized to absorb float error (~1e-12 at ten thousand steps) without being large enough
++#: to promote a genuinely mis-aligned volume to the next step.
++_VOLUME_STEP_EPSILON = 1e-9
++
+ CHECKPOINT_PATH = "knowledge_base/meta/execution_checkpoint.json"
+ PENDING_INTENT_DIR = "knowledge_base/meta"
+ PENDING_INTENT_MAX_AGE_HOURS = 24
+@@ -2549,9 +2556,35 @@
+                 )
+                 return None
+             lots = min(lots, volume_max)
+-            steps = math.floor((lots - volume_min) / volume_step)
++            # `math.floor` on a raw binary quotient truncates a value that is
++            # mathematically an exact integer. With volume_min == volume_step == 0.01,
++            # `(0.03 - 0.01) / 0.01` is 1.9999999999999996, so 0.03 normalizes to 0.02
++            # — and `_close_request_execution_geometry:2641` then refuses the close,
++            # because it demands the normalized volume equal the requested one to 1e-9.
++            #
++            # That is a STRAND, not a rounding nit. Nine close producers route through
++            # that check (`:7722, 7879, 7932, 8048, 8122, 8199, 8264, 8319, 8446`), the live book always takes the
++            # verified-geometry branch (`ultimate_book/execution_packets.py:318-319` sets
++            # the selected-cell risk fields that `_trade_requires_verified_broker_geometry`
++            # keys on), and each producer returns before `safe_place_order` — so nothing
++            # reaches the activation layer and no retry can ever succeed, because the next
++            # tick recomputes the identical volume.
++            #
++            # Measured on THIS file (B333, re-measured on the host lineage 2026-07-29,
++            # B551): 33 of 300 two-decimal lot sizes are affected at (0.01, 0.01), and it
++            # is worse on coarser geometry — 253 of 500 at (0.10, 0.10). 44 of 327 real
++            # broker close deals in `vps-export-20260725` carried an affected volume.
++            #
++            # The epsilon is a step-count tolerance, not a volume tolerance. It can only
++            # promote a quotient already within 1e-9 of an integer, i.e. a lot size
++            # within 1e-11 of the next step — far below any broker's volume resolution —
++            # so a genuinely mis-aligned volume still rounds DOWN, and the normalized
++            # result can never exceed the request.
++            steps = math.floor((lots - volume_min) / volume_step + _VOLUME_STEP_EPSILON)
+             normalized = volume_min + max(0, steps) * volume_step
+-            return round(normalized, 8)
++            normalized = round(normalized, 8)
++            # Never hand back more than was asked for, whatever the arithmetic did.
++            return normalized if normalized <= lots + 1e-12 else round(lots, 8)
+ 
+         lots = math.floor(lots * 100) / 100
+         return max(lots, 0.01)

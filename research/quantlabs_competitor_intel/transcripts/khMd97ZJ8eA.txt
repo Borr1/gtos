@@ -1,0 +1,564 @@
+# Stop trying to trade like a hedge fund. You are becoming their liquidity.
+URL: https://www.youtube.com/watch?v=khMd97ZJ8eA
+Video ID: khMd97ZJ8eA
+Duration: 1059s
+Fetched: 2026-04-18T13:24:10Z
+---
+
+Welcome back to the deep dive. Today we
+are going to try and look behind the
+curtain. And I don't mean the curtain at
+the theater. I mean the heavy velvet
+drape that separates the retail trader,
+you know, us with our apps and our
+hopes,
+>> right,
+>> from the institutional giants who
+actually well run the show.
+>> It is a bit of a Wizard of Oz situation,
+isn't it? It really is because whenever
+I try to picture what a winning trader
+looks like, someone who is truly beating
+the market consistently, my brain
+defaults to Hollywood.
+>> Mhm.
+>> I picture a guy in a tailored vest
+standing in front of like six monitors
+shouting into a phone, maybe with some
+scrolling green code reflecting in his
+glasses.
+>> The Wolf of Wall Street meets The
+Matrix.
+>> Exactly. We assume The Secret Sauce is
+flashy. We think it involves some
+proprietary complex software with a
+magic buy button that only the elite
+have access to.
+>> But that's not what we're talking about
+today.
+>> Not at all. The source material we have
+today, it's a technical breakdown from
+the quantitative analysis channel Quant
+Labs recorded just recently on January
+24th. It completely flips that
+narrative.
+>> It really does. It suggests that the
+reality of highle trading is uh
+significantly more boring than the movie
+version, but it is also infinitely more
+dangerous for the average person trying
+to replicate it.
+>> Yeah, dangerous is the word. We are
+going to be digging into the raw
+plumbing of the market today. The source
+isn't looking at the pretty charts you
+see on Robin Hood or Trading View. He is
+looking at the raw data logs,
+specifically something called C features
+>> from a high-end data service called
+Rhythmic,
+>> right?
+>> And just to frame this for everyone,
+Rhythmic isn't something you download
+from the app store. This is low latency,
+unfiltered access to exchange data. It's
+the fire hose.
+>> It's the fire hose. Yeah. And the
+mission for this deep dive is to unpack
+what is actually happening in the, you
+know, the milliseconds of the market
+because the source's main thesis is
+actually kind of insulting, but in a
+helpful way. How so?
+>> He argues that a huge chunk of the data
+traders obsess over is actually useless
+for 99% of us.
+>> I wouldn't say useless. I'd say
+deceptive.
+>> Deceptive.
+>> It's worse than useless because it
+tricks you into thinking you see a
+pattern when you don't.
+>> Okay, that is a heavy accusation. So, if
+I'm sitting there spotting a trend
+thinking I'm smart, this source is
+saying I might just be looking at noise
+created by the big wigs to confuse me.
+>> Essentially, yes, that's the argument.
+We're going to explore how multi-billion
+dollar firms use what looks like valid
+market data to basically create noise,
+turn the water, and hide their real
+moves.
+>> So, if you've ever wondered why the
+market zags when your technical analysis
+textbook says it should undoubtedly zag,
+stick around. We're going to explain the
+difference between highfrequency trading
+opportunities, which are for the
+machines,
+>> and what a momand pop investor can
+actually execute.
+>> Okay, let's unpack this.
+>> Let's do it. So to set the scene, the
+source conducted an experiment. This
+wasn't a year-long academic study. This
+was a look under the hood snapshot.
+>> He monitored a few hours of raw data
+flow between major instruments,
+specifically the NQ, which is NASDAQ
+futures,
+>> the tech heavy index, usually considered
+the volatile, fastmoving one,
+>> right? And the ES, which is the S&P 500
+futures. He also looked at oil or CL.
+>> Okay.
+>> But the real story here was the
+comparison between the indices.
+>> Okay? Now, he wasn't looking at price.
+He was counting occurrences.
+>> And we should probably pause and uh
+Eli5, that term occurrences.
+>> Please, because to me, an occurrence
+just sounds like something happened.
+>> That's actually not far off. In this
+context, he's looking at the C features,
+the raw code logs, and occurrence is the
+heartbeat of the algorithm. It's not
+just a trade execution. It's every time
+the system analyzes a price tick,
+updates a bid, sends a query, or checks
+a logic gate. It is the digital exhaust
+of the trading engine.
+>> So if the engine is revving hard, you
+get more occurrences.
+>> Exactly. He's measuring the RPMs of the
+market, not just the speed of the car.
+>> Got it. So here's where the data gets
+weird.
+>> He compared the volume of these
+occurrences between the NASDAQ and the
+S&P 500. For the NASDAQ, in this short
+window, he logged about 48,000
+occurrences,
+>> which is a lot of chatter,
+>> a massive amount of data. But then he
+looked at the S&P 500, specifically the
+ESH6 contract,
+>> and the volume there, it was nearly
+double.
+>> Double. So, we're talking over 93,000
+>> implied to be. Yeah. Over 93,000.
+>> That is the first big disparity.
+>> Well, hang on. I always think of the
+NASDAQ as the crazy high-speed casino.
+Why is the S&P 500 the boring index of
+stable companies generating double the
+algorithmic noise?
+>> Because that's where the liquidity
+lives. The S&P 500 is the elephant in
+the room. Wow.
+>> It's where the massive pension funds,
+the sovereign wealth funds, and the
+structural hedging happens. The NASDAQ
+might have wilder price swings, but the
+S&P 500 has the depth.
+>> So, double the occurrences means double
+the activity.
+>> Correct.
+>> Well, playing devil's advocate here.
+>> Isn't that good? If I'm a trader, don't
+I want to go where the action is? If the
+S&P is double the fish, shouldn't I be
+casting my line there?
+>> You would think so. That's the logical
+assumption. But this is where the source
+makes a critical pivot. He says yes
+there is double the opportunity but that
+creates double the noise.
+>> Define noise in this context
+>> because usually data is information
+>> not at the speed. Imagine you are trying
+to listen to a song. The NASDAQ is
+playing the song loudly. The S&P 500 is
+playing the song but they're also I
+don't know three jackhammers and a jet
+engine running in the background.
+>> Okay, that's a headache.
+>> The data those 93,000 occurrences
+represents a fire hose.
+For a human being or even a standard
+retail trading bot running on your
+laptop, trying to drink from that fire
+hose is impossible. Most of that data
+isn't price moving up because value went
+up. It's algorithms fighting each other.
+>> So, he's saying that for the average
+person, looking at that raw feed is
+actually detrimental.
+>> It's a trap. And this leads us directly
+into the concept of the HFT trap.
+>> Let's get into that because this was the
+part of the source material that made me
+actually put down my coffee.
+>> Tuckles, right? The source starts
+talking about buy and sell signals. Now,
+in my simple mind, a buy signal is a
+good thing. It's the green light. It
+means get in now.
+>> In a normal human time frame, yes.
+>> But the analysis here shows signals
+being generated down to the millisecond.
+The source gives a specific example. He
+sees a buy signal on the S&P 500 futures
+based on a MAC CD indicator,
+>> a very common momentum indicator,
+probably the most used indicator in
+history.
+>> Right? He sees the buy signal, but then
+literally 3 seconds later, 3 seconds,
+there's a sell signal.
+>> And that is the kill zone.
+>> Explain that. Because fundamentally, the
+value of the top 500 companies in the US
+didn't change in 3 seconds. Apple didn't
+go bankrupt and then recover in the time
+it took me to sneeze.
+>> No. So, what are you seeing? You are
+seeing highfrequency trading or HFT
+algorithms at work. Imagine you are a
+multibillion dollar firm. Your servers
+are physically located inside the
+exchange data center to minimize the
+time light takes to travel through the
+fiber optic cable.
+>> We're talking flash boy stuff.
+>> Exactly. For that firm, that buy signal
+followed by a sell signal 3 seconds
+later. That's a profit opportunity. They
+are scalping tiny tiny discrepancies.
+They might make a fraction of a penny
+per share, but they do it millions of
+times. They get in and out before your
+screen even refreshes.
+>> So for them, it's a valid strategy. It's
+just business.
+>> It's their entire business model. But
+now put yourself in the shoes of the mom
+and pop investor the source talks about
+or even someone with a decentsized
+account let's say under $10 million
+>> which as pretty much everyone listening
+to us right now
+>> right if you try to chase that buy
+signal by the time your brain processes
+oh green light and you click your mouse
+and your order travels over the internet
+to your broker and then to the exchange
+>> it's too late
+>> it's way too late the algorithm has
+already switched to sell
+>> so I'm buying exactly when they are
+selling
+>> you are buying their trash. You are
+providing the liquidity for them to exit
+their trade. You are the bag holder
+instantly.
+>> That is humbling and honestly a little
+infuriating.
+>> The source is very blunt about this. He
+says, "For the retail investor, this
+high-speed data isn't information. It is
+garbage. It is noise."
+>> But he goes a step further than just
+calling it garbage, doesn't he? He
+suggests this isn't just accidental
+market mechanics. He uses the Mword
+>> manipulation.
+>> Manipulation.
+>> He does. And this is a controversial
+view, but it holds water when you look
+at the structure. These HFT firms know
+that retail traders are looking at these
+technical indicators. They know that if
+they paint a certain picture on the
+chart, a breakout, a volume spike retail
+money will chase it.
+>> So they are churning the water to hide
+what they're doing
+>> or to lure us in.
+>> Both. It's called spoofing or layering
+in some context, though that's
+technically illegal. The mechanics of
+turning look very similar. They create a
+frenzy of activity. Buy, sell, buy,
+sell. That looks like genuine market
+momentum to the untrained eye. But it's
+just algorithmic turning.
+>> It's like a mirage in the desert.
+>> It is. And if you try to trade it,
+you're just paying commissions and
+losing on the spread. You are playing a
+game of reflex against a computer that
+doesn't have reflexes. It has
+calculations.
+>> The source asks a really poignant
+question here. What can a mom and pop
+investor do with this? And his answer is
+basically not a whole lot.
+>> Not a whole lot. If you start at that
+level, if you try to fight them in the
+mud, you lose.
+>> So, if the millisecond data is a trap
+and the S&P 500 is just a noise factory
+for the average guy.
+>> Yeah.
+>> What are we supposed to look at? Because
+the source didn't just stay in the
+weeds, he zoomed out.
+>> He did. And this is the pivot point of
+the deep dive. I think this is where we
+move from the micro the millisecond
+noise to the macro. While he's watching
+these algorithms fight over pennies, he
+noticed significant macro warnings that
+were influencing the broader data flow.
+>> He started talking about global
+liquidity fears.
+>> Yes.
+>> And he got specific. He started talking
+about the Bank of Japan, the Boj. Now, I
+have to pause you here because I can
+hear our listeners asking, I live in
+Ohio where I live in London. I trade the
+S&P 500. Why on earth does the Bank of
+Japan matter to my portfolio?
+>> That is the right question. And the
+answer is something called the carry
+trade.
+>> Oh, okay. It is the invisible plumbing
+of the global economy.
+>> Break that down for us.
+>> Okay. Historically, for a long time,
+Japan has had extremely low interest
+rates. Sometimes zero, sometimes
+negative. So, what do the big global
+banks and hedge funds do? They borrow
+money in Japanese yen because it's
+basically free to borrow.
+>> Free money. I like that.
+>> But they don't keep it in yen. They take
+that borrowed yen, convert it to
+dollars, and buy US stocks, US bonds, or
+tech stocks. They're using cheap
+Japanese money to pump up American
+assets.
+>> So, a lot of the money fueling the S&P
+500
+>> is actually Japanese yen in disguise.
+>> Exactly. But, and here's the danger the
+source highlights. The Bank of Japan is
+starting to intervene. They are worried
+about their own currency. If they raise
+rates or if Japanese bonds yield more,
+that free money loan isn't free anymore.
+>> And if the loan isn't free,
+>> the big institutions have to pay it
+back. to pay it back, they have to sell
+the US assets they bought,
+>> which means selling the S&P 500
+>> aggressively. The source warns that this
+could have a colossal impact on
+financial markets. He's talking about a
+liquidity drain.
+>> So, let me get this straight. While the
+retail trader is staring at a one minute
+chart of the S&P 500, sweating over a
+mankey crossover, thinking, "Oh, the
+chart looks bullish,
+>> right?"
+>> The Bank of Japan might be pulling the
+rug out from under the entire global
+economy.
+>> That's the danger. The algorithm might
+give you a buy signal because of some
+microructure setup, but if the macro
+tide is going out because of the carry
+trade unwinding, that buy signal is
+going to get crushed.
+>> It really reinforces that you cannot
+trade in a vacuum. You can't just look
+at the lines on the screen.
+>> No, context is everything. And he added
+another layer to this macro picture,
+crypto,
+>> right? Bitcoin and Ethereum.
+>> He noted that UBS, the huge Swiss bank,
+is pushing these assets to their
+clientele. Now, usually crypto people
+cheer when they hear institutional
+adoption. Is that how he framed it?
+>> He framed it as a signal of where the
+big money is positioning. It's part of
+the landscape. If you have the Boj
+threaten liquidity on one side and major
+banks pushing alternative assets like
+crypto on the other, these are massive
+slowm moving tectonic plates.
+>> And these plates matter more than the
+millisecond ticks.
+>> Exactly. The source is saying, don't get
+lost in the HFT noise. Look at the
+backdrop. Are bonds rising? Is liquidity
+drying up? That is what dictates the
+real trend.
+>> This brings us to the solution because I
+think if we stopped here, the takeaway
+would just be the market is rigged, the
+Bank of Japan is scary, put your money
+under a mattress,
+>> which would be a prudent but very boring
+deep dive.
+>> But the source offers a strategy. If raw
+by sell signals are just noise for us,
+what is the alternative? He mentions a
+concept called layering.
+>> Layering is the key takeaway here. It's
+about not relying on a single source of
+truth. He's taking that raw market data,
+the volume, the flow, and he is layering
+it with news,
+>> but not just scrolling through Twitter
+or reading the headlines on CNBC, right?
+>> Oh, no. That's too slow and too full of
+opinion. He's talking about using AI.
+>> AI seems to be everywhere these days.
+How is he using it here? Not to trade
+for him.
+>> No, not to execute trades. He's using AI
+to analyze news feeds, to find
+intelligent trading opportunities. Think
+of the AI as a filter.
+>> A filter. Okay, how does that work in
+practice?
+>> Well, we established that HFT firms can
+create fake volume or fake price moves
+on the chart. They can manipulate the
+price for a few seconds or minutes, but
+they can't create fake news, at least
+not real economic drivers instantly.
+>> So, if the price spikes up, the AI
+checks why.
+>> Exactly. Imagine the S&P 500 jumps 10
+points in a minute. The HFT algorithms
+might be going crazy, painting green
+candles everywhere. Your emotions say
+FOMO. Bye. the train is leaving the
+station,
+>> right? But if your AI scans the news
+feeds and finds nothing, no earnings
+report, no Federal Reserve announcement,
+no geopolitical event, no Bank of Japan
+statement,
+>> then the move is suspect.
+>> It's likely just noise. It's a fake out.
+The source argues that we need to use
+news as a confirmation filter. If the
+data shows a move and the news backs it
+up and the volume is there, now you have
+a high probability trade.
+>> He calls this moving up a level.
+>> That's the phrase. Stop looking at the
+microscopic level. That's where the
+sharks live. Move up a level where the
+trends are clearer, where the movements
+are driven by actual information, not
+just algorithmic games.
+>> It's interesting because he explicitly
+mentions that for accounts under a
+million dollars or even 10 million, this
+is the only way to survive. You have to
+confirm the theory using feebased
+services and real news.
+>> It's about asymmetry. The HFT firms have
+the speed advantage. They will always
+win on speed. They have better hardware,
+better location, faster code. You cannot
+beat them there.
+>> So, you have to compete somewhere else.
+>> I have to compete on a different axis.
+>> Context. They have speed. We have
+context.
+>> Context. I like that. It's a much slower
+way to trade though.
+>> It is. But it's a much safer way to
+trade. You are verifying the volume with
+the narrative.
+>> It sounds like he's advocating for
+patience, which is the hardest thing for
+a trader to have.
+>> He is. He's shifting from a reactive
+state chasing every tick like a dog
+chasing a car to an analytical state
+waiting for the data and the news to
+align.
+>> It reminds me of a detective building a
+case. You have a fingerprint. That's the
+data. But a fingerprint alone doesn't
+solve the crime or prove guilt. You need
+a motive. The news is the motive.
+>> That's a fantastic analogy. Without the
+motive, the fingerprint is just
+circumstantial evidence. And in trading,
+acting on circumstantial evidence gets
+you broke. You need the full picture
+before you commit your capital.
+>> So, let's bring this all together. We
+started this deep dive looking for the
+secret sauce inside the black box.
+>> And we found it. But it wasn't the magic
+spell we expected.
+>> No, the secret sauce isn't a magic
+indicator or a special software setting.
+It's raw data. But for most of us, that
+raw data is actually poison.
+>> It's noise designed to confuse you. It
+represents the churning of algorithms,
+not the movement of value. The real
+value is hidden in the S&P 500 volume,
+but only if you filter through the lens
+of real news and macro events like the
+carry trade unwinding or institutional
+>> That's the synthesis. You need the raw
+data to see the activity, but you need
+the macro news to understand the intent
+behind the activity. Without the news,
+you're just gambling against a
+supercomput that knows your hand before
+you play it. And we should remind
+everyone, of course, that this is based
+on the observations of one quantitative
+analyst, Quant Labs. This is his take on
+the market structure as of late January.
+>> It's a fascinating insight, but it's not
+financial advice.
+>> Absolutely. It's one perspective, but
+it's a perspective that challenges the
+common retail trader mindset of just
+staring at charts all day and ignoring
+the rest of the world.
+>> It really makes you question the game
+we're playing. I want to leave you with
+this thought today. If the smart money,
+the multi-billion dollar firms, makes
+its cash by confusing the retail market
+with speed and noise, is patience the
+only true edge a regular investor has
+left?
+>> That's a powerful thought. If you can't
+run faster than them, maybe you just
+have to wait longer than them.
+>> Something to mull over before you open
+your brokerage app next time. Thanks for
+listening to the deep dive. We'll see
+you on the next one. Take care.

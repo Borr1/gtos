@@ -1,0 +1,72 @@
+# Novelty Anti Boxing Audit
+
+```json
+{
+  "anti_boxing_checks": {
+    "accepted_40_floor_not_ceiling": true,
+    "current_symbol_or_proxy_expansion_preserved": true,
+    "local_heavy_data_roots_preserved": true,
+    "negative_evidence_failure_anatomy_lane_preserved": true,
+    "new_science_doors_preserved": true,
+    "non_ob_framing_preserved": true,
+    "sierra_proxy_source_ledgers_present": true,
+    "source_gaps_preserved_as_route_families": true
+  },
+  "anti_boxing_conclusion": "The accepted 40 was treated as a floor; R4 added auditable route families beyond the first 12 quarantined examples while preserving denominator quarantine.",
+  "artifact_family": "novelty_anti_boxing_audit",
+  "changes_trading_risk_safety_prompt_decision_behavior": false,
+  "credentials_touched": false,
+  "evidence_class": "G12_SCID_EXPANSION_CANDIDATE_ACCEPTANCE_DESIGN_AUDIT_ONLY",
+  "fair_adversarial_note": "The audit rejects count drift and leakage but does not reject novelty, non-OB framing, or outside-current-GTOS candidates merely for breadth.",
+  "generated_at_utc": "2026-05-12T18:06:35Z",
+  "live_effect": false,
+  "ok": true,
+  "opens_ai_api": false,
+  "opens_broker_account_order_history_deal_position_evidence": false,
+  "opens_live_restart": false,
+  "opens_live_trading_behavior": false,
+  "opens_paid_or_vendor_access": false,
+  "opens_prompt_config_risk_safety_execution_canary_selector_edit": false,
+  "opens_raw_market_data_blob_commit": false,
+  "opens_registry_edit": false,
+  "opens_remote_push": false,
+  "opens_result_scoring": false,
+  "opens_strategy_edge_claims": false,
+  "opens_validation": false,
+  "outcome_review_opened": false,
+  "promotion_verdict": "NO_PROMOTION_VERDICT",
+  "r4_required_family_ids_missing": [],
+  "r4_required_family_ids_present": [
+    "R4-EXP-ALIAS-001",
+    "R4-EXP-BASIS-001",
+    "R4-EXP-CAPGROUP-001",
+    "R4-EXP-CLOCK-001",
+    "R4-EXP-CODEHIST-001",
+    "R4-EXP-COSTSRC-001",
+    "R4-EXP-MLDATA-001",
+    "R4-EXP-NEG-001",
+    "R4-EXP-NEWSMACRO-001",
+    "R4-EXP-PARSER-001",
+    "R4-EXP-PLACEBO-001",
+    "R4-EXP-ROOT-001"
+  ],
+  "route_id": "G12_SCID_EXPANSION_CANDIDATE_ACCEPTANCE_DESIGN_AUDIT",
+  "schema_version": "g12_scid_expansion_audit_v1",
+  "source_category_counts": {
+    "BROKER_NATIVE_MARKET_TICK_PARQUET_CONTEXT_NOT_ACCOUNT_EVIDENCE": 93,
+    "LOCAL_OHLCV_LTF_OR_M15_CSV_SOURCE": 48,
+    "ORDERFLOW_DATABENTO_OR_PRIMITIVE_SOURCE_CONTROL": 205,
+    "OTHER_RELEVANT_SOURCE_METADATA": 53,
+    "PATH_CONTEXT_SHADOW_SOURCE": 15,
+    "PROXY_MAPPING_OR_REGISTRY_SOURCE_CONTROL": 9,
+    "SESSION_VOLATILITY_CONTEXT_SOURCE": 7,
+    "SIERRA_CONVERTED_LTF_OHLCV_SOURCE": 150,
+    "SIERRA_DEPTH_MARKET_DEPTH_SOURCE": 152,
+    "SIERRA_SCID_TIME_AND_SALES_FOOTPRINT_SOURCE": 33,
+    "SIERRA_SOURCE_CONTROL_LEDGER_OR_PARSER": 59,
+    "SOURCE_CONTROL_SUPPORTING_ARTIFACT": 20
+  },
+  "source_inventory_count": 844,
+  "validation_safe": false
+}
+```

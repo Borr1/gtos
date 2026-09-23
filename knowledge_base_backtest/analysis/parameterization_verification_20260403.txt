@@ -1,0 +1,44 @@
+PARAMETERIZATION VERIFICATION — Fri Apr  3 11:07:47 +08 2026
+===========================================
+
+=== 1. XAUUSD in data paths (scripts/) ===
+scripts/historical_data_loader.py:6:        --m15 data/raw/XAUUSD_M15.csv \
+scripts/historical_data_loader.py:7:        --h1  data/raw/XAUUSD_H1.csv \
+scripts/historical_data_loader.py:8:        --h4  data/raw/XAUUSD_H4.csv \
+scripts/historical_data_loader.py:9:        --d1  data/raw/XAUUSD_D1.csv
+scripts/historical_data_loader.py:714:            save_candles_csv(candles, hist_dir / f"XAUUSD_{tf}.csv")
+scripts/historical_data_loader.py:722:        save_candles_csv(all_candles["M15"], hist_dir / "XAUUSD_M15.csv")
+scripts/historical_data_loader.py:727:                save_candles_csv(all_candles[tf], hist_dir / f"XAUUSD_{tf}.csv")
+scripts/replay_session.py:719:        csv_path = HISTORICAL_DIR / f"XAUUSD_{tf}.csv"
+scripts/analyze_prescreen_kills.py:75:        csv_path = HISTORICAL_DIR / f"XAUUSD_{tf}.csv"
+scripts/reprocess_batch.py:52:        csv_path = HISTORICAL_DIR / f"XAUUSD_{tf}.csv"
+scripts/session1_deep_analysis.py:349:with open("data/historical/XAUUSD_M15.csv") as f:
+(Expected: 0 remaining in batch_backtest.py and backtest_runner.py data loading)
+
+=== 2. Old RR check (< 2.5) ===
+(Expected: 0 — should be config-driven)
+
+=== 3. Old SL floor (< 5.0) ===
+(Expected: 0 — should be config-driven)
+
+=== 4. 'gold trader' in prompts ===
+src/prompts/bull_agent_prompt.py:19:SYSTEM_PROMPT = """You are a senior gold trader who has identified what you believe is a high-quality Model A setup. The Primary Analyzer has assessed this as a CANDIDATE trade. Your task is to present the STRONGEST POSSIBLE CASE for taking this trade.
+src/prompts/bull_agent_prompt.py:57:    return SYSTEM_PROMPT.replace("senior gold trader", f"senior {label} trader")
+src/prompts/primary_analyzer_prompt.py:43:    "XAUUSD": "institutional gold trader with 15+ years of experience trading XAUUSD",
+src/prompts/judge_prompt.py:15:SYSTEM_PROMPT = """You are the fund manager making the final allocation decision on a gold trade. You have heard both the bull case (for the trade) and the bear case (against the trade). Your job is to evaluate the QUALITY of each argument and deliver a final verdict.
+src/prompts/judge_prompt.py:63:    return SYSTEM_PROMPT.replace("a gold trade", f"a {label} trade")
+(Expected: only in default SYSTEM_PROMPT constant and M5_SYSTEM_PROMPT, not in templates)
+
+=== 5. Remaining hardcoded XAUUSD in scripts/ ===
+scripts/backtest_runner.py:380:        symbol = self.config.get("market", {}).get("symbol", "XAUUSD")
+scripts/backtest_runner.py:1051:        description="Backtesting harness for the XAUUSD trading agent.",
+(Expected: 0 in data paths and safety checks)
+
+=== 6. Test results ===
+463 passed, 19 warnings
+
+=== 7. Config merge test ===
+Gold config: PASS
+GBPUSD config: PASS
+NAS100 config: PASS
+Gold unchanged after GBPUSD load: PASS

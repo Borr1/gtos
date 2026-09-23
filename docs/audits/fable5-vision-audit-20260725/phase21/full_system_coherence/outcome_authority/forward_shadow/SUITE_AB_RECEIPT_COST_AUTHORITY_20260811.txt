@@ -1,0 +1,186 @@
+# Wave-21 forward shadow — cost authority preflight + parity tests: full-suite failure-set A/B
+
+**46 bad → 46 bad · 0 fixed · 0 regressed. No regressions.**
+
+Compared by **failure set**, not by count — counts are not portable across worktrees.
+
+| | before | after |
+|---|---|---|
+| commit | `0ff15bbe3` | `0ff15bbe3` |
+| captured (UTC) | 2026-08-11T07:09:38Z | 2026-08-11T07:37:18Z |
+| working tree | dirty | dirty |
+| failed | 45 | 45 |
+| errored | 1 | 1 |
+| **bad** | **46** | **46** |
+| passed | 13855 | 13875 |
+| skipped | 120 | 120 |
+
+## Embedded captures
+
+Embedded, not referenced. A receipt that points at a scratchpad path is as unverifiable as
+no receipt at all, because that file is gone by the time anyone reads this.
+
+```json
+{
+ "schema": "gtos-ab-receipt-v1",
+ "scope": [
+  "tests/"
+ ],
+ "before": {
+  "commit": "0ff15bbe362ea30ff0624d264b06cfc935a500cd",
+  "commit_subject": "Wave-21 forward shadow: cost tests are Windows-portable",
+  "captured_utc": "2026-08-11T07:09:38Z",
+  "dirty": true,
+  "totals": {
+   "failed": 45,
+   "passed": 13855,
+   "skipped": 120,
+   "xfailed": 32,
+   "error": 1
+  }
+ },
+ "after": {
+  "commit": "0ff15bbe362ea30ff0624d264b06cfc935a500cd",
+  "commit_subject": "Wave-21 forward shadow: cost tests are Windows-portable",
+  "captured_utc": "2026-08-11T07:37:18Z",
+  "dirty": true,
+  "totals": {
+   "failed": 45,
+   "passed": 13875,
+   "skipped": 120,
+   "xfailed": 32,
+   "error": 1
+  }
+ },
+ "bad_before": 46,
+ "bad_after": 46,
+ "unchanged": 46,
+ "fixed": [],
+ "regressed": [],
+ "bad_before_nodeids": [
+  "tests/research_infra/test_cl_pass_surface_ceremony.py::test_real_package_is_hash_sealed_and_empty",
+  "tests/research_infra/test_cn_live_cost_carry.py::test_carry_builder_reproduces_every_committed_payload_and_diff",
+  "tests/research_infra/test_exit_overlay.py::test_frozen_protocol_has_exactly_40_parseable_default_off_cells",
+  "tests/research_infra/test_p1_offline_complete_path_runner.py::test_preexisting_output_parent_refuses_in_preflight",
+  "tests/research_infra/test_session_fb_sol_grid.py",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_all_214_timebox_identities_and_economics_reproduce_independently",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_frozen_analyzer_fast_path_matches_reference_for_all_cells",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_independent_state_machine_reproduces_all_3200_fast_and_reference_rows",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_look_ledger_preserves_invalidated_schema_and_prefill_runs",
+  "tests/research_infra/test_session_fg_integration.py::test_session_fg_integrated_evidence_and_default_off_boundaries",
+  "tests/research_infra/test_session_hdf_exit_capture_falsifier2.py::test_all_3200_fast_and_reference_rows_match_the_third_oracle",
+  "tests/research_infra/test_session_hdf_exit_capture_falsifier2.py::test_historical_fc_family_disposition_and_sealed_artifact_hashes_are_unchanged",
+  "tests/research_infra/test_sol_conditions.py::test_february_rounding_reconciliation_is_narrow_and_content_bound",
+  "tests/research_infra/test_sol_conditions.py::test_protocol_contains_no_open_ended_cell_discovery",
+  "tests/research_infra/test_sol_conditions.py::test_protocol_materializes_exact_declared_cell_space",
+  "tests/research_infra/test_sol_conditions.py::test_row_axes_fails_closed_on_side_disagreement_or_undeclared_symbol",
+  "tests/research_infra/test_sol_conditions.py::test_row_axes_uses_true_utc_and_frozen_symbol_map",
+  "tests/research_infra/test_wave19_sol_decision_semantics.py::test_fd_complete_row_results_and_economics_remain_identical",
+  "tests/scripts/test_ab_receipts_are_self_contained.py::test_every_ab_receipt_embeds_its_captures",
+  "tests/test_armed_set_mc.py::test_a_named_set_equals_the_derived_variant_it_names",
+  "tests/test_armed_set_mc.py::test_no_sleeve_set_leaves_the_published_grid_shape",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_decision_window_and_canonical_identity_fail_closed",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R0-None]",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R0-hard_scheduler_veto_present:cost_authority_missing]",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R1-None]",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R1-hard_scheduler_veto_present:cost_authority_missing]",
+  "tests/test_b7_5_post_acceleration_contract.py::test_phase_c_hash_producer_binding_is_format_independent",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_a_verifier_fix_breaks_r1_and_not_r2",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r1_binds_again_the_moment_the_sealed_bytes_are_restored",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[0]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[1]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[2]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[3]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_no_longer_rebuilds_and_the_break_is_exactly_the_authorized_one",
+  "tests/test_broad_origin_emission_repairs.py::test_the_live_book_entrypoint_does_not_import_this_generator",
+  "tests/test_mc_firm_rules.py::test_the_published_grid_reconstructs_and_the_two_survivor_sets_differ",
+  "tests/test_mc_firm_rules.py::test_this_engine_reproduces_every_published_mc_field_exactly",
+  "tests/test_opus5_architecture_audit_hardening.py::test_every_create_mt5_caller_uses_a_known_mode",
+  "tests/test_replay_differential_harness.py::test_a_sealed_arm_compared_with_itself_is_equivalent",
+  "tests/test_replay_differential_harness.py::test_the_cold_shard_roles_are_readable_on_a_sealed_arm",
+  "tests/test_replay_differential_harness.py::test_two_different_sealed_arms_are_reported_as_differing",
+  "tests/test_replay_policy_generation_lineage.py::test_deployed_lineage_claim_is_pinned_to_the_live_commit",
+  "tests/test_w7_recost.py::test_commission_at_validation_stops_is_not_the_live_window_rate",
+  "tests/test_w7_recost.py::test_night_ceilings_come_from_rollover_nights_not_a_weekday_fraction",
+  "tests/test_w7_recost.py::test_only_a_structural_bound_promotes_a_sleeve_out_of_carry_conditional",
+  "tests/ultimate_book/test_lane_weights.py::test_supervisor_binds_current_account_scopes_and_contracts_to_external_files"
+ ],
+ "bad_after_nodeids": [
+  "tests/research_infra/test_cl_pass_surface_ceremony.py::test_real_package_is_hash_sealed_and_empty",
+  "tests/research_infra/test_cn_live_cost_carry.py::test_carry_builder_reproduces_every_committed_payload_and_diff",
+  "tests/research_infra/test_exit_overlay.py::test_frozen_protocol_has_exactly_40_parseable_default_off_cells",
+  "tests/research_infra/test_p1_offline_complete_path_runner.py::test_preexisting_output_parent_refuses_in_preflight",
+  "tests/research_infra/test_session_fb_sol_grid.py",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_all_214_timebox_identities_and_economics_reproduce_independently",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_frozen_analyzer_fast_path_matches_reference_for_all_cells",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_independent_state_machine_reproduces_all_3200_fast_and_reference_rows",
+  "tests/research_infra/test_session_fc_exit_overlay.py::test_look_ledger_preserves_invalidated_schema_and_prefill_runs",
+  "tests/research_infra/test_session_fg_integration.py::test_session_fg_integrated_evidence_and_default_off_boundaries",
+  "tests/research_infra/test_session_hdf_exit_capture_falsifier2.py::test_all_3200_fast_and_reference_rows_match_the_third_oracle",
+  "tests/research_infra/test_session_hdf_exit_capture_falsifier2.py::test_historical_fc_family_disposition_and_sealed_artifact_hashes_are_unchanged",
+  "tests/research_infra/test_sol_conditions.py::test_february_rounding_reconciliation_is_narrow_and_content_bound",
+  "tests/research_infra/test_sol_conditions.py::test_protocol_contains_no_open_ended_cell_discovery",
+  "tests/research_infra/test_sol_conditions.py::test_protocol_materializes_exact_declared_cell_space",
+  "tests/research_infra/test_sol_conditions.py::test_row_axes_fails_closed_on_side_disagreement_or_undeclared_symbol",
+  "tests/research_infra/test_sol_conditions.py::test_row_axes_uses_true_utc_and_frozen_symbol_map",
+  "tests/research_infra/test_wave19_sol_decision_semantics.py::test_fd_complete_row_results_and_economics_remain_identical",
+  "tests/scripts/test_ab_receipts_are_self_contained.py::test_every_ab_receipt_embeds_its_captures",
+  "tests/test_armed_set_mc.py::test_a_named_set_equals_the_derived_variant_it_names",
+  "tests/test_armed_set_mc.py::test_no_sleeve_set_leaves_the_published_grid_shape",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_decision_window_and_canonical_identity_fail_closed",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R0-None]",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R0-hard_scheduler_veto_present:cost_authority_missing]",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R1-None]",
+  "tests/test_b7_5_neutral_selection_factorial.py::test_s1_scheduler_counterfactual_carry_is_audit_only_and_parent_exact[R1-hard_scheduler_veto_present:cost_authority_missing]",
+  "tests/test_b7_5_post_acceleration_contract.py::test_phase_c_hash_producer_binding_is_format_independent",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_a_verifier_fix_breaks_r1_and_not_r2",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r1_binds_again_the_moment_the_sealed_bytes_are_restored",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[0]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[1]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[2]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_binds_through_the_real_enforcement_path[3]",
+  "tests/test_b7_5_post_acceleration_contract_r2_verification_split.py::test_r2_no_longer_rebuilds_and_the_break_is_exactly_the_authorized_one",
+  "tests/test_broad_origin_emission_repairs.py::test_the_live_book_entrypoint_does_not_import_this_generator",
+  "tests/test_mc_firm_rules.py::test_the_published_grid_reconstructs_and_the_two_survivor_sets_differ",
+  "tests/test_mc_firm_rules.py::test_this_engine_reproduces_every_published_mc_field_exactly",
+  "tests/test_opus5_architecture_audit_hardening.py::test_every_create_mt5_caller_uses_a_known_mode",
+  "tests/test_replay_differential_harness.py::test_a_sealed_arm_compared_with_itself_is_equivalent",
+  "tests/test_replay_differential_harness.py::test_the_cold_shard_roles_are_readable_on_a_sealed_arm",
+  "tests/test_replay_differential_harness.py::test_two_different_sealed_arms_are_reported_as_differing",
+  "tests/test_replay_policy_generation_lineage.py::test_deployed_lineage_claim_is_pinned_to_the_live_commit",
+  "tests/test_w7_recost.py::test_commission_at_validation_stops_is_not_the_live_window_rate",
+  "tests/test_w7_recost.py::test_night_ceilings_come_from_rollover_nights_not_a_weekday_fraction",
+  "tests/test_w7_recost.py::test_only_a_structural_bound_promotes_a_sleeve_out_of_carry_conditional",
+  "tests/ultimate_book/test_lane_weights.py::test_supervisor_binds_current_account_scopes_and_contracts_to_external_files"
+ ]
+}
+```
+
+---
+
+## Addendum — read the `commit` row with this caveat (added by the author of the change)
+
+The table above stamps **the same commit on both sides**, and that is a property of the
+tool, not of the comparison: `pytest_failset.py` records the git HEAD at the moment each
+capture *finishes*, and both captures finished after the branch was committed.
+
+What the BEFORE capture actually measured was `origin/main` content:
+
+* it was launched from a clean checkout of `origin/main` **before any file in this change
+  existed**, and pytest collects (and therefore imports) every test module in the first
+  minutes of a run — five minutes before the first source edit landed;
+* `tests/research_infra/test_wave21_forward_shadow_costs.py` did not exist at that
+  collection, so none of its 18 node ids can appear in the before set — and none do;
+* the passed delta is **exactly +20**, which is precisely the number of tests this change
+  adds (18 in the new cost file, 2 in the refit file). A contaminated base would not
+  produce that identity;
+* the before set contains **zero** `wave21_forward_shadow` entries, matching a direct
+  pre-edit run of the lane's own suite (50 passed).
+
+The two bad sets are **equal as sets**, not merely equal in count: 46 identical node ids,
+`before - after` empty and `after - before` empty.
+
+Blast radius, for whoever is checking this claim rather than trusting it: the change adds a
+function and four packet keys, and inserts one call into `ForwardShadowRunner.__init__`.
+No test outside the new file constructs `ForwardShadowRunner`, so no pre-existing test's
+behaviour can change.

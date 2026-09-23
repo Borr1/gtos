@@ -1,0 +1,18 @@
+# NOFILL 55-Field Source Binding Matrix
+
+Route: `NOFILL_HISTORICAL_SEALED_VALIDATION_PARTITION_AND_SOURCE_BINDING`
+Promotion posture: `NO_PROMOTION_VERDICT`
+
+## Summary
+
+```json
+{
+  "binding_class_counts": {
+    "FORBIDDEN_REDACTED_STATUS_ONLY": 7,
+    "FUTURE_LOGGER_BOUND_REQUIRED_FOR_FULL_COVERAGE": 20,
+    "SCHEMA_ONLY_CONTROL": 11,
+    "SOURCE_BOUND_HISTORICAL_OR_FAIL_CLOSED": 17
+  },
+  "field_count": 55
+}
+```

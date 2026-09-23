@@ -1,0 +1,5 @@
+before b22b64da4 ('swarm2: nine-lane constructive audit — the rule trades the negative arm'): 14 bad
+after  b22b64da4 ('swarm2: nine-lane constructive audit — the rule trades the negative arm'): 14 bad
+unchanged: 14   fixed: 0   REGRESSED: 0
+
+No regressions.

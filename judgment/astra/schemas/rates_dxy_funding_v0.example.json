@@ -1,0 +1,100 @@
+{
+  "schema": "gtos.judgment.rates_dxy_funding.v0",
+  "pack": "gtos.judgment.rdf_pack.v0",
+  "as_of_clock": "as_of_open_study",
+  "never_place": true,
+  "never_remint": true,
+  "never_flatten": true,
+  "never_resize": true,
+  "never_apply_size": true,
+  "never_invent_news_protocol": true,
+  "never_ingest_raw_x": true,
+  "clock": {
+    "as_of_utc": "2026-09-17T11:00:00Z",
+    "rule": "new_york_plus_7"
+  },
+  "focus": {
+    "symbol": "XAUUSD",
+    "side": "short"
+  },
+  "usd_impulse": {
+    "noul": "usd_impulse",
+    "value": null,
+    "assembled": false,
+    "feed_class": "unassembled",
+    "challenge_true": false,
+    "challenge_true_target": null,
+    "lab_target": null,
+    "source": "unassembled",
+    "reason": "no_named_usd_fx_books_or_stale_vs_as_of",
+    "source_paths": [],
+    "stance": "unassembled",
+    "dxy_used": false
+  },
+  "rates_impulse": {
+    "noul": "rates_impulse",
+    "value": null,
+    "assembled": false,
+    "feed_class": "unassembled",
+    "challenge_true": false,
+    "challenge_true_target": null,
+    "source": "unassembled",
+    "reason": "no_named_yield_tape_on_this_clone",
+    "usd_fx_is_not_a_yield": true,
+    "sierra_zn": "control_only_not_used_as_rates_print"
+  },
+  "funding_stress": {
+    "noul": "funding_stress",
+    "value": null,
+    "assembled": false,
+    "feed_class": "unassembled",
+    "challenge_true": false,
+    "challenge_true_target": null,
+    "source": "unassembled",
+    "reason": "no_named_funding_stress_feed_on_this_clone",
+    "gold_spread_is_not_funding": true,
+    "vix_is_not_funding": true
+  },
+  "risk_on_off": {
+    "noul": "risk_on_off",
+    "value": null,
+    "assembled": false,
+    "feed_class": "unassembled",
+    "challenge_true": false,
+    "challenge_true_target": null,
+    "source": "unassembled",
+    "stance": "unassembled",
+    "yes_event": "risk_off",
+    "vix_used": false
+  },
+  "dxy": {
+    "series": null,
+    "source": "unassembled",
+    "reason": "dxy_csv_present_but_not_ice_dxy",
+    "file_present": true,
+    "usable_as_ice_dxy": false,
+    "challenge_true": false
+  },
+  "usd_proxy_quality": {
+    "fx_basket_assembled": false,
+    "dxy_usable": false,
+    "quality": "dxy_rejected"
+  },
+  "completeness": {
+    "usd_impulse": false,
+    "usd_impulse_challenge_true": false,
+    "rates_impulse": false,
+    "funding_stress": false,
+    "risk_on_off": false,
+    "dxy": false,
+    "named_yield": false,
+    "named_funding": false,
+    "missing_fields": [
+      "usd_impulse",
+      "rates_impulse",
+      "funding_stress",
+      "risk_on_off",
+      "usd.dxy"
+    ]
+  }
+}

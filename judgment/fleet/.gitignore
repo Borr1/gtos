@@ -1,0 +1,13 @@
+outbox/*.jsonl
+outbox/relay_state.json
+outbox/mirror_state*.json
+outbox/*.tmp
+inbox/*.jsonl
+inbox/*.tmp
+labels/*.jsonl
+labels/*.json
+labels/*.tmp
+mirror/run/*.pid
+mirror/logs/*.log
+mirror/logs/*.err
+__pycache__/

@@ -1,0 +1,14 @@
+candle_time: '2025-01-02T07:00:00Z'
+data_quality_ok: true
+date: '2025-01-02'
+decision: NO_TRADE
+reason: Daily bias is ranging/transitional - no clear directional bias established
+reasoning:
+  daily_bias: null
+  full_explanation: 'Session produced 0 candidates. Primary reasons: Daily bias is
+    ranging/transitional - Model A requires clear directional bias, Daily bias is
+    ranging/transitional - no clear directional bias established, Daily bias is ranging/transitional
+    - Model A requires clear Daily directional bias'
+  h4_alignment: null
+  stopped_at_step: null
+record_id: nt_2025-01-02_0700

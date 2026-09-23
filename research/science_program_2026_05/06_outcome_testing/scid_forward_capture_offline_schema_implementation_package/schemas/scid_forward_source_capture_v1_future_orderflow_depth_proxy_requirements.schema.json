@@ -1,0 +1,229 @@
+{
+  "$id": "https://gtos.local/research/scid_forward_capture/future_orderflow_depth_proxy_requirements.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "source capture and derived features must be timestamped no later than decision_asof_utc unless marked forensic-only",
+  "properties": {
+    "candidate_input_row_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "decision_asof_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "derived_feature_schema_version": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "downstream_g12_acceptance_rule": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "duplicate_proxy_denominator_key": {
+      "minLength": 16,
+      "type": "string"
+    },
+    "evidence_class": {
+      "const": "SCID_FORWARD_CAPTURE_OFFLINE_SCHEMA_IMPLEMENTATION_PACKAGE_ONLY"
+    },
+    "field_group": {
+      "const": "future_orderflow_depth_proxy_requirements"
+    },
+    "field_status": {
+      "enum": [
+        "CAPTURED_SOURCE_SAFE",
+        "SOURCE_UNAVAILABLE_FAIL_CLOSED",
+        "PROSPECTIVE_CAPTURE_REQUIRED",
+        "FORBIDDEN_FAIL_CLOSED"
+      ]
+    },
+    "forbidden_value_policy_id": {
+      "const": "SCID_FORWARD_CAPTURE_FORBIDDEN_SURFACE_FAIL_CLOSED_V1"
+    },
+    "live_effect": {
+      "const": false
+    },
+    "missing_status_policy": {
+      "enum": [
+        "FAIL_CLOSED_MISSING_SOURCE_FIELD",
+        "PROSPECTIVE_CAPTURE_REQUIRED",
+        "FORBIDDEN_FAIL_CLOSED"
+      ]
+    },
+    "opens_ai_api": {
+      "const": false
+    },
+    "opens_broker_account_order_history_deal_position_evidence": {
+      "const": false
+    },
+    "opens_live_restart": {
+      "const": false
+    },
+    "opens_live_trading_behavior": {
+      "const": false
+    },
+    "opens_paid_or_vendor_access": {
+      "const": false
+    },
+    "opens_prompt_config_risk_safety_execution_canary_selector_edit": {
+      "const": false
+    },
+    "opens_raw_market_data_blob_commit": {
+      "const": false
+    },
+    "opens_result_scoring": {
+      "const": false
+    },
+    "opens_strategy_edge_claims": {
+      "const": false
+    },
+    "opens_validation": {
+      "const": false
+    },
+    "orderflow_proxy_availability_status": {
+      "enum": [
+        "AVAILABLE",
+        "UNAVAILABLE_FAIL_CLOSED"
+      ],
+      "minLength": 1,
+      "type": "string"
+    },
+    "outcome_review_opened": {
+      "const": false
+    },
+    "promotion_verdict": {
+      "const": "NO_PROMOTION_VERDICT"
+    },
+    "proxy_contract_month": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "proxy_instrument": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "proxy_mapping_version": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "publication_or_capture_asof_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "redaction_policy_id": {
+      "const": "SCID_FORWARD_CAPTURE_NO_BROKER_ACCOUNT_ORDER_DEAL_POSITION_IDS_V1"
+    },
+    "route_id": {
+      "const": "SCID_FORWARD_CAPTURE_OFFLINE_SCHEMA_IMPLEMENTATION_PACKAGE"
+    },
+    "schema_version": {
+      "const": "scid_forward_source_capture_v1"
+    },
+    "source_family_scid_depth_mbo_mbp_other": {
+      "enum": [
+        "scid",
+        "depth",
+        "mbo",
+        "mbp",
+        "other",
+        "unavailable"
+      ],
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_file_pointer_or_vendor_cache_id": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_hash_policy": {
+      "enum": [
+        "STRICT_SHA256_REQUIRED",
+        "HASH_DEFERRED_SOURCE_UNAVAILABLE_FAIL_CLOSED",
+        "SELF_REFERENTIAL_MANIFEST_HASH_NON_BLOCKING"
+      ]
+    },
+    "source_identifier": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_observed_asof_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "validation_safe": {
+      "const": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "route_id",
+    "evidence_class",
+    "promotion_verdict",
+    "validation_safe",
+    "outcome_review_opened",
+    "live_effect",
+    "opens_validation",
+    "opens_result_scoring",
+    "opens_strategy_edge_claims",
+    "opens_broker_account_order_history_deal_position_evidence",
+    "opens_ai_api",
+    "opens_paid_or_vendor_access",
+    "opens_live_restart",
+    "opens_live_trading_behavior",
+    "opens_raw_market_data_blob_commit",
+    "opens_prompt_config_risk_safety_execution_canary_selector_edit",
+    "candidate_input_row_id",
+    "duplicate_proxy_denominator_key",
+    "field_group",
+    "decision_asof_utc",
+    "source_observed_asof_utc",
+    "source_identifier",
+    "source_hash",
+    "source_hash_policy",
+    "redaction_policy_id",
+    "forbidden_value_policy_id",
+    "missing_status_policy",
+    "field_status",
+    "downstream_g12_acceptance_rule",
+    "proxy_instrument",
+    "proxy_contract_month",
+    "source_family_scid_depth_mbo_mbp_other",
+    "source_file_pointer_or_vendor_cache_id",
+    "proxy_mapping_version",
+    "publication_or_capture_asof_utc",
+    "derived_feature_schema_version",
+    "orderflow_proxy_availability_status"
+  ],
+  "title": "future_orderflow_depth_proxy_requirements row schema",
+  "type": "object",
+  "x_scid_contract": {
+    "as_of_rule": "source capture and derived features must be timestamped no later than decision_asof_utc unless marked forensic-only",
+    "field_group": "future_orderflow_depth_proxy_requirements",
+    "future_source_or_logger": "orderflow_depth_proxy_context_capture",
+    "historical_status": "RECOVERABLE_OR_REQUESTABLE_MARKET_CONTEXT_WITH_PROXY_CONTRACT_CAPTURE_REQUIRED",
+    "no_leak_rule": "no post-event orderflow, future depth state, paid-call output, or raw blob commit in this route",
+    "parser_requirement": "append-only JSONL parser with schema-version check, source-hash recomputation, duplicate-key preservation, and fail-closed missing-field behavior"
+  }
+}

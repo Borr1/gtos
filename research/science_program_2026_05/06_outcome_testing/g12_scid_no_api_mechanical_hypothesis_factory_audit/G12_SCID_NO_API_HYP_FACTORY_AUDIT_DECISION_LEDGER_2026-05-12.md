@@ -1,0 +1,72 @@
+# Decision Ledger
+
+```json
+{
+  "accepted_g12_control_evidence_only": true,
+  "accepted_promotion": false,
+  "accepted_strategy_performance": false,
+  "accepted_validation_execution": false,
+  "artifact_family": "decision_ledger",
+  "candidate_rows_verified": 3014,
+  "capture_groups_verified": [
+    "baseline_control_fields",
+    "framework_setup_family",
+    "future_orderflow_depth_proxy_requirements",
+    "intended_entry_reference",
+    "intended_side_direction",
+    "intended_stop_reference",
+    "intended_target_reference",
+    "lifecycle_fill_cancel_expiry_source_status",
+    "lower_timeframe_asof_path_availability",
+    "poi_type_bounds_source"
+  ],
+  "card_count_verified": 40,
+  "changes_live_trading_behavior": false,
+  "check_map": {
+    "boundary_capture_manifest": true,
+    "card_schema_count": true,
+    "input_inventory": true,
+    "matrix_crosscheck": true,
+    "no_leak_scoped_diff": true,
+    "science_domain_coverage": true
+  },
+  "credentials_touched": false,
+  "duplicate_proxy_denominator_keys_verified": 3014,
+  "evidence_class": "G12_SCID_NO_API_MECHANICAL_HYPOTHESIS_FACTORY_AUDIT_ONLY",
+  "generated_at_utc": "2026-05-12T08:32:04Z",
+  "input_evidence_class": "SCID_NO_API_MECHANICAL_HYPOTHESIS_FACTORY_FROM_OFFLINE_SCHEMA_SYNTHESIS_ONLY",
+  "input_route_id": "SCID_NO_API_MECHANICAL_HYPOTHESIS_FACTORY_FROM_OFFLINE_SCHEMA_SYNTHESIS",
+  "live_effect": false,
+  "opens_ai_api": false,
+  "opens_broker_account_order_history_deal_position_evidence": false,
+  "opens_live_restart": false,
+  "opens_live_trading_behavior": false,
+  "opens_paid_or_vendor_access": false,
+  "opens_prompt_config_risk_safety_execution_canary_selector_edit": false,
+  "opens_raw_market_data_blob_commit": false,
+  "opens_registry_edit": false,
+  "opens_remote_push": false,
+  "opens_result_scoring": false,
+  "opens_strategy_edge_claims": false,
+  "opens_validation": false,
+  "outcome_review_opened": false,
+  "outside_current_gtos_ob_framing_count_verified": 33,
+  "promotion_verdict": "NO_PROMOTION_VERDICT",
+  "repair_policy": "Repair only on exact card/domain/field/hash/no-leak/scoped-diff/verifier/evidence-class failures; novelty and lack of outcome scoring are not blockers in this lane.",
+  "route_id": "G12_SCID_NO_API_MECHANICAL_HYPOTHESIS_FACTORY_AUDIT",
+  "schema_version": "g12_scid_no_api_mechanical_hypothesis_factory_audit_v1",
+  "science_domains_verified": [
+    "geometry_topology_path_shape",
+    "stochastic_tail_hazard_first_passage",
+    "microstructure_orderflow_liquidity_trapped_flow",
+    "behavioral_game_theory_session_participant_constraints",
+    "macro_session_calendar_cross_asset_context",
+    "execution_science_spread_slippage_fillability",
+    "ml_meta_labeling_model_disagreement_uncertainty_controls",
+    "adversarial_baselines_placebo_explanations"
+  ],
+  "terminal_blockers": [],
+  "terminal_decision": "ACCEPT_AS_G12_SCID_NO_API_MECHANICAL_HYPOTHESIS_FACTORY_CONTROL_EVIDENCE_ONLY",
+  "validation_safe": false
+}
+```

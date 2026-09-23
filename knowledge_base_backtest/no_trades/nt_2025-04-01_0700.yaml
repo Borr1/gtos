@@ -1,0 +1,14 @@
+candle_time: '2025-04-01T07:00:00Z'
+data_quality_ok: true
+date: '2025-04-01'
+decision: NO_TRADE
+reason: No H1 pullback to valid POI in discount zone; weak M15 displacement
+reasoning:
+  daily_bias: null
+  full_explanation: 'Session produced 0 candidates. Primary reasons: No H1 pullback
+    to valid POI in discount zone; weak M15 displacement, Missing M15 CHoCH with displacement
+    after liquidity sweep, Price in premium zone - need discount retracement for valid
+    bullish Model A setup'
+  h4_alignment: null
+  stopped_at_step: null
+record_id: nt_2025-04-01_0700
