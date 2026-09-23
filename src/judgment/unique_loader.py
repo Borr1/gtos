@@ -371,37 +371,32 @@ def _occupancy_named(obj: Mapping[str, Any] | None) -> str:
     return str(raw or "").strip().lower()
 
 
-def _wake_positions() -> tuple[list[dict[str, Any]], bool]:
-    """Positions on the chair wake. The second value is whether the wake was read."""
+def _live_positions() -> tuple[list[dict[str, Any]] | None, bool]:
+    """positions_get on the writer's terminal. A failed read is unset."""
 
-    path = _STAMP_DIR / "state" / "chair_wake.json"
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        from src.judgment.equity_frame import read_live_positions
     except Exception:
-        return [], False
-    book = data.get("book") if isinstance(data, dict) else None
-    raw = book.get("positions") if isinstance(book, dict) else None
-    if not isinstance(raw, list):
-        return [], True
-    found: list[dict[str, Any]] = []
-    for pos in raw:
-        if not isinstance(pos, dict):
-            continue
-        if pos.get("ticket") is None or not pos.get("symbol"):
-            continue
-        found.append(pos)
-    return found, True
+        return None, False
+    try:
+        return read_live_positions()
+    except Exception:
+        return None, False
 
 
-def _open_broker_positions() -> list[dict[str, Any]]:
-    """Broker positions from the latest chair wake. No stand-in ticket."""
+def _open_broker_positions() -> list[dict[str, Any]] | None:
+    """Broker positions from positions_get. Unread is None, not a flat book."""
 
-    positions, _read = _wake_positions()
+    positions, read = _live_positions()
+    if not read:
+        return None
     return positions
 
 
-def _position_facts(positions: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+def _position_facts(positions: list[dict[str, Any]] | None = None) -> list[dict[str, Any]] | None:
     raw = _open_broker_positions() if positions is None else positions
+    if not isinstance(raw, list):
+        return None
     slim: list[dict[str, Any]] = []
     for pos in raw:
         slim.append(
@@ -436,10 +431,10 @@ def _gold_rows(positions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _gold_ticket_occupied() -> bool | None:
-    """Whether the wake shows a gold position. Unread wake stays unset."""
+    """Whether the terminal shows a gold position. An unread book stays unset."""
 
-    positions, read = _wake_positions()
-    if not read:
+    positions, read = _live_positions()
+    if not read or positions is None:
         return None
     return bool(_gold_rows(positions))
 
@@ -615,12 +610,12 @@ def load_unique_apply() -> dict[str, Any]:
 
 
 def _open_gold_fact() -> dict[str, Any]:
-    """Gold positions on the wake. No stand-in ticket."""
+    """Gold positions on the terminal. No stand-in ticket."""
 
-    positions, read = _wake_positions()
-    metals = _gold_rows(positions)
+    positions, read = _live_positions()
+    metals = _gold_rows(positions or [])
     return {
-        "positions": metals,
+        "positions": metals if read else None,
         "occupied": bool(metals) if read else None,
     }
 
@@ -818,7 +813,7 @@ def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) ->
         manage = importlib.import_module("src.judgment.manage_choices")
         positions = _open_broker_positions()
         asked: list[dict[str, Any]] = []
-        for pos in positions:
+        for pos in (positions if isinstance(positions, list) else ()):
             acts: dict[str, Any] = {}
             for act in ("move_sl", "move_tp", "close"):
                 facts = {
@@ -870,7 +865,7 @@ def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) ->
             "order_send": sl_sent,
             "ticket": None if only is None else only["ticket"],
             "acts": {} if only is None else only["acts"],
-            "positions": asked,
+            "positions": None if positions is None else asked,
         }
     except Exception as exc:  # noqa: BLE001
         row["manage"] = {"ok": False, "block": f"{type(exc).__name__}: {exc}", "order_send": None}

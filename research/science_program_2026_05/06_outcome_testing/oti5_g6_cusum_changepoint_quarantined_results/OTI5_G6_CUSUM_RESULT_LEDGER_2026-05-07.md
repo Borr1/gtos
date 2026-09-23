@@ -71,7 +71,7 @@
   "promotion_verdict": "NO_PROMOTION_VERDICT",
   "raw_auxiliary_summary_not_countable_for_primary_metric": {
     "failure_rate_resolved_terminal": 0.96969697,
-    "mean_synthetic_r_resolved_only": -0.92424242,
+    "mean_synthetic_r_resolved_only": -0.920,
     "median_synthetic_r_resolved_only": -1.0,
     "no_entry_rows": 48,
     "record_count": 81,

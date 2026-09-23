@@ -1,4 +1,4 @@
-"""Persist original stops and the 22:00 UTC day baseline. No MT5.
+"""Persist original stops. The day baseline is read, not written here. No MT5.
 
 A lock must never overwrite an original. After a restart the desk and the book
 both read these files so R is not recomputed against a BE stop.
@@ -112,24 +112,26 @@ def persist_baseline(path: Path, balance: float, reset_utc: str) -> None:
     })
 
 
-def ftmo_reset_utc(now: datetime) -> datetime:
-    """The last 22:00 UTC reset at or before ``now``."""
-    now = now.astimezone(timezone.utc)
-    reset = now.replace(hour=22, minute=0, second=0, microsecond=0)
-    if now < reset:
-        from datetime import timedelta
-        reset = reset - timedelta(days=1)
-    return reset
+def ftmo_reset_utc(now: datetime) -> Optional[datetime]:
+    """This FTMO account's current reset, 00:00 Europe/Prague."""
+    from src.utils.broker_clock import daily_reset_instant_utc
+
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    return daily_reset_instant_utc(now, "Europe/Prague")
 
 
 def maybe_roll_baseline(
     path: Path,
     balance_now: float,
     now: Optional[datetime] = None,
-) -> float:
-    """If the stored reset is older than the last 22:00 UTC, take ``balance_now``."""
+) -> Optional[float]:
+    """Stored balance when its reset is today's. Does not write the file."""
+    del balance_now
     now = now or common.now_utc()
     want = ftmo_reset_utc(now)
+    if want is None:
+        return None
     doc = common.read_json(path, default=None)
     stored_reset = None
     stored_bal = None
@@ -139,10 +141,13 @@ def maybe_roll_baseline(
             stored_bal = float(doc.get("balance"))
         except (TypeError, ValueError):
             stored_bal = None
-    if stored_reset is not None and stored_reset >= want and stored_bal is not None:
+    if stored_reset is None or stored_bal is None:
+        return None
+    same = stored_reset.astimezone(timezone.utc).replace(microsecond=0)
+    wanted = want.astimezone(timezone.utc).replace(microsecond=0)
+    if same == wanted:
         return stored_bal
-    persist_baseline(path, balance_now, common.iso_utc(want))
-    return float(balance_now)
+    return None
 
 
 def write_trade_record_orig(

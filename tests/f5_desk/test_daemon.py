@@ -68,7 +68,7 @@ def test_skip_when_unchanged_calls_model_once(tmp_path):
 
     # a new fill in the stream changes the open set -> judged again
     fill = {"event": "f5_fill", "schema": "gtos.f5.minimal_size_event.v1",
-            "namespace": "operator", "ticket": 424242, "symbol": "XAUUSD",
+            "namespace": "operator", "ticket": 0, "symbol": "XAUUSD",
             "sleeve": "dsp_walked_high_accepted_through",
             "candidate_id": "W7_BOOK::dsp_c_walk::XAUUSD::2026-08-24::LONG::dsp_walked_high_accepted_through",
             "decision_day": "2026-08-24", "ts_utc": "2026-08-24T23:50:00+00:00"}

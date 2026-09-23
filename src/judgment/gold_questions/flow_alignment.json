@@ -32,7 +32,7 @@
     "Aligned with named HTF/session flow"
   ],
   "measured": {
-    "delta_long_h4_up_minus_dn": 0.04118549119424242,
+    "delta_long_h4_up_minus_dn": 0.041185491190,
     "n_up": 25793,
     "n_dn": 10169
   }
