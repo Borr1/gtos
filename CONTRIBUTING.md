@@ -2,7 +2,7 @@
 
 Anyone can read this repository, run it, and change their own copy. That freedom is the point.
 
-A change to **this** repository is a pull request. GitHub requires a pull request into `main`, a review from the code owner in `.github/CODEOWNERS`, a linear history, and no force-push and no deletion. The code owner is `@Borr1`. Agents that ship here act under that account. There are no other collaborators.
+A change to **this** repository is a pull request. GitHub requires a pull request into `main`, a linear history, and no force-push and no deletion. No second review is required. Only `@Borr1` has write access, so only that account can merge. Anyone can open a pull request. Agents that ship here act under that account. There are no other collaborators.
 
 Open an issue to:
 
