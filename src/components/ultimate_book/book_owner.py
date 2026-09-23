@@ -2883,6 +2883,48 @@ class UltimateBookOwner:
         except Exception:
             return False
 
+    @staticmethod
+    def _bar_age_minutes(now, bar_iso, tf) -> float | None:
+        """Minutes from this bar's close to the cycle clock. A missing bar stays absent."""
+
+        try:
+            per = _TF_MINUTES.get(tf)
+            if not per or not bar_iso or now is None:
+                return None
+            close = datetime.fromisoformat(str(bar_iso)) + timedelta(minutes=int(per))
+            if close.tzinfo is None:
+                close = close.replace(tzinfo=timezone.utc)
+            clock = now if getattr(now, "tzinfo", None) else now.replace(tzinfo=timezone.utc)
+            return (clock - close).total_seconds() / 60.0
+        except Exception:
+            return None
+
+    @staticmethod
+    def _move_from_limit(intent, tick) -> float | None:
+        """How far the live quote sits from the limit, on that order's side.
+
+        A long reads the bid against the limit. A short reads the limit against
+        the ask. A missing price or a missing side stays absent.
+        """
+
+        try:
+            entry = float(getattr(intent, "entry_price", None))
+            bid = float(getattr(tick, "bid", None))
+            ask = float(getattr(tick, "ask", None))
+        except (TypeError, ValueError):
+            return None
+        if entry != entry or bid != bid or ask != ask:
+            return None
+        try:
+            side = int(getattr(intent, "direction", None))
+        except (TypeError, ValueError):
+            return None
+        if side > 0:
+            return bid - entry
+        if side < 0:
+            return entry - ask
+        return None
+
     def _broker_holds(self, symbol: str, sleeve: str) -> bool:
         """True if the broker already has an open W7:{sleeve} position on `symbol` — a definitive
         anti-duplicate guard for the case where manage_open_positions FAILED to adopt it (a transient
@@ -4980,9 +5022,13 @@ class UltimateBookOwner:
                     "agent_order_send": False,
                 }
         for unit in units:
-            raw_risk = unit.get("risk_pct_per_trade", 0)
+            raw_risk = unit.get("risk_pct_per_trade")
             try:
-                risk_missing = raw_risk is None or float(raw_risk) <= 0
+                risk_missing = (
+                    isinstance(raw_risk, bool)
+                    or raw_risk is None
+                    or float(raw_risk) <= 0
+                )
             except (TypeError, ValueError):
                 risk_missing = True
             if not unit.get("sized") or risk_missing:
@@ -4992,23 +5038,32 @@ class UltimateBookOwner:
                 ):
                     _skip_unsized = str(self._namespace) != "operator"
                     if str(self._namespace) == "operator":
-                        _skip_unsized = _spot_choice(
+                        # An empty answer is not a send. Only the unique keep
+                        # continues, and the percent on the unit stays unset.
+                        _unsized_choice = _ask_jev(
                             "unsized_unit",
                             {
                                 "sized": bool(unit.get("sized")),
-                                "risk_pct_per_trade": unit.get("risk_pct_per_trade", 0),
+                                "risk_pct_per_trade": unit.get("risk_pct_per_trade"),
                                 "reason": str(unit.get("reason") or ""),
                                 "namespace": "operator",
                             },
-                            {
+                            kind="choice",
+                            instructions=(
+                                "The two sides of an unsized unit that is not the gross-cap exception."
+                                " The unique highest probability is the decision."
+                                " An empty answer does not place."
+                                " Do not close ticket 294215389."
+                            ),
+                            criteria={
                                 "skip_unsized_unit": "This unit is not sized. Skip it.",
                                 "keep_unsized_unit": "The unsized reading is a fact. Keep this unit.",
                             },
-                            "skip_unsized_unit",
-                            f"unsized_unit|{unit.get('reason')}|{now.strftime('%Y%m%dT%H%M')}|{len(unit.get('sleeve_members') or [])}",
-                            "The two sides of an unsized unit that is not the gross-cap exception.",
                         )
+                        _skip_unsized = str(_unsized_choice) != "keep_unsized_unit"
                     if _skip_unsized:
+                        if str(self._namespace) == "operator":
+                            continue
                         members_now = {str(member) for member in (unit.get("sleeve_members") or [])}
                         side_reaches = any(
                             getattr(item, "unit_choice", None) in {"unit_long", "unit_short"}
@@ -5609,39 +5664,48 @@ class UltimateBookOwner:
                                                        "existing_comments": existing_comments,
                                                        "existing_position_count": len(same_symbol_exposures)})
                             continue
-                    # BAR-AGE GATE (no restart-late chase): a supervised/cold restart spanning a bar close
-                    # re-generates that bar's signal; placing it hours late chases a price the validated edge
-                    # never entered at. Past the freshness window -> SHADOW it (skip send, still recorded).
+                    # BAR-AGE GATE. Friend books still use the configured fraction of the
+                    # bar. Challenge does not. The minutes since the close and the
+                    # quote's distance from the limit are facts. The skip is the
+                    # unique answer. An empty answer does not skip.
                     _bar_iso = bar_of.get((intent.sleeve, intent.symbol))
-                    if self._entry_too_late(now, _bar_iso, tf_of.get((intent.sleeve, intent.symbol)), late_frac):
-                        _block_late = str(self._namespace) != "operator"
-                        if str(self._namespace) == "operator":
-                            try:
-                                _block_late = bool(_spot_choice(
-                                    "stale_late_entry_after_restart",
-                                    {
-                                        "symbol": intent.symbol,
-                                        "sleeve": intent.sleeve,
-                                        "bar_iso": str(_bar_iso or ""),
-                                        "freshness_frac": late_frac,
-                                        "past_freshness": True,
-                                        "namespace": "operator",
-                                    },
-                                    {
-                                        "still_the_close": "The order is still this bar's close.",
-                                        "restart_chase": "This is a restart chase of a price the pattern did not enter.",
-                                    },
-                                    "restart_chase",
-                                    f"stale_late_entry_after_restart|{intent.sleeve}|{intent.symbol}|{_bar_iso}",
-                                    "The decision bar has closed and this cycle is past the freshness fraction. Is the order still that bar's close, or a restart chase? Do not close an open ticket.",
-                                ))
-                            except Exception:
-                                _block_late = False
-                        if _block_late:
-                            summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
-                                                       "decision_bar_iso": dbar,
-                                                       "reason": "stale_late_entry_after_restart"})
-                            continue
+                    _bar_tf = tf_of.get((intent.sleeve, intent.symbol))
+                    if str(self._namespace) == "operator":
+                        _age = self._bar_age_minutes(now, _bar_iso, _bar_tf)
+                        _move = self._move_from_limit(intent, tick)
+                        try:
+                            _block_late = bool(_spot_choice(
+                                "stale_late_entry_after_restart",
+                                {
+                                    "symbol": intent.symbol,
+                                    "sleeve": intent.sleeve,
+                                    "bar_iso": str(_bar_iso or ""),
+                                    "bar_age_minutes": _age,
+                                    "move_so_far": _move,
+                                    "entry": getattr(intent, "entry_price", None),
+                                    "bid": None if tick is None else getattr(tick, "bid", None),
+                                    "ask": None if tick is None else getattr(tick, "ask", None),
+                                    "namespace": "operator",
+                                },
+                                {
+                                    "still_the_close": "The order is still this bar's close.",
+                                    "restart_chase": "This is a restart chase of a price the pattern did not enter.",
+                                },
+                                "restart_chase",
+                                f"stale_late_entry_after_restart|{intent.sleeve}|{intent.symbol}|{_bar_iso}",
+                                "The minutes since this bar closed, and how far the quote has moved from the limit, are facts. "
+                                "Is the order still that bar's close, or a restart chase? "
+                                "An empty answer or a tie does not skip. Do not close an open ticket.",
+                            ))
+                        except Exception:
+                            _block_late = False
+                    else:
+                        _block_late = self._entry_too_late(now, _bar_iso, _bar_tf, late_frac)
+                    if _block_late:
+                        summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
+                                                   "decision_bar_iso": dbar,
+                                                   "reason": "stale_late_entry_after_restart"})
+                        continue
                     if (
                         self._namespace == "operator"
                         and self._f5_cfg is not None
@@ -5859,27 +5923,45 @@ class UltimateBookOwner:
                                 summary["bar_consumable"] = False
                                 continue
                             route_unit = unit
-                        if not route_unit.get("sized") or route_unit.get("risk_pct_per_trade", 0) <= 0:
+                        _raw_risk = route_unit.get("risk_pct_per_trade")
+                        _risk_number = None
+                        if not isinstance(_raw_risk, bool) and _raw_risk is not None:
+                            try:
+                                _risk_number = float(_raw_risk)
+                            except (TypeError, ValueError):
+                                _risk_number = None
+                        if (
+                            not route_unit.get("sized")
+                            or _risk_number is None
+                            or not (_risk_number > 0)
+                        ):
                             _skip_route = str(self._namespace) != "operator"
                             if str(self._namespace) == "operator":
-                                _skip_route = _spot_choice(
+                                # Empty, a tie, and the skip side do not reach
+                                # router.place. A missing percent stays unset.
+                                _route_choice = _ask_jev(
                                     "running_conviction_route_unsized",
                                     {
                                         "symbol": intent.symbol,
                                         "sleeve": intent.sleeve,
                                         "sized": bool(route_unit.get("sized")),
-                                        "risk_pct_per_trade": route_unit.get("risk_pct_per_trade", 0),
+                                        "risk_pct_per_trade": route_unit.get("risk_pct_per_trade"),
                                         "reason": str(route_unit.get("reason") or ""),
                                         "namespace": "operator",
                                     },
-                                    {
+                                    kind="choice",
+                                    instructions=(
+                                        "The two sides of a running-conviction route that is not sized."
+                                        " The unique highest probability is the decision."
+                                        " An empty answer does not place."
+                                        " Do not close ticket 294215389."
+                                    ),
+                                    criteria={
                                         "unsized_route_skips": "This conviction route is not sized. Do not send.",
                                         "unsized_route_is_a_fact": "The unsized route is a fact. The candidate can still send.",
                                     },
-                                    "unsized_route_skips",
-                                    f"running_conviction_route_unsized|{intent.sleeve}|{intent.symbol}|{dbar}",
-                                    "The two sides of a running-conviction route that is not sized.",
                                 )
+                                _skip_route = str(_route_choice) != "unsized_route_is_a_fact"
                             if _skip_route:
                                 summary["skipped"].append({
                                     "symbol": intent.symbol,
@@ -5899,7 +5981,13 @@ class UltimateBookOwner:
                         })
                     adjusted_unit = self._ai_companion_gate.adjusted_unit(route_unit, ai_risk)
                     if sequential_conviction and gross_headroom is not None:
-                        candidate_risk_pct = float(adjusted_unit.get("risk_pct_per_trade", 0.0) or 0.0)
+                        _raw_candidate = adjusted_unit.get("risk_pct_per_trade")
+                        candidate_risk_pct = None
+                        if not isinstance(_raw_candidate, bool) and _raw_candidate is not None:
+                            try:
+                                candidate_risk_pct = float(_raw_candidate)
+                            except (TypeError, ValueError):
+                                candidate_risk_pct = None
                         remaining = max(0.0, gross_headroom - cycle_accepted_risk_pct)
                         if str(self._namespace) == "operator":
                             # The room comparison is not the gate. how_many_more is.
@@ -5923,7 +6011,7 @@ class UltimateBookOwner:
                                 "The unique highest wins. An empty answer or a tie does not cap "
                                 "and does not mean zero more. Do not close an open ticket.",
                             )
-                        elif candidate_risk_pct > remaining + 1e-9:
+                        elif candidate_risk_pct is not None and candidate_risk_pct > remaining + 1e-9:
                             _cap_skip = True
                         else:
                             _cap_skip = False
@@ -6106,6 +6194,21 @@ class UltimateBookOwner:
                     )
                     if f5_market_stop_floor is not None:
                         hop_notes["f5_market_stop_floor"] = dict(f5_market_stop_floor)
+                    _view_risk = getattr(unit_su, "risk_pct_per_trade", None)
+                    _view_missing = True
+                    if not isinstance(_view_risk, bool) and _view_risk is not None:
+                        try:
+                            _view_missing = not (float(_view_risk) > 0)
+                        except (TypeError, ValueError):
+                            _view_missing = True
+                    if str(self._namespace) == "operator" and _view_missing:
+                        summary["skipped"].append({
+                            "symbol": intent.symbol,
+                            "sleeve": intent.sleeve,
+                            "decision_bar_iso": dbar,
+                            "reason": "risk_unset",
+                        })
+                        continue
                     result = self.router.place(
                         ee,
                         unit_su,
@@ -6129,9 +6232,12 @@ class UltimateBookOwner:
                             trade_params["risk_unit_floor"] = dict(routed_floor)
                     if result["placed"]:
                         if sequential_conviction:
-                            cycle_accepted_risk_pct += float(
-                                adjusted_unit.get("risk_pct_per_trade", 0.0) or 0.0
-                            )
+                            _accepted = adjusted_unit.get("risk_pct_per_trade")
+                            if not isinstance(_accepted, bool) and _accepted is not None:
+                                try:
+                                    cycle_accepted_risk_pct += float(_accepted)
+                                except (TypeError, ValueError):
+                                    pass
                         if result.get("native_pending"):
                             record_conviction = getattr(self.engine, "record_placement_conviction", None)
                             if callable(record_conviction):
@@ -12769,7 +12875,7 @@ class _UnitView:
         self.sleeve_members = unit.get("sleeve_members", [])
         self.n_trades = unit.get("n_trades", 1)
         self.confidence = unit.get("confidence")
-        self.risk_pct_per_trade = unit.get("risk_pct_per_trade", 0.0)
+        self.risk_pct_per_trade = unit.get("risk_pct_per_trade")
         self.unit_risk_pct = unit.get("unit_risk_pct")
         self.sized = unit.get("sized", False)
         self.reason = unit.get("reason")
