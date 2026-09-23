@@ -1,0 +1,99 @@
+{
+  "schema": "gtos.f5.launch_contract.v1+week_repair_argv",
+  "as_of_utc": "2026-09-13T14:20:00Z",
+  "owner_word": "2026-09-02 B1 remint: 57 tags, $150, mx_ger40 kept, spent gold <ticket> not reminted. EUR/GBP/USDJPY dsp dropped in code. idxrev GER40/US30 off in code. US500 idxrev stays. | US30_cash OFF 2026-09-10 owner standdown (0 TP Challenge). | SURFACE_CUT 2026-09-13 ~21:19 ICT owner: US30 fully off remaining ON_SURFACE; hard-off dsp_bleed*/orb_crypto*/idxrev/xa_huge*; keep dsp_spring_* + vss_fxcross_*; 2-stop same-symbol same-sleeve orig_stop day circuit on isolated-reentry path. | US30 residual mx_us30 + session_leadlag US30 leader legs stripped 2026-09-14",
+  "namespace": "<namespace>",
+  "profile": "<server>",
+  "magic": 0,
+  "login": "<account-login>",
+  "token_dir": "<activation-token-dir>",
+  "python": "<python>",
+  "terminal_path": "<terminal-path>",
+  "kill_flag": "<kill-flag>",
+  "token_bound": {
+    "f5_minimal_size_usd": 150,
+    "f5_notional_initial_usd": 100000,
+    "selected_tags_csv": "crypto,dsp_climax_2atr_onto_20high_then_fade,dsp_close_on_20low_not_a_cascade_then_up,dsp_expanding_two_bar_run_tokyo,dsp_expanding_up_staircase,dsp_first_cash_bar_spike_and_flush,dsp_huge_down_hold_then_spring,dsp_isolated_spike_high,dsp_london_two_up_into_20high_reverses,dsp_walked_high_accepted_through,dsp_weekend_gap_then_bleed_into_20low,dsp_wide_down_then_micro_bounce_then_through,liq_asia_up_low_metal,metals_softband,mx_avausd_d1_donchian_20_breakout,mx_btcusd_d1_donchian_20_breakout,mx_ethusd_d1_donchian_20_breakout,mx_ger40_cash_d1_volume_surge_reversal,sub_mid_dn_revert,vol_compression,vp_euidx_pocgrav,vss_fxcross_london_up_low,xa_climax_spring,xa_isolated_opposite,xa_prior_huge,xa_second_leg,xa_wide_extreme,xa_wave_two_standing,dsp_high_vol_doji_after_reclaimed_flush,dsp_two_bar_thrust_into_20high_continues,dsp_climax_onto_20high_then_fade,dsp_first_crack_failed_reclaim,dsp_three_fresh_lower_lows,dsp_descending_lows_accepted,dsp_spring_close_on_20low_through_the_box,dsp_volume_ramp_into_unrepaired_low,dsp_small_bar_on_thrust_high,dsp_wide_bar_takes_both_extremes_then_reverse,dsp_three_bar_squeeze_into_high,dsp_isolated_20h_spike_then_fade,dsp_london_cascade_into_20low_springs,dsp_rejection_wick_then_through,dsp_shakeout_holds_run_lows,dsp_cascade_two_down_bars_then_third,dsp_take_of_low_already_falling_continues,dsp_spring_first_print_of_range_low,dsp_reclaim_then_giveback,dsp_accepted_20low_then_second_flush,dsp_london_bounce_fails_overnight_midpoint,sub_mid_dn_re_proxy_eurusd_short_m15_atr,asian_fade,metal_session_reversion,sub_mid_dn_re_proxy_nzdusd_short_m15_atr,energy_agri,fx_jpy,fx_jpy_ny,idxrev,metals_core,metals_ob_micro,sub_xvol_pullback,asia_pdl_fade,mx_cadjpy_d1_volume_surge_reversal,mx_eu50_cash_d1_volume_surge_reversal,mx_fra40_cash_d1_volume_surge_reversal,mx_jp225_cash_d1_volume_surge_reversal,mx_nzdjpy_d1_donchian_20_breakout,mx_us100_cash_d1_atr_mean_reversion,mx_us500_cash_d1_atr_mean_reversion",
+    "selected_tag_count": 68,
+    "q1_mode": "shadow",
+    "q1_selection_csv": "crypto,dsp_climax_2atr_onto_20high_then_fade,dsp_close_on_20low_not_a_cascade_then_up,dsp_expanding_two_bar_run_tokyo,dsp_expanding_up_staircase,dsp_first_cash_bar_spike_and_flush,dsp_huge_down_hold_then_spring,dsp_isolated_spike_high,dsp_london_two_up_into_20high_reverses,dsp_walked_high_accepted_through,dsp_weekend_gap_then_bleed_into_20low,dsp_wide_down_then_micro_bounce_then_through,liq_asia_up_low_metal,metals_softband,mx_avausd_d1_donchian_20_breakout,mx_btcusd_d1_donchian_20_breakout,mx_ethusd_d1_donchian_20_breakout,mx_ger40_cash_d1_volume_surge_reversal,sub_mid_dn_revert,vol_compression,vp_euidx_pocgrav,vss_fxcross_london_up_low,xa_climax_spring,xa_isolated_opposite,xa_prior_huge,xa_second_leg,xa_wide_extreme,xa_wave_two_standing,dsp_high_vol_doji_after_reclaimed_flush,dsp_two_bar_thrust_into_20high_continues,dsp_climax_onto_20high_then_fade,dsp_first_crack_failed_reclaim,dsp_three_fresh_lower_lows,dsp_descending_lows_accepted,dsp_spring_close_on_20low_through_the_box,dsp_volume_ramp_into_unrepaired_low,dsp_small_bar_on_thrust_high,dsp_wide_bar_takes_both_extremes_then_reverse,dsp_three_bar_squeeze_into_high,dsp_isolated_20h_spike_then_fade,dsp_london_cascade_into_20low_springs,dsp_rejection_wick_then_through,dsp_shakeout_holds_run_lows,dsp_cascade_two_down_bars_then_third,dsp_take_of_low_already_falling_continues,dsp_spring_first_print_of_range_low,dsp_reclaim_then_giveback,dsp_accepted_20low_then_second_flush,dsp_london_bounce_fails_overnight_midpoint,sub_mid_dn_re_proxy_eurusd_short_m15_atr,asian_fade,metal_session_reversion,sub_mid_dn_re_proxy_nzdusd_short_m15_atr,energy_agri,fx_jpy,fx_jpy_ny,idxrev,metals_core,metals_ob_micro,sub_xvol_pullback,asia_pdl_fade,mx_cadjpy_d1_volume_surge_reversal,mx_eu50_cash_d1_volume_surge_reversal,mx_fra40_cash_d1_volume_surge_reversal,mx_jp225_cash_d1_volume_surge_reversal,mx_nzdjpy_d1_donchian_20_breakout,mx_us100_cash_d1_atr_mean_reversion,mx_us500_cash_d1_atr_mean_reversion",
+    "q2_event_clock_shadow": true,
+    "q2_effect": "observation_only",
+    "note": "B1 remint 2026-09-02 size 150 tags 57. J2b 21 V2 + J5 idxrev keep/off + J6 FX dsp drop.",
+    "hard_off_sleeves_absent_from_tags": [
+      "dsp_already_wide_down_bar_second_wave",
+      "dsp_cascade_last_two_not_yet_four",
+      "dsp_climax_flush_to_96low_then_snap",
+      "dsp_climax_into_high_then_dump",
+      "dsp_isolated_flush_to_20low_snap",
+      "dsp_overnight_box_failed_floor_probe",
+      "dsp_session_open_already_live",
+      "dsp_small_bar_sit_on_20high_rejects",
+      "dsp_two_open_bars_down_then_cascade",
+      "asian_fade_widen",
+      "dsp_bleed_accept_fresh_20low_second_push",
+      "orb_crypto_london",
+      "orb_crypto_london_widen",
+      "xa_huge_20_extreme",
+      "xa_huge_same_way",
+      "mx_us30_cash_d1_volume_surge_reversal"
+    ]
+  },
+  "argv_bound": {
+    "frozen_intent_reprice": true,
+    "transient_retry_cap": 3,
+    "poll_seconds": 60,
+    "f5_friday_new_risk_cutoff_utc": "16:00",
+    "f5_weekend_flat_utc": "20:30",
+    "note": "On f5_launch.ps1 / supervisor argv. Writer constants F5_WEEKEND_NEW_RISK_CUTOFF_UTC_HHMM=(16,0) and F5_WEEKEND_FLAT_UTC_HHMM=(20,30) are overridden when these flags are present. Not in token digest (avoids remint). Host restart via f5_launch.ps1 cannot drop them."
+  },
+  "hard_off_sleeves_absent_from_tags": [
+    "dsp_already_wide_down_bar_second_wave",
+    "dsp_cascade_last_two_not_yet_four",
+    "dsp_climax_flush_to_96low_then_snap",
+    "dsp_climax_into_high_then_dump",
+    "dsp_isolated_flush_to_20low_snap",
+    "dsp_overnight_box_failed_floor_probe",
+    "dsp_session_open_already_live",
+    "dsp_small_bar_sit_on_20high_rejects",
+    "dsp_two_open_bars_down_then_cascade",
+    "asian_fade_widen",
+    "dsp_bleed_accept_fresh_20low_second_push",
+    "orb_crypto_london",
+    "orb_crypto_london_widen",
+    "xa_huge_20_extreme",
+    "xa_huge_same_way",
+    "mx_us30_cash_d1_volume_surge_reversal"
+  ],
+  "writer_constants_also_live": {
+    "F5_HARD_OFF_SLEEVES": "belt-and-suspenders, same 11 names",
+    "USDJPY": "standing HOLD",
+    "dead_window_utc_hours": [
+      21,
+      22,
+      23
+    ],
+    "HIGH_T_minus_T_plus": "15/60 candidate-symbol",
+    "FX_SL_cooldown_hours": 4,
+    "metals_index_sibling_minutes": 15,
+    "FX_DSP_min_stop_pips": 8.0,
+    "AUTO_BE_R": "OFF (F5_AUTO_BE_ENABLED=False, Contract v1)",
+    "uniform_risk_usd": 150
+  },
+  "forbidden_argv": [
+    "--frontier-exits",
+    "--spread-geometry-floor",
+    "--judgment-rescue",
+    "--weekend-flat"
+  ],
+  "forbidden_weekend_flat_note": "--weekend-flat is redacted_account Session BA and binds on FTMO NEVER. F5 uses --f5-friday-new-risk-cutoff-utc / --f5-weekend-flat-utc plus writer constants.",
+  "do_not_touch": [
+    "<production-accounts>",
+    "<redacted_account-accounts>",
+    "config/agent_config.yaml",
+    "<prod-token-dir>"
+  ],
+  "owner_word_account_cutover": "2026-09-09 owner FINAL: leave verification <prior-account-login>; live on FTMO Challenge <account-login>. Prior login in contract was <prior-account-login>.",
+  "owner_word_us30_standdown": "2026-09-10 ~16:35 ICT owner: STOP US30. Challenge 0 TPs / all orig_stops. US30_cash removed from admission DSP first surface + cash index surfaces. Leave UK100/XAU origs. No flatten from fear. Lift only on later spoken word.",
+  "owner_word_surface_cut_20260913": "2026-09-13 ~21:19 ICT APPLY NOW: strip US30 from every remaining ON_SURFACE; hard-off bleed/orb_crypto/idxrev/xa_huge; keep spring+vss; 2-stop day circuit."
+}
