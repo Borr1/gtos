@@ -1,7 +1,7 @@
-"""A closed bar whose sleeve did not fire still has a unit Choice.
+"""The unit Choice is long, short, or no move.
 
-The stop is that bar's range on the chosen side. An empty answer, a tie,
-or a zero range does not invent a direction.
+The limit prices are the forming open shifted by the projected move.
+An empty answer or a tie does not invent a direction.
 """
 
 from __future__ import annotations
@@ -80,11 +80,39 @@ def test_question_text_carries_the_closed_bar() -> None:
         "Bid 2350.4",
         "Ask 2350.6",
         "Last bar closed_bar_reaches",
+        "Sleeve fired absent",
+        "Forming open absent",
+        "Projected move absent",
+        "Long limit absent",
+        "Short limit absent",
         "does not invent a direction",
+        "unit_long is the long limit",
+        "unit_short is the short limit",
+        "sleeve_stays_out is no move",
     ):
         assert piece in text, piece
+    assert "Entry is this close" not in text
+    assert "produces no unit" not in text
+    assert "did not fire" not in text
     assert "Jev" not in text
     assert "System One" not in text
+
+
+def test_question_text_names_both_limits() -> None:
+    text = unit_question_text(
+        {
+            "symbol": "USDJPY",
+            "sleeve": "fx_jpy",
+            "forming_open": 157.58,
+            "projected_move": 0.05,
+            "sleeve_fired": False,
+        }
+    )
+    assert "Forming open 157.58" in text
+    assert "Projected move 0.05" in text
+    assert "Long limit 157.53" in text
+    assert "Short limit 157.63" in text
+    assert "Sleeve fired false" in text
 
 
 def test_empty_card_does_not_invent_a_side() -> None:
@@ -103,7 +131,7 @@ def test_engine_asks_before_unit_unset() -> None:
     unset = engine.find('status = "unit_unset"')
     assert call > 0
     assert unset > call
-    body = engine[engine.find("def _limit_unit_from_closed_bar") : call]
+    card = engine[engine.find("def _closed_bar_card") : engine.find("def _remember_last_bar")]
     for piece in (
         'facts["open"]',
         'facts["range_to_low"]',
@@ -112,8 +140,13 @@ def test_engine_asks_before_unit_unset() -> None:
         'facts["ask"]',
         'facts["direction"]',
         "_direction_if_any",
+        "if sleeve_fired is not None",
     ):
-        assert piece in body, piece
+        assert piece in card, piece
+    assert '"sleeve_fired": False' not in card
+    unit = engine[engine.find("def _limit_unit_from_closed_bar") : engine.find("def _slot_generation")]
+    assert "sleeve_fired=False" in unit
+    assert 'facts["long_limit"]' in engine or "long_limit" in engine
 
 
 if __name__ == "__main__":
@@ -122,6 +155,7 @@ if __name__ == "__main__":
     test_unset_does_not_invent()
     test_question_names_the_three_sides()
     test_question_text_carries_the_closed_bar()
+    test_question_text_names_both_limits()
     test_empty_card_does_not_invent_a_side()
     test_engine_asks_before_unit_unset()
     print("ok")

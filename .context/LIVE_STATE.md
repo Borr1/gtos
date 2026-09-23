@@ -51,7 +51,6 @@ Curated research context lives in `.context/00_core/research_operating_doctrine.
  M tests/ultimate_book/test_governor_baseline.py
  M tests/ultimate_book/test_packet_emit_on_change.py
  M tests/ultimate_book/test_risk_unit_floor.py
-?? ._run_book.py
 ?? INTENT_HEAD.txt
 ?? config/agent_config.yaml.bak-blossom-20260818-045744
 ?? judgment/
@@ -78,10 +77,6 @@ Curated research context lives in `.context/00_core/research_operating_doctrine.
 ?? shadow_logs/ultimate_book_runtime_learning_packets.jsonl
 ?? shadow_logs/ultimate_book_runtime_learning_packets.jsonl.quarantine.jsonl
 ?? src/components/execution.py.b64.c0a38041abec492784ae1226801703f5
-?? src/components/ultimate_book/._book_owner.py
-?? src/components/ultimate_book/._frozen_price_intent.py
-?? src/components/ultimate_book/._live_flow.py
-?? src/components/ultimate_book/._order_router.py
 ?? src/utils/broker_accounting.py
 ?? tests/test_broker_accounting.py
 ?? tests/ultimate_book/test_run_book_env_authority.py

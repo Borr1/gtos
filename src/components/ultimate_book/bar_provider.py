@@ -321,22 +321,43 @@ def decision_day_of(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%d")
 
 
+def _named_count(value: object) -> Optional[int]:
+    """A count a caller already read from a fact. A fraction is not a count."""
+
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")) or not (number > 0):
+        return None
+    nearest = round(number)
+    if nearest != number:
+        return None
+    return int(nearest)
+
+
 def enough(
     bars: list[Bar],
     cluster: str,
     symbol: object = None,
     timeframe: object = None,
     bar: object = None,
+    needed: object = None,
 ) -> bool:
     """Closed bars reach this cluster.
 
-    The series is the symbol, timeframe, bar, and cluster passed in.
-    The Challenge writer asks closed_series. False only when
-    closed_series_short is the unique highest. An empty answer does not
-    restore the old warmup refusal. Any other process keeps the friend map.
+    The Challenge writer refuses only when a count named by the caller is
+    larger than the series and closed_series_short is the unique highest.
+    An empty answer does not refuse. A missing count does not refuse.
+    Any other process keeps the friend map.
     """
     if not _challenge_writer():
         return len(bars) >= WARMUP.get(cluster, 200)
+    needed_n = _named_count(needed)
+    if needed_n is None or len(bars) >= needed_n:
+        return True
     symbol_s = _text(symbol)
     tf_s = _text(timeframe)
     if hasattr(bar, "isoformat"):
@@ -352,6 +373,7 @@ def enough(
             "bar": bar_s,
             "cluster": cluster,
             "bars_held": len(bars),
+            "bars_needed": needed_n,
             "namespace": _CHALLENGE_NS,
         },
     )

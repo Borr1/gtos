@@ -374,6 +374,27 @@ def _limit_level(anchor: Any, move: Any, direction: Any) -> float | None:
     return level
 
 
+def _named_bar_count(value: Any) -> int | None:
+    """A warmup count a score actually returned.
+
+    A fraction, an empty score, or a non-positive number is not a count.
+    Nothing here substitutes a printed minimum.
+    """
+
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")) or not (number > 0):
+        return None
+    nearest = round(number)
+    if nearest != number:
+        return None
+    return int(nearest)
+
+
 # Fact names copied onto the move ask. Labels below are the Score levels.
 _ANCHOR_FACT_KEYS = (
     "high",
@@ -1590,9 +1611,25 @@ class UltimateBookLiveEngine:
         if str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS:
             return
         move = self._projected_move(facts, getattr(spec, "timeframe", None))
+        anchor = self._unit_number(facts.get("forming_open"))
+        if anchor is None:
+            anchor = self._unit_number(facts.get("open"))
         if move is None:
+            facts.pop("projected_move", None)
+            facts.pop("long_limit", None)
+            facts.pop("short_limit", None)
             return
         facts["projected_move"] = move
+        long_level = _limit_level(anchor, move, 1)
+        short_level = _limit_level(anchor, move, -1)
+        if long_level is None:
+            facts.pop("long_limit", None)
+        else:
+            facts["long_limit"] = long_level
+        if short_level is None:
+            facts.pop("short_limit", None)
+        else:
+            facts["short_limit"] = short_level
 
     def _price_span(self, bars) -> tuple[float | None, float | None]:
         highs: list[float] = []
@@ -1714,17 +1751,23 @@ class UltimateBookLiveEngine:
 
     def _closed_bar_card(
         self, spec, symbol, bars, times, now, ivl, generator_error=None, *, bind_choice: bool = False,
+        sleeve_fired: bool | None = None,
     ):
-        """Prices on this close. A missing field stays absent. This does not pick a side."""
+        """Prices on this close. A missing field stays absent. This does not pick a side.
+
+        sleeve_fired is present only when the caller already knows whether the
+        generator returned an intent. An unknown result stays off the card.
+        """
 
         facts: dict[str, Any] = {
             "symbol": symbol,
             "sleeve": getattr(spec, "tag", None),
-            "sleeve_fired": False,
             "generator_error": generator_error,
             "decision_bar_iso": times[-1].isoformat() if times else None,
             "cluster": getattr(spec, "cluster", None),
         }
+        if sleeve_fired is not None:
+            facts["sleeve_fired"] = bool(sleeve_fired)
         try:
             if bars:
                 bar = bars[-1]
@@ -1814,6 +1857,7 @@ class UltimateBookLiveEngine:
 
         facts = self._closed_bar_card(
             spec, symbol, bars, times, now, ivl, generator_error, bind_choice=True,
+            sleeve_fired=False,
         )
         winner = self._spot_choice(
             "unit",
@@ -2056,7 +2100,12 @@ class UltimateBookLiveEngine:
                 return
         generation["profile_supported_symbol_slot_count"] += 1
         broker_sym = self._broker_symbol(symbol)   # canonical -> broker for ALL fetches
-        key = (symbol, spec.timeframe, primary_count)
+        on_challenge = str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS
+        named = _named_bar_count(self._warmup_required(spec)) if on_challenge else None
+        fetch_count = primary_count
+        if named is not None and named > fetch_count:
+            fetch_count = named
+        key = (symbol, spec.timeframe, fetch_count)
         # fetch under the BROKER name; meta + intent.symbol stay canonical for placement
         #
         # `now`/`interval_minutes` make `candles_to_bars` keep a last candle it
@@ -2078,7 +2127,7 @@ class UltimateBookLiveEngine:
             bars, times = self._raw_closed_bars(
                 bar_cache,
                 key,
-                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=primary_count, clock=now, minutes=interval_minutes, ns=getattr(self, "_namespace", None): get_closed_bars(
+                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=fetch_count, clock=now, minutes=interval_minutes, ns=getattr(self, "_namespace", None): get_closed_bars(
                     mt5, broker, tf, count,
                     now=clock, interval_minutes=minutes, namespace=ns,
                 ),
@@ -2087,7 +2136,7 @@ class UltimateBookLiveEngine:
             bars, times = self._raw_closed_bars(
                 bar_cache,
                 key,
-                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=primary_count, ns=getattr(self, "_namespace", None): get_closed_bars(
+                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=fetch_count, ns=getattr(self, "_namespace", None): get_closed_bars(
                     mt5, broker, tf, count, namespace=ns,
                 ),
             )
@@ -2124,19 +2173,29 @@ class UltimateBookLiveEngine:
                 )
             return
         series_bar = times[-1].isoformat() if times else ""
-        if not enough(bars, spec.cluster, symbol, spec.timeframe, series_bar):
-            # Counted, not silent. On Challenge the skip is the feed Choice.
-            withhold_feed = str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS
+        if not enough(
+            bars,
+            spec.cluster,
+            symbol,
+            spec.timeframe,
+            series_bar,
+            needed=named if on_challenge else None,
+        ):
+            # A friend book still uses its cluster map. On Challenge the
+            # series is short only when a returned warmup count is unmet
+            # and that ask's unique answer says so. An empty answer does
+            # not withhold the slot.
+            withhold_feed = not on_challenge
             if not withhold_feed:
                 withhold_feed = self._spot_choice(
                     "feed_lookback",
-                    spot=f"{spec.tag}|{symbol}|{len(bars)}|{primary_count}",
+                    spot=f"{spec.tag}|{symbol}|{len(bars)}|{fetch_count}",
                     facts={
                         "symbol": symbol,
                         "sleeve": spec.tag,
                         "bars_returned": len(bars),
-                        "bars_requested": primary_count,
-                        "warmup_required": self._warmup_required(spec),
+                        "bars_requested": fetch_count,
+                        "warmup_required": named,
                     },
                 ) == "feed_short"
             if withhold_feed:
@@ -2148,8 +2207,8 @@ class UltimateBookLiveEngine:
                         "cluster": spec.cluster,
                         "reason": "insufficient_bars",
                         "bars_returned": len(bars),
-                        "bars_requested": primary_count,
-                        "warmup_required": self._warmup_required(spec),
+                        "bars_requested": fetch_count,
+                        "warmup_required": named if on_challenge else self._warmup_required(spec),
                     })
                 except Exception:      # noqa: BLE001 — telemetry never gates
                     pass
