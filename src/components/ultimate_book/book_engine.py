@@ -3034,6 +3034,65 @@ class UltimateBookLiveEngine:
             return None
 
     # ---------------- equity / open-risk ----------------
+    def _broker_equity(self) -> Optional[float]:
+        try:
+            number = float(self._mt5.get_account_equity())
+        except Exception:
+            return None
+        if number != number or number <= 0 or number in (float("inf"), float("-inf")):
+            return None
+        return number
+
+    def _symbol_info(self, symbol):
+        mt5 = getattr(self, "_mt5", None)
+        if mt5 is None:
+            return None
+        for name in ("symbol_info", "get_symbol_info"):
+            getter = getattr(mt5, name, None)
+            if not callable(getter):
+                continue
+            try:
+                return getter(symbol)
+            except Exception:
+                continue
+        raw = getattr(mt5, "_mt5", None)
+        getter = getattr(raw, "symbol_info", None) if raw is not None else None
+        if callable(getter):
+            try:
+                return getter(symbol)
+            except Exception:
+                return None
+        return None
+
+    def _admission_config(self, rt_cfg: dict) -> dict:
+        config = {"gtos_vnext_runtime": rt_cfg}
+        equity = self._broker_equity()
+        if equity is not None:
+            config["account_equity"] = equity
+        try:
+            from .admission import cycle_share_facts
+            launcher = cycle_share_facts().get("launcher_usd")
+        except Exception:
+            launcher = None
+        if isinstance(launcher, (int, float)) and launcher > 0:
+            config["launcher_usd"] = float(launcher)
+        try:
+            from src.judgment.apply_size import read_binding_room_facts
+            room = read_binding_room_facts(
+                getattr(self, "_mt5", None),
+                self.config,
+                namespace=getattr(self, "_namespace", None),
+            )
+        except Exception:
+            room = {}
+        if isinstance(room, dict):
+            for key, value in room.items():
+                if value in (None, "") or key == "equity":
+                    continue
+                if config.get(key) in (None, ""):
+                    config[key] = value
+        return config
+
     def _equity(self) -> Optional[float]:
         if self._f5_ledger is not None:
             # F5 N1: realized notional balance plus ticket-bound floating broker P&L, scaled
@@ -3415,8 +3474,23 @@ class UltimateBookLiveEngine:
             if asym is not None:
                 return self._safe(asym, intents=intents, meta=meta)
             rt_cfg, runtime_overrides = self._runtime_evaluation_config()
+            try:
+                from .admission import broker_order_calc, stamp_min_lot_risk
+                from .symbol_map import build_broker_symbol_resolver
+                calc, buy, sell = broker_order_calc(getattr(self, "_mt5", None))
+                raw = getattr(getattr(self, "_mt5", None), "_mt5", None)
+                cfg = getattr(self, "config", None) or {}
+                if not (isinstance(cfg, dict) and cfg.get("instruments")):
+                    cfg = getattr(self, "base_config", None) or cfg
+                stamp_min_lot_risk(
+                    intents, self._broker_equity(), self._symbol_info, calc,
+                    buy=buy, sell=sell, module=raw if raw is not None else getattr(self, "_mt5", None),
+                    resolve=build_broker_symbol_resolver(cfg if isinstance(cfg, dict) else {}),
+                )
+            except Exception:
+                pass
             decision = evaluate_vnext_ultimate_book_admission(
-                config={"gtos_vnext_runtime": rt_cfg}, intents=intents,
+                config=self._admission_config(rt_cfg), intents=intents,
                 governor_state=gs, account=self._account,
                 limits=self._joint_daily_limits(self._governor_limits(), gs),
                 n_active_override=self._running_conviction_override(
@@ -3619,6 +3693,8 @@ class UltimateBookLiveEngine:
         governor_state,
         *,
         now_utc: Optional[datetime] = None,
+        cycle_taken: float | None = 0.0,
+        book_open_risk_pct: float | None = None,
     ):
         """Re-size ``intent`` at the final send boundary from accepted conviction only.
 
@@ -3679,7 +3755,7 @@ class UltimateBookLiveEngine:
             )
             raw_state = replace(governor_state, open_risk_pct=0.0)
             preview = evaluate_vnext_ultimate_book_admission(
-                config={"gtos_vnext_runtime": rt_cfg},
+                config=self._admission_config(rt_cfg),
                 intents=group,
                 governor_state=raw_state,
                 account=self._account,
@@ -3687,6 +3763,9 @@ class UltimateBookLiveEngine:
                 n_active_override={day: exact_na},
                 n_active_override_authoritative=True,
                 stress_state=self._stress_derisk_state(now_utc or datetime.now(timezone.utc)),
+                cycle_taken=cycle_taken,
+                book_open_risk_pct=book_open_risk_pct,
+                apply_book_open_risk=True,
             )
             target_cluster = str((unit or {}).get("cluster") or "")
             for routed in getattr(preview, "would_units", ()) or ():

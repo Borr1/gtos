@@ -446,6 +446,53 @@ def score(
     return _interpolate(index, levels)
 
 
+def score_many(
+    state: Mapping[str, Any] | None,
+    specs: Any,
+) -> dict[str, float | None]:
+    """One post for every share in this cycle.
+
+    ``specs`` is a sequence of ``(question_id, instructions, anchors)``.
+    Each anchor list is that question's levels. The card is the same state
+    for every question, so each answer is given with the others in view.
+    Fewer than two levels leaves that question unset. An empty score, a tie,
+    or an error leaves that question unset.
+    """
+
+    try:
+        items = list(specs)
+    except TypeError:
+        return {}
+    prepared: list[tuple[str, list[tuple[str, float]]]] = []
+    questions: dict[str, Any] = {}
+    for item in items:
+        try:
+            question_id, instructions, anchors = item
+        except (TypeError, ValueError):
+            continue
+        ordered = _ordered_levels(anchors)
+        if not ordered:
+            continue
+        levels = _thin_levels(ordered)
+        if not levels:
+            continue
+        key = str(question_id)
+        prepared.append((key, levels))
+        questions[key] = {
+            "type": "score",
+            "instructions": str(instructions),
+            "criteria": [_criterion(label, value) for label, value in levels],
+        }
+    if not questions:
+        return {}
+    receipt = _post(_card(state), questions, None)
+    out: dict[str, float | None] = {}
+    for key, levels in prepared:
+        index = _accepted_number(receipt, key)
+        out[key] = None if index is None else _interpolate(index, levels)
+    return out
+
+
 def score_question(spot: str, instructions: str, anchors: Any) -> dict[str, Any]:
     """The Score block an amount question posts.
 

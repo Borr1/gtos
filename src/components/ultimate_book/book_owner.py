@@ -1156,6 +1156,11 @@ class UltimateBookOwner:
                 _Path(repo_root) / "shadow_logs" / "f5_minimal" / namespace / "events.jsonl",
                 namespace=namespace, account_login=self._f5_account_login(mt5))
             self._f5_scaler = MinimalSizeScaler(self._f5_cfg, self._f5_ledger)
+            try:
+                from .admission import note_launcher_usd
+                note_launcher_usd(getattr(self._f5_cfg, "target_risk_usd", None))
+            except Exception:
+                pass
         # FrozenPriceIntent V1 (default OFF). Armed only when the CLI flag is on AND this
         # worker is an F5 minimal-size book. A production namespace with the flag set is
         # inert — the cost-skip `continue` stays today's consume-and-skip.
@@ -2924,6 +2929,168 @@ class UltimateBookOwner:
         if side < 0:
             return entry - ask
         return None
+
+    def _binding_contract_risk(self, intent, equity, room) -> float | None:
+        """Equity fraction of one minimum contract, only while that contract still binds.
+
+        It binds when that fraction is larger than the room still open. A missing
+        spec, a missing room, or a contract that fits stays absent.
+        """
+
+        if equity is None or room is None:
+            return None
+        try:
+            equity_n = float(equity)
+            room_n = float(room)
+            stop = float(getattr(intent, "stop_dist", None))
+        except (TypeError, ValueError):
+            return None
+        if equity_n <= 0 or room_n < 0 or stop <= 0 or stop != stop:
+            return None
+        info = self._symbol_info_obj(getattr(intent, "symbol", None))
+        if info is None:
+            return None
+
+        def _num(key):
+            raw = info.get(key) if isinstance(info, dict) else getattr(info, key, None)
+            return float(raw)
+
+        try:
+            contract = _num("trade_contract_size")
+            minimum = _num("volume_min")
+        except (TypeError, ValueError):
+            return None
+        if contract <= 0 or minimum <= 0:
+            return None
+        fraction = (minimum * contract * stop) / equity_n
+        if fraction != fraction or fraction <= 0 or fraction <= room_n:
+            return None
+        return fraction
+
+    def _size_reached_sides(self, intents, decision, state, room, cycle_taken: float | None = 0.0) -> list:
+        """The admission risk hop for sides that reached place without a unit.
+
+        Pending rows use the same (decision day, cluster) bucket as
+        ``size_correlated_units``, then ``_challenge_risk_units`` asks the
+        risk. An empty score stays unset and the unit stays unsized.
+        """
+
+        from dataclasses import asdict
+
+        from .admission import (
+            ALLOCATION_PROFILES,
+            _challenge_risk_units,
+            _equity_card,
+            cluster_of,
+            effective_registry,
+        )
+
+        if not intents or state is None or decision is None:
+            return []
+        profile_name = str(getattr(decision, "profile", "") or "")
+        prof = ALLOCATION_PROFILES.get(profile_name)
+        if prof is None:
+            return []
+        account = str(getattr(self.engine, "_account", "A") or "A").upper()
+        base = prof.risk_per_unit_A if account == "A" else prof.risk_per_unit_B
+        limits = self.engine._joint_daily_limits(self.engine._governor_limits(), state)
+        registry = effective_registry(
+            include_clean3=bool(getattr(decision, "include_clean3", False)),
+            include_clean4=bool(getattr(decision, "include_clean4", False)),
+            include_candidate_book=bool(getattr(decision, "include_candidate_book", False)),
+            candidate_book_sleeves=getattr(decision, "candidate_book_sleeves", None) or None,
+            include_market_expansion_book=bool(getattr(decision, "include_market_expansion_book", False)),
+            market_expansion_sleeves=getattr(decision, "market_expansion_sleeves", None) or None,
+        )
+        equity = getattr(state, "equity", None)
+        account_equity = None
+        try:
+            raw_equity = self._mt5.get_account_equity()
+            account_equity = float(raw_equity)
+        except (TypeError, ValueError, AttributeError):
+            account_equity = None
+        lot_equity = account_equity if isinstance(account_equity, float) and account_equity > 0 else equity
+        try:
+            from .admission import broker_order_calc, stamp_min_lot_risk
+            calc, buy, sell = broker_order_calc(getattr(self, "_mt5", None))
+            raw = getattr(getattr(self, "_mt5", None), "_mt5", None)
+            stamp_min_lot_risk(
+                intents, lot_equity, self._symbol_info_obj, calc,
+                buy=buy, sell=sell, module=raw if raw is not None else getattr(self, "_mt5", None),
+                resolve=getattr(self, "_broker_symbol", None),
+            )
+        except Exception:
+            pass
+        buckets: dict[tuple[str, str], list] = {}
+        for intent in intents:
+            fraction = self._binding_contract_risk(intent, equity, room)
+            if fraction is not None:
+                details = getattr(intent, "details", None)
+                if not isinstance(details, dict):
+                    details = {}
+                    try:
+                        object.__setattr__(intent, "details", details)
+                    except Exception:
+                        details = None
+                if isinstance(details, dict):
+                    details["contract_risk_pct"] = fraction
+            sleeve = str(getattr(intent, "sleeve", "") or "")
+            day = str(getattr(intent, "decision_day", "") or "")
+            cluster = cluster_of(sleeve, registry) or "__unknown__"
+            buckets.setdefault((day, cluster), []).append(intent)
+        pending = []
+        for (day, cluster), group in sorted(buckets.items()):
+            members = tuple(sorted({str(getattr(item, "sleeve", "") or "") for item in group}))
+            pending.append((day, cluster, group, members, len(group)))
+        day_sleeves: dict[str, set[str]] = {}
+        for intent in intents:
+            day_sleeves.setdefault(str(getattr(intent, "decision_day", "") or ""), set()).add(
+                str(getattr(intent, "sleeve", "") or "")
+            )
+        launcher_usd = None
+        cfg = getattr(self, "_f5_cfg", None)
+        if cfg is not None:
+            try:
+                launcher_usd = float(getattr(cfg, "target_risk_usd", None))
+            except (TypeError, ValueError):
+                launcher_usd = None
+            if launcher_usd is not None and launcher_usd <= 0:
+                launcher_usd = None
+        card = _equity_card(
+            state, limits, recorded_base_risk=base, room_pct=room,
+            account_equity=account_equity, launcher_usd=launcher_usd,
+        )
+        try:
+            from src.judgment.apply_size import read_binding_room_facts
+            room_facts = read_binding_room_facts(
+                getattr(self, "_mt5", None),
+                getattr(getattr(self, "engine", None), "config", None),
+                namespace=getattr(self, "_namespace", None),
+            )
+        except Exception:
+            room_facts = {}
+        if isinstance(room_facts, dict):
+            for key, value in room_facts.items():
+                if value in (None, "") or key == "equity":
+                    continue
+                if card.get(key) in (None, ""):
+                    card[key] = value
+        sized = _challenge_risk_units(
+            pending,
+            registry=registry,
+            base_risk=base,
+            equity_card=card,
+            room=room,
+            sqrt_n_pooling=bool(getattr(decision, "sqrt_n_pooling", False)),
+            kelly_lite=bool(getattr(decision, "kelly_lite", False)),
+            kelly_conservative=bool(getattr(decision, "kelly_conservative", False)),
+            n_active_by_day={day: len(sleeves) for day, sleeves in day_sleeves.items()},
+            stress_derisk=False,
+            stress_state=None,
+            overlays=bool(getattr(decision, "overlays", False)),
+            cycle_taken=cycle_taken,
+        )
+        return [asdict(unit) for unit in sized]
 
     def _broker_holds(self, symbol: str, sleeve: str) -> bool:
         """True if the broker already has an open W7:{sleeve} position on `symbol` — a definitive
@@ -4936,18 +5103,55 @@ class UltimateBookOwner:
                     units.append(unit)
                     for member in unit.get("sleeve_members") or []:
                         covered.add(str(member))
+            reached = []
             for intent in intents or []:
                 choice = getattr(intent, "unit_choice", None)
                 sleeve = str(getattr(intent, "sleeve", "") or "")
                 if choice not in {"unit_long", "unit_short"} or not sleeve or sleeve in covered:
                     continue
-                units.append({
-                    "sleeve_members": [sleeve],
-                    "sized": True,
-                    "risk_pct_per_trade": None,
-                    "reason": "unit_side_reaches_place",
-                    "cluster": None,
-                })
+                reached.append(intent)
+            sized_rows = []
+            if reached:
+                try:
+                    from .admission import sized_cycle_risk
+                    sized_rows = self._size_reached_sides(
+                        reached, decision, gs, gross_headroom,
+                        cycle_taken=sized_cycle_risk(units),
+                    )
+                except Exception:
+                    sized_rows = []
+            by_sleeve = {}
+            for row in sized_rows:
+                if not isinstance(row, dict):
+                    continue
+                for member in row.get("sleeve_members") or []:
+                    by_sleeve[str(member)] = row
+            for intent in reached:
+                sleeve = str(getattr(intent, "sleeve", "") or "")
+                row = by_sleeve.get(sleeve)
+                if not isinstance(row, dict):
+                    row = {
+                        "sleeve_members": [sleeve],
+                        "sized": False,
+                        "risk_pct_per_trade": None,
+                        "unit_risk_pct": None,
+                        "reason": "risk_unset",
+                        "cluster": None,
+                    }
+                else:
+                    row = dict(row)
+                risk = row.get("risk_pct_per_trade")
+                risk_ok = False
+                if risk is not None and not isinstance(risk, bool):
+                    try:
+                        risk_ok = float(risk) > 0
+                    except (TypeError, ValueError):
+                        risk_ok = False
+                if not risk_ok:
+                    row["sized"] = False
+                    row["risk_pct_per_trade"] = None
+                    row["reason"] = "risk_unset"
+                units.append(row)
                 covered.add(sleeve)
         if sequential_conviction and any(
             (not unit.get("sized")) and unit.get("reason") == "gross_risk_cap_would_exceed"
@@ -5021,6 +5225,18 @@ class UltimateBookOwner:
                     "error": type(exc).__name__,
                     "agent_order_send": False,
                 }
+        _pending_facts = {}
+        if str(self._namespace) == "operator":
+            try:
+                from src.judgment.apply_size import read_binding_room_facts
+                _pending_facts = read_binding_room_facts(
+                    getattr(self, "_mt5", None),
+                    getattr(getattr(self, "engine", None), "config", None),
+                    namespace=getattr(self, "_namespace", None),
+                ) or {}
+            except Exception:
+                _pending_facts = {}
+        _visited_pairs: set[tuple[str, str]] = set()
         for unit in units:
             raw_risk = unit.get("risk_pct_per_trade")
             try:
@@ -5077,6 +5293,7 @@ class UltimateBookOwner:
             for intent in intents:
                 if intent.sleeve not in members:
                     continue
+                _visited_pairs.add((str(intent.sleeve), str(intent.symbol)))
                 # PER-INTENT ISOLATION: one intent's failure (e.g. an unexpected per-symbol engine
                 # factory exception) must never abort the cycle or starve the
                 # remaining intents on this bar. run_cycle NEVER raises (the launcher marks the bar
@@ -5886,12 +6103,18 @@ class UltimateBookOwner:
                             continue
                     route_unit = unit
                     if sequential_conviction:
+                        from .admission import sized_cycle_risk
+                        _open_risk = getattr(gs, "open_risk_pct", None) if gs is not None else None
                         route_unit = route_conviction(
                             unit,
                             intent,
                             intents,
                             gs,
                             now_utc=now,
+                            cycle_taken=sized_cycle_risk(
+                                units, skip_cluster=str((unit or {}).get("cluster") or ""),
+                            ),
+                            book_open_risk_pct=_open_risk,
                         )
                         if not isinstance(route_unit, dict):
                             if _challenge_withholds(
@@ -5923,6 +6146,10 @@ class UltimateBookOwner:
                                 summary["bar_consumable"] = False
                                 continue
                             route_unit = unit
+                        if isinstance(route_unit, dict) and isinstance(unit, dict) and route_unit is not unit:
+                            for _key in ("unit_risk_pct", "risk_pct_per_trade", "sized"):
+                                if route_unit.get(_key) is not None:
+                                    unit[_key] = route_unit.get(_key)
                         _raw_risk = route_unit.get("risk_pct_per_trade")
                         _risk_number = None
                         if not isinstance(_raw_risk, bool) and _raw_risk is not None:
@@ -6038,6 +6265,15 @@ class UltimateBookOwner:
                             "multiplier": float(ai_risk.control.get("multiplier", 1.0)),
                             "reason": ai_risk.reason,
                         })
+                    _share_details = getattr(intent, "details", None)
+                    if (
+                        str(self._namespace) == "operator"
+                        and isinstance(adjusted_unit, dict)
+                        and isinstance(_share_details, dict)
+                        and _share_details.get("candidate_share")
+                    ):
+                        adjusted_unit = dict(adjusted_unit)
+                        adjusted_unit["risk_pct_per_trade"] = _share_details.get("candidate_risk_pct")
                     unit_su = _UnitView(adjusted_unit)
                     route_intent = intent
                     routed_floor = None
@@ -6194,6 +6430,22 @@ class UltimateBookOwner:
                     )
                     if f5_market_stop_floor is not None:
                         hop_notes["f5_market_stop_floor"] = dict(f5_market_stop_floor)
+                    if str(self._namespace) == "operator":
+                        _share_details = getattr(route_intent, "details", None)
+                        if not isinstance(_share_details, dict):
+                            _share_details = getattr(intent, "details", None)
+                        if isinstance(_share_details, dict):
+                            if _share_details.get("allocation_cash_usd") not in (None, ""):
+                                hop_notes["allocation_cash_usd"] = _share_details.get("allocation_cash_usd")
+                                hop_notes["symbol"] = getattr(intent, "symbol", None)
+                                hop_notes["sleeve"] = getattr(intent, "sleeve", None)
+                            if _share_details.get("min_lot_risk_usd") not in (None, ""):
+                                hop_notes["min_lot_risk_usd"] = _share_details.get("min_lot_risk_usd")
+                        if isinstance(_pending_facts, dict):
+                            if _pending_facts.get("pending_stop_risk_usd") not in (None, ""):
+                                hop_notes["pending_stop_risk_usd"] = _pending_facts.get("pending_stop_risk_usd")
+                            if _pending_facts.get("pending_stop_risk_read") not in (None, ""):
+                                hop_notes["pending_stop_risk_read"] = _pending_facts.get("pending_stop_risk_read")
                     _view_risk = getattr(unit_su, "risk_pct_per_trade", None)
                     _view_missing = True
                     if not isinstance(_view_risk, bool) and _view_risk is not None:
@@ -6467,6 +6719,37 @@ class UltimateBookOwner:
                         "and does not restore a silent skip. Do not close an open ticket.",
                     )
                     continue
+        if str(self._namespace) == "operator":
+            refusal_by = {}
+            for refusal in list(getattr(decision, "candidate_refusals", []) or []):
+                if not isinstance(refusal, dict):
+                    continue
+                refusal_by[(
+                    str(refusal.get("sleeve") or ""),
+                    str(refusal.get("symbol") or ""),
+                )] = refusal
+            for intent in intents or []:
+                key = (
+                    str(getattr(intent, "sleeve", "") or ""),
+                    str(getattr(intent, "symbol", "") or ""),
+                )
+                if not key[0] or not key[1] or key in _visited_pairs:
+                    continue
+                refusal = refusal_by.get(key)
+                reason = None
+                if isinstance(refusal, dict):
+                    reason = refusal.get("candidate_disposition_reason")
+                if not reason:
+                    details = getattr(intent, "details", None)
+                    if isinstance(details, dict):
+                        reason = details.get("jev_place_action") or details.get("jev_admission_error")
+                if not reason:
+                    reason = "not_in_sized_unit"
+                summary["skipped"].append({
+                    "symbol": key[1],
+                    "sleeve": key[0],
+                    "reason": str(reason),
+                })
         self._sweep_frozen_price_intents(now, summary)
         self._emit_cycle_runtime_learning(summary, now, decision=decision, place=place)
         return summary
@@ -11826,6 +12109,34 @@ class UltimateBookOwner:
             "frozen_queued_at_utc": item.queued_at_utc.isoformat(),
         }
         unit_view = _UnitView(item.unit or unit)
+        _share_details = getattr(intent, "details", None)
+        if (
+            str(getattr(self, "_namespace", "") or "") == "operator"
+            and isinstance(_share_details, dict)
+            and _share_details.get("candidate_share")
+        ):
+            _unit_copy = dict(item.unit or unit or {})
+            _unit_copy["risk_pct_per_trade"] = _share_details.get("candidate_risk_pct")
+            unit_view = _UnitView(_unit_copy)
+            if _share_details.get("allocation_cash_usd") not in (None, ""):
+                annotations["allocation_cash_usd"] = _share_details.get("allocation_cash_usd")
+                annotations["symbol"] = getattr(intent, "symbol", None)
+                annotations["sleeve"] = getattr(intent, "sleeve", None)
+            if _share_details.get("min_lot_risk_usd") not in (None, ""):
+                annotations["min_lot_risk_usd"] = _share_details.get("min_lot_risk_usd")
+            try:
+                from src.judgment.apply_size import read_binding_room_facts
+                _pending_facts = read_binding_room_facts(
+                    getattr(self, "_mt5", None),
+                    getattr(getattr(self, "engine", None), "config", None),
+                    namespace=getattr(self, "_namespace", None),
+                ) or {}
+            except Exception:
+                _pending_facts = {}
+            if _pending_facts.get("pending_stop_risk_usd") not in (None, ""):
+                annotations["pending_stop_risk_usd"] = _pending_facts.get("pending_stop_risk_usd")
+            if _pending_facts.get("pending_stop_risk_read") not in (None, ""):
+                annotations["pending_stop_risk_read"] = _pending_facts.get("pending_stop_risk_read")
         route_intent = self._limit_at_level_intent(
             intent, frozen_entry=getattr(item, "frozen_entry", None)
         )
@@ -12173,6 +12484,13 @@ class UltimateBookOwner:
                 return getter(symbol)
             except Exception:
                 continue
+        raw = getattr(mt5, "_mt5", None)
+        getter = getattr(raw, "symbol_info", None) if raw is not None else None
+        if callable(getter):
+            try:
+                return getter(symbol)
+            except Exception:
+                return None
         return None
 
     def _symbol_digits(self, symbol) -> int | None:

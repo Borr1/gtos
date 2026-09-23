@@ -357,6 +357,9 @@ def evaluate_vnext_ultimate_book_admission(
     n_active_override_authoritative: bool = False,
     stress_state: "Any | None" = None,
     symbol_damage_metrics: "Mapping[str, Any] | None" = None,
+    cycle_taken: float | None = 0.0,
+    book_open_risk_pct: float | None = None,
+    apply_book_open_risk: bool = False,
 ) -> UltimateBookAdmissionDecision:
     """Evaluate the standalone deploy-book admission through the vNext runtime bridge (DEFAULT-OFF).
 
@@ -569,6 +572,12 @@ def evaluate_vnext_ultimate_book_admission(
             )
 
     # 2. SHADOW projection — what the book WOULD size right now (always computed; pure, no broker).
+    from src.judgment.apply_size import ROOM_FACT_KEYS
+    room_facts = {
+        key: root_config.get(key)
+        for key in ROOM_FACT_KEYS
+        if root_config.get(key) not in (None, "") and key != "equity"
+    }
     shadow = admit_and_size(
         kept, governor_state, profile=profile, account=account, limits=limits,
         include_clean3=include_clean3, include_clean4=include_clean4,
@@ -586,6 +595,12 @@ def evaluate_vnext_ultimate_book_admission(
         symbol_damage_metrics=symbol_damage_metrics, symbol_damage_guard=symbol_damage_guard,
         vol_level_tilt=vol_level_tilt,
         candidate_refusal_sink=candidate_refusals,
+        cycle_taken=cycle_taken,
+        book_open_risk_pct=book_open_risk_pct,
+        apply_book_open_risk=apply_book_open_risk,
+        account_equity=root_config.get("account_equity"),
+        launcher_usd=root_config.get("launcher_usd"),
+        room_facts=room_facts,
     )
 
     # 3. Replacement-invariant guard (belt-and-braces; the staged patch is the primary control).
