@@ -174,7 +174,7 @@ def _post(facts: dict, bars=None, i: int | None = None, bar_times=None) -> dict[
     out = _empty()
     try:
         from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import append_outcome, prior_outcomes, returned_number
+        from src.judgment.jev_questions import append_outcome, prior_outcomes
     except Exception:
         return out
     try:
@@ -195,9 +195,9 @@ def _post(facts: dict, bars=None, i: int | None = None, bar_times=None) -> dict[
     raw = receipt.get("answers")
     answers = raw if isinstance(raw, dict) else {}
     for spot in _SCORE_SPOTS:
-        from .spot_choice import value_at
+        from .spot_choice import answered_amount
 
-        number = value_at(returned_number(answers.get(spot)), _questions.anchors.get(spot))
+        number = answered_amount(spot, answers.get(spot), _questions.anchors.get(spot))
         out[spot] = number
         try:
             append_outcome(spot, number, state, error=None if number is not None else "empty")

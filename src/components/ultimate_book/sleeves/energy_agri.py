@@ -71,7 +71,7 @@ def _ask(spots, bars, i, facts):
     printed constant back.
     """
     from src.judgment.jev_client import evaluate
-    from src.judgment.jev_questions import append_outcome, prior_outcomes, returned_number
+    from src.judgment.jev_questions import append_outcome, prior_outcomes
 
     state = dict(facts or {})
     questions, anchors = _decision_questions(spots, state, bars, i)
@@ -101,9 +101,9 @@ def _ask(spots, bars, i, facts):
             error = receipt.get("error") or receipt.get("skipped") or "post_failed"
     out = {}
     for spot in spots:
-        from .spot_choice import value_at
+        from .spot_choice import answered_amount
 
-        number = value_at(returned_number(answers.get(spot)), anchors.get(spot))
+        number = answered_amount(spot, answers.get(spot), anchors.get(spot))
         out[spot] = number
         try:
             append_outcome(

@@ -37,6 +37,11 @@ _CLOCK = {
 _UNSET = (
     " An empty score leaves it unset. A tie leaves it unset. An error leaves it unset."
 )
+_WHOLE = (
+    " Choose one of these whole levels from the card. "
+    "An empty answer, a tie, or an error leaves it unset."
+)
+_WHOLE_UNITS = frozenset({"count", "hour", "minute"})
 
 _LOCK = threading.Lock()
 _CACHE: dict[str, dict[str, str | None]] = {}
@@ -453,6 +458,28 @@ _FRACTION = frozenset({
 _AUTOCORR = frozenset({"ac_thr", "ac_floor_sb", "persist_trend", "persist_revert"})
 _PRICE = frozenset({"limit_price"})
 _DIRECTION = frozenset({"direction"})
+_SESSION_INDEX = frozenset({"session_index"})
+_SESSION_AFTER = frozenset({"catchup_grace"})
+_BEFORE_SESSION = frozenset({"i0_min", "min_asian_bars"})
+_WARMUP = frozenset({
+    "warmup_bars", "min_bars", "atr_window", "vol_window", "window",
+    "hist_min", "min_hist", "vol_win", "or_bars", "sma_n", "atr_n",
+    "sma_bars", "atr_bars", "horizon_bars", "maxbars", "persist_bars",
+    "persist_min_bars", "sma_fast", "sma_slow", "atr_mean_bars",
+})
+_BAR_INDEX = frozenset({"scan_floor", "scan_oldest"})
+_LOOKBACK = frozenset({
+    "trend_lb", "ob_lookback", "range_bars", "scan_span", "scan_from",
+    "gap_shift", "ac_lag", "slope_bars", "mom_bars", "trend_lookback",
+    "reg_lb", "don_lb", "break_lb", "hist_lb", "atr_lb", "range_window",
+    "slope_short_bars", "slope_mid_bars", "slope_long_bars",
+    "comp_short_bars", "comp_long_bars",
+})
+_BOX = frozenset({"n_box"})
+_PRIOR_BARS = frozenset({"pct_win"})
+_RATIO_COUNT = frozenset({"squeeze_min_count"})
+_ATR_COUNT = frozenset({"min_vol_count"})
+_BIN_COUNT = frozenset({"node_min_count", "min_bin_count"})
 
 
 def _unit(spot: str) -> str:
@@ -494,6 +521,226 @@ def _server_parts(stamp: Any) -> tuple[int | None, int | None, str | None]:
     except Exception:
         return None, None, None
     return hour, minute, day
+
+
+def _count_family(spot: str) -> str:
+    name = str(spot)
+    if name in _SESSION_INDEX:
+        return "session_index"
+    if name in _SESSION_AFTER:
+        return "session_after"
+    if name in _BEFORE_SESSION:
+        return "before_session"
+    if name in _WARMUP:
+        return "warmup"
+    if name in _BAR_INDEX:
+        return "bar_index"
+    if name in _BOX:
+        return "box"
+    if name in _PRIOR_BARS:
+        return "prior_bars"
+    if name in _RATIO_COUNT:
+        return "ratio_count"
+    if name in _ATR_COUNT:
+        return "atr_count"
+    if name in _BIN_COUNT:
+        return "bin_count"
+    if name in _LOOKBACK:
+        return "lookback"
+    return "lookback"
+
+
+def _clock_matches(bars: Any, bar_times: Any) -> bool:
+    try:
+        return bar_times is not None and bars is not None and len(bar_times) == len(bars)
+    except TypeError:
+        return False
+
+
+def _day_start(bars: Any, i: int, bar_times: Any) -> int | None:
+    if not _clock_matches(bars, bar_times) or i < 0:
+        return None
+    _, _, day = _server_parts(bar_times[i])
+    if day is None:
+        return None
+    start = i
+    while start > 0:
+        _, _, earlier = _server_parts(bar_times[start - 1])
+        if earlier != day:
+            break
+        start -= 1
+    return start
+
+
+def _bar_high(bar: Any) -> float | None:
+    try:
+        number = float(bar.h)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if number != number:
+        return None
+    return number
+
+
+def _bar_low(bar: Any) -> float | None:
+    try:
+        number = float(bar.l)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if number != number:
+        return None
+    return number
+
+
+def _bar_close(bar: Any) -> float | None:
+    try:
+        number = float(bar.c)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if number != number:
+        return None
+    return number
+
+
+_STRUCTURE: dict[tuple[int, int], dict[str, list[tuple[str, float]]]] = {}
+
+
+def _structure(bars: Any, i: int) -> dict[str, list[tuple[str, float]]]:
+    """Distances and indexes of swings, gaps, order blocks, and range edges up to i."""
+
+    key = (id(bars), i)
+    hit = _STRUCTURE.get(key)
+    if hit is not None:
+        return hit
+    distances: list[tuple[str, float]] = []
+    indexes: list[tuple[str, float]] = []
+    if i >= 1:
+        for k in range(1, i):
+            high = _bar_high(bars[k])
+            low = _bar_low(bars[k])
+            prev_high = _bar_high(bars[k - 1])
+            prev_low = _bar_low(bars[k - 1])
+            next_high = _bar_high(bars[k + 1])
+            next_low = _bar_low(bars[k + 1])
+            if None not in (high, prev_high, next_high) and high > prev_high and high > next_high:
+                _push(distances, f"swing_high_{k}", i - k, positive=True)
+                _push(indexes, f"swing_high_{k}", k)
+            if None not in (low, prev_low, next_low) and low < prev_low and low < next_low:
+                _push(distances, f"swing_low_{k}", i - k, positive=True)
+                _push(indexes, f"swing_low_{k}", k)
+        for k in range(i):
+            left_high = _bar_high(bars[k])
+            left_low = _bar_low(bars[k])
+            right_high = _bar_high(bars[k + 1])
+            right_low = _bar_low(bars[k + 1])
+            right_close = _bar_close(bars[k + 1])
+            if None in (left_high, left_low, right_high, right_low):
+                continue
+            if right_low > left_high or right_high < left_low:
+                _push(distances, f"gap_{k + 1}", i - (k + 1), positive=True)
+                _push(indexes, f"gap_{k + 1}", k + 1)
+            if right_close is not None and (right_close > left_high or right_close < left_low):
+                _push(distances, f"order_block_{k}", i - k, positive=True)
+                _push(indexes, f"order_block_{k}", k)
+        try:
+            hi_at = max(range(i + 1), key=lambda k: bars[k].h)
+            lo_at = min(range(i + 1), key=lambda k: bars[k].l)
+        except Exception:
+            hi_at = None
+            lo_at = None
+        if hi_at is not None:
+            _push(distances, "range_high", i - hi_at, positive=True)
+            _push(indexes, "range_high", hi_at)
+        if lo_at is not None:
+            _push(distances, "range_low", i - lo_at, positive=True)
+            _push(indexes, "range_low", lo_at)
+    built = {"distances": distances, "indexes": indexes}
+    _STRUCTURE[key] = built
+    return built
+
+
+def _positive_whole(value: Any) -> float | None:
+    number = _finite(value)
+    if number is None or number % 1 != 0 or not (number >= 1):
+        return None
+    return number
+
+
+def _count_steps(count: float, label: str) -> list[tuple[str, float]]:
+    levels: list[tuple[str, float]] = []
+    step = 1.0
+    while step <= count:
+        _push(levels, label + "_" + format(step, "g"), step, positive=True)
+        step += 1
+    return levels
+
+
+def _box_widths(structure: Mapping[str, Any], i: int) -> list[tuple[str, float]]:
+    """Bars between consecutive structure edges, including the first bar and this bar."""
+
+    points: list[tuple[str, float]] = []
+    _push(points, "first_bar", 0)
+    _push(points, "decision_bar", i)
+    for label, at in structure.get("indexes") or ():
+        if at <= i:
+            _push(points, str(label), at)
+    ordered = sorted(points, key=lambda pair: (pair[1], pair[0]))
+    levels: list[tuple[str, float]] = []
+    previous = None
+    previous_label = None
+    for label, at in ordered:
+        if previous is not None and at > previous:
+            _push(levels, "box_" + str(previous_label) + "_" + str(label), at - previous, positive=True)
+        previous = at
+        previous_label = label
+    return levels
+
+
+def _width_count(bars: Any, i: int) -> float:
+    found = 0.0
+    k = 0
+    while k <= i:
+        high = _bar_high(bars[k])
+        low = _bar_low(bars[k])
+        if high is not None and low is not None and high > low:
+            found += 1
+        k += 1
+    return found
+
+
+def _prior_atr_count(bars: Any, i: int) -> float:
+    found = 0.0
+    k = 1
+    while k < i:
+        high = _bar_high(bars[k])
+        low = _bar_low(bars[k])
+        prev = _bar_close(bars[k - 1])
+        if high is not None and low is not None and prev is not None:
+            span = high - low
+            up = abs(high - prev)
+            down = abs(low - prev)
+            if up > span:
+                span = up
+            if down > span:
+                span = down
+            if span > 0:
+                found += 1
+        k += 1
+    return found
+
+
+def _bins_present(card: Mapping[str, Any]) -> list[tuple[str, float]]:
+    count = _positive_whole(card.get("n_bins"))
+    if count is None:
+        return []
+    return _count_steps(count, "bin")
+
+
+def _session_span(bars: Any, i: int, bar_times: Any) -> tuple[int, int] | None:
+    start = _day_start(bars, i, bar_times)
+    if start is None or i < start:
+        return None
+    return start, i - start + 1
 
 
 def _indexed(bars: Any, index: Any, facts: Mapping[str, Any] | None) -> int | None:
@@ -614,44 +861,64 @@ def anchors_for(
                 _push(levels, "step_sign", 1.0 if step > 0 else (-1.0 if step < 0 else 0.0))
         return levels
     if unit == "count":
-        if bars is not None and i is not None and i >= 1:
-            try:
-                hi_at = max(range(i + 1), key=lambda k: bars[k].h)
-                lo_at = min(range(i + 1), key=lambda k: bars[k].l)
-            except Exception:
-                hi_at = None
-                lo_at = None
-            if hi_at is not None:
-                _push(levels, "bars_since_high", i - hi_at, positive=True)
-            if lo_at is not None:
-                _push(levels, "bars_since_low", i - lo_at, positive=True)
-        if bar_times is not None and bars is not None and i is not None:
-            try:
-                same = len(bar_times) == len(bars)
-            except TypeError:
-                same = False
-            if same:
-                hour, _, day = _server_parts(bar_times[i])
-                if day is not None:
-                    day_count = 0
-                    hour_count = 0
-                    for k in range(i + 1):
-                        k_hour, _, k_day = _server_parts(bar_times[k])
-                        if k_day != day:
-                            continue
-                        day_count += 1
-                        if hour is not None and k_hour == hour:
-                            hour_count += 1
-                    _push(levels, "bars_this_server_day", day_count, positive=True)
-                    _push(levels, "bars_this_server_hour", hour_count, positive=True)
-        held = _finite(card.get("n_bars"))
-        if held is None and bars is not None:
-            try:
-                held = float(len(bars))
-            except TypeError:
-                held = None
-        _push(levels, "bars_held", held, positive=True)
-        _push(levels, "bar_index", i, positive=True)
+        family = _count_family(spot)
+        if family == "bin_count":
+            return _bins_present(card)
+        if bars is None or i is None or i < 0:
+            return levels
+        structure = _structure(bars, i)
+        span = _session_span(bars, i, bar_times)
+        if family == "session_index":
+            if span is None:
+                return levels
+            count = span[1]
+            step = 1
+            while step <= count:
+                _push(levels, f"session_bar_{step}", step, positive=True)
+                step += 1
+            return levels
+        if family == "session_after":
+            if span is None:
+                return levels
+            count = span[1]
+            step = 1
+            while step <= count:
+                _push(levels, f"bars_after_{step}", count - step)
+                step += 1
+            return levels
+        if family == "box":
+            return _box_widths(structure, i)
+        if family == "prior_bars":
+            if i < 1:
+                return levels
+            return _count_steps(i, "prior_bar")
+        if family == "ratio_count":
+            return _count_steps(_width_count(bars, i), "width_ratio")
+        if family == "atr_count":
+            return _count_steps(_prior_atr_count(bars, i), "prior_atr")
+        if family == "before_session":
+            start = span[0] if span is not None else None
+            if start is not None:
+                _push(levels, "session_open_index", start)
+                for label, at in structure["indexes"]:
+                    if at <= start:
+                        _push(levels, f"before_{label}", at)
+            return levels
+        if family == "bar_index":
+            _push(levels, "first_bar", 0)
+            for label, at in structure["indexes"]:
+                if at <= i:
+                    _push(levels, label, at)
+            return levels
+        if family == "warmup":
+            step = 1
+            while step <= i:
+                _push(levels, f"bars_present_{step}", step, positive=True)
+                step += 1
+            return levels
+        for label, dist in structure["distances"]:
+            if dist <= i:
+                _push(levels, label, dist, positive=True)
         return levels
     if unit in {"hour", "minute"} and bar_times is not None and i is not None:
         try:
@@ -667,6 +934,8 @@ def anchors_for(
             limit = len(stamps)
         _, _, day = _server_parts(stamps[i]) if i < len(stamps) else (None, None, None)
         for k, stamp in enumerate(stamps[: limit]):
+            if k > i:
+                break
             hour, minute, k_day = _server_parts(stamp)
             if day is not None and k_day != day:
                 continue
@@ -722,11 +991,24 @@ def anchors_for(
 
 
 def amount_question(spot: str, text: str, anchors: Any) -> dict[str, Any]:
-    """One score from the spine builder. Fewer than two anchors does not post.
+    """One amount from the card. Fewer than two anchors does not post.
 
-    Criteria are label (value). The private anchor key stays off this post.
-    The level count is the maximum the API has already stated.
+    A whole-number quantity is a choice of the card's whole levels. Any other
+    amount is a Score. Criteria are label (value). The private anchor key
+    stays off this post. The Score level count is the maximum the API has
+    already stated.
     """
+
+    if _unit(str(spot)) in _WHOLE_UNITS:
+        from src.judgment.jev_questions import whole_levels, whole_question
+
+        levels = whole_levels(anchors)
+        built = whole_question(str(spot), str(text).strip() + _WHOLE, anchors)
+        body = built.get(str(spot)) if isinstance(built, dict) else None
+        if not isinstance(body, dict) or not levels:
+            return {}
+        amount_question.pending[str(spot)] = list(levels)
+        return {str(spot): body}
 
     from src.judgment.nineteen import _anchor_levels, score_question
 
@@ -795,6 +1077,55 @@ def arm_card(
     }
 
 
+def answered_amount(spot: str, block: Any, anchors: Any) -> float | None:
+    """The amount this question returned.
+
+    A whole-number question returns the whole level that was chosen. Any other
+    amount is the value at the returned level position. Empty, tie, and error
+    stay unset.
+    """
+
+    if isinstance(block, Mapping) and block.get("tie") is True:
+        return None
+    if _unit(str(spot)) in _WHOLE_UNITS:
+        from src.judgment.jev_questions import chosen_level
+
+        return chosen_level(block, anchors)
+    from src.judgment.jev_questions import returned_number
+
+    return value_at(returned_number(block), anchors)
+
+
+def post_again(evaluate_once, questions: Mapping[str, Any], rebuild) -> Any:
+    """Post once. If a refusal names a level cap, post the thinned whole levels once."""
+
+    receipt = evaluate_once(questions)
+    if not isinstance(receipt, dict) or receipt.get("ok") or not str(receipt.get("error") or "").startswith("http_"):
+        return receipt
+    from src.judgment.nineteen import note_score_level_cap
+
+    note_score_level_cap(receipt.get("detail"))
+    fresh = rebuild()
+    if not isinstance(fresh, dict):
+        return receipt
+
+    def width(posted: Mapping[str, Any]) -> int:
+        total = 0
+        for block in posted.values():
+            if not isinstance(block, dict):
+                continue
+            criteria = block.get("criteria")
+            try:
+                total += len(criteria)
+            except TypeError:
+                continue
+        return total
+
+    if width(fresh) >= width(questions):
+        return receipt
+    return evaluate_once(fresh)
+
+
 def read_number(
     answers: Mapping[str, Any] | None,
     spot: str,
@@ -834,6 +1165,8 @@ def read_number(
             )
         elif pending is not None:
             anchors = pending
+    if _unit(str(spot)) in _WHOLE_UNITS:
+        return answered_amount(str(spot), block, anchors)
     return value_at(index, anchors)
 
 

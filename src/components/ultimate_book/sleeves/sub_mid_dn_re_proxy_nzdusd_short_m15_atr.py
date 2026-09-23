@@ -354,7 +354,6 @@ def _post(state: dict, choice_questions: dict, bars=None, index=None, bar_times=
         from src.judgment.jev_questions import (
             append_outcome,
             prior_outcomes,
-            returned_number,
             spot_question,
             unique_highest,
         )
@@ -412,9 +411,9 @@ def _post(state: dict, choice_questions: dict, bars=None, index=None, bar_times=
             picks[qid] = None
     out["picks"] = picks
     for spot in _SCORE_SPOTS:
-        from .spot_choice import value_at
+        from .spot_choice import answered_amount
 
-        number = value_at(returned_number(answers.get(spot)), _post.anchors.get(spot))
+        number = answered_amount(spot, answers.get(spot), _post.anchors.get(spot))
         out[spot] = number
         try:
             append_outcome(spot, number, card, error=None if number is not None else "empty")

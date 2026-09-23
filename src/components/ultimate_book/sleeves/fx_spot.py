@@ -363,8 +363,8 @@ def ask_pack(
         }
     try:
         from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number, spot_question, unique_highest
-        from .spot_choice import amount_question, value_at
+        from src.judgment.jev_questions import spot_question, unique_highest
+        from .spot_choice import amount_question, answered_amount, post_again
     except Exception as exc:
         empty["error"] = type(exc).__name__
         return empty
@@ -383,8 +383,25 @@ def ask_pack(
     except Exception as exc:
         empty["error"] = type(exc).__name__
         return empty
+    def _once(posted: dict[str, Any]):
+        return evaluate(clean, questions=posted, model=MODEL, merge_sleeve=False)
+
+    def _rebuild() -> dict[str, Any]:
+        built: dict[str, Any] = {}
+        for qid, text in scores.items():
+            built.update(amount_question(str(qid), str(text), level_map[str(qid)]))
+        for qid, spec in choice_map.items():
+            built.update(
+                spot_question(
+                    str(qid),
+                    str(spec.get("instructions", "")),
+                    spec.get("criteria") if isinstance(spec.get("criteria"), dict) else {},
+                )
+            )
+        return built
+
     try:
-        receipt = evaluate(clean, questions=questions, model=MODEL, merge_sleeve=False)
+        receipt = post_again(_once, questions, _rebuild)
     except Exception as exc:
         empty["error"] = type(exc).__name__
         return empty
@@ -410,7 +427,7 @@ def ask_pack(
             number = None
         else:
             try:
-                number = value_at(returned_number(block), level_map.get(str(qid)))
+                number = answered_amount(str(qid), block, level_map.get(str(qid)))
             except Exception:
                 number = None
         result["scores"][str(qid)] = finite(number)
