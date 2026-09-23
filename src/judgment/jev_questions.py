@@ -239,6 +239,89 @@ def amount_question(spot: str, instructions: str, anchors: Any) -> dict[str, Any
     return score_question(spot, instructions, anchors)
 
 
+def _already_whole(number: float) -> bool:
+    return number % 1 == 0
+
+
+def whole_levels(anchors: Any) -> list[tuple[str, float]] | None:
+    """Whole card amounts. Fewer than two is not a choice of levels."""
+
+    levels = anchor_levels(anchors)
+    if not levels:
+        return None
+    kept = [(label, value) for label, value in levels if _already_whole(value)]
+    if len(kept) < 2:
+        return None
+    from .nineteen import _thin_levels
+
+    thinned = _thin_levels(kept)
+    if len(thinned) < 2:
+        return None
+    return thinned
+
+
+def _level_text(value: float) -> str:
+    return format(value, "g")
+
+
+def whole_question(spot: str, instructions: str, anchors: Any) -> dict[str, Any]:
+    """A Choice of the card's whole levels.
+
+    Each criterion is one whole amount already on the card. The answer is the
+    level that was chosen. Fewer than two whole levels does not post.
+    """
+
+    levels = whole_levels(anchors)
+    if not levels:
+        return {}
+    criteria = {
+        label: label + " (" + _level_text(value) + ")"
+        for label, value in levels
+    }
+    return spot_question(spot, instructions, criteria)
+
+
+def chosen_level(block: Any, anchors: Any) -> float | None:
+    """The whole anchor of the unique highest criterion.
+
+    An empty answer, a tie, or an error is unset. The number is that level's
+    own amount. It is not a position between levels.
+    """
+
+    if not isinstance(block, Mapping) or block.get("error") or block.get("tie") is True:
+        return None
+    levels = whole_levels(anchors)
+    if not levels:
+        return None
+    probabilities = block.get("probabilities")
+    if not isinstance(probabilities, Mapping) or not probabilities:
+        return None
+    by_name: dict[str, float] = {}
+    for label, value in levels:
+        by_name[label] = value
+        by_name[label + " (" + _level_text(value) + ")"] = value
+    name = unique_highest(probabilities, tuple(by_name))
+    if name is not None and name in by_name:
+        return by_name[name]
+    name = unique_highest(probabilities)
+    if name is None:
+        return None
+    if name in by_name:
+        return by_name[name]
+    try:
+        index = float(name)
+    except (TypeError, ValueError):
+        return None
+    if index != index or not _already_whole(index):
+        return None
+    position = 0.0
+    for _label, value in levels:
+        if position == index:
+            return value
+        position += 1
+    return None
+
+
 def ordinal_question(spot: str, instructions: str, levels: Any) -> dict[str, Any]:
     """A Score whose words are an order. The position is not an amount."""
 
