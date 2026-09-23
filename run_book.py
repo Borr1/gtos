@@ -786,7 +786,19 @@ def main():
             return 6
     logging.info("broker identity: magic=%d comment_prefix=%r (namespace=%s)",
                  _magic, comment_prefix_for_namespace(args.namespace), args.namespace)
+    mt5.bind_launched_account(merged)
     if not mt5.connect():
+        if mt5.identity_refused():
+            _ide = mt5.identity_error()
+            logging.error("ACCOUNT IDENTITY check FAILED (namespace=%s): %s — refusing to start.",
+                          args.namespace, _ide)
+            try:
+                from src.notifications import notify_critical
+                notify_critical(f"W7 BOOK [{args.namespace}]: ACCOUNT IDENTITY mismatch/unverifiable — "
+                                f"REFUSING to start: {_ide}")
+            except Exception:
+                pass
+            return 5
         logging.error("MT5 connect failed (terminal=%s) — aborting launcher.", terminal)
         try:
             from src.notifications import notify_critical
