@@ -1579,7 +1579,7 @@ def _spot_withholds(question, state, withhold, allow, cache_key, instructions):
         {allow_name: allow_text, withhold_name: withhold_text},
         withhold_name,
         cache_key,
-        instructions + " Do not flatten ticket 294215389.",
+        instructions,
     )
 
 
@@ -1638,7 +1638,7 @@ def f5_fx_dsp_tight_stop_reason(
             },
             "pattern_absent",
             f"fx_dsp_dropped_j6|{sym}|{family}",
-            "A DSP sleeve printed on a symbol that an old study dropped. Is this bar's pattern the fire, or is the pattern absent? Do not close ticket 294215389.",
+            "A DSP sleeve printed on a symbol that an old study dropped. Is this bar's pattern the fire, or is the pattern absent?",
         ):
             return "fx_dsp_dropped_j6"
     dist = stop_dist
@@ -1672,7 +1672,7 @@ def f5_fx_dsp_tight_stop_reason(
         },
         "eight_pip_cliff",
         f"fx_dsp_stop_le_8pip|{sym}|{family}|{round(float(pips), 4)}",
-        "This DSP stop width in pips is on the card. A returned minimum is a fact only when it is present. Is this stop the plan, or is the cliff the decision? Do not close ticket 294215389.",
+        "This DSP stop width in pips is on the card. A returned minimum is a fact only when it is present. Is this stop the plan, or is the cliff the decision?",
     ):
         return "fx_dsp_stop_le_8pip"
     return None
@@ -1906,7 +1906,7 @@ def f5_high_print_hold_reason(
         },
         "named_high_inside_window",
         f"f5_named_high|{symbol}|{hour}",
-        "A named high event for this symbol sits inside the pre/post window. Is this candidate still the fire, or does that window withhold the send? An empty calendar is not this question. Do not close an open ticket. Do not flatten ticket 294215389.",
+        "A named high event for this symbol sits inside the pre/post window. Is this candidate still the fire, or does that window withhold the send? An empty calendar is not this question. Do not close an open ticket.",
     ):
         return "f5_named_high_window"
     return None

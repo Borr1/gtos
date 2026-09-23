@@ -4,7 +4,7 @@ The two sides of one condition are the alternatives. The unique highest
 probability wins. Empty, tie, and error return None: the measured boolean
 is not restored, and nothing is labeled unanswered as an absent mode.
 Arithmetic warmup, on-surface membership, and the clock stay integers.
-Never closes ticket 294215389.
+Does not close a position.
 """
 
 from __future__ import annotations
@@ -22,7 +22,6 @@ from typing import Any
 MODEL = "jev-1.13.0"
 NS = "operator"
 LOGIN = 0
-DO_NOT_CLOSE = 294215389
 _CACHE: dict[str, dict[str, Any]] = {}
 
 
@@ -87,10 +86,7 @@ def crypto_side(
         }
         return side
     fact = "true" if measured else "false"
-    sent = (
-        f"{instructions} The condition measured {fact}. "
-        f"Do not close ticket {DO_NOT_CLOSE}."
-    )
+    sent = f"{instructions} The condition measured {fact}."
     fact_text = json.dumps(facts or {}, sort_keys=True, default=str)
     digest = hashlib.sha256(f"{sent}|{fact_text}".encode("utf-8")).hexdigest()
     cache_key = f"{spot}|{digest}|{fact}"
@@ -172,7 +168,6 @@ def _post(
             "namespace": NS,
             "login": LOGIN,
             "measured": bool(measured),
-            "do_not_close": DO_NOT_CLOSE,
             "facts": safe_facts,
         },
         "model": MODEL,

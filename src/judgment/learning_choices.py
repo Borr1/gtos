@@ -26,7 +26,6 @@ CHALLENGE_NS = "operator"
 CHALLENGE_LOGIN = 0
 MODEL = "jev-1.13.0"
 SCHEMA = "gtos.judgment.learning_choices.v1"
-NEVER_FLATTEN_TICKET = "294215389"
 
 # Importers still compare with ``is LEGACY``. A miss is None, not this sentinel.
 LEGACY = object()
@@ -1261,9 +1260,11 @@ def _decide(spot: str, facts: Mapping[str, Any]) -> dict[str, Any]:
         "live_outcome_fields": list(_LIVE_FIELDS),
         "live_outcomes": _compact_outcomes(cards),
         "latest_close": latest,
-        "ticket": NEVER_FLATTEN_TICKET,
         "flatten": False,
     }
+    open_gold = clean.get("open_gold")
+    if isinstance(open_gold, dict) and "open_tickets" in open_gold:
+        state["open_tickets"] = open_gold["open_tickets"]
     _attach_priors(state, questions)
     try:
         from .jev_client import evaluate
@@ -1351,26 +1352,36 @@ def _read_json(path: Path) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) else None
 
 
-def _open_gold_facts(root: Path) -> dict[str, Any]:
-    """Read the open gold ticket. Do not write it and do not flatten it."""
+def _open_gold_facts(root: Path, raw: Any = None) -> dict[str, Any]:
+    """Read the open gold position. Do not write it and do not flatten it."""
 
-    path = (
-        root
-        / "pipeline_state"
-        / "ultimate_book"
-        / CHALLENGE_NS
-        / "trade_records"
-        / f"{NEVER_FLATTEN_TICKET}.json"
-    )
-    rec = _read_json(path) or {}
-    inst = rec.get("instrumentation") if isinstance(rec.get("instrumentation"), dict) else {}
+    del root
+    from src.judgment.gold_sleeve_ifs import _symbol_key, live_gold_positions
+
+    gold = live_gold_positions(raw)
+    symbol = None
+    sleeve = None
+    if gold is None:
+        tickets: Any = "unread"
+        present = False
+    elif not gold:
+        tickets = "none"
+        present = False
+    else:
+        numbers = [row["ticket"] for row in gold if isinstance(row.get("ticket"), int)]
+        tickets = numbers if numbers else "none"
+        present = True
+        if len(gold) == 1:
+            symbol = _symbol_key(str(gold[0].get("symbol") or "")) or None
+            comment = str(gold[0].get("comment") or "").strip()
+            sleeve = comment or None
     return {
-        "ticket": NEVER_FLATTEN_TICKET,
-        "present": path.is_file(),
-        "symbol": rec.get("symbol"),
-        "sleeve": rec.get("sleeve") or rec.get("sleeve_name"),
-        "family_class": inst.get("family_class") or rec.get("family_class"),
-        "status": rec.get("trade_lifecycle_status") or rec.get("status"),
+        "open_tickets": tickets,
+        "present": present,
+        "symbol": symbol,
+        "sleeve": sleeve,
+        "family_class": None,
+        "status": None,
         "flatten": False,
     }
 
@@ -1522,7 +1533,6 @@ def maybe_ask_learning(*, namespace: str | None = None) -> dict[str, Any]:
         "pid": os.getpid(),
         "asked": False,
         "flatten": False,
-        "ticket": NEVER_FLATTEN_TICKET,
         "open_gold": gold,
         "latest_close": latest,
         "live_n": len(cards),

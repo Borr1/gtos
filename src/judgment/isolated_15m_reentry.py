@@ -59,8 +59,7 @@ DEFAULT_PROVE = (
     REPO_ROOT / "judgment" / "astra" / "lab" / "wires" / "JEV_ISOLATED_15M_REENTRY_PROVE.json"
 )
 
-# Live tickets this file must never flatten / remint / place.
-NEVER_FLATTEN_TICKETS = (293332188, 294069721, 294088097, 294092360, 294215389)
+# The Challenge does not flatten. This hop does not keep a stand-in ticket list.
 KIND_READ = "read"
 FORBIDDEN_INSTRUCTION_TOKENS = ("jev", "system one", "choice")
 
@@ -1344,7 +1343,6 @@ def _ask_state(deal: Mapping[str, Any], measured: Mapping[str, Any]) -> dict[str
             "hold_dead": True,
         },
         "clock": {"as_of_utc": measured.get("as_of_utc")},
-        "never_flatten_tickets": list(NEVER_FLATTEN_TICKETS),
         "occupancy_hold_dead": True,
     }
 
@@ -1451,7 +1449,6 @@ def classify_open(
         "isolated_reentry_minutes": None,
         "isolated_reentry_is_new": None,
         "choice": None,
-        "never_flatten_tickets": list(NEVER_FLATTEN_TICKETS),
         "kind": "LABEL",
         "write": False,
     }
@@ -1572,7 +1569,6 @@ def prove_challenge_history(
             "isolated_reentry_is_new": None if us30_short is None else us30_short.get("isolated_reentry_is_new"),
             "action": None if us30_short is None else us30_short.get("action"),
         },
-        "never_flatten_tickets": list(NEVER_FLATTEN_TICKETS),
         "kind": "LABEL",
         "rows": classified,
     }
@@ -1632,7 +1628,6 @@ def maybe_prove_isolated_15m(
     pack["occupancy_hold"] = False
     pack["occupancy_hold_dead"] = True
     pack["already_placed_not_lifted"] = live.get("already_placed_holds")
-    pack["never_flatten_tickets"] = list(NEVER_FLATTEN_TICKETS)
     return pack
 
 
@@ -1731,7 +1726,6 @@ def _hop_state_from_history(history: Mapping[str, Any] | None) -> dict[str, Any]
             "n_first_print": hist.get("n_first_print"),
             "proved": hist.get("proved"),
         },
-        "never_flatten_tickets": list(NEVER_FLATTEN_TICKETS),
         "occupancy_hold_dead": True,
     }
 
@@ -1786,7 +1780,6 @@ def decide_isolated_15m_live(
         "live_fanout_skipped": fanout.get("skipped"),
         "live_n_calls": fanout.get("n_calls"),
         "live_hop": "occupancy_after_close",
-        "never_flatten_tickets": list(NEVER_FLATTEN_TICKETS),
         "occupancy_hold": False,
         "occupancy_hold_dead": True,
         "two_stop_is_integer": True,

@@ -44,8 +44,7 @@ ADMISSION_ORDER = ("this_candidate", "not_this_candidate")
 ADMISSION_QUESTION = spot_question(
     "admission",
     "This candidate on this bar. Pick one option. Refuse only when not_this_candidate "
-    "is the single highest probability. An empty answer or a tie does not refuse. "
-    "Do not flatten open gold 294215389.",
+    "is the single highest probability. An empty answer or a tie does not refuse.",
     {
         "this_candidate": "This candidate is admitted on this bar.",
         "not_this_candidate": "This candidate is not admitted on this bar.",

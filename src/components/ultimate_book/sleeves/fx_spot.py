@@ -59,7 +59,6 @@ def book_state(sleeve: str, symbol: str, **facts: Any) -> dict[str, Any]:
         "sleeve": sleeve,
         "symbol": symbol,
         "order_send": False,
-        "open_gold": 294215389,
     }
     state.update(facts)
     for key in _DROPPED:

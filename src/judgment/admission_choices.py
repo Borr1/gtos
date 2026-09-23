@@ -18,8 +18,6 @@ from .jev_questions import spot_question, unique_highest
 CHALLENGE_NS = "operator"
 CHALLENGE_LOGIN = 0
 MODEL = "jev-1.13.0"
-OPEN_GOLD = 294215389
-
 _CACHE: dict[str, tuple[bool, str | None]] = {}
 _PACK: dict[str, dict[str, Any]] = {}
 last: dict[str, Any] = {}
@@ -48,7 +46,7 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: the operator circuit breaker reads open. "
             "Pick one option. Block a new entry only when circuit_open has the "
-            "single highest probability. Do not flatten open gold 294215389."
+            "single highest probability."
         ),
     },
     "nan_state": {
@@ -61,7 +59,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: an equity, high-water, day, or open-risk reading is missing or not a number. "
             "Pick one option. Block only when state_unreadable is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "nonpositive_equity": {
@@ -74,7 +71,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: equity or high water is at or under zero. "
             "Pick one option. Block only when equity_not_positive is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "high_water_below_equity": {
@@ -87,7 +83,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: recorded high water is below equity. "
             "Pick one option. Block only when high_water_below is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "negative_open_risk": {
@@ -100,7 +95,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: open risk percent is negative. "
             "Pick one option. Block only when open_risk_negative is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "soft_daily_stop": {
@@ -113,7 +107,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: realized today is at or under the soft daily stop. "
             "Pick one option. Block only when soft_stop_reached is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "max_dd_limit": {
@@ -126,7 +119,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: drawdown from the static reference is at the max-DD limit. "
             "Pick one option. Block only when max_dd_reached is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "max_dd_entry_buffer": {
@@ -139,7 +131,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: drawdown has reached the max-DD entry buffer. "
             "Pick one option. Block only when entry_buffer_reached is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "how_many_more": {
@@ -154,7 +145,6 @@ SPOTS: dict[str, dict[str, Any]] = {
             "The fractions on this state are facts, not a cap. "
             "Pick one option. Cap another ticket only when count_caps is the single highest. "
             "An empty answer, a tie, or an error does not cap and does not mean zero more. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "gross_risk_cap": {
@@ -167,7 +157,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: remaining gross open-risk headroom is at or under zero. "
             "Pick one option. Block only when cap_exhausted is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "profit_target_protect": {
@@ -180,7 +169,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: equity gain versus the static reference is at the profit-target protect. "
             "Pick one option. Shrink the new entry only when protect_derisk is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "governor": {
@@ -194,7 +182,7 @@ SPOTS: dict[str, dict[str, Any]] = {
             "Governor question: the two sides of allow_new_entries being false. "
             "Pick one option. Block new entries only when block_new_entries is the "
             "single highest probability. An empty answer or a tie does not restore "
-            "the boolean. Do not flatten open gold 294215389."
+            "the boolean."
         ),
     },
     "derisk": {
@@ -208,7 +196,6 @@ SPOTS: dict[str, dict[str, Any]] = {
             "Derisk question: the two sides of shrinking size as equity approaches the wall. "
             "Pick one option. Shrink only when shrink_into_wall is the single highest "
             "probability. An empty answer or a tie does not restore the shrink. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "ceiling_smooth": {
@@ -221,7 +208,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: base risk is at the 2 percent ceiling and defense is not smooth. "
             "Pick one option. Refuse the book only when ceiling_refuses is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "w7_dropped_symbol": {
@@ -234,7 +220,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: this intent's symbol is HEATOIL_c or NATGAS_cash. "
             "Pick one option. Drop it only when symbol_dropped is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "vp_acceptance": {
@@ -247,7 +232,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: this sub_mid_dn_revert intent is not tagged above_va. "
             "Pick one option. Drop it only when not_above_va is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "learning_rerate_gate": {
@@ -260,7 +244,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: the learning actuator multiplier for this sleeve is at or under zero. "
             "Pick one option. Drop the intent only when learning_gate_drop is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "policy_c_stand_down": {
@@ -273,7 +256,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: policy C marked this intent stand_down. "
             "Pick one option. Drop it only when stand_down is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "metals_confluence": {
@@ -286,7 +268,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: this metals intent carries the confluence features and failed K of 4. "
             "Pick one option. Drop it only when confluence_failed is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "symbol_damage": {
@@ -299,7 +280,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: the symbol-damage multiplier for this symbol is at or under zero. "
             "Pick one option. Drop it only when quarantine is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "unknown_sleeve": {
@@ -312,7 +292,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: a member sleeve is absent from the active registry. "
             "Pick one option. Size the unit to zero only when sleeve_unknown is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "bad_direction": {
@@ -325,7 +304,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: an intent direction is not +1 or -1. "
             "Pick one option. Size the unit to zero only when direction_invalid is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "nonpositive_stop": {
@@ -338,7 +316,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: an intent stop distance is missing or not positive. "
             "Pick one option. Size the unit to zero only when stop_not_positive is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "bad_intra_size": {
@@ -351,7 +328,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: an intent intra size is missing or negative. "
             "Pick one option. Size the unit to zero only when intra_size_invalid is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "gross_cap_shed": {
@@ -364,7 +340,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: this sized unit's risk is above remaining gross headroom. "
             "Pick one option. Shed it only when shed_unit is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "house_hard_off": {
@@ -377,7 +352,6 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: family class is house hard-off, or the sleeve is on the hard-off list. "
             "Pick one option. Block only when hard_off_stands is the single highest. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "admission": {
@@ -390,7 +364,7 @@ SPOTS: dict[str, dict[str, Any]] = {
         "instructions": (
             "Admission question: this candidate on this bar. "
             "Pick one option. Refuse only when not_this_candidate is the single highest. "
-            "An empty answer or a tie does not refuse. Do not flatten open gold 294215389."
+            "An empty answer or a tie does not refuse."
         ),
     },
     "unknown_profile": {
@@ -404,7 +378,6 @@ SPOTS: dict[str, dict[str, Any]] = {
             "Admission question: the named allocation profile is not in the book. "
             "Pick one option. Refuse sizing only when profile_missing is the single highest. "
             "An empty answer or a tie does not refuse. A floor and a baseline are not a limit. "
-            "Do not flatten open gold 294215389."
         ),
     },
     "tick_untradeable": {
@@ -419,7 +392,6 @@ SPOTS: dict[str, dict[str, Any]] = {
             "The recorded untradeable level on the card is a fact, not the decision. "
             "Pick one option. Refuse only when floor_refuses is the single highest. "
             "An empty answer or a tie does not refuse. "
-            "Do not flatten open gold 294215389."
         ),
     },
 }
@@ -450,7 +422,6 @@ def withholds(spot: str, facts: Mapping[str, Any] | None = None) -> bool:
         "model": MODEL,
         "login": CHALLENGE_LOGIN,
         "ns": CHALLENGE_NS,
-        "open_gold": OPEN_GOLD,
         "error": None,
     }
     if spec is None:
@@ -475,7 +446,6 @@ def withholds(spot: str, facts: Mapping[str, Any] | None = None) -> bool:
         "ns": CHALLENGE_NS,
         "spot": spot,
         "model": MODEL,
-        "open_gold": OPEN_GOLD,
         "facts": dict(facts or {}),
         "questions": question,
     }
@@ -638,7 +608,6 @@ def ask_pack(
         "login": CHALLENGE_LOGIN,
         "ns": CHALLENGE_NS,
         "model": MODEL,
-        "open_gold": OPEN_GOLD,
         "facts": card,
     }
     try:

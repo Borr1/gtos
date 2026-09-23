@@ -72,12 +72,8 @@ _BANNED_TEXT = (
     "110K",
 )
 KIND_READ = "read"
-NEVER_FLATTEN_TICKETS = frozenset(
-    {294092360, 294088097, 293332188, 294069721, 294215389}
-)
 FORBIDDEN_INSTRUCTION_TOKENS = ("jev", "system one", "choice")
 OPEN_GOLD_SLEEVE = "dsp_descending_lows_accepted"
-OPEN_GOLD_TICKET = 294215389
 
 GOLD_SYMBOLS = frozenset({"XAUUSD", "XAUEUR", "XAUAUD"})
 F5_FX_DSP_DROP_SYMBOLS = frozenset({"EURUSD", "GBPUSD", "USDJPY"})
@@ -255,6 +251,16 @@ def gold_sleeve_env_on() -> bool:
 
 def is_gold_symbol(symbol: str) -> bool:
     return _symbol_key(symbol) in GOLD_SYMBOLS
+
+
+def live_gold_positions(raw: Any = None) -> list[dict[str, Any]] | None:
+    """Gold rows from the lock-wrapped read. ``None`` when that read failed."""
+    from src.components.ultimate_book.open_tickets import read_open_positions, writer_terminal
+
+    rows = read_open_positions(writer_terminal() if raw is None else raw)
+    if rows is None:
+        return None
+    return [row for row in rows if is_gold_symbol(str(row.get("symbol") or ""))]
 
 
 def gold_node_for(sleeve: str, *, symbol: str = "XAUUSD") -> str:
@@ -436,6 +442,7 @@ def gold_subtree_questions(
     symbol: str = "XAUUSD",
     side: str = "",
     branch: str = "fire",
+    raw: Any = None,
 ) -> dict[str, Any]:
     """Dump the gold subtree for THIS sleeve only.
 
@@ -533,14 +540,22 @@ def gold_subtree_questions(
             ],
         )
 
-    questions["gold_vs_sibling"] = _choice_q(
+    from src.components.ultimate_book.open_tickets import (
+        question_with_open_tickets,
+        writer_terminal,
+    )
+
+    sibling_text, open_card = question_with_open_tickets(
         (
             f"On `{_symbol_key(symbol)}`, does THIS named sleeve `{sl}` still "
             "own the fire versus named siblings on the same symbol, or should "
             "THIS sleeve stand for a sibling? Occupancy keep-one stays integer. "
-            "Do not invent a second unit. Open ticket 294215389 stays unmanaged "
-            "by this hop."
+            "Do not invent a second unit."
         ),
+        writer_terminal() if raw is None else raw,
+    )
+    questions["gold_vs_sibling"] = _choice_q(
+        sibling_text,
         {
             "keep_this": (
                 "THIS named gold sleeve still owns the fire versus siblings "
@@ -586,6 +601,7 @@ def gold_subtree_questions(
         "questions": questions,
         "integer_facts": INTEGER_FACTS,
         "extra_pass": False,
+        "open_ticket_card": open_card,
         "snippet": (
             f"Gold seat `{sl}` on `{_symbol_key(symbol)}`; "
             "displacement stance/fresh/geometry are ranges, not KEEP-OFF"
@@ -946,6 +962,7 @@ def _hop_state(
     symbol: str,
     side: str = "",
     extra: Mapping[str, Any] | None = None,
+    raw: Any = None,
 ) -> dict[str, Any]:
     st = dict(extra or {})
     identity = dict(st.get("identity") or {})
@@ -960,9 +977,12 @@ def _hop_state(
     st.setdefault("namespace", CHALLENGE_NS)
     st.setdefault("login", CHALLENGE_LOGIN)
     st.setdefault("occupancy_hold_dead", True)
-    st.setdefault("never_flatten_tickets", sorted(NEVER_FLATTEN_TICKETS))
-    st.setdefault("open_gold_ticket", OPEN_GOLD_TICKET)
-    st.setdefault("open_gold_sleeve", OPEN_GOLD_SLEEVE)
+    st.pop("open_gold_sleeve", None)
+    gold = live_gold_positions(raw)
+    if gold is not None and len(gold) == 1:
+        comment = str(gold[0].get("comment") or "").strip()
+        if comment:
+            st["open_gold_sleeve"] = comment
     cleaned = _scrub(st)
     return cleaned if isinstance(cleaned, dict) else st
 
@@ -1043,9 +1063,6 @@ def compose_gold_sleeve(
         "persist_apply": None,
         "may_send": None,
         "occupancy_hold_dead": True,
-        "never_flatten_tickets": sorted(NEVER_FLATTEN_TICKETS),
-        "named_never_flatten_ticket": True,
-        "open_gold_ticket": OPEN_GOLD_TICKET,
         "live_hop": f"gold_sleeve:{_norm(sleeve)}",
         "broker_effect": False,
         "model": MODEL,
@@ -1072,6 +1089,12 @@ def compose_gold_sleeve(
             "apply": False,
         }
     live_state = _hop_state(sleeve=sleeve, symbol=symbol, side=side, extra=state)
+    live_state.pop("never_flatten_tickets", None)
+    live_state.pop("open_gold_ticket", None)
+    card = pack.get("open_ticket_card")
+    if isinstance(card, dict):
+        live_state.update(card)
+        base.update(card)
     if evaluate_jev and _answers_missing(answers):
         fanout = fanout_gold_sleeve(
             live_state,

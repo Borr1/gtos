@@ -12,7 +12,6 @@ from typing import Any
 
 _MODEL = "jev-1.13.0"
 _NS = "operator"
-_OPEN_TICKET = 294215389
 _CACHE: dict[tuple, dict[str, Any]] = {}
 
 _SPOTS = {
@@ -112,7 +111,6 @@ def decide_place_path(
         "registry_read_error": bool(registry_read_error),
         "require_native_limit": bool(require_native_limit),
         "native_limit": bool(native_limit),
-        "open_ticket_do_not_close": _OPEN_TICKET,
     }
     fact_key = tuple(state.items())
     sides: dict[str, str | None] = {}
