@@ -1653,6 +1653,82 @@ def _day_start_for_card(
     )
 
 
+_LIVE_READ: dict[str, Any] | None = None
+_LIVE_LOCK = threading.Lock()
+_LIVE_FOR_FANOUT = False
+
+
+def begin_fanout_read() -> None:
+    """The generation pool shares one terminal account card. It starts empty."""
+
+    global _LIVE_READ, _LIVE_FOR_FANOUT
+    with _LIVE_LOCK:
+        _LIVE_READ = None
+        _LIVE_FOR_FANOUT = True
+
+
+def end_fanout_read() -> None:
+    """The pool has joined. Later asks read the terminal themselves."""
+
+    global _LIVE_READ, _LIVE_FOR_FANOUT
+    with _LIVE_LOCK:
+        _LIVE_READ = None
+        _LIVE_FOR_FANOUT = False
+
+
+def clear_live_read() -> None:
+    """Drop a shared card. The same as the pool finishing."""
+
+    end_fanout_read()
+
+
+def _serves_this_account(card: Mapping[str, Any], login: Any) -> bool:
+    """The shared card is this login's. An unnamed ask is the challenge account."""
+
+    card_login = _account_login(card.get("login"))
+    if card_login is None or not _login_ok(card_login):
+        return False
+    asked = _account_login(login)
+    if asked is None:
+        return True
+    return asked == card_login
+
+
+def _cycle_live_read(*, mt5: Any = None, owner: Any = None, login: Any = None) -> dict[str, Any] | None:
+    """One terminal account card while the generation pool is running.
+
+    Outside that pool every ask reads the terminal. The lock covers the
+    shared read so the pool does not take it twice. The day start is not
+    stored here. A card for another login is not returned.
+    """
+
+    global _LIVE_READ
+    with _LIVE_LOCK:
+        if not _LIVE_FOR_FANOUT:
+            live = read_live_mt5(mt5=mt5, owner=owner)
+            if isinstance(live, dict) and not _serves_this_account(live, login):
+                return None
+            return live
+        remembered = _LIVE_READ
+        if (
+            isinstance(remembered, dict)
+            and remembered.get("equity") is not None
+            and _serves_this_account(remembered, login)
+        ):
+            return dict(remembered)
+        live = read_live_mt5(mt5=mt5, owner=owner)
+        if not isinstance(live, dict) or live.get("equity") is None:
+            return live
+        if not _serves_this_account(live, login):
+            return None
+        _LIVE_READ = {
+            key: value
+            for key, value in live.items()
+            if not str(key).startswith("day_start") and key != "day_net"
+        }
+        return dict(_LIVE_READ)
+
+
 def _assemble_facts(
     *,
     injected: Mapping[str, Any] | None = None,
@@ -1686,7 +1762,7 @@ def _assemble_facts(
             if live["equity"] is None:
                 live = None
     if live is None:
-        live = read_live_mt5(mt5=mt5, owner=owner)
+        live = _cycle_live_read(mt5=mt5, owner=owner, login=asked_login)
     if live is None or live.get("equity") is None:
         row = _card_shell(terminal_read="missing")
         row["as_of_utc"] = as_of_s

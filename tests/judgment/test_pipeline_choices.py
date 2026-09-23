@@ -67,13 +67,46 @@ def _n_bars(**kwargs) -> int:
 
 
 def test_last_bar():
+    # NOW is 10:20. The 10:15 M15 bar closes at 10:30, so this clock keeps
+    # it out. An ask does not put a still-forming bar back into the series.
     assert _n_bars() == 1
-    _bind("forming_bar_stays_out")
+
+    def _refuse(state, **_kwargs):
+        raise AssertionError("a cycle clock classifies the bar and does not ask")
+
+    pc.bind_ask(_refuse)
     assert _n_bars(namespace=NS) == 1
+
+    closed_now = datetime(2026, 9, 21, 10, 30, tzinfo=timezone.utc)
+
+    def _n_closed(**kwargs) -> int:
+        bars, _times = candles_to_bars(
+            CANDLES,
+            now=closed_now,
+            interval_minutes=15,
+            symbol="XAUUSD",
+            timeframe=15,
+            **kwargs,
+        )
+        return len(bars)
+
+    assert _n_closed(namespace=NS) == 2
+
+    def _n_unclocked(**kwargs) -> int:
+        bars, _times = candles_to_bars(
+            CANDLES,
+            symbol="XAUUSD",
+            timeframe=15,
+            **kwargs,
+        )
+        return len(bars)
+
+    _bind("forming_bar_stays_out")
+    assert _n_unclocked(namespace=NS) == 1
     _bind("closed_bar_reaches")
-    assert _n_bars(namespace=NS) == 2
+    assert _n_unclocked(namespace=NS) == 2
     _bind(None)
-    assert _n_bars(namespace=NS) == 2
+    assert _n_unclocked(namespace=NS) == 2
 
 
 def test_unclosed_tail():

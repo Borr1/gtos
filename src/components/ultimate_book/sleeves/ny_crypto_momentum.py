@@ -78,7 +78,7 @@ def _rank(bars, i: int, vol_win: int, hist_min: int) -> float | None:
     return sum(1 for value in hist if value <= current) / len(hist)
 
 
-def _ask(symbol, bars, decision_day, bar_time, bar_times) -> dict[str, Any]:
+def _ask(symbol, bars, decision_day, bar_time, bar_times, now=None) -> dict[str, Any]:
     n = len(bars) if bars else 0
     i = n - 1 if n else -1
     stamp = bar_time
@@ -101,7 +101,7 @@ def _ask(symbol, bars, decision_day, bar_time, bar_times) -> dict[str, Any]:
         on_named_surface=symbol in ON_SURFACE,
         named_surface=list(ON_SURFACE),
     )
-    remain = fx_spot.seconds_until_next_print(stamp, previous)
+    remain = fx_spot.seconds_until_next_print(stamp, previous, now=now)
     if remain is not None:
         state["seconds_from_clock"] = remain
     choices = {
@@ -125,12 +125,12 @@ def _ask(symbol, bars, decision_day, bar_time, bar_times) -> dict[str, Any]:
 
 
 def generate(symbol, bars, decision_day, *, bar_time=None, bar_times=None,
-             aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
+             aux_bars=None, aux_times=None, runtime_now=None, **_) -> Optional[TradeIntent]:
     """One post. A missing bound, including the time stop, does not emit."""
     del aux_bars, aux_times
     if not bars:
         return None
-    packed = _ask(symbol, bars, decision_day, bar_time, bar_times)
+    packed = _ask(symbol, bars, decision_day, bar_time, bar_times, now=runtime_now)
     if packed.get("sides", {}).get("surface") != "on_surface":
         return None
     scores = packed.get("scores") or {}

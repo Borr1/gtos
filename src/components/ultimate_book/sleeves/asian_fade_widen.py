@@ -49,7 +49,7 @@ def generate(symbol, bars, decision_day, *, bar_time=None, bar_times=None,
         parent_stop=float(intent.stop_dist),
         atr=float(atr),
     )
-    remain = fx_spot.seconds_until_next_print(latest, previous)
+    remain = fx_spot.seconds_until_next_print(latest, previous, now=kw.get("runtime_now"))
     if remain is not None:
         state["seconds_from_clock"] = remain
     packed = fx_spot.ask_pack(_SCORES, state, bars=bars, index=i, bar_times=bar_times)
