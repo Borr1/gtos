@@ -50,7 +50,6 @@ This module does not send and does not flatten.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
 
 try:
@@ -1419,18 +1418,6 @@ def choice_alternative(block: Any) -> dict[str, Any]:
     }
 
 
-def _chair_wake_paths() -> tuple[Path, ...]:
-    repo = Path(__file__).resolve().parents[2]
-    state = repo / "pipeline_state" / "ultimate_book" / "operator" / "judgment" / "state"
-    host = Path(r"host-local\redacted_host\repo") / "pipeline_state" / "ultimate_book" / "operator" / "judgment" / "state"
-    return (
-        state / "chair_wake.json",
-        host / "chair_wake.json",
-        state / "equity_wire_post.json",
-        host / "equity_wire_post.json",
-    )
-
-
 def _float_or_none(value: Any) -> float | None:
     if value is None or value == "":
         return None
@@ -1443,52 +1430,32 @@ def _float_or_none(value: Any) -> float | None:
     return number
 
 
+def _challenge_login(login: Any) -> bool:
+    try:
+        return int(login) == int(CHALLENGE_LOGIN)
+    except (TypeError, ValueError):
+        return False
+
+
 def measured_account_card(state: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
-    """Measured Challenge card. Never invent equity. chair_wake wins over a string login."""
+    """Measured Challenge card already on the state.
+
+    chair_wake.json and equity_wire_post.json are not equity. A file can
+    hold another terminal's equity, and this reader used to stamp that
+    number with the Challenge login. Missing equity stays missing.
+    """
     st = dict(state or {})
     existing = st.get("account") if isinstance(st.get("account"), Mapping) else None
     if (
         isinstance(existing, Mapping)
         and existing.get("present") is True
         and _float_or_none(existing.get("equity")) is not None
+        and _challenge_login(existing.get("login"))
     ):
         card = dict(existing)
         card["invented"] = False
         return {str(key): item for key, item in card.items() if not _limit_key(key)}
-    raw: dict[str, Any] | None = None
-    for path in _chair_wake_paths():
-        try:
-            if not path.is_file():
-                continue
-            loaded = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        if isinstance(loaded, dict) and _float_or_none(loaded.get("equity")) is not None:
-            raw = loaded
-            break
-    if raw is None:
-        return None
-    equity = float(raw["equity"])
-    balance = _float_or_none(raw.get("balance"))
-    open_pnl = _float_or_none(raw.get("open_pnl") if raw.get("open_pnl") is not None else raw.get("profit"))
-    to_pass = _float_or_none(raw.get("to_pass"))
-    return {
-        "schema": "gtos.judgment.equity_frame.v1",
-        "login": CHALLENGE_LOGIN,
-        "ns": CHALLENGE_NS,
-        "present": True,
-        "source": "chair_wake",
-        "reason": None,
-        "equity": equity,
-        "balance": balance,
-        "open_pnl": open_pnl,
-        "to_pass": to_pass,
-        "day_equity": equity,
-        "pass_line": None,
-        "cash_unit_usd": None,
-        "never_enlarge_because_to_pass": False,
-        "invented": False,
-    }
+    return None
 
 
 def _prepare_hop_state(state: Mapping[str, Any] | None) -> dict[str, Any]:

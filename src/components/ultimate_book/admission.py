@@ -479,10 +479,6 @@ def stress_derisk_multiplier(
             {
                 "consecutive_loss_days": int(getattr(st, "consecutive_loss_days", 0) or 0),
                 "trailing_neg_frac": float(getattr(st, "trailing_neg_frac", 0.0) or 0.0),
-                "recorded_ladder": list(LADDER_STEPS),
-                "recorded_coloss_neg_frac": COLOSS_NEG_FRAC,
-                "recorded_coloss_mult": COLOSS_SIZE_MULT,
-                "recorded_min_mult": STRESS_DERISK_MIN_MULT,
                 "login": 0,
             },
         )
@@ -2725,6 +2721,8 @@ def _challenge_risk_units(
     """
     LAST_CYCLE_SHARE.clear()
     card = dict(equity_card or {})
+    for key in _PLANTED_GOVERNOR_FACTS:
+        card.pop(key, None)
     card["recorded_base_risk"] = base_risk
     card["room_pct"] = room
     card["kelly_lite"] = bool(kelly_lite)
@@ -3490,6 +3488,24 @@ def _read_side(unit: SizedUnit):
     return _UNIT_SIDE.get(id(unit))
 
 
+# Ours, not the firm's. They stay off the Challenge governor card so a score cannot pick them.
+_PLANTED_GOVERNOR_FACTS = (
+    "recorded_soft_daily_stop_pct",
+    "recorded_max_dd_entry_block_pct",
+    "recorded_derisk_start_dd_pct",
+    "recorded_gross_open_risk_cap_pct",
+    "recorded_profit_target_derisk_mult",
+)
+
+
+def _governor_card(state: GovernorState, limits: GovernorLimits, **extra) -> dict:
+    """Challenge equity card. The firm's loss rules stay. Our tighter numbers do not."""
+    card = _equity_card(state, limits, **extra)
+    for key in _PLANTED_GOVERNOR_FACTS:
+        card.pop(key, None)
+    return card
+
+
 def _equity_card(state: GovernorState, limits: GovernorLimits, **extra) -> dict:
     """Live equity readings. Recorded limits are facts on the card."""
     dd_ref = state.max_dd_reference_equity if state.max_dd_reference_equity > 0 else state.high_water
@@ -3526,29 +3542,203 @@ def _equity_card(state: GovernorState, limits: GovernorLimits, **extra) -> dict:
     return card
 
 
+def _adapter_login(adapter: Any) -> int | None:
+    """Login on this adapter. Does not initialize a terminal."""
+    if adapter is None:
+        return None
+    fn = getattr(adapter, "get_account_login", None)
+    login = None
+    if callable(fn):
+        try:
+            login = fn()
+        except Exception:
+            login = None
+    if login is None:
+        raw = getattr(adapter, "_mt5", None)
+        raw = raw if raw is not None else adapter
+        info_fn = getattr(raw, "account_info", None)
+        if callable(info_fn):
+            try:
+                info = info_fn()
+            except Exception:
+                info = None
+            if isinstance(info, Mapping):
+                login = info.get("login")
+            elif info is not None:
+                login = getattr(info, "login", None)
+    try:
+        return None if login is None else int(login)
+    except (TypeError, ValueError):
+        return None
+
+
+def _account_rule(config: Mapping[str, Any] | None, *names: str):
+    """The size hop's lookup. Runtime block, then the config, then ftmo_rules."""
+    root = config if isinstance(config, Mapping) else {}
+    runtime = root.get("gtos_vnext_runtime")
+    runtime = runtime if isinstance(runtime, Mapping) else {}
+    firm = root.get("ftmo_rules")
+    firm = firm if isinstance(firm, Mapping) else {}
+    for blob in (runtime, root, firm):
+        for name in names:
+            if blob.get(name) not in (None, ""):
+                return blob.get(name)
+    return None
+
+
+def _challenge_binding_facts(
+    state: GovernorState,
+    rules: Mapping[str, Any] | None,
+    hop_facts: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Facts for binding_room_usd.
+
+    Day start is only ``read_chair_day_start``, including that read's reset.
+    Equity, open stop risk, and the account-rule numbers are the size hop's
+    reads (``execution._size_room_facts``). The governor state is not a
+    source: its equity and its open-risk percent are a different book.
+    """
+    del state
+    hop = hop_facts if isinstance(hop_facts, Mapping) else {}
+    if hop.get("login") not in (None, ""):
+        try:
+            if int(hop.get("login")) != 0:
+                return {}
+        except (TypeError, ValueError):
+            return {}
+    try:
+        equity = float(hop.get("equity"))
+    except (TypeError, ValueError):
+        return {}
+    if equity <= 0:
+        return {}
+    facts: dict[str, Any] = {
+        "equity": equity,
+        "equity_source": "execution._size_room_facts.get_account_equity",
+    }
+    try:
+        from src.judgment.equity_frame import read_chair_day_start
+
+        day = read_chair_day_start(
+            login=hop.get("login"),
+            rule_name=_account_rule(
+                rules,
+                "prop_safe_selector_daily_reset_timezone",
+                "governor_daily_reset_rule",
+            ),
+            namespace=os.environ.get("GTOS_NAMESPACE") or os.environ.get("GTOS_BOOK_NAMESPACE"),
+        )
+    except Exception:
+        day = {}
+    if isinstance(day, Mapping):
+        for key in (
+            "day_start_balance",
+            "day_start_equity",
+            "day_start_reset_utc",
+            "day_start_source",
+            "day_start_equity_source",
+        ):
+            if day.get(key) not in (None, ""):
+                facts[key] = day.get(key)
+    for hop_key, source_key, names in (
+        (
+            "initial_balance",
+            "initial_source",
+            ("prop_safe_selector_initial_balance", "account_balance_initial_inferred_usd"),
+        ),
+        (
+            "overall_loss_pct",
+            "overall_source",
+            ("prop_safe_selector_external_overall_max_loss_pct", "maximum_loss_pct"),
+        ),
+        (
+            "daily_percent_external",
+            "daily_source",
+            ("prop_safe_selector_external_daily_loss_limit_pct", "maximum_daily_loss_pct"),
+        ),
+    ):
+        if hop.get(hop_key) not in (None, ""):
+            facts[hop_key] = hop.get(hop_key)
+            facts[source_key] = "execution._size_room_facts._cfg_fact"
+        else:
+            value = _account_rule(rules, *names)
+            if value not in (None, ""):
+                facts[hop_key] = value
+                facts[source_key] = "account_rule"
+    if hop.get("account_rules") not in (None, ""):
+        facts["account_rules"] = str(hop.get("account_rules"))
+    else:
+        declared = _account_rule(rules, "account_rules")
+        if declared not in (None, ""):
+            facts["account_rules"] = str(declared)
+    if hop.get("positions_total") not in (None, ""):
+        facts["positions_total"] = hop.get("positions_total")
+    if "open_risk_usd" in hop and hop.get("open_risk_usd") not in (None, ""):
+        facts["open_risk_usd"] = hop.get("open_risk_usd")
+        facts["open_risk_source"] = "execution._size_room_facts.open_stop_risk"
+    elif hop.get("positions_total") == 0:
+        facts["open_risk_usd"] = 0.0
+        facts["open_risk_source"] = "execution._size_room_facts.flat"
+    return facts
+
+
+def _challenge_binding_room(
+    state: GovernorState,
+    limits: GovernorLimits,
+    rules: Mapping[str, Any] | None = None,
+    hop_facts: Mapping[str, Any] | None = None,
+):
+    """The room #34 already binds, as a fraction of the size hop's equity.
+
+    ``limits`` is not a source. Day start is the chair read. Equity and open
+    stop risk are the size hop's reads. Unread chair day start or unread
+    account rules leave the room unset. An empty room is no room.
+    """
+    del limits
+    try:
+        from src.judgment.apply_size import binding_room_usd
+    except Exception:
+        return None, "unset", None
+    facts = _challenge_binding_facts(state, rules, hop_facts)
+    equity = facts.get("equity")
+    if equity is None:
+        return None, "unset", None
+    try:
+        room, read = binding_room_usd(facts, equity)
+    except Exception:
+        return None, "unset", None
+    if read == "empty":
+        return 0.0, read, 0.0
+    if room is None:
+        return None, read or "unset", None
+    return float(room) / float(equity), read, float(room)
+
+
 def _challenge_governor(
     state: GovernorState,
     limits: GovernorLimits,
     *,
     base_risk: float | None = None,
+    rules: Mapping[str, Any] | None = None,
+    hop_facts: Mapping[str, Any] | None = None,
 ) -> GovernorDecision:
-    """Room, caps, and the block choices are one pack on the live equity card.
+    """Caps and block choices sit on the live equity card.
 
-    An empty score does not restore a recorded cap and does not write the room as zero.
-    An empty choice does not block.
+    The room is the binding room. Day start is the chair read. Equity and
+    open stop risk are the size hop's reads. An empty score does not restore
+    a recorded cap. An empty choice does not block. An unread room stays
+    None. None is not a limit and not the absence of one: the size hop
+    sends no cash when its own room is unset.
     """
-    card = _equity_card(state, limits)
+    card = _governor_card(state, limits)
+    room_frac, room_read, room_usd = _challenge_binding_room(
+        state, limits, rules, hop_facts
+    )
+    card["binding_room_usd"] = room_usd
+    card["binding_room_read"] = room_read
     if base_risk is not None:
         card["base_risk"] = base_risk
     pack = {
-        "gross_open_risk_room": _admit_score(
-            "gross_open_risk_room",
-            "The score you return is the gross open-risk room on this live equity, "
-            "as a fraction of equity still open for new risk. "
-            "The recorded cap is a fact, not the room. "
-            "An empty score leaves the room unset. Do not write zero. Do not send.",
-            card,
-        ),
         "soft_daily_stop_pct": _admit_score(
             "soft_daily_stop_pct",
             "The score you return is the soft daily stop for this live equity, as a fraction of equity. "
@@ -3587,13 +3777,19 @@ def _challenge_governor(
         "profit_target_mult": _admit_score(
             "profit_target_mult",
             "The score you return is the profit-target size multiplier on this live equity. "
-            "The recorded target and the recorded shrink are facts, not the multiplier. "
+            "The recorded target is a fact, not the multiplier. "
             "An empty score leaves the size uncut. Do not send.",
             card,
         ),
     }
     questions: dict[str, Any] = {}
-    for name in ("soft_daily_stop", "max_dd_limit", "max_dd_entry_buffer", "ceiling_smooth"):
+    for name in (
+        "soft_daily_stop",
+        "max_dd_limit",
+        "max_dd_entry_buffer",
+        "ceiling_smooth",
+        "profit_target_protect",
+    ):
         block = _spot(name)
         if block is not None:
             questions[name] = block
@@ -3606,13 +3802,14 @@ def _challenge_governor(
         return GovernorDecision(False, 0.0, None, "max_dd_limit_reached")
     if pack.get("max_dd_entry_buffer") == "entry_buffer_reached":
         return GovernorDecision(False, 0.0, None, "max_dd_entry_buffer_reached")
-    room = pack.get("gross_open_risk_room")
-    room_out = None if room is None else round(float(room), 6)
+    room_out = None if room_frac is None else round(float(room_frac), 6)
     cap = pack.get("size_cap_multiplier")
     cap_mult = 1.0 if cap is None else float(cap)
     profit = pack.get("profit_target_mult")
     reason = "ok" if cap_mult == 1.0 else "derisking_into_maxdd_wall"
-    if profit is not None:
+    # A returned multiplier is not the protect reason. The choice is.
+    # Empty, tie, and error leave the size uncut and do not restore a shrink.
+    if pack.get("profit_target_protect") == "protect_derisk" and profit is not None:
         cap_mult *= float(profit)
         reason = "profit_target_protect_derisk"
     return GovernorDecision(True, round(cap_mult, 6), room_out, reason)
@@ -3623,6 +3820,8 @@ def evaluate_governor(
     *,
     limits: GovernorLimits = DEFAULT_LIMITS,
     base_risk: float | None = None,
+    rules: Mapping[str, Any] | None = None,
+    hop_facts: Mapping[str, Any] | None = None,
 ) -> GovernorDecision:
     """Fail-closed governor. Returns whether NEW entries are allowed and a size-cap multiplier.
 
@@ -3660,7 +3859,9 @@ def evaluate_governor(
     ):
         return GovernorDecision(False, 0.0, 0.0, "fail_closed:negative_open_risk")
     if _on_challenge_book():
-        return _challenge_governor(state, limits, base_risk=base_risk)
+        return _challenge_governor(
+            state, limits, base_risk=base_risk, rules=rules, hop_facts=hop_facts
+        )
     # 3. soft daily stop (block opening NEW units below -3% intraday; -5% hard never approached)
     if state.realized_today_pct <= -limits.soft_daily_stop_pct and _admission_blocks(
         "soft_daily_stop", {"realized_today_pct": state.realized_today_pct}
@@ -3859,6 +4060,8 @@ def admit_and_size(
     account_equity: float | None = None,
     launcher_usd: float | None = None,
     room_facts: "Mapping[str, Any] | None" = None,
+    rules: Mapping[str, Any] | None = None,
+    hop_facts: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Top-level deployable decision: governor gate -> confidence-weighted correlated-unit sizing.
 
@@ -3938,7 +4141,9 @@ def admit_and_size(
     if drop_w7_symbols:
         intents, dropped_w7 = filter_w7_dropped_symbols(intents, enabled=True)
     if challenge:
-        gov = evaluate_governor(state, limits=limits, base_risk=base_risk)
+        gov = evaluate_governor(
+            state, limits=limits, base_risk=base_risk, rules=rules, hop_facts=hop_facts
+        )
     else:
         gov = evaluate_governor(state, limits=limits)
     if not gov.allow_new_entries and challenge:
@@ -3984,7 +4189,7 @@ def admit_and_size(
     if challenge:
         size_base = base_risk
         effective_base = None
-        equity_card = _equity_card(
+        equity_card = _governor_card(
             state, limits,
             recorded_base_risk=base_risk,
             recorded_size_cap=gov.size_cap_multiplier,
@@ -3993,7 +4198,7 @@ def admit_and_size(
         )
         if isinstance(room_facts, dict):
             for key, value in room_facts.items():
-                if value in (None, "") or key == "equity":
+                if value in (None, "") or key == "equity" or key in _PLANTED_GOVERNOR_FACTS:
                     continue
                 if equity_card.get(key) in (None, ""):
                     equity_card[key] = value
