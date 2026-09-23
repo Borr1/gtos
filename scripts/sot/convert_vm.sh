@@ -27,7 +27,11 @@ if [ "$others" -gt 1 ] && [ "$2" != "--detach-worktrees" ]; then
   echo "pass --apply --detach-worktrees to move that .git aside anyway"
   exit 2
 fi
-url=$(git -C "$root" remote get-url origin)
+if [ -n "${SOT_URL:-}" ]; then
+  url=$SOT_URL
+else
+  url=$(git -C "$root" remote get-url origin)
+fi
 mkdir -p "$hold"
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 aside="$hold/git-aside-workspace-$stamp"

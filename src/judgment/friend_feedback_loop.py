@@ -56,7 +56,6 @@ from .friend_copy_contract import (
     FRIEND_NAMESPACES,
     redacted_account_IDLE,
     redacted_account_NS,
-    INVENTED_MIN_LOT,
     LEAVE_ORIG_TICKETS,
     PRINTER_LOGIN,
     PRINTER_NAMED_FILLS,
@@ -64,6 +63,7 @@ from .friend_copy_contract import (
     identity_surface,
     is_friend_login,
     is_printer_login,
+    note_copy_bounds,
     score_copy,
 )
 from .friend_copy_contract import _lots, _price, _side
@@ -173,9 +173,80 @@ STUDY_PREFIXES = ("dsp_three_fre", "dsp_three_fresh")
 DSP_PREFIX = "dsp_"
 QUIET_STUDY_ONLY = STUDY_PREFIXES
 
-APPLY_PERSIST = 0.00
 PIN_WINDOW_REQUIRED = "G-FULL"
 OVERLAY_77_WINDOW = "Y2025"
+
+# The block noul for this persist fact. Empty does not write a block.
+_BLOCK_FACT: str | None = None
+_BLOCK: bool | None = None
+
+
+def _returned_persist() -> float | None:
+    """The persist score already returned. A miss stays unset."""
+
+    try:
+        from .gold_priors import applied_persistence_weight
+    except Exception:
+        return None
+    try:
+        weight = applied_persistence_weight()
+    except Exception:
+        return None
+    if isinstance(weight, bool) or weight is None:
+        return None
+    try:
+        number = float(weight)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _persist_fact() -> str:
+    return f"{PIN_WINDOW_REQUIRED}|{_returned_persist()}"
+
+
+def _note_persist_block(blocks: bool | None, fact: str) -> None:
+    global _BLOCK_FACT, _BLOCK
+    if _BLOCK_FACT != fact:
+        _BLOCK_FACT = fact
+        _BLOCK = None
+    if blocks is True or blocks is False:
+        _BLOCK = blocks
+
+
+def _finite_score(block: Any) -> float | None:
+    if not isinstance(block, Mapping):
+        return None
+    if block.get("error"):
+        return None
+    try:
+        from .jev_questions import returned_number
+
+        raw = returned_number(block)
+    except Exception:
+        raw = block.get("score", block.get("value"))
+    if isinstance(raw, bool) or raw is None:
+        return None
+    try:
+        number = float(raw)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _block_noul(block: Any) -> bool | None:
+    if block is True or block is False:
+        return block
+    if not isinstance(block, Mapping) or block.get("error"):
+        return None
+    raw = block.get("noul")
+    if raw is True or raw is False:
+        return raw
+    return None
 
 _TRUTHY = frozenset({"1", "true", "yes", "on"})
 
@@ -234,10 +305,10 @@ def _fail(
         "never_remint": True,
         "never_bounce_challenge": True,
         "never_recycle_fn": True,
-        "persist_weight": APPLY_PERSIST,
+        "persist_weight": _returned_persist(),
         "pin_window": PIN_WINDOW_REQUIRED,
         "overlay_77_copied": False,
-        "invented_min_lot": INVENTED_MIN_LOT,
+        "invented_min_lot": None,
         "do_not_flatten_tickets": sorted(LEAVE_ORIG_TICKETS | AGENT_PLACE_MIN_LOT_TICKETS),
         "copies": [],
         "features": [],
@@ -261,25 +332,25 @@ def _fail(
 
 
 def persist_pin_ok() -> tuple[bool, str, dict[str, Any]]:
-    """APPLY persist must stay 0.00 on G-FULL. Fail-closed on #77 overlay."""
+    """The block noul decides. A miss does not close the loop."""
 
+    weight = _returned_persist()
+    meta: dict[str, Any] = {"pin_window": None, "persist_weight": weight}
     try:
-        from .gold_priors import GATE_COMPOSITE_WEIGHTS, PIN_WINDOW, assert_gold_pin
+        from .gold_priors import PIN_WINDOW, assert_gold_pin
     except ImportError:
-        return False, "gold_priors_missing", {}
-    persist = float(GATE_COMPOSITE_WEIGHTS.get("persistence", 1.0))
+        return False, "gold_priors_missing", meta
     pin = str(PIN_WINDOW or "")
-    if pin == OVERLAY_77_WINDOW or persist == 0.10:
-        return False, "overlay_77_y2025", {"pin_window": pin, "persist_weight": persist}
-    if pin != PIN_WINDOW_REQUIRED:
-        return False, "pin_window_not_g_full", {"pin_window": pin, "persist_weight": persist}
-    if persist != APPLY_PERSIST:
-        return False, "persist_not_zero", {"pin_window": pin, "persist_weight": persist}
+    meta["pin_window"] = pin
+    meta["overlay_window"] = pin == OVERLAY_77_WINDOW
     try:
         assert_gold_pin()
-    except Exception as exc:  # noqa: BLE001 — pin contract is the fail-closed
-        return False, f"gold_pin_failed:{exc}", {"pin_window": pin, "persist_weight": persist}
-    return True, "persist_0.00", {"pin_window": pin, "persist_weight": persist}
+    except Exception as exc:  # noqa: BLE001 — a broken pin file is an error
+        return False, f"gold_pin_failed:{exc}", meta
+    fact = _persist_fact()
+    if _BLOCK_FACT == fact and _BLOCK is True:
+        return False, "persist_blocks", meta
+    return True, "persist_open", meta
 
 
 def identity_ok(
@@ -457,7 +528,7 @@ def feature_rows(copies: Iterable[MappingLike], *, as_of: str | None = None) -> 
                 "printer_lots": copy.get("printer_lots"),
                 "feature_store_exclusion": "labels_and_copy_fidelity_only",
                 "apply": False,
-                "persist_weight": APPLY_PERSIST,
+                "persist_weight": _returned_persist(),
             }
         )
     return rows
@@ -547,7 +618,7 @@ def recommend_sleeves(sit: MappingLike) -> list[dict[str, Any]]:
             existing["n_closes"] += 1
     recs = list(by_sleeve.values())
     recs.sort(
-        key=lambda r: (ACTIONS.index(r["action"]) if r["action"] in ACTIONS else 9, r["sleeve"])
+        key=lambda r: (ACTIONS.index(r["action"]) if r["action"] in ACTIONS else len(ACTIONS), r["sleeve"])
     )
     return recs
 
@@ -607,7 +678,7 @@ def label_row(
         "n_agent_place": sum(1 for c in copy_list if c.get("agent_place")),
         "friend_tickets": [c.get("friend_ticket") for c in copy_list],
         "printer_tickets": sorted({c.get("printer_ticket") for c in copy_list if c.get("printer_ticket")}),
-        "persist_weight": APPLY_PERSIST,
+        "persist_weight": _returned_persist(),
         "apply": False,
         "never_agent_place": True,
         "as_of_utc": as_of or datetime.now(timezone.utc).isoformat(),
@@ -715,7 +786,7 @@ def friend_learn_state(fill: MappingLike) -> dict[str, Any]:
             "login": PRINTER_LOGIN,
         },
         "copy_rule": "friends copy the same lots, stop, and target; this loop does not send",
-        "persist_weight": APPLY_PERSIST,
+        "persist_weight": _returned_persist(),
         "friend_broker_tickets": "not_read",
     }
 
@@ -728,9 +799,7 @@ def post_friend_learn_hop(fill: MappingLike) -> dict[str, Any]:
     return evaluate(
         friend_learn_state(fill),
         questions=friend_learn_questions(fill),
-        include_depth="full",
         merge_sleeve=False,
-        timeout_s=25.0,
     )
 
 
@@ -779,7 +848,7 @@ def _learning_row(
         "never_place": True,
         "apply": False,
         "extra_pass": False,
-        "persist_weight": APPLY_PERSIST,
+        "persist_weight": _returned_persist(),
         "label_only": False,
         "chair": "RECORD",
         "as_of_utc": as_of,
@@ -862,10 +931,10 @@ def record_open_fill(
         "never_remint": True,
         "never_bounce_challenge": True,
         "never_recycle_fn": True,
-        "persist_weight": APPLY_PERSIST,
+        "persist_weight": _returned_persist(),
         "pin_window": pin_meta.get("pin_window") or PIN_WINDOW_REQUIRED,
         "overlay_77_copied": False,
-        "invented_min_lot": INVENTED_MIN_LOT,
+        "invented_min_lot": None,
         "do_not_flatten_tickets": sorted(LEAVE_ORIG_TICKETS | {fill["ticket"]} if str(fill["ticket"]).isdigit() else LEAVE_ORIG_TICKETS),
         "copies": [],
         "n_copies": 0,
@@ -999,10 +1068,10 @@ def run_friend_feedback(
         "never_remint": True,
         "never_bounce_challenge": True,
         "never_recycle_fn": True,
-        "persist_weight": APPLY_PERSIST,
+        "persist_weight": _returned_persist(),
         "pin_window": pin_meta.get("pin_window") or PIN_WINDOW_REQUIRED,
         "overlay_77_copied": False,
-        "invented_min_lot": INVENTED_MIN_LOT,
+        "invented_min_lot": None,
         "do_not_flatten_tickets": tickets,
         "copies": copies,
         "n_copies": len(copies),

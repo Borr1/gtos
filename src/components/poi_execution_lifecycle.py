@@ -374,7 +374,7 @@ def build_causal_poi_lifecycle_envelope(
         lifecycle_state = "unmitigated"
 
     distance_zone = _number(distance_to_zone_price)
-    if distance_zone is not None and distance_zone <= 1e-12:
+    if distance_zone is not None and distance_zone <= 0:
         proximity_state = "inside_zone"
     elif fill_probability is not None and fill_probability >= floor:
         proximity_state = "near_touch"

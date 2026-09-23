@@ -89,14 +89,113 @@ _STOP_TEXT = (
 )
 
 
-def _spine_score(role: str, instructions: str, facts: dict | None = None):
+def _push_level(levels: list, seen: list, label: str, number: float | None) -> None:
+    text = str(label or "").strip()
+    if number is None or not text or number in seen:
+        return
+    if number != number or number in (float("inf"), float("-inf")):
+        return
+    seen.append(number)
+    levels.append((text, number))
+
+
+def _pip_anchors(stop_dist: Any, point: Any, digits: Any, symbol: Any) -> list:
+    """Pip distances from the stop and the point already on this card."""
+    pip = fx_pip_size(digits=digits, point=point, symbol=symbol)
+    if pip is None or pip <= 0:
+        return []
+    levels: list = []
+    seen: list = []
+    distance = _as_float(stop_dist)
+    if distance is not None and distance > 0:
+        _push_level(levels, seen, "this stop, in pips", distance / pip)
+    point_n = _as_float(point)
+    if point_n is not None and point_n > 0:
+        _push_level(levels, seen, "one point of this symbol, in pips", point_n / pip)
+    return levels
+
+
+def _tolerance_anchors(facts: Mapping[str, Any] | None) -> list:
+    """Cost tolerance in R. Both costs are already on the card."""
+    if not isinstance(facts, Mapping):
+        return []
+    levels: list = []
+    seen: list = []
+    _push_level(levels, seen, "the packet's max total cost, in R", _as_float(facts.get("max_total_cost_r")))
+    _push_level(levels, seen, "the packet's immutable cost, in R", _as_float(facts.get("immutable_cost_r")))
+    return levels
+
+
+def _day_start_utc(decision_day: Any) -> datetime | None:
+    text = str(decision_day or "").strip()
+    if len(text) < 10:
+        return None
+    head = text[:10]
+    try:
+        year = int(head[0:4])
+        month = int(head[5:7])
+        day = int(head[8:10])
+        return datetime(year, month, day, tzinfo=timezone.utc)
+    except ValueError:
+        return None
+
+
+def _clock_seconds(card: Mapping[str, Any], now: datetime, quote_at: datetime | None) -> dict[str, float]:
+    """Seconds fixed by this bar and this clock. Missing stays off the card."""
+    close = parse_decision_close_utc(card.get("decision_bar_iso"), fallback=now)
+    queued = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+    found: dict[str, float] = {"since_bar_close_s": (queued - close).total_seconds()}
+    start = _day_start_utc(card.get("decision_day"))
+    if start is not None:
+        found["bar_close_into_day_s"] = (close - start).total_seconds()
+    if quote_at is not None:
+        stamp = quote_at if quote_at.tzinfo is not None else quote_at.replace(tzinfo=timezone.utc)
+        found["since_quote_s"] = (queued - stamp).total_seconds()
+    return found
+
+
+def _second_anchors(seconds: Mapping[str, float]) -> list:
+    labels = {
+        "since_bar_close_s": "seconds since this bar closed",
+        "bar_close_into_day_s": "seconds from this day's start to the bar close",
+        "since_quote_s": "seconds since this quote",
+    }
+    levels: list = []
+    seen: list = []
+    for key, label in labels.items():
+        _push_level(levels, seen, label, _as_float(seconds.get(key)))
+    return levels
+
+
+def _chase_anchors(card: Mapping[str, Any]) -> list:
+    """Chase is a fraction of the stop. A time ratio is not that fraction."""
+    levels: list = []
+    seen: list = []
+    source = card if isinstance(card, Mapping) else {}
+    for key, label in (
+        ("spread_r", "this quote's spread over the stop"),
+        ("chase", "the chase fraction on this tick"),
+        ("chase_at_first_clear", "the chase fraction when the spread first cleared"),
+        ("min_spread_over_stop", "the series minimum spread over the stop"),
+        ("max_spread_over_stop", "the series maximum spread over the stop"),
+    ):
+        _push_level(levels, seen, label, _as_float(source.get(key)))
+    return levels
+
+
+def _spine_score(role: str, instructions: str, facts: dict | None = None, anchors=None):
     """One score for this fact card. A repeated card reuses that return.
 
+    Anchors are this hop's unit. Fewer than two does not post.
     Empty, tie, and error stay None. They are stored for the card so the
     next hop does not ask the same card again and does not fill in a number.
     """
 
-    key = str(role) + "|" + json.dumps(facts or {}, sort_keys=True, default=str)
+    key = str(role) + "|" + json.dumps(
+        {"facts": facts or {}, "anchors": anchors},
+        sort_keys=True,
+        default=str,
+    )
     with _SCORE_LOCK:
         if key in _SCORE_CACHE:
             return _SCORE_CACHE[key]
@@ -115,7 +214,12 @@ def _spine_score(role: str, instructions: str, facts: dict | None = None):
     try:
         from src.judgment.nineteen import score
 
-        raw = score(dict(facts or {}), question_id=role, instructions=instructions)
+        raw = score(
+            dict(facts or {}),
+            question_id=role,
+            instructions=instructions,
+            anchors=anchors,
+        )
         if raw is not None:
             number = float(raw)
             if number == number and number not in (float("inf"), float("-inf")):
@@ -455,12 +559,13 @@ def is_market_stop(
     digits: Any = None,
     point: Any = None,
     symbol: Any = "",
-) -> bool:
-    """True when no returned pip minimum puts this stop inside the floor.
+) -> bool | None:
+    """Whether the returned pip minimum puts this stop inside the floor.
 
-    A symbol with no FX pip size is not this class. A missing distance does
-    not invent one. An empty score does not invent a pip floor and does not
-    withhold. A returned minimum is the comparison.
+    True means the distance is at least the returned minimum. False means it
+    is inside that minimum. None means the score was empty: the floor is
+    unset. A symbol with no FX pip size is not this class. A missing
+    distance does not invent one.
     """
     pip = fx_pip_size(digits=digits, point=point, symbol=symbol)
     if pip is None:
@@ -468,18 +573,20 @@ def is_market_stop(
     distance = _as_float(stop_dist)
     if distance is None or distance <= 0:
         return True
+    stop_card = {
+        "symbol": str(symbol or ""),
+        "stop_dist": distance,
+        "digits": digits,
+        "point": point,
+    }
     pips = _spine_score(
         "market_stop_min_pips",
         _STOP_TEXT,
-        {
-            "symbol": str(symbol or ""),
-            "stop_dist": distance,
-            "digits": digits,
-            "point": point,
-        },
+        stop_card,
+        _pip_anchors(distance, point, digits, symbol),
     )
     if pips is None:
-        return True
+        return None
     return distance >= float(pips) * pip
 
 
@@ -547,10 +654,12 @@ def immutable_floor_clear(
         if given is not None:
             tolerance = given
         else:
+            tolerance_card = _tolerance_facts(packet, max_total, immutable)
             tolerance = _spine_score(
                 "cost_limit_tolerance_r",
                 _TOLERANCE_TEXT,
-                _tolerance_facts(packet, max_total, immutable),
+                tolerance_card,
+                _tolerance_anchors(tolerance_card),
             )
     if tolerance is None:
         return True
@@ -635,14 +744,14 @@ def classify_cost_refusal(
     digits: Any = None,
     point: Any = None,
     symbol: Any = "",
-) -> str:
-    """Return ``QUOTE_DEPENDENT``, ``STRUCTURAL``, ``MODEL_INPUT_INVALID``, or ``NONE``.
+) -> str | None:
+    """Return a packet class, or None when the ask that would name it is empty.
 
     ``screen_reason`` is the owner pre-send string from ``_spread_cost_screen``.
     A packet, when present, is the authority for mixed / total-cost cases.
     An FX stop inside the returned pip minimum is model input. An empty
-    minimum does not invent that class. An unnamed family is asked. An
-    empty answer does not become structural.
+    minimum leaves the class unset. An unnamed family is asked. An empty
+    family answer leaves the class unset. It does not kill and it does not send.
     """
     collected: list[str] = []
     if screen_reason not in (None, ""):
@@ -681,13 +790,16 @@ def classify_cost_refusal(
         immutable = immutable_cost_r(packet)
         if max_total is not None and immutable is not None:
             facts = _tolerance_facts(packet, max_total, immutable)
+            tol_anchors = _tolerance_anchors(facts)
             jobs["tol"] = lambda: _spine_score(
                 "cost_limit_tolerance_r",
                 _TOLERANCE_TEXT,
                 facts,
+                tol_anchors,
             )
     got = _parallel(jobs)
-    if got.get("market") is False:
+    market = got.get("market")
+    if market is False:
         return PACKET_CLASS_MODEL_INPUT
     if unknown:
         alt = got.get("family")
@@ -695,15 +807,14 @@ def classify_cost_refusal(
             return PACKET_CLASS_STRUCTURAL
         if alt == "model_input":
             return PACKET_CLASS_MODEL_INPUT
-        if alt == "quote_dependent":
-            families = [
-                family if family not in unknown_set else "cost_screen_spread_r"
-                for family in families
-            ]
-        else:
-            families = [family for family in families if family not in unknown_set]
-            if not families:
-                return PACKET_CLASS_QUOTE_DEPENDENT
+        if alt != "quote_dependent":
+            return None
+        families = [
+            family if family not in unknown_set else "cost_screen_spread_r"
+            for family in families
+        ]
+    if market is None:
+        return None
     if _TOTAL_COST_FAMILY in families:
         if "tol" in got:
             clear = immutable_floor_clear(
@@ -970,16 +1081,30 @@ def build_frozen_price_intent(
         "decision_bar_iso": str(decision_bar_iso),
         "decision_day": str(decision_day),
     }
+    card.update(_clock_seconds(card, queued, quote.get("quote_at_utc")))
+    spread_r = _as_float(quote.get("spread_r"))
+    if spread_r is not None:
+        card["spread_r"] = spread_r
+    chase_levels = _chase_anchors(card)
+    expiry_levels = _second_anchors(card)
     jobs: dict[str, Callable[[], Any]] = {}
     if max_chase_stop_fraction is None:
-        jobs["chase"] = lambda: _spine_score("max_chase_stop_fraction", _CHASE_TEXT, card)
+        jobs["chase"] = lambda: _spine_score(
+            "max_chase_stop_fraction", _CHASE_TEXT, card, chase_levels,
+        )
     if hard_expiry_seconds is None:
-        jobs["expiry"] = lambda: _spine_score("hard_expiry_seconds", _EXPIRY_TEXT, card)
+        jobs["expiry"] = lambda: _spine_score(
+            "hard_expiry_seconds", _EXPIRY_TEXT, card, expiry_levels,
+        )
     got = _parallel(jobs)
     if "chase" in got:
         max_chase_stop_fraction = got.get("chase")
+        if _as_float(max_chase_stop_fraction) is None:
+            return None
     if "expiry" in got:
         hard_expiry_seconds = got.get("expiry")
+        if _as_float(hard_expiry_seconds) is None:
+            return None
     chase_limit = _as_float(max_chase_stop_fraction)
     expiry_s = _as_float(hard_expiry_seconds)
     return FrozenPriceIntent(

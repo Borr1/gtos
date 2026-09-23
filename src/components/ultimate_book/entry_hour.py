@@ -81,8 +81,13 @@ def _finite(value: Any) -> float | None:
     return number
 
 
-def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[str, float | None]:
-    """One post for this sleeve. The same sleeve does not ask again."""
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post. Never raises."""
     if cache_key in _HOP:
         return dict(_HOP[cache_key])
     payload = {
@@ -90,32 +95,26 @@ def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[st
         for key, value in dict(facts or {}).items()
         if str(key) not in {"denominator", "other"}
     }
-    packed = {
-        str(qid): {"type": "score", "instructions": str(text)}
-        for qid, text in questions.items()
-    }
-    answers: dict = {}
-    returned = None
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
     try:
-        from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number
-
-        returned = returned_number
-        receipt = evaluate(payload, questions=packed, merge_sleeve=False)
+        from src.judgment.nineteen import score as ask
     except Exception:
-        receipt = None
-    if (
-        isinstance(receipt, dict)
-        and receipt.get("ok") is not False
-        and not receipt.get("error")
-        and receipt.get("tie") is not True
-        and isinstance(receipt.get("answers"), dict)
-    ):
-        answers = receipt["answers"]
-    out = {
-        qid: None if returned is None else _finite(returned(answers.get(qid)))
-        for qid in packed
-    }
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
     _HOP[cache_key] = dict(out)
     return out
 
@@ -148,8 +147,9 @@ def parse_entry_hour(
 ) -> dict[str, int]:
     """`"a,b:2"` -> `{"a": 1, "b": 2}`. `None`/absent -> `{}` (the default: OFF).
 
-    A sleeve named without an hour asks for that hour. An empty score refuses the launch.
-    `RATIFIED_TARGET_HOUR` stays exported and is not the hour this function fills in.
+    A sleeve named without an hour asks for that hour. An empty score leaves that
+    sleeve out of the selection. `RATIFIED_TARGET_HOUR` stays exported and is not
+    the hour this function fills in.
 
     REFUSES, rather than degrading:
       * the empty string -- `--tags ""` is falsy at `run_book.py` and therefore means ALL
@@ -210,10 +210,7 @@ def parse_entry_hour(
                 },
             ).get("entry_hour")
             if asked is None:
-                raise EntryHourSelectionError(
-                    f"--entry-hour names {name!r} without an hour and the hour score is empty. "
-                    "Refused rather than filled with a planted hour."
-                )
+                continue
             hour = int(round(asked))
         else:
             try:
@@ -246,10 +243,8 @@ def parse_entry_hour(
                         },
                     ).get("lateness_frac")
                 if frac is None:
-                    raise EntryHourSelectionError(
-                        f"--entry-hour lateness window for {name!r} is unset. "
-                        "Refused rather than filled with a planted fraction."
-                    )
+                    out[name] = hour
+                    continue
                 # Worst case: the decision bar closed at hour 0 and we defer to `hour`.
                 worst_min = hour * 60
                 window_min = float(frac) * per

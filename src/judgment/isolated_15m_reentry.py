@@ -126,6 +126,283 @@ _COMPONENT_CRITERIA = {
 _COMPONENT_ORDER = tuple(_COMPONENT_CRITERIA)
 
 
+
+import threading as _anchor_threading
+
+_ANCHOR_CARD = _anchor_threading.local()
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _is_map(value):
+    if isinstance(value, dict):
+        return True
+    if isinstance(value, (str, bytes)):
+        return False
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return False
+    return isinstance(value, Mapping)
+
+
+def _bind_card(card):
+    _ANCHOR_CARD.value = card if _is_map(card) else None
+
+
+def _bound_card(explicit):
+    if _is_map(explicit):
+        return explicit
+    bound = getattr(_ANCHOR_CARD, "value", None)
+    return bound if _is_map(bound) else None
+
+
+def _anchor_sources(card):
+    if not _is_map(card):
+        return []
+    found = [card]
+    for key in ("account", "facts", "pair", "news", "ticket", "proposed", "extra", "labels", "subject_facts", "candidate"):
+        inner = card.get(key)
+        if _is_map(inner) and inner is not card:
+            found.append(inner)
+    return found
+
+
+_COUNT_FIELDS = (
+    "n_candidates", "n_events", "n_sleeves", "n_bars", "bars_available",
+    "repeats", "session_bars", "day_bars", "swing_bars", "bars_since_high",
+    "bars_since_low", "candles_elapsed", "closed_orig_stop_count",
+)
+_COUNT_SEQS = (
+    "prior_outcomes", "candidates", "events", "sleeve_members", "lengths",
+    "stamps", "hashes", "bars", "bar_times", "members", "closed",
+    "legacy_symbol_keys", "families", "priors",
+)
+_PRICE_FIELDS = (
+    "bid", "ask", "entry", "entry_price", "stop", "stop_loss", "sl", "tp",
+    "take_profit", "price", "high", "low", "close", "open", "orig_sl", "orig_tp",
+    "stop_now", "target", "trail", "fill_price", "exit_px",
+)
+_SECOND_FIELDS = (
+    "seconds_until_cycle", "seconds_until_now", "age_s", "age_seconds",
+    "seconds_since_quote", "seconds_since_bar", "seconds_since_last_close",
+    "seconds_between_closes", "seconds_since_prior_close", "expiry_seconds",
+    "timeout_seconds",
+)
+_MINUTE_FIELDS = (
+    "minutes_since_flat", "age_minutes", "minutes_until_now", "window_minutes",
+)
+_HOUR_FIELDS = ("age_hours", "lag_hours", "hours_since_bar", "hours_open", "measured_hours")
+_DAY_FIELDS = ("age_days", "lag_days", "days_open", "measured_days")
+_LOT_FIELDS = (
+    "volume", "volume_min", "volume_step", "lots", "lot",
+    "volume_current", "volume_initial",
+)
+_POINT_FIELDS = (
+    "spread_points", "stop_level", "freeze_level", "tick_points", "deviation_points",
+)
+_INCLUDE_WORDS = ("hide", "short", "long", "full")
+
+
+def _named_pairs(card, fields, seqs=()):
+    pairs = []
+    for source in _anchor_sources(card):
+        for key in fields:
+            number = _anchor_finite(source.get(key))
+            if number is None:
+                continue
+            pairs.append((f"the {key} named on this card", number))
+        for key in seqs:
+            seq = source.get(key)
+            if isinstance(seq, (list, tuple)) and not isinstance(seq, (str, bytes)):
+                pairs.append((f"the count of {key} named on this card", float(len(seq))))
+    return pairs
+
+
+def _keys_matching(card, tokens):
+    pairs = []
+
+    def walk(node):
+        if _is_map(node):
+            for key, value in node.items():
+                low = str(key).lower()
+                if "floor" in low or "baseline" in low:
+                    continue
+                number = _anchor_finite(value)
+                if number is not None and any(tok in low for tok in tokens):
+                    pairs.append((f"the {low} named on this card", number))
+                    continue
+                if _is_map(value):
+                    walk(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        if _is_map(item):
+                            walk(item)
+
+    walk(card)
+    return pairs
+
+
+def _anchors_for_spot(qid, card):
+    name = str(qid).lower()
+    try:
+        from .jev_questions import count_anchors, minute_anchors, mult_anchors, usd_anchors, weight_anchors
+    except Exception:
+        def count_anchors(_card):
+            return []
+
+        def minute_anchors(_card):
+            return []
+
+        def mult_anchors(_card):
+            return []
+
+        def usd_anchors(_card):
+            return []
+
+        def weight_anchors(_card):
+            return []
+
+    override = globals().get("_UNIT_OVERRIDE")
+    if isinstance(override, dict):
+        base = name[: -len("_parameter")] if name.endswith("_parameter") else name
+        spec = override.get(base)
+        if spec == "weight":
+            return list(weight_anchors(card) or [])
+        if spec == "count":
+            pairs = list(count_anchors(card) or [])
+            pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+            return pairs
+        if isinstance(spec, tuple):
+            return _named_pairs(card, spec)
+    if any(tok in name for tok in ("loop", "splice", "width", "lookback", "bound", "_cap")):
+        pairs = list(count_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+        return pairs
+    if "ac60" in name or "autocorr" in name:
+        return _keys_matching(card, ("ac60", "autocorr"))
+    if "direction" in name:
+        return _keys_matching(card, ("direction",))
+    if name.endswith("_r") or "mfe" in name or "mae" in name:
+        return list(weight_anchors(card) or [])
+    if "hour" in name:
+        return _named_pairs(card, _HOUR_FIELDS)
+    if "minute" in name:
+        pairs = list(minute_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _MINUTE_FIELDS))
+        return pairs
+    if "day" in name and "today" not in name:
+        return _named_pairs(card, _DAY_FIELDS)
+    if any(tok in name for tok in ("second", "expiry", "timeout", "pause", "adopt_wait")):
+        return _named_pairs(card, _SECOND_FIELDS)
+    if any(tok in name for tok in ("tilt", "alignment", "weight", "persist")):
+        pairs = list(weight_anchors(card) or [])
+        if len(pairs) >= 2:
+            return pairs
+        return list(mult_anchors(card) or [])
+    if any(tok in name for tok in ("lot", "volume")):
+        return _named_pairs(card, _LOT_FIELDS)
+    if "scale" in name:
+        return _scale_pairs(card)
+    if any(tok in name for tok in ("price",)) or name in {"manage_sl_price", "manage_tp_price"}:
+        return _named_pairs(card, _PRICE_FIELDS)
+    if "point" in name or "deviation" in name:
+        return _named_pairs(card, _POINT_FIELDS)
+    if "spread" in name:
+        return _named_pairs(card, ("spread", "spread_points"))
+    if any(tok in name for tok in ("usd", "equity", "pnl", "cash")):
+        return list(usd_anchors(card) or [])
+    if name == "reentry_threshold":
+        pairs = list(minute_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _MINUTE_FIELDS))
+        pairs.extend(_keys_matching(card, ("minute",)))
+        return pairs
+    return []
+
+
+def _scale_pairs(card):
+    pairs = []
+    for source in _anchor_sources(card):
+        volume = _anchor_finite(source.get("volume"))
+        if volume is None:
+            volume = _anchor_finite(source.get("volume_current"))
+        initial = _anchor_finite(source.get("volume_initial"))
+        least = _anchor_finite(source.get("volume_min"))
+        step = _anchor_finite(source.get("volume_step"))
+        if volume not in (None, 0) and least is not None:
+            pairs.append(("minimum volume over this volume", least / volume))
+        if volume not in (None, 0) and step is not None:
+            pairs.append(("volume step over this volume", step / volume))
+        if initial not in (None, 0) and volume is not None:
+            pairs.append(("current volume over initial volume", volume / initial))
+    return pairs
+
+
+def _amount_block(qid, instructions, card):
+    """Amount Score. Fewer than two anchors in this unit does not post."""
+
+    source = _bound_card(card)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(qid, instructions, _anchors_for_spot(qid, source))
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        block.pop(key, None)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _ordinal_block(qid, instructions, words):
+    """Word levels. Fewer than two words does not post. The index is not an amount."""
+
+    try:
+        from .jev_questions import ordinal_question
+
+        built = ordinal_question(qid, instructions, words)
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _score_amount_or_ordinal(qid, instructions, card=None, *_rest):
+    if str(qid).startswith("include_"):
+        return _ordinal_block(qid, instructions, _INCLUDE_WORDS)
+    return _amount_block(qid, instructions, card)
+
+
 def _limit_key(name: str) -> bool:
     low = str(name).lower().replace("-", "_")
     return any(part in low for part in _LIMIT_PARTS)
@@ -152,11 +429,11 @@ def _number(value: Any) -> float | None:
     return number
 
 
-def _scrub(value: Any, depth: int = 0) -> Any:
+def _scrub(value: Any, seen: set[int] | None = None) -> Any:
     """Drop a floor and a baseline before the ask. They are not a question."""
 
-    if depth > 8:
-        return _DROP
+    if seen is None:
+        seen = set()
     if isinstance(value, str):
         if _banned_text(value) or "floor" in value.lower() or "baseline" in value.lower():
             return _DROP
@@ -169,20 +446,28 @@ def _scrub(value: Any, depth: int = 0) -> Any:
             return _DROP
         return value
     if isinstance(value, Mapping):
+        ident = id(value)
+        if ident in seen:
+            return _DROP
+        seen.add(ident)
         out: dict[str, Any] = {}
         for key, item in value.items():
             name = str(key)
             if _limit_key(name):
                 continue
-            cleaned = _scrub(item, depth + 1)
+            cleaned = _scrub(item, seen)
             if cleaned is _DROP:
                 continue
             out[name] = cleaned
         return out
     if isinstance(value, (list, tuple)) and not isinstance(value, (str, bytes)):
+        ident = id(value)
+        if ident in seen:
+            return _DROP
+        seen.add(ident)
         kept = []
         for item in value:
-            cleaned = _scrub(item, depth + 1)
+            cleaned = _scrub(item, seen)
             if cleaned is _DROP:
                 continue
             kept.append(cleaned)
@@ -237,24 +522,11 @@ def _choice_question(qid: str, instructions: str, criteria: Mapping[str, str]) -
     return {qid: body}
 
 
-def _score_question(qid: str, instructions: str, levels: list[str]) -> dict[str, Any]:
-    body: dict[str, Any] = {"type": "score", "instructions": instructions}
-    try:
-        from .jev_questions import parameter_question
 
-        built = parameter_question(qid, instructions)
-        row = built.get(qid) if isinstance(built, Mapping) else None
-        if isinstance(row, Mapping):
-            body = dict(row)
-    except Exception:
-        pass
-    body["type"] = "score"
-    body["instructions"] = instructions
-    if levels:
-        body["criteria"] = list(levels)
-    else:
-        body["criteria"] = list(_BETWEEN)
-    return {qid: body}
+def _score_question(qid, instructions, card=None, *_rest):
+    """Amount on this card, or an include-depth ordinal. A bare Score does not post."""
+
+    return _score_amount_or_ordinal(qid, instructions, card)
 
 
 def _noul_question(qid: str, instructions: str) -> dict[str, Any]:
@@ -299,155 +571,159 @@ def reentry_questions(state: Mapping[str, Any] | None = None) -> dict[str, Any]:
     facts = _scrub(dict(state or {}))
     if not isinstance(facts, dict):
         facts = {}
-    scale = _levels(facts)
-    pack: dict[str, Any] = {}
-    pack.update(_choice_question(
-        "occupancy_after_close",
-        (
-            "This open on this symbol. Minutes since flat, whether the symbol is open, "
-            "and the integer two-stop count are facts on this state. "
-            "Which option is this open? The single highest probability is the decision. "
-            "An empty answer or a tie leaves the decision unset. "
-            "Do not flatten. Do not send."
-        ),
-        _OCCUPANCY_CRITERIA,
-    ))
-    pack.update(_score_question(
-        "reentry_threshold",
-        (
-            "The score you return is the minute threshold for an isolated re-entry on this state. "
-            "It may sit between the levels. "
-            "An empty score leaves the threshold unset. Do not send."
-        ),
-        scale,
-    ))
-    pack.update(_score_question(
-        "reentry_parameter",
-        (
-            "The score you return is the parameter for this occupancy state. "
-            "It may sit between the levels. "
-            "An empty score leaves the parameter unset. Do not send."
-        ),
-        scale,
-    ))
-    pack.update(_score_question(
-        "reentry_loop",
-        (
-            "The score you return is how far this occupancy state reads prior returned outcomes. "
-            "It may sit between the levels. "
-            "An empty score leaves the bound unset. Do not send."
-        ),
-        scale,
-    ))
-    pack.update(_score_question(
-        "two_stop_cap",
-        (
-            "The score you return is the same-sleeve original-stop cap for this session day. "
-            "The count on the state is the integer. You are not the counter. "
-            "The score may sit between the levels. "
-            "An empty score leaves the cap unset. Do not send."
-        ),
-        scale,
-    ))
-    pack.update(_noul_question(
-        "remaining_state_sufficient",
-        (
-            "Are the named occupancy facts present enough to judge this open? "
-            "An empty noul leaves sufficiency unset. Do not send."
-        ),
-    ))
-    pack.update(_choice_question(
-        "which_component",
-        (
-            "Which occupancy component exists on this state? "
-            "The single highest probability is that component. "
-            "An empty answer or a tie leaves the component unset. Do not send."
-        ),
-        _COMPONENT_CRITERIA,
-    ))
-    pack.update(_noul_question(
-        "component_exists",
-        (
-            "Does that occupancy component exist on this state? "
-            "An empty noul leaves existence unset. Do not send."
-        ),
-    ))
-    pack.update(_noul_question(
-        "isolated_reentry_is_new",
-        (
-            "Is this open a new named fire after a close on a flat symbol? "
-            "The integer two-stop count stays the integer on the state. "
-            "An empty noul leaves this unset. Do not flatten. Do not send."
-        ),
-    ))
-    pack.update(_noul_question(
-        "two_stop_binds",
-        (
-            "Does the integer two-stop count on this state bind this open? "
-            "You are not the counter. "
-            "An empty noul leaves the bind unset. Do not send."
-        ),
-    ))
-    pack.update(_score_question(
-        "persist_weight",
-        (
-            "The score you return is the persistence parameter for this state. "
-            "It may sit between the levels. "
-            "An empty score leaves the parameter unset. Do not send."
-        ),
-        scale,
-    ))
-    pack.update(_noul_question(
-        "pin_ok",
-        (
-            "Are the recorded pin attributes on this state the pin for this open? "
-            "An empty noul leaves the pin unset. Do not send."
-        ),
-    ))
-    pack.update(_noul_question(
-        "may_send",
-        (
-            "May this open send? "
-            "An empty noul leaves send unset. Do not flatten."
-        ),
-    ))
-    pack.update(_noul_question(
-        "blocks_send",
-        (
-            "Does this open block a send? "
-            "An empty noul leaves the block unset. Do not flatten."
-        ),
-    ))
-    pack.update(_noul_question(
-        "fail_closed",
-        (
-            "Is this open closed off the challenge book? "
-            "The identity reason on this state is a fact. "
-            "An empty noul leaves it unset. Do not send."
-        ),
-    ))
-    pack.update(_noul_question(
-        "thin_state",
-        (
-            "Is this open thin? "
-            "An empty noul leaves it unset. Do not send."
-        ),
-    ))
-    pack.update(_noul_question(
-        "already_placed_holds",
-        (
-            "Does already-placed hold this open? "
-            "An empty noul leaves it unset. Do not send."
-        ),
-    ))
-    pack.update(_noul_question(
-        "history_proved",
-        (
-            "Do the measured counts on this state prove the pack? "
-            "An empty noul leaves it unset. Do not send."
-        ),
-    ))
-    return {key: body for key, body in pack.items() if isinstance(body, Mapping) and _question_ok(body)}
+    _bind_card(facts)
+    try:
+        scale = _levels(facts)
+        pack: dict[str, Any] = {}
+        pack.update(_choice_question(
+            "occupancy_after_close",
+            (
+                "This open on this symbol. Minutes since flat, whether the symbol is open, "
+                "and the integer two-stop count are facts on this state. "
+                "Which option is this open? The single highest probability is the decision. "
+                "An empty answer or a tie leaves the decision unset. "
+                "Do not flatten. Do not send."
+            ),
+            _OCCUPANCY_CRITERIA,
+        ))
+        pack.update(_score_question(
+            "reentry_threshold",
+            (
+                "The score you return is the minute threshold for an isolated re-entry on this state. "
+                "It may sit between the levels. "
+                "An empty score leaves the threshold unset. Do not send."
+            ),
+            scale,
+        ))
+        pack.update(_score_question(
+            "reentry_parameter",
+            (
+                "The score you return is the parameter for this occupancy state. "
+                "It may sit between the levels. "
+                "An empty score leaves the parameter unset. Do not send."
+            ),
+            scale,
+        ))
+        pack.update(_score_question(
+            "reentry_loop",
+            (
+                "The score you return is how far this occupancy state reads prior returned outcomes. "
+                "It may sit between the levels. "
+                "An empty score leaves the bound unset. Do not send."
+            ),
+            scale,
+        ))
+        pack.update(_score_question(
+            "two_stop_cap",
+            (
+                "The score you return is the same-sleeve original-stop cap for this session day. "
+                "The count on the state is the integer. You are not the counter. "
+                "The score may sit between the levels. "
+                "An empty score leaves the cap unset. Do not send."
+            ),
+            scale,
+        ))
+        pack.update(_noul_question(
+            "remaining_state_sufficient",
+            (
+                "Are the named occupancy facts present enough to judge this open? "
+                "An empty noul leaves sufficiency unset. Do not send."
+            ),
+        ))
+        pack.update(_choice_question(
+            "which_component",
+            (
+                "Which occupancy component exists on this state? "
+                "The single highest probability is that component. "
+                "An empty answer or a tie leaves the component unset. Do not send."
+            ),
+            _COMPONENT_CRITERIA,
+        ))
+        pack.update(_noul_question(
+            "component_exists",
+            (
+                "Does that occupancy component exist on this state? "
+                "An empty noul leaves existence unset. Do not send."
+            ),
+        ))
+        pack.update(_noul_question(
+            "isolated_reentry_is_new",
+            (
+                "Is this open a new named fire after a close on a flat symbol? "
+                "The integer two-stop count stays the integer on the state. "
+                "An empty noul leaves this unset. Do not flatten. Do not send."
+            ),
+        ))
+        pack.update(_noul_question(
+            "two_stop_binds",
+            (
+                "Does the integer two-stop count on this state bind this open? "
+                "You are not the counter. "
+                "An empty noul leaves the bind unset. Do not send."
+            ),
+        ))
+        pack.update(_score_question(
+            "persist_weight",
+            (
+                "The score you return is the persistence parameter for this state. "
+                "It may sit between the levels. "
+                "An empty score leaves the parameter unset. Do not send."
+            ),
+            scale,
+        ))
+        pack.update(_noul_question(
+            "pin_ok",
+            (
+                "Are the recorded pin attributes on this state the pin for this open? "
+                "An empty noul leaves the pin unset. Do not send."
+            ),
+        ))
+        pack.update(_noul_question(
+            "may_send",
+            (
+                "May this open send? "
+                "An empty noul leaves send unset. Do not flatten."
+            ),
+        ))
+        pack.update(_noul_question(
+            "blocks_send",
+            (
+                "Does this open block a send? "
+                "An empty noul leaves the block unset. Do not flatten."
+            ),
+        ))
+        pack.update(_noul_question(
+            "fail_closed",
+            (
+                "Is this open closed off the challenge book? "
+                "The identity reason on this state is a fact. "
+                "An empty noul leaves it unset. Do not send."
+            ),
+        ))
+        pack.update(_noul_question(
+            "thin_state",
+            (
+                "Is this open thin? "
+                "An empty noul leaves it unset. Do not send."
+            ),
+        ))
+        pack.update(_noul_question(
+            "already_placed_holds",
+            (
+                "Does already-placed hold this open? "
+                "An empty noul leaves it unset. Do not send."
+            ),
+        ))
+        pack.update(_noul_question(
+            "history_proved",
+            (
+                "Do the measured counts on this state prove the pack? "
+                "An empty noul leaves it unset. Do not send."
+            ),
+        ))
+        return {key: body for key, body in pack.items() if isinstance(body, Mapping) and _question_ok(body)}
+    finally:
+        _bind_card(None)
 
 
 def _probabilities(block: Any, order: tuple[str, ...]) -> dict[str, float]:
@@ -479,11 +755,11 @@ def _local_unique(probabilities: Mapping[str, float], order: tuple[str, ...]) ->
         if name not in probabilities:
             continue
         p = probabilities[name]
-        if best_p is None or p > best_p + 1e-12:
+        if best_p is None or p > best_p:
             best = name
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     if tied or best is None:
         return None

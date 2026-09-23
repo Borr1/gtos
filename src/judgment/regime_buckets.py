@@ -49,106 +49,48 @@ def _as_float(value: Any) -> float | None:
         return None
 
 
-def bucket_return(ret: float) -> str | None:
-    """OSS ±0.5% / ±2% on a close return expressed as a fraction."""
+def _label(chosen: Any) -> str | None:
+    """The ask's label. Empty, tie, error, and the off-writer sentinel stay unset."""
 
-    from .state_choices import LEGACY, bucket_return_choice
-
-    chosen = bucket_return_choice(ret)
-    if chosen is not LEGACY:
+    if isinstance(chosen, str) and chosen:
         return chosen
-    if ret > 0.02:
-        return "strong_up"
-    if ret > 0.005:
-        return "up"
-    if ret > -0.005:
-        return "flat"
-    if ret > -0.02:
-        return "down"
-    return "strong_down"
+    return None
+
+
+def bucket_return(ret: float) -> str | None:
+    """The return bucket is the ask's label. An empty answer does not pick a band."""
+
+    from .state_choices import bucket_return_choice
+
+    return _label(bucket_return_choice(ret))
 
 
 def bucket_vol(ratio: float) -> str | None:
-    from .state_choices import LEGACY, bucket_vol_choice
+    from .state_choices import bucket_vol_choice
 
-    chosen = bucket_vol_choice(ratio)
-    if chosen is not LEGACY:
-        return chosen
-    if ratio < 0.7:
-        return "compressed"
-    if ratio < 1.3:
-        return "normal"
-    if ratio < 2.0:
-        return "elevated"
-    return "extreme"
+    return _label(bucket_vol_choice(ratio))
 
 
 def bucket_atr_expansion(ratio: float) -> str | None:
-    from .state_choices import LEGACY, bucket_atr_choice
+    from .state_choices import bucket_atr_choice
 
-    chosen = bucket_atr_choice(ratio)
-    if chosen is not LEGACY:
-        return chosen
-    if ratio < 0.8:
-        return "contracting"
-    if ratio < 1.2:
-        return "flat"
-    if ratio < 1.8:
-        return "expanding"
-    return "spiking"
+    return _label(bucket_atr_choice(ratio))
 
 
 def bucket_price_vs_sma(frac: float) -> str | None:
-    """``frac`` is (close - sma) / sma, or an ATR-normalized stand-in."""
+    """``frac`` is (close - sma) / sma, or the prior-day mid stand-in."""
 
-    from .state_choices import LEGACY, bucket_sma_choice
+    from .state_choices import bucket_sma_choice
 
-    chosen = bucket_sma_choice(frac)
-    if chosen is not LEGACY:
-        return chosen
-    if frac > 0.05:
-        return "well_above"
-    if frac > 0.01:
-        return "above"
-    if frac > -0.01:
-        return "near"
-    if frac > -0.05:
-        return "below"
-    return "well_below"
+    return _label(bucket_sma_choice(frac))
 
 
 def bucket_trend_persistence(*, slope: float | None, mom: float | None, green_ratio: float | None) -> str | None:
     if green_ratio is None and slope is None and mom is None:
         return None
-    from .state_choices import LEGACY, bucket_trend_choice
+    from .state_choices import bucket_trend_choice
 
-    chosen = bucket_trend_choice(slope=slope, mom=mom, green_ratio=green_ratio)
-    if chosen is not LEGACY:
-        return chosen
-    if green_ratio is not None:
-        if green_ratio >= 0.8:
-            return "strong_up"
-        if green_ratio >= 0.6:
-            return "weak_up"
-        if green_ratio >= 0.4:
-            return "mixed"
-        if green_ratio >= 0.2:
-            return "weak_down"
-        return "strong_down"
-    if slope is None and mom is None:
-        return None
-    s = 0.0 if slope is None else slope
-    m = 0.0 if mom is None else mom
-    score = s + m
-    if s > 0 and m > 0 and score >= 1.0:
-        return "strong_up"
-    if s >= 0 and m >= 0:
-        return "weak_up"
-    if s < 0 and m < 0 and score <= -1.0:
-        return "strong_down"
-    if s <= 0 and m <= 0:
-        return "weak_down"
-    return "mixed"
+    return _label(bucket_trend_choice(slope=slope, mom=mom, green_ratio=green_ratio))
 
 
 def _close_ret_from_tf(tf: Mapping[str, Any] | None) -> float | None:
@@ -172,21 +114,36 @@ def _close_ret_from_tf(tf: Mapping[str, Any] | None) -> float | None:
     return None
 
 
-def _close_ret_n_from_tf(tf: Mapping[str, Any] | None, n: int = 5) -> float | None:
+def _close_ret_n_from_tf(tf: Mapping[str, Any] | None, n: int | None = None) -> float | None:
+    """A named return already on the frame, or the span of the closes that exist.
+
+    ``n`` is a caller-supplied hop. A missing ``n`` uses the closes on the frame.
+    """
+
     if not isinstance(tf, Mapping):
         return None
-    for key in (f"close_ret_{n}bar", f"close_ret_{n}", "close_ret_5bar"):
-        val = _as_float(tf.get(key))
-        if val is not None:
-            return val
-    pct = _as_float(tf.get(f"close_ret_{n}bar_pct") or tf.get("close_ret_5bar_pct"))
-    if pct is not None:
-        return pct / 100.0
+    if n is not None:
+        for key in (f"close_ret_{n}bar", f"close_ret_{n}"):
+            val = _as_float(tf.get(key))
+            if val is not None:
+                return val
+        pct = _as_float(tf.get(f"close_ret_{n}bar_pct"))
+        if pct is not None:
+            return pct / 100.0
+    else:
+        for key, raw in tf.items():
+            name = str(key)
+            if name.startswith("close_ret_") and not name.endswith("_pct"):
+                val = _as_float(raw)
+                if val is not None:
+                    return val
     closes = tf.get("closed_closes")
-    if isinstance(closes, (list, tuple)) and len(closes) >= n + 1:
-        a, b = _as_float(closes[-(n + 1)]), _as_float(closes[-1])
-        if a not in (None, 0.0) and b is not None:
-            return (b - a) / a
+    if isinstance(closes, (list, tuple)) and len(closes) >= 2:
+        span = (len(closes) - 1) if n is None else n
+        if len(closes) >= span + 1:
+            a, b = _as_float(closes[-(span + 1)]), _as_float(closes[-1])
+            if a not in (None, 0.0) and b is not None:
+                return (b - a) / a
     return None
 
 
@@ -350,7 +307,11 @@ def emit_regime_buckets(
     if ret1 is None:
         omitted.append("returns_1d")
     else:
-        buckets["returns_1d"] = bucket_return(ret1)
+        label = bucket_return(ret1)
+        if label is None:
+            omitted.append("returns_1d")
+        else:
+            buckets["returns_1d"] = label
 
     ret5 = _close_ret_n_from_tf(h4 if isinstance(h4, Mapping) else None, 5)
     if ret5 is None:
@@ -358,7 +319,11 @@ def emit_regime_buckets(
     if ret5 is None:
         omitted.append("returns_5d")
     else:
-        buckets["returns_5d"] = bucket_return(ret5)
+        label = bucket_return(ret5)
+        if label is None:
+            omitted.append("returns_5d")
+        else:
+            buckets["returns_5d"] = label
 
     features = gold.get("sleeve_features") if isinstance(gold.get("sleeve_features"), Mapping) else {}
     vol = _as_float(features.get("vol_ratio") if isinstance(features, Mapping) else None)
@@ -367,7 +332,11 @@ def emit_regime_buckets(
     if vol is None:
         omitted.append("vol_vs_baseline")
     else:
-        buckets["vol_vs_baseline"] = bucket_vol(vol)
+        label = bucket_vol(vol)
+        if label is None:
+            omitted.append("vol_vs_baseline")
+        else:
+            buckets["vol_vs_baseline"] = label
 
     slope = _as_float(features.get("htf_slope_norm") if isinstance(features, Mapping) else None)
     mom = _as_float(features.get("mom_20_atr") if isinstance(features, Mapping) else None)
@@ -393,13 +362,21 @@ def emit_regime_buckets(
     if atr_ratio is None:
         omitted.append("atr_expansion")
     else:
-        buckets["atr_expansion"] = bucket_atr_expansion(atr_ratio)
+        label = bucket_atr_expansion(atr_ratio)
+        if label is None:
+            omitted.append("atr_expansion")
+        else:
+            buckets["atr_expansion"] = label
 
     sma_frac = _price_vs_sma_frac(gold)
     if sma_frac is None:
         omitted.append("price_vs_sma")
     else:
-        buckets["price_vs_sma"] = bucket_price_vs_sma(sma_frac)
+        label = bucket_price_vs_sma(sma_frac)
+        if label is None:
+            omitted.append("price_vs_sma")
+        else:
+            buckets["price_vs_sma"] = label
 
     missing = list(completeness_src.get("missing_fields") or [])
     for key in omitted:

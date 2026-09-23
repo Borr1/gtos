@@ -8,7 +8,9 @@ Questions are only Choice or Score. Prior outcomes are attached on the
 ask. An empty answer, a tie, a missing score, or an error leaves that
 return unset.
 
-A floor and a baseline are not asked. This hop does not send an order.
+This hop does not build a question whose only purpose is the account floor
+or the pass target. A name that only contains those words is still asked.
+This hop does not send an order.
 """
 
 from __future__ import annotations
@@ -19,7 +21,6 @@ from typing import Any, Mapping
 
 MODEL = "jev-1.13.0"
 API_URL = "https://api.typesafe.ai/v1/systemone"
-_SKIP_KEY_PARTS = ("floor", "baseline")
 
 
 def read_json(path: Path | str | None) -> dict[str, Any] | None:
@@ -62,24 +63,13 @@ def _as_float(value: Any) -> float | None:
         return None
 
 
-def _skip_key(key: str) -> bool:
-    low = str(key).lower()
-    return any(part in low for part in _SKIP_KEY_PARTS)
-
-
-def _scrub(value: Any) -> Any:
-    """Drop floor and baseline keys. They are not a question."""
+def _copy_tree(value: Any) -> Any:
+    """A copy of the facts. Every key stays, including a name that only contains a limit word."""
 
     if isinstance(value, dict):
-        out: dict[str, Any] = {}
-        for key, item in value.items():
-            name = str(key)
-            if _skip_key(name):
-                continue
-            out[name] = _scrub(item)
-        return out
+        return {str(key): _copy_tree(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
-        return [_scrub(item) for item in value]
+        return [_copy_tree(item) for item in value]
     return value
 
 
@@ -97,7 +87,7 @@ def probabilities(answer: Any, criteria: Mapping[str, str]) -> tuple[dict[str, f
         if isinstance(raw, dict) and raw:
             out: dict[str, float] = {}
             for name, val in raw.items():
-                if str(name) in names and not _skip_key(str(name)):
+                if str(name) in names:
                     number = _as_float(val)
                     if number is not None:
                         out[str(name)] = number
@@ -111,7 +101,7 @@ def probabilities(answer: Any, criteria: Mapping[str, str]) -> tuple[dict[str, f
                 continue
             name = opt.get("value") if opt.get("value") is not None else opt.get("name")
             number = _as_float(opt.get("probability", opt.get("prob", opt.get("p"))))
-            if name is not None and str(name) in names and not _skip_key(str(name)) and number is not None:
+            if name is not None and str(name) in names and number is not None:
                 out[str(name)] = number
         if out:
             return out, "options"
@@ -135,7 +125,7 @@ def _winner(probs: Mapping[str, float], criteria: Mapping[str, str]) -> str | No
 
     if not probs:
         return None
-    order = tuple(str(name) for name in criteria if not _skip_key(str(name)))
+    order = tuple(str(name) for name in criteria)
     try:
         from .jev_questions import unique_highest
 
@@ -171,12 +161,9 @@ def _score_of(block: Any) -> float | None:
 
 
 def _choice_block(question_id: str, instructions: str, criteria: Mapping[str, str]) -> dict[str, Any] | None:
-    if _skip_key(question_id):
-        return None
     kept = {
         str(key): str(text)
         for key, text in criteria.items()
-        if not _skip_key(str(key))
     }
     if not kept:
         return None
@@ -201,68 +188,79 @@ def _choice_block(question_id: str, instructions: str, criteria: Mapping[str, st
     return block
 
 
-def _score_block(spot: str, instructions: str) -> dict[str, Any]:
-    text = str(instructions).strip()
-    block: dict[str, Any] = {"type": "score", "instructions": text}
-    try:
-        from .jev_questions import parameter_question
+def _amount_block(spot: str, instructions: str, anchors: Any) -> dict[str, Any] | None:
+    """Amount Score. Fewer than two anchors in that unit does not post."""
 
-        built = parameter_question(spot, text)
-        row = built.get(spot) if isinstance(built, dict) else None
-        if isinstance(row, dict):
-            block = dict(row)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(spot, instructions, anchors)
     except Exception:
-        pass
-    block["type"] = "score"
-    block["instructions"] = text
-    criteria = block.get("criteria")
-    if isinstance(criteria, dict):
-        block["criteria"] = {
-            str(key): str(value)
-            for key, value in criteria.items()
-            if not _skip_key(str(key))
-        }
-    elif isinstance(criteria, (list, tuple)):
-        block["criteria"] = [str(item) for item in criteria if not _skip_key(str(item))]
-    return block
+        return None
+    row = built.get(spot) if isinstance(built, dict) else None
+    if not isinstance(row, dict):
+        return None
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return None
+    return dict(row)
 
 
 def rung_questions(
     question_id: str,
     instructions: str,
     criteria: Mapping[str, str],
+    state: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """The rung Choice plus the weight and the cash. One piece. No floor question."""
+    """The rung Choice plus the weight and the cash. One piece.
+
+    Cash is anchored to the card's own money. The weight is anchored to the
+    card's own weights. A missing scale leaves that Score off the post.
+    """
 
     pack: dict[str, Any] = {}
     choice = _choice_block(str(question_id), instructions, criteria)
     if choice is not None:
         pack[str(question_id)] = choice
-    pack["persist_weight"] = _score_block(
+    try:
+        from .jev_questions import usd_anchors, weight_anchors
+
+        money = usd_anchors(state)
+        weights = weight_anchors(state)
+    except Exception:
+        money = []
+        weights = []
+    weight = _amount_block(
         "persist_weight",
         "Given the facts and prior_outcomes on this state, what weight does "
         "persistence carry on this learning rung? The score you return is that "
         "weight. It may sit between levels. An empty score leaves the weight "
         "unset. Do not send.",
+        weights,
     )
-    pack["unit_usd"] = _score_block(
+    if weight is not None:
+        pack["persist_weight"] = weight
+    cash = _amount_block(
         "unit_usd",
         "Given the facts and prior_outcomes on this state, what cash does this "
         "learning unit name? The score you return is that cash. It may sit "
         "between levels. An empty score leaves the cash unset. Do not send.",
+        money,
     )
+    if cash is not None:
+        pack["unit_usd"] = cash
     return {
         key: value
         for key, value in pack.items()
-        if not _skip_key(key) and isinstance(value, dict) and value.get("type") in {"choice", "score", "noul"}
+        if isinstance(value, dict) and value.get("type") in {"choice", "score", "noul"}
     }
 
 
 def _posted_state(state: Mapping[str, Any], questions: Mapping[str, Any]) -> dict[str, Any]:
-    """Facts for the ask. Prior outcomes are history. Floor and baseline are not on it."""
+    """Facts for the ask. Prior outcomes are history. Every key on the card stays."""
 
     raw = dict(state) if isinstance(state, Mapping) else {}
-    posted = _scrub(raw)
+    posted = _copy_tree(raw)
     if not isinstance(posted, dict):
         posted = {}
     posted.pop("persist_weight", None)
@@ -296,7 +294,7 @@ def _remember(
     except Exception:
         return
     pairs: list[tuple[str, Any, bool]] = []
-    if asked_choice and not _skip_key(question_id):
+    if asked_choice:
         pairs.append((question_id, choice, choice is None))
     pairs.append(("persist_weight", persist, persist is None))
     pairs.append(("unit_usd", unit, unit is None))
@@ -317,8 +315,10 @@ def ask_choice(
 ) -> dict[str, Any]:
     """One evaluate call. The choice and the parameters are that return.
 
-    An empty answer, a tie, or an error does not restore a constant.
-    The deadline is the expiry already on the state. This hop does not send.
+    A parameter already returned for these facts is not a second call. It
+    comes back on this receipt. An empty answer, a tie, or an error does
+    not restore a constant. The deadline is the expiry already on the state.
+    This hop does not send.
     """
 
     del timeout_s
@@ -341,7 +341,7 @@ def ask_choice(
         "error": None,
         "key_source": None,
     }
-    questions = rung_questions(question_id, instructions, criteria)
+    questions = rung_questions(question_id, instructions, criteria, state)
     asked_choice = str(question_id) in questions
     try:
         posted = _posted_state(state, questions)
@@ -558,7 +558,7 @@ def learning_unit_state(rung: str, repo_root: Path | None = None) -> tuple[Path,
         "n_candidates": n_candidates,
         "pair": pair,
     }
-    cleaned = _scrub(state)
+    cleaned = _copy_tree(state)
     return ns_root, cleaned if isinstance(cleaned, dict) else {}
 
 

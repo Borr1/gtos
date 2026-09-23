@@ -37,6 +37,8 @@ Pin model ``jev-1.13.0``. Challenge book ``0`` / ``operator``.
 
 from __future__ import annotations
 
+import hashlib
+import json
 from typing import Any, Callable, Iterable, Mapping
 
 from .challenge import CHALLENGE_LOGIN, CHALLENGE_MAGIC, CHALLENGE_NS
@@ -739,8 +741,57 @@ def _scrub_text(text: str) -> str:
     return cleaned
 
 
+# Span for this card. It expires when the card changes. Empty does not write one.
+_SPAN_KEY: str | None = None
+_SPAN_SCORE: float | None = None
+_SPAN_NOW: float | None = None
+
+
+def _card_key(value: Any) -> str:
+    try:
+        blob = json.dumps(value, sort_keys=True, default=str, separators=(",", ":"))
+    except (TypeError, ValueError):
+        blob = repr(value)
+    return hashlib.sha256(blob.encode("utf-8", "replace")).hexdigest()
+
+
+def _span_for(key: str) -> float | None:
+    if _SPAN_KEY != key:
+        return None
+    return _SPAN_SCORE
+
+
+def _remember_span(key: str, score: float | None) -> None:
+    global _SPAN_KEY, _SPAN_SCORE
+    if _SPAN_KEY != key:
+        _SPAN_KEY = key
+        _SPAN_SCORE = None
+    if score is not None and score > 0:
+        _SPAN_SCORE = score
+
+
 def _banned_number(number: float) -> bool:
-    return abs(number - 90000.0) < 1e-6 or abs(number - 110000.0) < 1e-6
+    """A number leaves the card when it sits inside the returned span.
+
+    No span does not drop the number.
+    """
+
+    span = _SPAN_NOW
+    if span is None:
+        return False
+    return abs(number - 90000.0) < span or abs(number - 110000.0) < span
+
+
+def _span_question() -> dict[str, Any]:
+    return _score(
+        "followthrough_number_span",
+        (
+            "The score you return is the span that decides whether a number "
+            "leaves this card. An empty score leaves the span unset. "
+            "Do not flatten. Do not send an order."
+        ),
+        list(_BETWEEN),
+    )
 
 
 def _scrub_state(value: Any) -> Any:
@@ -953,9 +1004,17 @@ def pack_payload(
     qs = _clean_questions(seat_subtree_questions(
         state, seats=seats, branch=branch, standalone=standalone
     ))
+    qs.update(_span_question())
     named = seats_for_branch(branch, seats)
+    global _SPAN_NOW
+    card = dict(state or {})
+    _SPAN_NOW = _span_for(_card_key(card))
+    try:
+        scrubbed = _scrub_state(card)
+    finally:
+        _SPAN_NOW = None
     return {
-        "state": _scrub_state(dict(state or {})),
+        "state": scrubbed,
         "model": model,
         "questions": qs,
         "ask_together": True,
@@ -1209,7 +1268,15 @@ def evaluate_followthrough_ifs(
         questions = _clean_questions(seat_subtree_questions(
             state, seats=seats, branch=branch, standalone=standalone
         ))
-        posted = _scrub_state(dict(state or {}))
+        questions.update(_span_question())
+        global _SPAN_NOW
+        card = dict(state or {})
+        card_key = _card_key(card)
+        _SPAN_NOW = _span_for(card_key)
+        try:
+            posted = _scrub_state(card)
+        finally:
+            _SPAN_NOW = None
         if not isinstance(posted, dict):
             posted = {}
         posted.pop("prior_outcomes", None)
@@ -1263,6 +1330,10 @@ def evaluate_followthrough_ifs(
     loop_bound = _score_value(answers.get("followthrough_loop_bound"))
     if error and "followthrough_loop_bound" not in answers:
         loop_bound = None
+    span = _score_value(answers.get("followthrough_number_span"))
+    if error and "followthrough_number_span" not in answers:
+        span = None
+    _remember_span(card_key, span)
     _remember(
         posted,
         "followthrough_loop_bound",
@@ -1274,5 +1345,6 @@ def evaluate_followthrough_ifs(
         "decisions": decisions,
         "components": components,
         "loop_bound": loop_bound,
+        "number_span": span,
         "error": error,
     }

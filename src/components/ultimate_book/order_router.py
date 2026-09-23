@@ -20,6 +20,49 @@ from typing import Any, Optional
 from . import execution_packets as EP
 
 
+def _finite_distance(value) -> Optional[float]:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not isfinite(number):
+        return None
+    return number
+
+
+def _target_r_anchors(entry, bid, ask, risk) -> list:
+    """Target multiples, in stops, from the prices already on this geometry."""
+    stop = _finite_distance(risk)
+    if stop is None or stop <= 0:
+        return []
+    levels = []
+    seen = []
+
+    def add(label, distance):
+        span = _finite_distance(distance)
+        if span is None:
+            return
+        number = span / stop
+        if number in seen:
+            return
+        seen.append(number)
+        levels.append((label, number))
+
+    add("a distance equal to this stop", stop)
+    price = _finite_distance(entry)
+    bid_n = _finite_distance(bid)
+    ask_n = _finite_distance(ask)
+    if bid_n is not None and ask_n is not None:
+        add("the spread, in stops", ask_n - bid_n)
+    if price is not None and bid_n is not None:
+        add("the bid's distance from the entry, in stops", abs(price - bid_n))
+    if price is not None and ask_n is not None:
+        add("the ask's distance from the entry, in stops", abs(price - ask_n))
+    return levels
+
+
 def native_pending_order_spec(intent) -> Optional[dict]:
     """Return the native pending-limit spec, or None when the rail is OFF.
 
@@ -101,8 +144,48 @@ class UltimateBookOrderRouter:
     def _geometry(self, intent, tick) -> Optional[dict]:
         d = int(intent.direction)
         sign = 1.0 if d > 0 else -1.0
-        bid = getattr(tick, "bid", None)
-        ask = getattr(tick, "ask", None)
+        bid = getattr(tick, "bid", None) if tick is not None else None
+        ask = getattr(tick, "ask", None) if tick is not None else None
+        if self.namespace == "operator":
+            # The named entry_price is the limit. Stop is the adverse side.
+            # Target is the favourable side. A missing entry or stop does not
+            # send. A missing target leaves take-profit unset.
+            pending = native_pending_order_spec(intent)
+            entry = None
+            if pending is not None:
+                try:
+                    entry = float(pending["entry_price"])
+                except (TypeError, ValueError):
+                    entry = None
+            if entry is None or entry != entry or entry in (float("inf"), float("-inf")):
+                return None
+            risk = None
+            try:
+                raw_risk = float(intent.stop_dist)
+                if isfinite(raw_risk) and raw_risk > 0:
+                    risk = raw_risk
+            except (TypeError, ValueError):
+                risk = None
+            if risk is None:
+                return None
+            target_dist = None
+            raw_target = getattr(intent, "target_dist", None)
+            if raw_target not in (None, ""):
+                try:
+                    target_dist = float(raw_target)
+                except (TypeError, ValueError):
+                    target_dist = None
+            take = None
+            if target_dist is not None and isfinite(target_dist) and target_dist > 0:
+                take = entry + sign * target_dist
+            return {
+                "entry_price": entry,
+                "bid": bid,
+                "ask": ask,
+                "risk_distance": risk,
+                "stop_loss": entry - sign * risk,
+                "take_profit_1": take,
+            }
         if not bid or not ask:
             return None
         pending = native_pending_order_spec(intent)
@@ -121,25 +204,32 @@ class UltimateBookOrderRouter:
             except (TypeError, ValueError):
                 target_dist = None
         if target_dist is None or target_dist <= 0:
+            card = {
+                "symbol": getattr(intent, "symbol", None),
+                "sleeve": getattr(intent, "sleeve", None),
+                "stop_dist": rd,
+                "direction": d,
+                "entry": entry,
+                "bid": bid,
+                "ask": ask,
+            }
             try:
                 from src.judgment.nineteen import score
                 multiple = score(
-                    {
-                        "symbol": getattr(intent, "symbol", None),
-                        "sleeve": getattr(intent, "sleeve", None),
-                        "stop_dist": rd,
-                        "direction": d,
-                    },
+                    card,
                     question_id="target_multiple",
                     instructions=(
                         "The score you return is the target multiple for this limit. "
                         "It may sit between the levels. An empty score leaves the target unset. "
                         "Do not send."
                     ),
+                    anchors=_target_r_anchors(entry, bid, ask, rd),
                 )
             except Exception:
                 multiple = None
-            target_dist = None if multiple is None else float(multiple) * rd
+            if multiple is None:
+                return None
+            target_dist = float(multiple) * rd
         take_profit = None if target_dist is None else entry + sign * target_dist
         return {
             "entry_price": entry, "risk_distance": rd,
@@ -267,6 +357,23 @@ class UltimateBookOrderRouter:
         composed = self._f5_compose_stricter_headroom(trade_params, account_state)
         if composed is None:
             return None
+        if self.namespace == "operator":
+            stamped = dict(composed)
+            try:
+                price = float(stamped.get("entry_price"))
+                price_ok = isfinite(price) and price > 0
+            except (TypeError, ValueError):
+                price_ok = False
+            if price_ok:
+                direction = int(getattr(intent, "direction", 0) or 0)
+                stamped["gtos_native_pending_limit"] = True
+                stamped["gtos_native_pending_order_type"] = (
+                    "BUY_LIMIT" if direction > 0 else "SELL_LIMIT"
+                )
+            raw_expiry = getattr(intent, "expiry_bars", None)
+            if raw_expiry is not None:
+                stamped["expiry_bars_fact"] = raw_expiry
+            return stamped
         pending = native_pending_order_spec(intent)
         if pending is None:
             return composed

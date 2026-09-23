@@ -8,7 +8,7 @@ function Show-Books {
   param($tag)
   Write-Output "=== $tag ==="
   Get-BookProcs | Where-Object {
-    $_.CommandLine -match 'run_book|f5_launch|redacted_account|ftmo_f5|redacted_account|ftmo_redacted_account|ftmo_redacted_account'
+    $_.CommandLine -match 'run_book|f5_launch|redacted_account|ftmo_f5|friend_a|ftmo_redacted_account|ftmo_redacted_account'
   } | ForEach-Object {
     $cl = $_.CommandLine
     if ($cl.Length -gt 220) { $cl = $cl.Substring(0, 220) }

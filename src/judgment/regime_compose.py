@@ -19,9 +19,8 @@ FAVORED_PATH = (
     Path(__file__).resolve().parents[2] / "judgment" / "astra" / "s14_favored_regimes.json"
 )
 
-VIABLE_FLOOR = 0.4
-CHANGE_CEILING = 0.6
-# Production default: unset until S15. Prove/research may pass starters.
+# Production bounds stay unset. A caller may pass a bound it already holds.
+# Research starters stay named so regime_gate's import does not break.
 CONFIDENCE_THRESHOLD_DEFAULT: float | None = None
 HALF_SIZE_THRESHOLD_DEFAULT: float | None = None
 RESEARCH_CONFIDENCE_THRESHOLD = 0.85
@@ -45,7 +44,7 @@ def snap_size_factor(size: float, ceiling: float) -> float:
     except (TypeError, ValueError):
         return 0.0
     for value in _ALLOWED_SIZE_ORDER:
-        if value <= cap + 1e-12:
+        if value <= cap:
             return value
     return 0.0
 
@@ -169,7 +168,7 @@ def parse_regime_answers(answers: Mapping[str, Any] | None, *, source: str = "in
         except (TypeError, ValueError):
             viable = None
     malformed = choice is None or change is None or viable is None
-    unclear = _is_unclear_equal(probs) or (choice == "unclear" and (max_p is None or max_p <= 0.25))
+    unclear = _is_unclear_equal(probs) or choice == "unclear"
     return RegimeAnswers(
         regime_type=choice,
         probabilities=probs,
@@ -178,7 +177,7 @@ def parse_regime_answers(answers: Mapping[str, Any] | None, *, source: str = "in
         strategy_viable=viable,
         source=source,
         malformed=malformed,
-        unclear_equal=unclear and malformed is False and (max_p is not None and abs((max_p or 0) - 0.2) < 1e-6),
+        unclear_equal=bool(unclear and malformed is False),
     )
 
 
@@ -269,8 +268,8 @@ def compose_regime_gate(
     answers: RegimeAnswers | None,
     *,
     occupancy: Mapping[str, Any] | None = None,
-    viable_floor: float = VIABLE_FLOOR,
-    change_ceiling: float = CHANGE_CEILING,
+    viable_floor: float | None = None,
+    change_ceiling: float | None = None,
     confidence_threshold: float | None = CONFIDENCE_THRESHOLD_DEFAULT,
     half_size_threshold: float | None = HALF_SIZE_THRESHOLD_DEFAULT,
     favored_table: Mapping[str, tuple[str, ...]] | None = None,
@@ -413,7 +412,7 @@ def compose_regime_gate(
 
     viable = answers.strategy_viable
     change = answers.regime_change_likely
-    if viable is not None and viable < viable_floor:
+    if viable_floor is not None and viable is not None and viable < viable_floor:
         return _stand(
             "strategy_viable_below_floor",
             state=state,
@@ -427,7 +426,7 @@ def compose_regime_gate(
             favored=favored,
             band=band,
         )
-    if change is not None and change > change_ceiling:
+    if change_ceiling is not None and change is not None and change > change_ceiling:
         return _stand(
             "regime_change_likely_above_ceiling",
             state=state,
@@ -456,9 +455,28 @@ def compose_regime_gate(
             band=band,
         )
 
+    if confidence_threshold is None and half_size_threshold is None:
+        notes.append("thresholds_unset")
+        return RegimeComposeResult(
+            gate_decision=None,
+            size_factor=None,
+            reason="thresholds_unset",
+            decidable=False,
+            consume=False,
+            conf_band=band,
+            disposition_candidate=None,
+            favored_regimes=favored,
+            chair=chair,
+            answers=answers,
+            cache_key=state.cache_key,
+            cache_hit=cache_hit,
+            thresholds=thresholds,
+            notes=tuple(notes),
+        )
+
     decision = "stand_down"
     size = 0.0
-    reason = "s15_thresholds_unset_prefer_stand_down"
+    reason = "below_caller_threshold"
     if confidence_threshold is not None and max_p is not None and max_p >= confidence_threshold:
         decision = "admit_ok_label"
         size = 1.0

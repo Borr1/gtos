@@ -130,7 +130,13 @@ def _finite(value: Any) -> float | None:
     return number
 
 
-def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[str, float | None]:
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post. Never raises."""
     if cache_key in _HOP:
         return dict(_HOP[cache_key])
     payload = {
@@ -138,26 +144,26 @@ def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[st
         for key, value in dict(facts or {}).items()
         if str(key) not in {"denominator", "other"}
     }
-    packed = {str(qid): {"type": "score", "instructions": str(text)} for qid, text in questions.items()}
-    answers: dict = {}
-    returned = None
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
     try:
-        from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number
-
-        returned = returned_number
-        receipt = evaluate(payload, questions=packed, merge_sleeve=False)
+        from src.judgment.nineteen import score as ask
     except Exception:
-        receipt = None
-    if (
-        isinstance(receipt, dict)
-        and receipt.get("ok") is not False
-        and not receipt.get("error")
-        and receipt.get("tie") is not True
-        and isinstance(receipt.get("answers"), dict)
-    ):
-        answers = receipt["answers"]
-    out = {qid: None if returned is None else _finite(returned(answers.get(qid))) for qid in packed}
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
     _HOP[cache_key] = dict(out)
     return out
 
@@ -438,12 +444,7 @@ def policy_from_args(weekend_flat, *, flatten_before_hours=None, entry_embargo_h
         raise WeekendPolicySelectionError(
             f"entry_embargo_hours is not a finite number: {entry_embargo_hours!r}"
         )
-    questions: dict[str, str] = {
-        "max_flatten_before_hours": (
-            "The score you return is the longest flatten lead, in hours, this policy still "
-            "accepts. An empty score leaves that ceiling unset. Do not send."
-        ),
-    }
+    questions: dict[str, str] = {}
     if offered_flatten is None:
         questions["flatten_before_hours"] = (
             "The score you return is how many hours before the weekend boundary a governed "
@@ -454,32 +455,39 @@ def policy_from_args(weekend_flat, *, flatten_before_hours=None, entry_embargo_h
             "The score you return is how many hours before the weekend boundary a new entry "
             "is refused. An empty score leaves that embargo unset. Do not send."
         )
-    scores = _scores(
-        ("weekend_policy", tuple(sleeves), offered_flatten, offered_embargo),
-        {
-            "sleeves": list(sleeves),
-            "offered_flatten_before_hours": offered_flatten,
-            "offered_entry_embargo_hours": offered_embargo,
-        },
-        questions,
+    hour_levels = []
+    if offered_flatten is not None:
+        hour_levels.append(("the offered flatten lead in hours", offered_flatten))
+    if offered_embargo is not None:
+        hour_levels.append(("the offered entry embargo in hours", offered_embargo))
+    scores = (
+        _scores(
+            ("weekend_policy", tuple(sleeves), offered_flatten, offered_embargo),
+            {
+                "sleeves": list(sleeves),
+                "offered_flatten_before_hours": offered_flatten,
+                "offered_entry_embargo_hours": offered_embargo,
+            },
+            questions,
+            {name: list(hour_levels) for name in questions},
+        )
+        if questions
+        else {}
     )
     flatten = offered_flatten if offered_flatten is not None else scores.get("flatten_before_hours")
     embargo = offered_embargo if offered_embargo is not None else scores.get("entry_embargo_hours")
-    ceiling = scores.get("max_flatten_before_hours")
-    if flatten is None or embargo is None or ceiling is None:
+    if offered_flatten is not None and not (offered_flatten > 0.0):
         raise WeekendPolicySelectionError(
-            "weekend flatten, embargo, or ceiling score is empty. Refused rather than "
-            "filled with a planted hour."
+            f"flatten_before_hours must be > 0, got {offered_flatten!r}"
         )
-    if not (0.0 < float(flatten) <= float(ceiling)):
+    if flatten is None or not (float(flatten) > 0.0):
+        return OFF
+    if offered_embargo is not None and offered_embargo < 0.0:
         raise WeekendPolicySelectionError(
-            f"flatten_before_hours {flatten} is outside (0, {ceiling}]. "
-            "Refused rather than clamped to a planted week."
+            f"entry_embargo_hours must be >= 0, got {offered_embargo!r}"
         )
-    if float(embargo) < 0.0:
-        raise WeekendPolicySelectionError(
-            f"entry_embargo_hours must be >= 0, got {embargo!r}"
-        )
+    if embargo is None or float(embargo) < 0.0:
+        embargo = 0.0
     return WeekendPolicy(
         sleeves=sleeves,
         flatten_before_hours=float(flatten),

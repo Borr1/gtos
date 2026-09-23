@@ -54,7 +54,7 @@ Remote `origin/main`:
 - `data/ticks/` exists and includes 109 tick/state/corrupt-quarantine files.
 - Remote `config/profiles/redacted_account.yaml` is account-specific and includes:
   - `server: redacted_account-Server 2`
-  - `login_sha256: 0000000000000000000000000000000000000000000000000000000000000000`
+  - `login_sha256: "0000000000000000000000000000000000000000000000000000000000000000"`
   - `terminal_path: C:\Program Files\MetaTrader 5\terminal64.exe`
   - `terminal_data_path: host-local\AppData\Roaming\MetaQuotes\Terminal\D0E8209F77C8CF37AD8BF550E51FF075...`
   - `max_concurrent: null`

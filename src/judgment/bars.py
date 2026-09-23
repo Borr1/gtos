@@ -5,10 +5,11 @@ from __future__ import annotations
 import csv
 import os
 import shutil
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 from src.components.ultimate_book.primitives import Bar, atr14
 from src.utils.broker_clock import NEW_YORK_PLUS_7, broker_naive_to_utc
@@ -22,6 +23,280 @@ class StampedBar:
     utc: datetime
     bar: Bar
     source_path: str
+
+
+
+import threading as _anchor_threading
+
+_ANCHOR_CARD = _anchor_threading.local()
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _is_map(value):
+    if isinstance(value, dict):
+        return True
+    if isinstance(value, (str, bytes)):
+        return False
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return False
+    return isinstance(value, Mapping)
+
+
+def _bind_card(card):
+    _ANCHOR_CARD.value = card if _is_map(card) else None
+
+
+def _bound_card(explicit):
+    if _is_map(explicit):
+        return explicit
+    bound = getattr(_ANCHOR_CARD, "value", None)
+    return bound if _is_map(bound) else None
+
+
+def _anchor_sources(card):
+    if not _is_map(card):
+        return []
+    found = [card]
+    for key in ("account", "facts", "pair", "news", "ticket", "proposed", "extra", "labels", "subject_facts", "candidate"):
+        inner = card.get(key)
+        if _is_map(inner) and inner is not card:
+            found.append(inner)
+    return found
+
+
+_COUNT_FIELDS = (
+    "n_candidates", "n_events", "n_sleeves", "n_bars", "bars_available",
+    "repeats", "session_bars", "day_bars", "swing_bars", "bars_since_high",
+    "bars_since_low", "candles_elapsed", "closed_orig_stop_count", "bars_in_hand", "bars_closed",
+)
+_COUNT_SEQS = (
+    "prior_outcomes", "candidates", "events", "sleeve_members", "lengths",
+    "stamps", "hashes", "bars", "bar_times", "members", "closed",
+    "legacy_symbol_keys", "families", "priors",
+)
+_PRICE_FIELDS = (
+    "bid", "ask", "entry", "entry_price", "stop", "stop_loss", "sl", "tp",
+    "take_profit", "price", "high", "low", "close", "open", "orig_sl", "orig_tp",
+    "stop_now", "target", "trail", "fill_price", "exit_px",
+)
+_SECOND_FIELDS = (
+    "seconds_until_cycle", "seconds_until_now", "age_s", "age_seconds",
+    "seconds_since_quote", "seconds_since_bar", "seconds_since_last_close",
+    "seconds_between_closes", "seconds_since_prior_close", "expiry_seconds",
+    "timeout_seconds",
+)
+_MINUTE_FIELDS = (
+    "minutes_since_flat", "age_minutes", "minutes_until_now", "window_minutes",
+)
+_HOUR_FIELDS = ("age_hours", "lag_hours", "hours_since_bar", "hours_open", "measured_hours")
+_DAY_FIELDS = ("age_days", "lag_days", "days_open", "measured_days")
+_LOT_FIELDS = (
+    "volume", "volume_min", "volume_step", "lots", "lot",
+    "volume_current", "volume_initial",
+)
+_POINT_FIELDS = (
+    "spread_points", "stop_level", "freeze_level", "tick_points", "deviation_points",
+)
+_INCLUDE_WORDS = ("hide", "short", "long", "full")
+
+
+def _named_pairs(card, fields, seqs=()):
+    pairs = []
+    for source in _anchor_sources(card):
+        for key in fields:
+            number = _anchor_finite(source.get(key))
+            if number is None:
+                continue
+            pairs.append((f"the {key} named on this card", number))
+        for key in seqs:
+            seq = source.get(key)
+            if isinstance(seq, (list, tuple)) and not isinstance(seq, (str, bytes)):
+                pairs.append((f"the count of {key} named on this card", float(len(seq))))
+    return pairs
+
+
+def _keys_matching(card, tokens):
+    pairs = []
+
+    def walk(node):
+        if _is_map(node):
+            for key, value in node.items():
+                low = str(key).lower()
+                if "floor" in low or "baseline" in low:
+                    continue
+                number = _anchor_finite(value)
+                if number is not None and any(tok in low for tok in tokens):
+                    pairs.append((f"the {low} named on this card", number))
+                    continue
+                if _is_map(value):
+                    walk(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        if _is_map(item):
+                            walk(item)
+
+    walk(card)
+    return pairs
+
+
+def _anchors_for_spot(qid, card):
+    name = str(qid).lower()
+    try:
+        from .jev_questions import count_anchors, minute_anchors, mult_anchors, usd_anchors, weight_anchors
+    except Exception:
+        def count_anchors(_card):
+            return []
+
+        def minute_anchors(_card):
+            return []
+
+        def mult_anchors(_card):
+            return []
+
+        def usd_anchors(_card):
+            return []
+
+        def weight_anchors(_card):
+            return []
+
+    override = globals().get("_UNIT_OVERRIDE")
+    if isinstance(override, dict):
+        base = name[: -len("_parameter")] if name.endswith("_parameter") else name
+        spec = override.get(base)
+        if spec == "weight":
+            return list(weight_anchors(card) or [])
+        if spec == "count":
+            pairs = list(count_anchors(card) or [])
+            pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+            return pairs
+        if isinstance(spec, tuple):
+            return _named_pairs(card, spec)
+    if any(tok in name for tok in ("loop", "splice", "width", "lookback", "bound", "_cap")):
+        pairs = list(count_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+        return pairs
+    if "ac60" in name or "autocorr" in name:
+        return _keys_matching(card, ("ac60", "autocorr"))
+    if "direction" in name:
+        return _keys_matching(card, ("direction",))
+    if name.endswith("_r") or "mfe" in name or "mae" in name:
+        return list(weight_anchors(card) or [])
+    if name in {"m15_max_lag_hours", "h4_max_lag_hours", "d1_max_lag_hours", "d1_prior_max_lag_days"}:
+        return _named_pairs(card, _SECOND_FIELDS)
+    if "hour" in name:
+        return _named_pairs(card, _HOUR_FIELDS)
+    if "minute" in name:
+        pairs = list(minute_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _MINUTE_FIELDS))
+        return pairs
+    if "day" in name and "today" not in name:
+        return _named_pairs(card, _DAY_FIELDS)
+    if any(tok in name for tok in ("second", "expiry", "timeout", "pause", "adopt_wait")):
+        return _named_pairs(card, _SECOND_FIELDS)
+    if any(tok in name for tok in ("tilt", "alignment", "weight", "persist")):
+        pairs = list(weight_anchors(card) or [])
+        if len(pairs) >= 2:
+            return pairs
+        return list(mult_anchors(card) or [])
+    if any(tok in name for tok in ("lot", "volume")):
+        return _named_pairs(card, _LOT_FIELDS)
+    if "scale" in name:
+        return _scale_pairs(card)
+    if any(tok in name for tok in ("price",)) or name in {"manage_sl_price", "manage_tp_price"}:
+        return _named_pairs(card, _PRICE_FIELDS)
+    if "point" in name or "deviation" in name:
+        return _named_pairs(card, _POINT_FIELDS)
+    if "spread" in name:
+        return _named_pairs(card, ("spread", "spread_points"))
+    if any(tok in name for tok in ("usd", "equity", "pnl", "cash")):
+        return list(usd_anchors(card) or [])
+    return []
+
+
+def _scale_pairs(card):
+    pairs = []
+    for source in _anchor_sources(card):
+        volume = _anchor_finite(source.get("volume"))
+        if volume is None:
+            volume = _anchor_finite(source.get("volume_current"))
+        initial = _anchor_finite(source.get("volume_initial"))
+        least = _anchor_finite(source.get("volume_min"))
+        step = _anchor_finite(source.get("volume_step"))
+        if volume not in (None, 0) and least is not None:
+            pairs.append(("minimum volume over this volume", least / volume))
+        if volume not in (None, 0) and step is not None:
+            pairs.append(("volume step over this volume", step / volume))
+        if initial not in (None, 0) and volume is not None:
+            pairs.append(("current volume over initial volume", volume / initial))
+    return pairs
+
+
+def _amount_block(qid, instructions, card):
+    """Amount Score. Fewer than two anchors in this unit does not post."""
+
+    source = _bound_card(card)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(qid, instructions, _anchors_for_spot(qid, source))
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        block.pop(key, None)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _ordinal_block(qid, instructions, words):
+    """Word levels. Fewer than two words does not post. The index is not an amount."""
+
+    try:
+        from .jev_questions import ordinal_question
+
+        built = ordinal_question(qid, instructions, words)
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _score_amount_or_ordinal(qid, instructions, card=None, *_rest):
+    if str(qid).startswith("include_"):
+        return _ordinal_block(qid, instructions, _INCLUDE_WORDS)
+    return _amount_block(qid, instructions, card)
 
 
 def _parse_broker_time(raw: str) -> datetime:
@@ -134,6 +409,7 @@ def last_closed_at_or_before(rows: list[StampedBar], as_of_utc: datetime) -> int
     return found
 
 
+# Names other modules still import. The live snap does not read them.
 _MAX_LAG = {
     "M1": timedelta(hours=4),
     "M5": timedelta(hours=6),
@@ -143,22 +419,189 @@ _MAX_LAG = {
     "D1": timedelta(days=5),
 }
 
+_MODEL = "jev-1.13.0"
+_UNSET = " An empty score leaves it unset. A tie leaves it unset. An error leaves it unset."
+_LAG_LOCK = threading.Lock()
+_LAG_CACHE: dict[tuple, dict[str, Any]] = {}
+_LAG_SPOTS = (
+    "m15_lookback",
+    "m15_max_lag_hours",
+    "h4_lookback",
+    "h4_max_lag_hours",
+    "d1_lookback",
+    "d1_max_lag_hours",
+    "d1_prior_max_lag_days",
+)
+_LAG_TEXT = {
+    "m15_lookback": "The score you return is how many M15 closes the trend distance uses.",
+    "m15_max_lag_hours": "The score you return is how many seconds an M15 close may lag the clock before the tape is missing.",
+    "h4_lookback": "The score you return is how many H4 closes the trend distance uses.",
+    "h4_max_lag_hours": "The score you return is how many seconds an H4 close may lag the clock before the tape is missing.",
+    "d1_lookback": "The score you return is how many D1 closes the trend distance uses.",
+    "d1_max_lag_hours": "The score you return is how many seconds a D1 close may lag the clock before the tape is missing.",
+    "d1_prior_max_lag_days": "The score you return is how many seconds the prior daily bar may lag the clock before those levels are missing.",
+}
+_TF_LOOKBACK = {"M15": "m15_lookback", "H4": "h4_lookback", "D1": "d1_lookback"}
+_TF_LAG = {"M15": "m15_max_lag_hours", "H4": "h4_max_lag_hours", "D1": "d1_max_lag_hours"}
 
-def tf_snap(rows: list[StampedBar], as_of_utc: datetime, tf: str, *, lookback: int = 20) -> dict | None:
+
+def _finite(value: Any) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _whole(value: Any) -> int | None:
+    number = _finite(value)
+    if number is None or number <= 0 or number != int(number):
+        return None
+    return int(number)
+
+
+def _lag_card(rows: list, as_of: datetime, idx: int) -> dict[str, Any]:
+    """Second spans and bar counts already measured on this tape. No invented hour."""
+
+    card: dict[str, Any] = {}
+    try:
+        card["bars_in_hand"] = float(len(rows))
+        card["bars_closed"] = float(idx + 1)
+    except Exception:
+        return card
+    second = as_of.second + as_of.microsecond / 1000000.0
+    card["seconds_until_cycle"] = 60.0 - second
+    try:
+        since = _finite((as_of - rows[idx].utc).total_seconds())
+        if since is not None:
+            card["seconds_since_last_close"] = since
+    except Exception:
+        pass
+    if idx >= 1:
+        try:
+            span = _finite((rows[idx].utc - rows[idx - 1].utc).total_seconds())
+            if span is not None:
+                card["seconds_between_closes"] = span
+            prior = _finite((as_of - rows[idx - 1].utc).total_seconds())
+            if prior is not None:
+                card["seconds_since_prior_close"] = prior
+        except Exception:
+            pass
+    return card
+
+
+def _lag_key(as_of: datetime, card: dict | None = None) -> tuple:
+    stamp = as_of.astimezone(timezone.utc).replace(second=0, microsecond=0)
+    facts = card if isinstance(card, dict) else {}
+    packed = tuple(
+        sorted(
+            (key, facts.get(key))
+            for key in (
+                "bars_in_hand",
+                "bars_closed",
+                "seconds_until_cycle",
+                "seconds_since_last_close",
+                "seconds_between_closes",
+                "seconds_since_prior_close",
+            )
+        )
+    )
+    return (stamp.isoformat(), packed)
+
+
+def _lag_post(as_of: datetime, card: dict | None = None) -> dict[str, Any]:
+    out: dict[str, Any] = {spot: None for spot in _LAG_SPOTS}
+    source = dict(card) if isinstance(card, dict) else {}
+    if "seconds_until_cycle" not in source:
+        second = as_of.second + as_of.microsecond / 1000000.0
+        source["seconds_until_cycle"] = 60.0 - second
+    try:
+        from src.judgment.jev_client import evaluate
+        from src.judgment.jev_questions import append_outcome, prior_outcomes, returned_number
+    except Exception:
+        return out
+    questions: dict[str, Any] = {}
+    _bind_card(source)
+    try:
+        for spot in _LAG_SPOTS:
+            block = _amount_block(spot, _LAG_TEXT[spot] + _UNSET, source)
+            if isinstance(block, dict) and block:
+                questions.update(block)
+    except Exception:
+        questions = {}
+    finally:
+        _bind_card(None)
+    if not questions:
+        return out
+    state: dict[str, Any] = {
+        "sleeve": "bars.tf_snap",
+        "as_of_utc": as_of.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    }
+    state.update(source)
+    try:
+        state["prior_outcomes"] = prior_outcomes(state=state, questions=questions)
+    except Exception:
+        state["prior_outcomes"] = []
+    try:
+        receipt = evaluate(state, questions=questions, model=_MODEL, merge_sleeve=False)
+    except Exception:
+        return out
+    if not isinstance(receipt, dict) or not receipt.get("ok"):
+        return out
+    answers = receipt.get("answers")
+    if not isinstance(answers, dict):
+        answers = {}
+    for spot in _LAG_SPOTS:
+        if spot not in questions:
+            continue
+        number = returned_number(answers.get(spot))
+        out[spot] = number
+        try:
+            append_outcome(spot, number, state, error=None if number is not None else "empty")
+        except Exception:
+            pass
+    return out
+
+
+def _lag_ask(as_of: datetime, card: dict | None = None) -> dict[str, Any]:
+    """One pack for this clock minute and these tape facts. The next minute drops it."""
+
+    key = _lag_key(as_of, card)
+    with _LAG_LOCK:
+        hit = _LAG_CACHE.get(key)
+    if hit is not None:
+        return dict(hit)
+    pack = _lag_post(as_of, card)
+    with _LAG_LOCK:
+        for old in list(_LAG_CACHE):
+            if old != key:
+                _LAG_CACHE.pop(old, None)
+        _LAG_CACHE[key] = pack
+    return dict(pack)
+
+
+def tf_snap(rows: list[StampedBar], as_of_utc: datetime, tf: str, *, lookback: int | None = None) -> dict | None:
+    del lookback
     idx = last_closed_at_or_before(rows, as_of_utc)
     if idx is None:
         return None
     as_of = as_of_utc.astimezone(timezone.utc)
     lag = as_of - rows[idx].utc
-    max_lag = _MAX_LAG.get(tf, timedelta(hours=12))
-    if lag > max_lag:
-        return None  # stale tape is missing state, not last April close wearing a September hat
+    card = _lag_card(rows, as_of, idx)
+    pack = _lag_ask(as_of, card)
+    lag_spot = _TF_LAG.get(tf)
+    seconds = _finite(pack.get(lag_spot)) if lag_spot else None
+    if seconds is None or seconds <= 0 or lag.total_seconds() > seconds:
+        return None
     bars = [r.bar for r in rows[: idx + 1]]
     last = rows[idx]
     atr = atr14(bars, idx) if idx >= 14 else None
+    lookback_n = _whole(pack.get(_TF_LOOKBACK[tf])) if tf in _TF_LOOKBACK else None
     close_vs = None
-    if atr and atr > 0 and idx >= lookback:
-        close_vs = (bars[idx].c - bars[idx - lookback].c) / atr
+    if atr and atr > 0 and lookback_n is not None and idx >= lookback_n:
+        close_vs = (bars[idx].c - bars[idx - lookback_n].c) / atr
     trend = None
     if close_vs is not None:
         from .state_choices import LEGACY, trend_choice
@@ -166,12 +609,6 @@ def tf_snap(rows: list[StampedBar], as_of_utc: datetime, tf: str, *, lookback: i
         chosen = trend_choice(close_vs)
         if chosen is not LEGACY:
             trend = chosen
-        elif close_vs > 1.0:
-            trend = 1
-        elif close_vs < -1.0:
-            trend = -1
-        else:
-            trend = 0
     return {
         "tf": tf,
         "last_close": last.bar.c,
@@ -191,7 +628,9 @@ def prior_day_levels(d1: list[StampedBar], as_of_utc: datetime) -> tuple[float |
     if idx is None or idx < 1:
         return None, None
     as_of = as_of_utc.astimezone(timezone.utc)
-    if as_of - d1[idx].utc > timedelta(days=5):
+    card = _lag_card(d1, as_of, idx)
+    seconds = _finite(_lag_ask(as_of, card).get("d1_prior_max_lag_days"))
+    if seconds is None or seconds <= 0 or (as_of - d1[idx].utc).total_seconds() > seconds:
         return None, None
     prev = d1[idx - 1].bar
     return prev.h, prev.l

@@ -197,26 +197,18 @@ def corr_flags(
     c60 = pearson([p[0] for p in long], [p[1] for p in long])
     relation: str | None = "unassembled"
     if c20 is not None:
-        from .state_choices import LEGACY, relation_choice
+        from .state_choices import relation_choice
 
         chosen = relation_choice(c20)
-        if chosen is not LEGACY:
+        if isinstance(chosen, str) and chosen:
             relation = chosen
-        elif c20 <= -0.15:
-            relation = "against_usd"
-        elif c20 >= 0.15:
-            relation = "with_usd"
-        else:
-            relation = "uncorrelated"
     broken = None
     if c20 is not None and c60 is not None:
-        from .state_choices import LEGACY, broken_choice
+        from .state_choices import broken_choice
 
         chosen_broken = broken_choice(c20, c60)
-        if chosen_broken is not LEGACY:
+        if chosen_broken is True or chosen_broken is False:
             broken = chosen_broken
-        elif abs(c20) >= 0.15 and abs(c60) >= 0.15:
-            broken = (c20 > 0) != (c60 > 0)
     return {
         "n": len(pairs),
         "corr_20d": None if c20 is None else round(c20, 4),

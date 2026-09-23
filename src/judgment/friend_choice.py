@@ -23,9 +23,8 @@ SCHEMA = "gtos.judgment.friend_choice.v0"
 QUESTION_ID = "manage_close"
 OPTIONS = ("leave_orig", "move_sl", "move_tp", "close", "hold")
 AUTHORIZES_CLOSE = "close"
-TIE_EPS = 1e-12
 FRIEND_BOOKS = {
-    "sh": {"login": 0, "ns": "redacted_account_f5_minimal"},
+    "sh": {"login": 0, "ns": "friend_a_f5_minimal"},
     "redacted_account": {"login": 0, "ns": "ftmo_redacted_account_f5_minimal"},
     "redacted_account": {"login": 1514684855, "ns": "ftmo_redacted_account_f5_minimal"},
 }
@@ -170,7 +169,7 @@ def unique_highest(probs: Mapping[str, float]) -> str | None:
     if not probs:
         return None
     top = max(probs.values())
-    winners = [name for name, prob in probs.items() if abs(prob - top) <= TIE_EPS]
+    winners = [name for name, prob in probs.items() if prob == top]
     if len(winners) != 1:
         return None
     return winners[0]

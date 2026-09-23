@@ -192,15 +192,7 @@ def attach_news(
     if high:
         nearest_e = min(high, key=lambda e: abs((e["_dt"] - as_of).total_seconds()))
         nearest = int(round((nearest_e["_dt"] - as_of).total_seconds() / 60.0))
-    w7_hit = any(
-        -W7_POST <= int(e["minutes_from_as_of"]) <= W7_PRE
-        and e["currency"] in {"USD", "XAU"}
-        for e in exported
-    ) if covering else None
-    f5_hit = any(
-        -F5_POST <= int(e["minutes_from_as_of"]) <= F5_PRE
-        for e in exported
-    ) if covering else None
+    w7_hit, f5_hit, w7_pre, w7_post, f5_pre, f5_post = _window_flags(exported, covering)
     return {
         "spine_id": packed["spine_id"],
         "spine_extracted_utc": as_of.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -213,10 +205,104 @@ def attach_news(
         "minutes_to_nearest_high": nearest if covering else None,
         "high_in_w7_window": w7_hit,
         "high_in_f5_window": f5_hit,
-        "w7_pre_block_minutes": W7_PRE,
-        "w7_post_block_minutes": W7_POST,
-        "f5_pre_block_minutes": F5_PRE,
-        "f5_post_block_minutes": F5_POST,
+        "w7_pre_block_minutes": w7_pre,
+        "w7_post_block_minutes": w7_post,
+        "f5_pre_block_minutes": f5_pre,
+        "f5_post_block_minutes": f5_post,
         "symbol": symbol,
         "usd_high_in_10d": len(usd_high) if covering else 0,
     }
+
+
+def _event_facts(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    return {
+        "events": [
+            {
+                "minutes_from_as_of": int(row["minutes_from_as_of"]),
+                "currency": row.get("currency"),
+                "event": row.get("event"),
+            }
+            for row in rows
+        ]
+    }
+
+
+def _window_flags(
+    exported: list[dict[str, Any]],
+    covering: bool,
+) -> tuple[bool | None, bool | None, int | None, int | None, int | None, int | None]:
+    """W7 and F5 window flags.
+
+    Off the Challenge writer the minute comparisons stand and the block
+    widths stay on the card. On it, two concurrent choices. An empty
+    answer is None and does not restore the minute comparison. No HIGH
+    event means the flag is false without an ask. The nearby-day slice
+    stays a card cut, not a decision.
+    """
+    legacy_w7 = (
+        any(
+            -W7_POST <= int(row["minutes_from_as_of"]) <= W7_PRE
+            and row["currency"] in {"USD", "XAU"}
+            for row in exported
+        )
+        if covering
+        else None
+    )
+    legacy_f5 = (
+        any(-F5_POST <= int(row["minutes_from_as_of"]) <= F5_PRE for row in exported)
+        if covering
+        else None
+    )
+    try:
+        from src.judgment.state_choices import LEGACY, on_challenge, window_bool
+    except Exception:
+        return legacy_w7, legacy_f5, W7_PRE, W7_POST, F5_PRE, F5_POST
+    if not on_challenge():
+        return legacy_w7, legacy_f5, W7_PRE, W7_POST, F5_PRE, F5_POST
+    if not covering:
+        return None, None, None, None, None, None
+
+    w7_rows = [row for row in exported if row.get("currency") in {"USD", "XAU"}]
+
+    def _flag(chosen: Any) -> bool | None:
+        if chosen is LEGACY or chosen is None:
+            return None
+        if chosen is True or chosen is False:
+            return chosen
+        return None
+
+    w7_chosen: Any = False if not w7_rows else None
+    f5_chosen: Any = False if not exported else None
+    jobs: list[tuple[str, Any]] = []
+    if w7_rows:
+        jobs.append(("w7", w7_rows))
+    if exported:
+        jobs.append(("f5", exported))
+    if jobs:
+        from concurrent.futures import ThreadPoolExecutor
+
+        def _ask(item: tuple[str, list[dict[str, Any]]]) -> tuple[str, Any]:
+            kind, rows = item
+            if kind == "w7":
+                return kind, window_bool(
+                    "news.high_in_w7_window",
+                    _event_facts(rows),
+                    "Is a USD or gold high-impact event inside the block window for this as-of?",
+                )
+            return kind, window_bool(
+                "news.high_in_f5_window",
+                _event_facts(rows),
+                "Is a high-impact event inside the block window for this as-of?",
+            )
+
+        try:
+            with ThreadPoolExecutor(max_workers=len(jobs)) as pool:
+                for kind, chosen in pool.map(_ask, jobs):
+                    if kind == "w7":
+                        w7_chosen = chosen
+                    else:
+                        f5_chosen = chosen
+        except Exception:
+            w7_chosen = None if w7_rows else False
+            f5_chosen = None if exported else False
+    return _flag(w7_chosen), _flag(f5_chosen), None, None, None, None

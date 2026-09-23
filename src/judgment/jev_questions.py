@@ -115,7 +115,11 @@ _PARAMETER_LEVELS = ("none", "trace", "small", "modest", "notable", "heavy")
 
 
 def parameter_question(spot: str, instructions: str) -> dict[str, Any]:
-    """One score. The returned score is the parameter. The levels name no amount."""
+    """One ordinal Score. The six words name no amount.
+
+    The return is a level position. A caller that needs an amount uses
+    ``amount_question`` and reads the value on those anchors.
+    """
     return {
         str(spot): {
             "type": "score",
@@ -123,6 +127,273 @@ def parameter_question(spot: str, instructions: str) -> dict[str, Any]:
             "criteria": list(_PARAMETER_LEVELS),
         }
     }
+
+
+_ANCHOR_KEY = "_anchor_values"
+_USD_FIELDS = (
+    ("equity", "the equity named on this card"),
+    ("balance", "the balance named on this card"),
+    ("open_pnl", "the open profit named on this card"),
+    ("profit", "the open profit named on this card"),
+    ("day_start_balance", "the day-start balance named on this card"),
+    ("day_start_equity", "the day-start equity named on this card"),
+    ("realized_closed_profit", "the realized profit named on this card"),
+    ("day_equity", "the day equity named on this card"),
+)
+
+
+def _finite_anchor(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _anchor_pair(item: Any) -> tuple[Any, Any] | None:
+    if isinstance(item, (str, bytes, Mapping)):
+        return None
+    try:
+        parts = list(item)
+    except TypeError:
+        return None
+    if len(parts) != 2:
+        return None
+    return parts[0], parts[1]
+
+
+def anchor_levels(anchors: Any) -> list[tuple[str, float]] | None:
+    """Ordered (label, value) levels. Fewer than two is not a Score."""
+
+    if anchors is None or isinstance(anchors, (str, bytes)):
+        return None
+    if isinstance(anchors, Mapping):
+        raw_items = list(anchors.items())
+    else:
+        try:
+            raw_items = list(anchors)
+        except TypeError:
+            return None
+    found: list[tuple[str, float]] = []
+    seen: list[float] = []
+    labels: set[str] = set()
+    for item in raw_items:
+        pair = _anchor_pair(item)
+        if pair is None:
+            number = _finite_anchor(item)
+            text = "" if number is None else str(number).strip()
+        else:
+            label, raw = pair
+            number = _finite_anchor(raw)
+            text = "" if label is None else str(label).strip()
+        if number is None or not text or number in seen or text in labels:
+            continue
+        seen.append(number)
+        labels.add(text)
+        found.append((text, number))
+    found.sort(key=lambda pair: pair[1])
+    if len(found) < 2:
+        return None
+    return found
+
+
+def interpolate(position: Any, levels: list[tuple[str, float]]) -> float | None:
+    """The anchor value at this level position. The position may sit between levels."""
+
+    number = _finite_anchor(position)
+    if number is None or not levels:
+        return None
+    low_index = None
+    low_value = None
+    for index, pair in enumerate(levels):
+        value = pair[1]
+        if number < index or number == index:
+            if number == index or low_value is None:
+                return value
+            span = index - low_index
+            if not span:
+                return low_value
+            frac = (number - low_index) / span
+            return low_value + (frac * (value - low_value))
+        low_index = index
+        low_value = value
+    return low_value
+
+
+def amount_question(spot: str, instructions: str, anchors: Any) -> dict[str, Any]:
+    """A Score whose levels are the card's own amounts. Fewer than two does not post.
+
+    The block is the spine's Score builder: criteria are label (value), and the
+    level count is the maximum the API has already stated.
+    """
+
+    from .nineteen import score_question
+
+    return score_question(spot, instructions, anchors)
+
+
+def ordinal_question(spot: str, instructions: str, levels: Any) -> dict[str, Any]:
+    """A Score whose words are an order. The position is not an amount."""
+
+    if isinstance(levels, (str, bytes)) or levels is None:
+        return {}
+    try:
+        raw = list(levels)
+    except TypeError:
+        return {}
+    words = []
+    seen: set[str] = set()
+    for item in raw:
+        text = str(item).strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        words.append(text)
+    if len(words) < 2:
+        return {}
+    from .nineteen import kept_indexes
+
+    ranks = kept_indexes(len(words))
+    if ranks:
+        words = [words[index] for index in ranks]
+    return {
+        str(spot): {
+            "type": "score",
+            "instructions": str(instructions).strip(),
+            "criteria": words,
+        }
+    }
+
+
+def ordinal_index(block: Any, n_levels: int) -> int | None:
+    """Nearest level. The index is an ordinal, not an amount."""
+
+    number = returned_number(block)
+    if number is None:
+        return None
+    try:
+        count = int(n_levels)
+    except (TypeError, ValueError):
+        return None
+    if count < 2:
+        return None
+    if number < 0 or number > (count - 1):
+        return None
+    nearest = int(round(number))
+    if nearest < 0 or nearest >= count:
+        return None
+    return nearest
+
+
+def _cards(card: Any) -> list[Mapping[str, Any]]:
+    if not isinstance(card, Mapping):
+        return []
+    found = [card]
+    for key in ("account", "facts", "pair", "news"):
+        inner = card.get(key)
+        if isinstance(inner, Mapping) and inner is not card:
+            found.append(inner)
+    return found
+
+
+def usd_anchors(card: Any) -> list[tuple[str, float]]:
+    """Broker money already on the card, in account currency. Not a prior score."""
+
+    pairs: list[tuple[str, float]] = []
+    for source in _cards(card):
+        for key, label in _USD_FIELDS:
+            number = _finite_anchor(source.get(key))
+            if number is None:
+                continue
+            pairs.append((label, number))
+    return anchor_levels(pairs) or []
+
+
+def weight_anchors(card: Any) -> list[tuple[str, float]]:
+    """Weights and R multiples already named on the card. Not dollars."""
+
+    pairs: list[tuple[str, float]] = []
+    for source in _cards(card):
+        for key, value in source.items():
+            if not isinstance(key, str):
+                continue
+            name = key.lower()
+            if name in {"persist_weight", "unit_usd", "prior_outcomes"}:
+                continue
+            if not (name.endswith("_weight") or name.endswith("_r") or name in {"weight", "locked_r"}):
+                continue
+            number = _finite_anchor(value)
+            if number is None:
+                continue
+            pairs.append((f"the {name} named on this card", number))
+    return anchor_levels(pairs) or []
+
+
+def minute_anchors(card: Any) -> list[tuple[str, float]]:
+    """Minute distances of named events already on the card."""
+
+    pairs: list[tuple[str, float]] = []
+    seen_events: list[Any] = []
+    for source in _cards(card):
+        for key in ("events",):
+            rows = source.get(key)
+            if isinstance(rows, list):
+                seen_events.append(rows)
+    for rows in seen_events:
+        for item in rows:
+            if not isinstance(item, Mapping):
+                continue
+            number = _finite_anchor(item.get("minutes_from_as_of"))
+            if number is None:
+                continue
+            name = str(item.get("event") or item.get("name") or item.get("scheduled_utc") or "").strip()
+            if not name:
+                continue
+            pairs.append((f"minutes from as-of of {name}", number))
+    return anchor_levels(pairs) or []
+
+
+def mult_anchors(card: Any) -> list[tuple[str, float]]:
+    """Multiples already named on the card."""
+
+    pairs: list[tuple[str, float]] = []
+    for source in _cards(card):
+        blobs = [source]
+        facts = source.get("facts")
+        if isinstance(facts, Mapping):
+            blobs.append(facts)
+        for blob in blobs:
+            for key, value in blob.items():
+                if not isinstance(key, str):
+                    continue
+                if not (key.endswith("_mult") or key.endswith("_multiple")):
+                    continue
+                number = _finite_anchor(value)
+                if number is None:
+                    continue
+                pairs.append((f"the {key} named on this card", number))
+    return anchor_levels(pairs) or []
+
+
+def count_anchors(card: Any) -> list[tuple[str, float]]:
+    """Counts already named on the card."""
+
+    pairs: list[tuple[str, float]] = []
+    for source in _cards(card):
+        for key in ("n_candidates", "n_events", "n_sleeves"):
+            number = _finite_anchor(source.get(key))
+            if number is None:
+                continue
+            pairs.append((f"the {key} named on this card", number))
+        for key in ("prior_outcomes", "candidates", "events", "sleeve_members", "lengths"):
+            seq = source.get(key)
+            if isinstance(seq, (list, tuple)):
+                pairs.append((f"the count of {key} named on this card", float(len(seq))))
+    return anchor_levels(pairs) or []
 
 
 _ROW_LOCK = __import__("threading").Lock()
@@ -258,13 +529,33 @@ def loop_count(spot: str, lengths: list[int] | tuple[int, ...]) -> int | None:
         if isinstance(n, (int, float)) and not isinstance(n, bool) and int(n) >= 0
     ]
     qid = str(spot)
-    questions = parameter_question(
+    rank = (
+        "first",
+        "second",
+        "third",
+        "fourth",
+        "fifth",
+        "sixth",
+        "seventh",
+        "eighth",
+        "ninth",
+        "tenth",
+    )
+    measured = []
+    for index, length in enumerate(usable):
+        if index >= len(rank):
+            break
+        measured.append((f"the {rank[index]} measured length named on this state", float(length)))
+    questions = amount_question(
         qid,
         "How many steps does this loop take on this state? "
         "The score you return is that count. It may sit between the levels. "
         "Measured lengths on this state are facts. "
         "An empty score leaves the count unset.",
+        measured,
     )
+    if not questions:
+        return None
     state: dict[str, Any] = {"spot": qid, "lengths": usable}
     try:
         loaded = prior_outcomes(state=state, questions=questions)
@@ -438,13 +729,19 @@ def _folded_history(
     state: Mapping[str, Any] | None,
     questions: Mapping[str, Any] | None,
 ) -> Any:
-    """Every logged outcome. The API's refusal is what shortens a later post."""
+    """Gold bars stay in order. Each other spot keeps its latest return.
+
+    The API's refusal still shortens a later post. No planted row count.
+    """
 
     del state, questions
     if not rows:
         return []
     bars, scores = _bars_and_scores(rows)
-    return [_outcome_full(item) for item in bars] + scores
+    latest: dict[str, dict[str, Any]] = {}
+    for row in scores:
+        latest[str(row.get("spot") or "")] = row
+    return [_outcome_full(item) for item in bars] + list(latest.values())
 
 
 def append_outcome(spot: str, value: float | None, facts: Mapping[str, Any] | None = None, error: str | None = None) -> None:
@@ -1320,11 +1617,13 @@ def sleeve_select_question(members: list[str] | tuple[str, ...] | None) -> dict[
         "The unique highest probability is the sleeve. An empty answer or a tie leaves the sleeve unset.",
         criteria,
     )
-    packed.update(parameter_question(
+    counted = count_anchors({"n_sleeves": len(names), "sleeve_members": list(names)})
+    packed.update(amount_question(
         "sleeve_select_cap",
         "How many named sleeves belong on this choice? "
         "The score you return is that bound. It may sit between the levels. "
         "An empty score leaves the bound unset.",
+        counted,
     ))
     return packed
 

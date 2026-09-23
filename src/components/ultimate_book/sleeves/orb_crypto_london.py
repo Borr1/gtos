@@ -1,171 +1,342 @@
-"""orb_crypto_london.py — NEW SLEEVE: London opening-range breakout CONTINUATION (M15, crypto, vol-low trending).
+"""London opening-range continuation on crypto.
 
-9th new sleeve (2026-06-17), PRINCIPAL-VERIFIED. A distinct ORB mechanic (NOT the killzone directional-efficiency
-sleeve): build the London opening range (server 07:00-07:45, 4 M15 bars); the FIRST bar in the break window
-(08:00-11:45) that CLOSES beyond the OR high/low is faded WITH the break (continuation); stop = opposite OR edge,
-target 2R, 80-bar time-stop. Gated to a LOW vol-state + a TRENDING (up or dn) HTF regime — the breakout pays in
-quiet-then-expand trending crypto.
-
-PRINCIPAL re-derivation (my own, matches the correct-null sweep): n=2375 (BTC+ETH), every-split positive
-(train +0.158 / oos +0.057 / sealed +0.118), balanced direction (L 1213 / S 1162 — continuation both ways),
-BTC +0.075 / ETH +0.123 both positive, CORRECT random-entry-same-exit null p=0.0000. DEFAULT-OFF candidate (the
-VPS wires/activates live).
-
-MECHANIC (leak-free, decides on the latest CLOSED M15 bar i): only in the London break window (server hour 8..11)
-when the LOW vol-state + trending HTF regime hold. OR = max/min of today's 4 server-hour-7 bars. i must be the
-FIRST break-window bar today to close beyond an OR edge -> continuation entry (long above OR_hi / short below OR_lo).
-stop = |entry - opposite OR edge|; target = 2R. vol-state = ATR/price percentile over a trailing window (LOW =
-bottom third) — LEAK-FREE (the research gen used a full-series tercile; trailing window is the deployable form).
-HTF regime = close-vs-close(REG_LB)/ATR (|slope|>REG_TH => trending). Decision uses only bars <= i; entry at close[i].
+The opening-range hour, the break window, the regime lookback, and the
+volatility rank are scores for this bar. An empty score does not restore a
+printed level. Break, regime, and earlier-bar Choices stay on their posts.
+The widened multiple is the same pack, read by the widen container.
 """
 from __future__ import annotations
-from typing import Optional
-from ..primitives import atr14
-from ..admission import TradeIntent
-from ._server_clock import server_day, server_hour
-from .crypto_choices import crypto_side
 
-OR_HOUR = 7              # London opening-range block = server hour 7 (07:00..07:45)
-OR_BARS = 4
-BRK_LO, BRK_HI = 8, 11   # break window = server hours 8..11
-TARGET_R = 2.0
-MAXBARS = 80
-REG_LB = 384             # HTF regime lookback (slope/ATR)
-REG_TH = 1.5             # |slope/ATR| > REG_TH => trending (up/dn)
-VOL_WIN = 500            # trailing window for the ATR/price vol-state percentile
-VOL_LO = 1.0 / 3.0       # LOW vol-state = bottom-third percentile
-MIN_BARS = VOL_WIN + 20  # warmup: needs both REG_LB (384) regime slope AND VOL_WIN (500) vol percentile
+from typing import Any, Optional
+
+from ..admission import TradeIntent
+from ..primitives import atr14
+from ._server_clock import server_day, server_hour
+from .spot_choice import arm_card, post_answers, read_number, read_side, score_questions
+
 ON_SURFACE = ("BTCUSD", "ETHUSD")
+_SURFACE = ("on_surface", "off_surface")
+_PACKS: dict[tuple, dict[str, Any]] = {}
 
 
 def _hour(t):
-    """SERVER-LOCAL hour. The session constants here are FTMO server hours (F7/B29); the
-    live feed is true UTC, so this converts before comparing. None -> fail closed."""
+    """Server-local hour. None when the stamp cannot be read."""
     return server_hour(t)
 
 
 def _day(t):
-    """SERVER-LOCAL date key. The route grouped prior-day levels and session ranges on
-    SERVER days, not UTC days (F7/B29). NOT the correlated-unit key. None -> fail closed."""
+    """Server-local date key. None when the stamp cannot be read."""
     return server_day(t)
 
 
-def _regime(bars, i, a):
-    """Measurement only. up / dn / range from slope versus ATR. Not the decision."""
-    if i < REG_LB or a <= 0:
-        return "range"
-    slope = (bars[i].c - bars[i - REG_LB].c) / a
-    return "up" if slope > REG_TH else ("dn" if slope < -REG_TH else "range")
+def _whole(value: Any, *, least: int | None = None) -> int | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    whole = int(round(number))
+    if least is not None and whole < least:
+        return None
+    return whole
 
 
-def _low_vol(bars, i, a):
-    """Measurement only. True iff ATR/price rank is in the bottom third. Not the decision."""
-    if i < VOL_WIN or a <= 0 or bars[i].c <= 0:
-        return False
-    cur = a / bars[i].c
+def _key(symbol, bars, decision_day, bar_time, bar_times) -> tuple:
+    stamp = bar_time
+    if stamp is None and bar_times:
+        try:
+            stamp = bar_times[-1]
+        except Exception:
+            stamp = None
+    return (str(symbol), str(decision_day), len(bars) if bars else 0, str(stamp))
+
+
+def _questions() -> dict[str, Any]:
+    packed = score_questions({
+        "or_hour": "The score you return is the server hour of the opening-range block.",
+        "or_bars": "The score you return is how many bars form the opening range.",
+        "break_hour_lo": "The score you return is the first server hour of the break window.",
+        "break_hour_hi": "The score you return is the last server hour of the break window.",
+        "target_r": "The score you return is the reward multiple of the stop.",
+        "maxbars": "The score you return is how many bars this position may stay open.",
+        "reg_lb": "The score you return is the regime lookback in bars.",
+        "reg_th": "The score you return is the absolute slope-over-ATR level that marks a trend.",
+        "vol_win": "The score you return is how many bars the volatility percentile uses.",
+        "vol_lo": "The score you return is the percentile rank at or below which volatility is low.",
+        "hist_min": "The score you return is how many ATR-over-price values the percentile needs.",
+        "min_bars": "The score you return is how many closed bars this scan needs.",
+        "widen_k": "The score you return is the multiple on the stop and the target for the widened container.",
+    })
+    packed["on_surface"] = {
+        "type": "choice",
+        "instructions": (
+            "Is this symbol on the named crypto surface for this bar? "
+            "The named symbols are a fact. "
+            "An empty answer, a tie, or an error is not a side."
+        ),
+        "criteria": {
+            "on_surface": "The symbol is on the named surface for this bar.",
+            "off_surface": "The symbol is off the named surface for this bar.",
+        },
+    }
+    return packed
+
+
+def _facts(symbol, bars, decision_day, bar_time, bar_times) -> dict[str, Any]:
+    i = len(bars) - 1 if bars else -1
+    hour = _hour(bar_times[i]) if bar_times and bars and len(bar_times) == len(bars) else None
+    atr = None
+    close = None
+    if bars and i >= 0:
+        try:
+            raw = atr14(bars, i)
+        except Exception:
+            raw = None
+        if isinstance(raw, (int, float)) and not isinstance(raw, bool) and raw > 0:
+            atr = float(raw)
+        close = float(bars[i].c)
+    return {
+        "sleeve": "orb_crypto_london",
+        "symbol": symbol,
+        "namespace": "operator",
+        "login": 0,
+        "decision_day": decision_day,
+        "bar": _key(symbol, bars, decision_day, bar_time, bar_times)[-1],
+        "n_bars": len(bars) if bars else 0,
+        "bar_index": i,
+        "hour": hour,
+        "atr": atr,
+        "close": close,
+        "named_surface": list(ON_SURFACE),
+        "on_named_surface": symbol in ON_SURFACE,
+        "order_send": False,
+        "flatten": False,
+    }
+
+
+def pack_for(symbol, bars, decision_day, bar_time, bar_times) -> dict[str, Any]:
+    """The one pack for this bar. A second read does not ask again."""
+
+    key = _key(symbol, bars, decision_day, bar_time, bar_times)
+    hit = _PACKS.get(key)
+    if hit is not None:
+        return hit
+    facts = _facts(symbol, bars, decision_day, bar_time, bar_times)
+    arm_card(facts, bars=bars, index=len(bars) - 1 if bars else None, bar_times=bar_times)
+    answers = post_answers(facts, _questions())
+    if answers:
+        _PACKS[key] = answers
+    return answers
+
+
+def cached_number(symbol, bars, decision_day, bar_time, bar_times, spot: str) -> float | None:
+    """A score already on this bar's pack. A miss stays unset."""
+
+    pack = _PACKS.get(_key(symbol, bars, decision_day, bar_time, bar_times))
+    if not isinstance(pack, dict):
+        return None
+    return read_number(pack, spot)
+
+
+def _regime(bars, i, atr, look: int | None, thresh: float | None) -> str | None:
+    if look is None or thresh is None or look < 1 or i < look or atr <= 0:
+        return None
+    slope = (bars[i].c - bars[i - look].c) / atr
+    if slope > thresh:
+        return "up"
+    if slope < -thresh:
+        return "dn"
+    return "range"
+
+
+def _low_vol(bars, i, atr, vol_win: int | None, hist_min: int | None, vol_lo: float | None) -> bool | None:
+    if vol_win is None or hist_min is None or vol_lo is None or vol_win < 1 or hist_min < 1:
+        return None
+    if i < vol_win or atr <= 0 or bars[i].c <= 0:
+        return None
+    current = atr / bars[i].c
     vals = []
-    for k in range(i - VOL_WIN, i + 1):
-        ak = atr14(bars, k)
-        if ak > 0 and bars[k].c > 0:
-            vals.append(ak / bars[k].c)
-    if len(vals) < 50:
-        return False
-    rank = sum(1 for v in vals if v <= cur) / len(vals)
-    return rank <= VOL_LO
+    for k in range(i - vol_win, i + 1):
+        try:
+            sample = atr14(bars, k)
+        except Exception:
+            continue
+        if isinstance(sample, (int, float)) and not isinstance(sample, bool) and sample > 0 and bars[k].c > 0:
+            vals.append(sample / bars[k].c)
+    if len(vals) < hist_min:
+        return None
+    rank = sum(1 for value in vals if value <= current) / len(vals)
+    return rank <= vol_lo
+
+
+def _bounds(answers: dict[str, Any]) -> dict[str, Any] | None:
+    pulled = {
+        "or_hour": _whole(read_number(answers, "or_hour")),
+        "or_bars": _whole(read_number(answers, "or_bars"), least=1),
+        "break_hour_lo": _whole(read_number(answers, "break_hour_lo")),
+        "break_hour_hi": _whole(read_number(answers, "break_hour_hi")),
+        "reg_lb": _whole(read_number(answers, "reg_lb"), least=1),
+        "reg_th": read_number(answers, "reg_th"),
+        "vol_win": _whole(read_number(answers, "vol_win"), least=1),
+        "vol_lo": read_number(answers, "vol_lo"),
+        "hist_min": _whole(read_number(answers, "hist_min"), least=1),
+        "min_bars": _whole(read_number(answers, "min_bars"), least=1),
+        "target_r": read_number(answers, "target_r"),
+    }
+    if any(value is None for value in pulled.values()):
+        return None
+    if pulled["target_r"] <= 0:
+        return None
+    if pulled["break_hour_hi"] < pulled["break_hour_lo"]:
+        return None
+    return pulled
+
+
+def _gate(spot: str, condition: str, measured: bool, true_name: str, false_name: str,
+         true_text: str, false_text: str) -> dict[str, Any]:
+    return {
+        spot: {
+            "type": "choice",
+            "instructions": (
+                f"Condition: {condition}. Measured fact for this condition is {measured}. "
+                "An empty answer, a tie, or an error is not a side."
+            ),
+            "criteria": {true_name: true_text, false_name: false_text},
+        }
+    }
 
 
 def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
              aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
-    """Emit a London-ORB continuation TradeIntent on the latest closed M15 bar, else None. Leak-free."""
-    if symbol not in ON_SURFACE or not bars or not bar_times:
+    """London opening-range continuation. Bounds come from one pack."""
+    del aux_bars, aux_times
+    if not bars or not bar_times or len(bar_times) != len(bars):
+        return None
+    answers = pack_for(symbol, bars, decision_day, bar_time, bar_times)
+    if read_side(answers, "on_surface", _SURFACE) != "on_surface":
+        return None
+    bounds = _bounds(answers)
+    if bounds is None:
         return None
     i = len(bars) - 1
-    if i < MIN_BARS or len(bar_times) != len(bars):
+    if i < bounds["min_bars"]:
         return None
-    hi_h = _hour(bar_times[i])
-    if hi_h is None or hi_h < BRK_LO or hi_h > BRK_HI:    # London break window only
+    hour = _hour(bar_times[i])
+    if hour is None or hour < bounds["break_hour_lo"] or hour > bounds["break_hour_hi"]:
+        return None
+    atr = atr14(bars, i)
+    if not isinstance(atr, (int, float)) or isinstance(atr, bool) or atr <= 0:
+        return None
+    regime = _regime(bars, i, atr, bounds["reg_lb"], bounds["reg_th"])
+    low = _low_vol(bars, i, atr, bounds["vol_win"], bounds["hist_min"], bounds["vol_lo"])
+    if regime is None or low is None:
         return None
     day = _day(bar_times[i])
-    a = atr14(bars, i)
-    if a <= 0:
-        return None
-    regime = _regime(bars, i, a)
-    blocked = crypto_side(
-        "orb_crypto_london_not_low_or_range",
-        (not _low_vol(bars, i, a)) or regime == "range",
-        "context_closed",
-        "context_open",
-        "Condition: vol is not low or the regime is range. Which side of this condition is the decision?",
-        true_text="Vol is not low or the higher-timeframe regime is range. Do not emit.",
-        false_text="Vol is low and the regime is not range.",
-        facts={"symbol": symbol, "regime": regime, "vol_low": VOL_LO, "regime_threshold": REG_TH},
-    )
-    if blocked == "true" or blocked is None:
-        return None
-    # today's London opening range (the 4 server-hour-7 bars)
-    or_idx = [k for k in range(i, -1, -1) if _day(bar_times[k]) == day and _hour(bar_times[k]) == OR_HOUR]
-    or_idx = sorted(or_idx)[:OR_BARS]
-    if len(or_idx) < OR_BARS:
+    or_idx = [
+        k for k in range(i, -1, -1)
+        if _day(bar_times[k]) == day and _hour(bar_times[k]) == bounds["or_hour"]
+    ]
+    or_idx = sorted(or_idx)[: bounds["or_bars"]]
+    if len(or_idx) < bounds["or_bars"]:
         return None
     or_hi = max(bars[k].h for k in or_idx)
     or_lo = min(bars[k].l for k in or_idx)
     if or_hi <= or_lo:
         return None
     last_or = or_idx[-1]
-    c = bars[i].c
-    above = crypto_side(
-        "orb_crypto_london_close_above_or_high",
-        c > or_hi,
-        "close_above_or_high",
-        "not_above_or_high",
-        "Condition: close > opening-range high. Which side of this condition is the decision?",
-        true_text="The close is above the opening-range high.",
-        false_text="The close is not above the opening-range high.",
-        facts={"symbol": symbol, "close": float(c), "or_high": float(or_hi), "or_low": float(or_lo)},
-    )
-    direction = 0
-    if above == "true":
-        direction = 1
-    elif above is None:
-        return None
-    else:
-        under = crypto_side(
-            "orb_crypto_london_close_below_or_low",
-            c < or_lo,
-            "close_below_or_low",
-            "not_below_or_low",
-            "Condition: close < opening-range low. Which side of this condition is the decision?",
-            true_text="The close is below the opening-range low.",
-            false_text="The close is not below the opening-range low.",
-            facts={"symbol": symbol, "close": float(c), "or_high": float(or_hi), "or_low": float(or_lo)},
-        )
-        if under == "true":
-            direction = -1
-        elif under is None:
-            return None
-    if direction == 0:
-        return None
-    # i must be the FIRST break-window bar today to close beyond an OR edge (one ORB per day)
+    close = bars[i].c
+    earlier = False
     for k in range(last_or + 1, i):
         if _day(bar_times[k]) != day:
             continue
-        hk = _hour(bar_times[k])
-        if hk is None or hk < BRK_LO or hk > BRK_HI:
+        hour_k = _hour(bar_times[k])
+        if hour_k is None or hour_k < bounds["break_hour_lo"] or hour_k > bounds["break_hour_hi"]:
             continue
-        earlier = crypto_side(
-            f"orb_crypto_london_earlier_break_{k}",
-            bars[k].c > or_hi or bars[k].c < or_lo,
-            "earlier_break",
-            "no_earlier_break",
-            "Condition: an earlier break-window close is beyond an opening-range edge. Which side of this condition is the decision?",
-            true_text="An earlier break-window bar already closed beyond the opening range. Do not emit.",
-            false_text="That earlier bar did not close beyond the opening range.",
-            facts={"symbol": symbol, "close": float(bars[k].c), "or_high": float(or_hi), "or_low": float(or_lo)},
-        )
-        if earlier == "true" or earlier is None:
-            return None
-    stop_dist = (c - or_lo) if direction > 0 else (or_hi - c)
+        if bars[k].c > or_hi or bars[k].c < or_lo:
+            earlier = True
+            break
+    gate_facts = {
+        "sleeve": "orb_crypto_london",
+        "symbol": symbol,
+        "namespace": "operator",
+        "login": 0,
+        "decision_day": decision_day,
+        "regime": regime,
+        "vol_low": low,
+        "close": float(close),
+        "or_high": float(or_hi),
+        "or_low": float(or_lo),
+        "above": bool(close > or_hi),
+        "under": bool(close < or_lo),
+        "earlier_break": earlier,
+        "order_send": False,
+        "flatten": False,
+    }
+    gates = {}
+    gates.update(_gate(
+        "blocked",
+        "vol is not low or the regime is range",
+        (not low) or regime == "range",
+        "context_closed",
+        "context_open",
+        "Vol is not low or the higher-timeframe regime is range. Do not emit.",
+        "Vol is low and the regime is not range.",
+    ))
+    gates.update(_gate(
+        "above",
+        "close is above the opening-range high",
+        close > or_hi,
+        "close_above_or_high",
+        "not_above_or_high",
+        "The close is above the opening-range high.",
+        "The close is not above the opening-range high.",
+    ))
+    gates.update(_gate(
+        "under",
+        "close is below the opening-range low",
+        close < or_lo,
+        "close_below_or_low",
+        "not_below_or_low",
+        "The close is below the opening-range low.",
+        "The close is not below the opening-range low.",
+    ))
+    gates.update(_gate(
+        "earlier",
+        "an earlier break-window close is beyond an opening-range edge",
+        earlier,
+        "earlier_break",
+        "no_earlier_break",
+        "An earlier break-window bar already closed beyond the opening range. Do not emit.",
+        "No earlier break-window bar closed beyond the opening range.",
+    ))
+    decided = post_answers(gate_facts, gates)
+    blocked = read_side(decided, "blocked", ("context_closed", "context_open"))
+    above = read_side(decided, "above", ("close_above_or_high", "not_above_or_high"))
+    under = read_side(decided, "under", ("close_below_or_low", "not_below_or_low"))
+    earlier_side = read_side(decided, "earlier", ("earlier_break", "no_earlier_break"))
+    if blocked != "context_open" or earlier_side != "no_earlier_break":
+        return None
+    if above == "close_above_or_high":
+        direction = 1
+    elif under == "close_below_or_low":
+        direction = -1
+    else:
+        return None
+    stop_dist = (close - or_lo) if direction > 0 else (or_hi - close)
     if stop_dist <= 0:
         return None
-    return TradeIntent(sleeve="orb_crypto_london", symbol=symbol, direction=direction,
-                       decision_day=decision_day, stop_dist=stop_dist, target_dist=TARGET_R * stop_dist)
+    horizon = _whole(read_number(answers, "maxbars"), least=1)
+    if horizon is None:
+        return None
+    return TradeIntent(
+        sleeve="orb_crypto_london",
+        symbol=symbol,
+        direction=direction,
+        decision_day=decision_day,
+        stop_dist=stop_dist,
+        target_dist=bounds["target_r"] * stop_dist,
+        expiry_bars=horizon,
+    )

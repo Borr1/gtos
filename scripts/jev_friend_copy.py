@@ -77,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
     record = _load_json(args.trade_record)
     plans: list[dict[str, Any]] = []
     if event is not None or record is not None:
-        ns = args.ns or "redacted_account_f5_minimal"
+        ns = args.ns or "friend_a_f5_minimal"
         login = args.login or 0
         row = print_plan(
             event,

@@ -29,8 +29,13 @@ def _finite(value: Any) -> float | None:
     return number
 
 
-def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[str, float | None]:
-    """One post for this feature state. The same facts return the same scores."""
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post."""
     if cache_key in _HOP:
         return dict(_HOP[cache_key])
     payload = {
@@ -38,32 +43,26 @@ def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[st
         for key, value in dict(facts or {}).items()
         if str(key) not in {"denominator", "other"}
     }
-    packed = {
-        str(qid): {"type": "score", "instructions": str(text)}
-        for qid, text in questions.items()
-    }
-    answers: dict = {}
-    returned = None
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
     try:
-        from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number
-
-        returned = returned_number
-        receipt = evaluate(payload, questions=packed, merge_sleeve=False)
+        from src.judgment.nineteen import score as ask
     except Exception:
-        receipt = None
-    if (
-        isinstance(receipt, dict)
-        and receipt.get("ok") is not False
-        and not receipt.get("error")
-        and receipt.get("tie") is not True
-        and isinstance(receipt.get("answers"), dict)
-    ):
-        answers = receipt["answers"]
-    out = {
-        qid: None if returned is None else _finite(returned(answers.get(qid)))
-        for qid in packed
-    }
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
     _HOP[cache_key] = dict(out)
     return out
 
@@ -86,8 +85,8 @@ def metals_confluence(*, htf_slope_norm: float, mom_20_atr: float, fvg_freshness
 
     enabled=False admits and does not ask. ac60 is accepted for callers and is
     not a condition. An unanswered bound does not fill the old age, cap, count,
-    or hour, and it does not admit. The count is None in that case so a caller
-    cannot read a planted total.
+    or hour, and it does not reject the intent. The count is None in that case
+    so a caller cannot read a planted total.
     """
     del ac60
     if not enabled:
@@ -102,6 +101,9 @@ def metals_confluence(*, htf_slope_norm: float, mom_20_atr: float, fvg_freshness
         "atr_ratio": atr_ratio,
         "session_hour": session_hour,
     }
+    fresh_age = _finite(fvg_freshness_bars)
+    ratio = _finite(atr_ratio)
+    hour = _finite(session_hour)
     bounds = _scores(
         ("metals_confluence", tuple(sorted((str(k), repr(v)) for k, v in facts.items()))),
         facts,
@@ -121,6 +123,18 @@ def metals_confluence(*, htf_slope_norm: float, mom_20_atr: float, fvg_freshness
             "asian_hour_end": (
                 "The score you return is the last session hour this state still calls inside the session window. "
                 "An empty score leaves that hour unset. Do not send."
+            ),
+        },
+        {
+            "fresh_bars_max": (
+                [("the FVG age in bars on this state", fresh_age)] if fresh_age is not None else []
+            ),
+            "vol_cap": (
+                [("the atr ratio on this state", ratio)] if ratio is not None else []
+            ),
+            "k_required": [],
+            "asian_hour_end": (
+                [("the session hour on this state", hour)] if hour is not None else []
             ),
         },
     )
@@ -149,7 +163,7 @@ def metals_confluence(*, htf_slope_norm: float, mom_20_atr: float, fvg_freshness
     flags = (up, fresh, vcap, asian)
     if fresh_max is None or vol_max is None or required is None or hour_end is None:
         return ConfluenceResult(
-            False, None, bool(up), bool(fresh), bool(vcap), bool(asian),
+            True, None, bool(up), bool(fresh), bool(vcap), bool(asian),
             "confluence bounds unset",
         )
     count = sum(1 for flag in flags if flag)

@@ -2,15 +2,15 @@
 
 ``sleeve.gbpjpy_a_plus_ready`` ∈ {a_plus, almost, blocked, null_state}.
 
-    a_plus = session_ok ∧ agree ∧ dual_same ∧ identity_ok(|resid|≤0.15)
-             ∧ boj ∉ {print, guidance_live} ∧ tone ≠ risk_off
-
-Fixtures: t1 / t3 pass-capable; t2 dual_split blocked; t4 residual blocked.
+On the Challenge writer the choice is the ask. An empty answer leaves it
+unset. Off that writer the recorded conjuncts stay for research.
 SHADOW only. Not an admit Choice. No new refuse walls.
 """
 
 from __future__ import annotations
 
+import json
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -101,7 +101,6 @@ SCOUT_ATTACH_NAMES = (
 ATTACH_ALIASES: dict[str, dict[str, Any]] = {
     "gbpjpy_dual_leg": {
         "equiv": "gate.cross_stack_gbpjpy",
-        "resid_cap": 0.15,
     },
     "tokyo_event": {
         "split": ("gate.asia_jpy_act_ok", "gate.event_boj_window"),
@@ -166,7 +165,6 @@ def resolve_attach_name(name: str) -> dict[str, Any]:
             "name": key,
             "kind": "equiv",
             "equiv": alias["equiv"],
-            "resid_cap": alias["resid_cap"],
             "targets": (alias["equiv"],),
             "shadow_only": True,
             "never_admit": True,
@@ -248,7 +246,7 @@ def assert_scout_attach_authority() -> dict[str, Any]:
     if choice["kind"] != "choice" or choice["never_admit"] is not True or choice["shadow_only"] is not True:
         bad.append("choice_not_shadow")
     dual = resolve_attach_name("gbpjpy_dual_leg")
-    if dual.get("equiv") != "gate.cross_stack_gbpjpy" or dual.get("resid_cap") != 0.15:
+    if dual.get("equiv") != "gate.cross_stack_gbpjpy":
         bad.append("dual_leg")
     tokyo = resolve_attach_name("tokyo_event")
     if tokyo.get("split") != ("gate.asia_jpy_act_ok", "gate.event_boj_window"):
@@ -269,7 +267,6 @@ def assert_scout_attach_authority() -> dict[str, Any]:
         "shadow_only": True,
         "never_admit": True,
         "never_refuse": True,
-        "resid_cap": 0.15,
         "scout_packet_present": SCOUT_PACKET_PATH.is_file(),
         "authority": "scout_sleeve_attach_map",
     }
@@ -294,12 +291,9 @@ PACK5_FIELD_SPEC: dict[str, dict[str, Any]] = {
             {"question": "warsh_class", "ids": ("FLUID-NWS-004",)},
         ),
         "criteria": {
-            A_PLUS: (
-                "session_ok ∧ agree ∧ dual_same ∧ identity_ok(|resid|≤0.15) "
-                "∧ boj_bucket ∉ {print, guidance_live} ∧ tone ≠ risk_off"
-            ),
-            ALMOST: "Session ok and no hard block; a required conjunct is soft or missing",
-            BLOCKED: "dual_split, residual > 0.15, boj print|guidance_live, or tone=risk_off",
+            A_PLUS: "The conjuncts on the card are the sleeve.",
+            ALMOST: "Session is present and a required conjunct is not a block.",
+            BLOCKED: "A conjunct on the card blocks the sleeve.",
             NULL_STATE: "Required conjuncts unassembled. Empty spine ≠ no BOJ.",
         },
         "role": "Chair-canon GBPJPY A+ Choice. SHADOW. Not admit.",
@@ -407,6 +401,67 @@ def assert_scout_tier1_observe_only() -> dict[str, Any]:
     }
 
 
+_CHOICE_CACHE: dict[str, str | None] = {}
+_CHOICE_LOCK = threading.Lock()
+
+
+def _challenge() -> bool:
+    try:
+        from .state_choices import on_challenge
+    except Exception:
+        return False
+    try:
+        return bool(on_challenge())
+    except Exception:
+        return False
+
+
+def _choice(
+    qid: str,
+    facts: dict[str, Any],
+    criteria: dict[str, str],
+    instructions: str,
+) -> str | None:
+    blob = json.dumps({"q": qid, "f": facts}, sort_keys=True, default=str)
+    with _CHOICE_LOCK:
+        if blob in _CHOICE_CACHE:
+            return _CHOICE_CACHE[blob]
+    try:
+        from .jev_client import evaluate
+        from .jev_questions import unique_highest
+    except Exception:
+        return None
+    questions = {
+        qid: {
+            "type": "choice",
+            "instructions": instructions,
+            "criteria": {str(key): str(text) for key, text in criteria.items()},
+        }
+    }
+    try:
+        receipt = evaluate(
+            {"facts": facts, "order_send": False, "flatten": False},
+            questions=questions,
+            merge_sleeve=False,
+            model="jev-1.13.0",
+        )
+    except Exception:
+        return None
+    block = None
+    if isinstance(receipt, dict):
+        answers = receipt.get("answers")
+        if isinstance(answers, dict):
+            block = answers.get(qid)
+    probs = block.get("probabilities") if isinstance(block, dict) else None
+    try:
+        picked = unique_highest(probs if isinstance(probs, dict) else None, tuple(criteria))
+    except Exception:
+        picked = None
+    with _CHOICE_LOCK:
+        _CHOICE_CACHE[blob] = picked
+    return picked
+
+
 def _tone(pack2: Mapping[str, Any] | None, supplied: Any) -> str:
     if supplied:
         return str(supplied).strip().lower()
@@ -442,6 +497,44 @@ def score_a_plus(
     )
     tone_ok = None if tone == "unassembled" else tone not in TONE_BLOCK
     conjuncts = {**pack4["conjuncts"], "tone_ok": tone_ok}
+    if _challenge():
+        picked = _choice(
+            CHOICE_ID,
+            {
+                "session_ok": session_ok,
+                "identity_ok": identity_ok,
+                "agree": agree,
+                "dual_same": dual_same,
+                "boj_bucket": boj_bucket,
+                "tone": tone,
+                "tone_ok": tone_ok,
+                "boj_clear": conjuncts.get("boj_clear"),
+            },
+            dict(PACK5_FIELD_SPEC[CHOICE_ID]["criteria"]),
+            (
+                "The conjuncts are on the card. "
+                "The unique highest sleeve state is the decision. "
+                "An empty answer or a tie leaves the choice unset. "
+                "Do not admit. Do not send."
+            ),
+        )
+        return {
+            "type": "choice",
+            "choice": picked,
+            "fail_reason": None,
+            "fail_conjunct": None,
+            "conjuncts": conjuncts,
+            "boj_bucket": boj_bucket,
+            "tone": tone,
+            "pack4_choice": pack4["choice"],
+            "criteria": dict(PACK5_FIELD_SPEC[CHOICE_ID]["criteria"]),
+            "never_admit": True,
+            "never_refuse": True,
+            "never_apply_size": True,
+            "shadow_only": True,
+            "invented": False,
+            "edge": EDGE,
+        }
     hard = (
         dual_same is False
         or identity_ok is False

@@ -1098,7 +1098,8 @@ class ExecutionEngine:
             "pending_intent_max_age_hours",
             "The score you return is the maximum age in hours for this pending intent. "
             "An empty score leaves the intent in place. Do not send.",
-            {"trade_id": getattr(intent, "trade_id", None)},
+            {"trade_id": getattr(intent, "trade_id", None), "placed_time": intent.placed_time},
+            placed=placed_dt,
         )
         age_hours = (now - placed_dt).total_seconds() / 3600.0
         if age_limit is not None and (now - placed_dt) >= timedelta(hours=float(age_limit)):
@@ -1257,14 +1258,6 @@ class ExecutionEngine:
         """Resolve placement-time defaults for the supported vNext BE policy."""
         cfg = self.config.get("gtos_vnext_runtime", {}) or {}
 
-        def _float_cfg(key: str, default: float) -> float:
-            raw = cfg.get(key, default)
-            try:
-                return float(raw if raw not in (None, "") else default)
-            except (TypeError, ValueError):
-                logger.error("Invalid %s=%r; using default %.2f", key, raw, default)
-                return default
-
         raw_time_stop = cfg.get("moonshot_dynamic_execution_router_be_time_stop_bars")
         try:
             time_stop_bars = (
@@ -1278,7 +1271,6 @@ class ExecutionEngine:
             )
             time_stop_bars = None
 
-        del _float_cfg
         state = {"policy": "be_after_trigger", "symbol": getattr(self, "symbol", None)}
         trigger_r = self._spine_score(
             "be_trigger_r",
@@ -1301,8 +1293,11 @@ class ExecutionEngine:
             out["time_stop_bars"] = time_stop_bars
         return out
 
-    def _configured_vnext_partial_be_runner_params(self) -> dict:
+    def _configured_vnext_partial_be_runner_params(self, trade=None) -> dict:
         state = {"policy": "partial_be_runner", "symbol": getattr(self, "symbol", None)}
+        if trade is not None:
+            state["current_volume"] = getattr(trade, "current_volume", None)
+            state["initial_volume"] = getattr(trade, "initial_volume", None)
         out = {}
         for role, text in (
             ("trigger_r", "The score you return is the partial trigger multiple. An empty score leaves it unset. Do not send."),
@@ -1310,12 +1305,12 @@ class ExecutionEngine:
             ("partial_close_ratio", "The score you return is the partial close fraction. An empty score leaves it unset. Do not send."),
             ("time_stop_bars", "The score you return is the partial time-stop bar count. An empty score leaves it unset. Do not send."),
         ):
-            number = self._spine_score(role, text, state)
+            number = self._spine_score(role, text, state, trade=trade)
             if number is not None:
                 out[role] = number
         return out
 
-    def _configured_vnext_trailing_runner_params(self) -> dict:
+    def _configured_vnext_trailing_runner_params(self, trade=None) -> dict:
         state = {"policy": "trailing_runner", "symbol": getattr(self, "symbol", None)}
         out = {}
         for role, text in (
@@ -1324,12 +1319,12 @@ class ExecutionEngine:
             ("trail_gap_r", "The score you return is the trail gap. An empty score leaves it unset. Do not send."),
             ("time_stop_bars", "The score you return is the trail time-stop bar count. An empty score leaves it unset. Do not send."),
         ):
-            number = self._spine_score(role, text, state)
+            number = self._spine_score(role, text, state, trade=trade)
             if number is not None:
                 out[role] = number
         return out
 
-    def _configured_vnext_momentum_exhaustion_params(self) -> dict:
+    def _configured_vnext_momentum_exhaustion_params(self, trade=None) -> dict:
         state = {"policy": "momentum_exhaustion", "symbol": getattr(self, "symbol", None)}
         out = {}
         for role, text in (
@@ -1338,7 +1333,7 @@ class ExecutionEngine:
             ("pullback_r", "The score you return is the momentum pullback. An empty score leaves it unset. Do not send."),
             ("time_stop_bars", "The score you return is the momentum time-stop bar count. An empty score leaves it unset. Do not send."),
         ):
-            number = self._spine_score(role, text, state)
+            number = self._spine_score(role, text, state, trade=trade)
             if number is not None:
                 out[role] = number
         return out
@@ -1371,8 +1366,7 @@ class ExecutionEngine:
                 return raw.strip().lower() in {"1", "true", "yes", "on"}
             return bool(raw)
 
-        def _float_cfg(key: str, default: float):
-            del default
+        def _float_cfg(key: str):
             return self._spine_score(
                 key,
                 "The score you return is this profit-harvest quantity. "
@@ -1402,23 +1396,18 @@ class ExecutionEngine:
             ),
             "min_mfe_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_min_mfe_r",
-                0.25,
             ),
             "stop_activation_mfe_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_stop_activation_mfe_r",
-                _float_cfg("profit_harvest_mfe_capture_v4_min_mfe_r", 0.25),
             ),
             "target_activation_fraction": _float_cfg(
                 "profit_harvest_mfe_capture_v4_target_activation_fraction",
-                0.0,
             ),
             "trail_gap_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_trail_gap_r",
-                0.35,
             ),
             "protect_floor_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_protect_floor_r",
-                0.0,
             ),
             "cost_aware_protect_floor_enabled": _bool_cfg(
                 "profit_harvest_mfe_capture_v4_cost_aware_protect_floor_enabled",
@@ -1426,22 +1415,18 @@ class ExecutionEngine:
             ),
             "cost_aware_margin_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_cost_aware_margin_r",
-                0.0,
             ),
             "close_on_giveback_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_close_on_giveback_r",
-                0.50,
             ),
             "stale_minutes": _optional_int_cfg(
                 "profit_harvest_mfe_capture_v4_stale_minutes",
             ),
             "stale_min_mfe_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_stale_min_mfe_r",
-                0.25,
             ),
             "stale_close_below_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_stale_close_below_r",
-                0.0,
             ),
             "armed_stale_close_enabled": _bool_cfg(
                 "profit_harvest_mfe_capture_v4_armed_stale_close_enabled",
@@ -1452,15 +1437,12 @@ class ExecutionEngine:
             ),
             "armed_stale_min_mfe_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_armed_stale_min_mfe_r",
-                _float_cfg("profit_harvest_mfe_capture_v4_min_mfe_r", 0.25),
             ),
             "armed_stale_close_below_r": _float_cfg(
                 "profit_harvest_mfe_capture_v4_armed_stale_close_below_r",
-                0.0,
             ),
             "min_hold_minutes_before_stop_raise": _float_cfg(
                 "profit_harvest_mfe_capture_v4_min_hold_minutes_before_stop_raise",
-                0.0,
             ),
         }
 
@@ -2568,7 +2550,7 @@ class ExecutionEngine:
             normalized = volume_min + max(0, steps) * volume_step
             normalized = round(normalized, 8)
             # Never hand back more than was asked for, whatever the arithmetic did.
-            return normalized if normalized <= lots + 1e-12 else round(lots, 8)
+            return normalized if normalized <= lots else round(lots, 8)
 
         lots = math.floor(lots * 100) / 100
         if self._challenge_book():
@@ -3835,6 +3817,37 @@ class ExecutionEngine:
                 _freeze_level = getattr(sym_info, "trade_freeze_level", None)
                 _filling_mode = getattr(sym_info, "filling_mode", None)
                 _tick_size = getattr(sym_info, "trade_tick_size", None) or _point
+            send_facts = {
+                "lots": _lots_fact,
+                "volume_min": volume_min,
+                "volume_step": volume_step,
+                "volume_max": volume_max,
+                "sl_distance": sizing_sl_distance,
+                "risk": _risk,
+                "risk_amount": _risk,
+                "balance": _balance,
+                "sleeve": _sleeve,
+                "direction": direction,
+                "candidate_id": (
+                    trade_params.get("candidate_id") or _sed.get("candidate_id")
+                ),
+                "round_up_enabled": bool(
+                    getattr(getattr(self, "_f5_scaler", None), "round_up_enabled", False)
+                ),
+                "filling_mode": _filling_mode,
+                "spread_points": _spread_points,
+                "point": _point,
+                "trade_stops_level": _stops_level,
+                "trade_freeze_level": _freeze_level,
+                "trade_tick_size": _tick_size,
+                "bid": getattr(tick, "bid", None) if tick is not None else None,
+                "ask": getattr(tick, "ask", None) if tick is not None else None,
+                "expiry_bars_fact": trade_params.get("expiry_bars_fact"),
+                "entry_price": entry_price,
+                "stop_loss": sl,
+                "decision_time_utc": trade_params.get("decision_time_utc"),
+                "pending_created_time_utc": trade_params.get("pending_created_time_utc"),
+            }
             send_rows = self._ask_send(
                 reason="open_trade",
                 proposed=_lots_fact,
@@ -3847,41 +3860,24 @@ class ExecutionEngine:
                     "timeout",
                     "adopt_wait",
                 ),
-                facts={
-                    "lots": _lots_fact,
-                    "volume_min": volume_min,
-                    "volume_step": volume_step,
-                    "volume_max": volume_max,
-                    "sl_distance": sizing_sl_distance,
-                    "risk": _risk,
-                    "risk_amount": _risk,
-                    "balance": _balance,
-                    "sleeve": _sleeve,
-                    "direction": direction,
-                    "candidate_id": (
-                        trade_params.get("candidate_id") or _sed.get("candidate_id")
-                    ),
-                    "round_up_enabled": bool(
-                        getattr(getattr(self, "_f5_scaler", None), "round_up_enabled", False)
-                    ),
-                    "filling_mode": _filling_mode,
-                    "spread_points": _spread_points,
-                    "point": _point,
-                    "trade_stops_level": _stops_level,
-                    "trade_freeze_level": _freeze_level,
-                    "trade_tick_size": _tick_size,
-                    "bid": getattr(tick, "bid", None) if tick is not None else None,
-                    "ask": getattr(tick, "ask", None) if tick is not None else None,
-                    "expiry_bars_fact": trade_params.get("expiry_bars_fact"),
-                    "entry_price": trade_params.get("entry_price"),
-                },
+                facts=send_facts,
             )
             lot_row = send_rows.get("lot") if isinstance(send_rows, dict) else None
             challenge_lot = self._row_choice(lot_row)
-            lot_score = self._row_score(lot_row)
+            lot_score = None
+            if challenge_lot == "place":
+                lot_score = self._spine_score(
+                    "lot",
+                    "The score you return is the volume in lots for this order. "
+                    "An empty score does not send.",
+                    send_facts,
+                    sym_info=sym_info,
+                )
             if challenge_lot != "place" or lot_score is None or lot_score <= 0:
                 self._last_open_trade_block_reason = (
-                    "exec_lot:" + (challenge_lot or "no_decision")
+                    "exec_lot:" + (
+                        "unset" if challenge_lot == "place" else (challenge_lot or "no_decision")
+                    )
                 )
                 return None
             lots = lot_score
@@ -3996,40 +3992,55 @@ class ExecutionEngine:
                 )
                 return None
             deviation_choice = self._row_choice(send_rows.get("deviation"))
-            deviation_score = self._row_score(send_rows.get("deviation"))
+            deviation_score = None
+            if deviation_choice == "use":
+                deviation_score = self._spine_score(
+                    "deviation_points",
+                    "The score you return is the deviation in points for this order. "
+                    "An empty score leaves the deviation unset.",
+                    send_facts,
+                    sym_info=sym_info,
+                )
             deviation_points = None
             if (
-                deviation_choice == "use"
-                and deviation_score is not None
-                and deviation_score >= 0
+                deviation_score is not None
+                and deviation_score > 0
                 and abs(deviation_score - round(deviation_score)) <= 1e-9
             ):
                 deviation_points = int(round(deviation_score))
-            if deviation_points is None:
-                self._last_open_trade_block_reason = (
-                    "exec_deviation:" + (deviation_choice or "no_decision")
-                )
-                return None
             expiry_choice = self._row_choice(send_rows.get("expiry"))
-            expiry_score = self._row_score(send_rows.get("expiry"))
-            if expiry_choice != "use" or expiry_score is None or expiry_score < 0:
-                self._last_open_trade_block_reason = (
-                    "exec_expiry:" + (expiry_choice or "no_decision")
+            expiry_score = None
+            if expiry_choice == "use":
+                expiry_score = self._spine_score(
+                    "expiry",
+                    "The score you return is the expiry in seconds for this order. "
+                    "An empty score leaves the expiry unset.",
+                    send_facts,
                 )
-                return None
+            if expiry_score is not None and expiry_score <= 0:
+                expiry_score = None
             timeout_choice = self._row_choice(send_rows.get("timeout"))
-            timeout_score = self._row_score(send_rows.get("timeout"))
-            if timeout_choice != "wait" or timeout_score is None or timeout_score <= 0:
-                self._last_open_trade_block_reason = (
-                    "exec_timeout:" + (timeout_choice or "no_decision")
+            timeout_score = None
+            if timeout_choice == "wait":
+                timeout_score = self._spine_score(
+                    "timeout",
+                    "The score you return is the wait in seconds for this order send. "
+                    "An empty score leaves the wait unset.",
+                    send_facts,
                 )
-                return None
+            if timeout_score is not None and timeout_score <= 0:
+                timeout_score = None
             adopt_choice = self._row_choice(send_rows.get("adopt_wait"))
-            adopt_score = self._row_score(send_rows.get("adopt_wait"))
-            if adopt_choice == "wait" and adopt_score is not None and adopt_score > 0:
-                adopt_wait_s = adopt_score
-            else:
-                adopt_wait_s = 0.0
+            adopt_wait_s = None
+            if adopt_choice == "wait":
+                adopt_score = self._spine_score(
+                    "adopt_wait",
+                    "The score you return is the adopt wait in seconds for this order. "
+                    "An empty score leaves the adopt wait unset.",
+                    send_facts,
+                )
+                if adopt_score is not None and adopt_score > 0:
+                    adopt_wait_s = adopt_score
             spread_choice = self._row_choice(send_rows.get("spread"))
             if spread_choice != "spread_ok":
                 self._last_open_trade_block_reason = (
@@ -4079,7 +4090,6 @@ class ExecutionEngine:
                 "price": entry_price,
                 "sl": sl,
                 "tp": tp1,
-                "deviation": deviation_points,
                 "magic": self._magic,
                 "comment": order_comment,
                 "type_time": 0,  # ORDER_TIME_GTC
@@ -4113,20 +4123,23 @@ class ExecutionEngine:
                 "price": entry_price,
                 "sl": sl,
                 "tp": tp1,
-                "deviation": deviation_points,
                 "magic": self._magic,
                 "comment": order_comment,
                 "type_time": 0,  # ORDER_TIME_GTC
                 "type_filling": type_filling,
             }
 
+        place_kwargs = {}
         if self._challenge_book():
-            if expiry_score == 0:
-                request["type_time"] = 0
-                request.pop("expiration", None)
-            else:
-                request["type_time"] = 1  # ORDER_TIME_SPECIFIED
-                request["expiration"] = int(time.time() + float(expiry_score))
+            request, place_kwargs = self.optional_send_request(
+                request,
+                deviation_points=deviation_points,
+                expiry_score=expiry_score,
+                timeout_score=timeout_score,
+                adopt_wait_s=adopt_wait_s,
+            )
+        elif deviation_points is not None:
+            request["deviation"] = deviation_points
 
         order_send_time = datetime.now(timezone.utc)
         pre_send_lifecycle_packet = build_broker_order_lifecycle_capture_v4(
@@ -4152,11 +4165,7 @@ class ExecutionEngine:
                 exc,
             )
         if self._challenge_book():
-            result = self.safe_place_order(
-                request,
-                timeout_seconds=timeout_score,
-                adopt_wait_s=adopt_wait_s,
-            )
+            result = self.safe_place_order(request, **place_kwargs)
         else:
             result = self.safe_place_order(request)
         if (getattr(self, "_last_order_send_diagnostic", None) or {}).get("status") == "news_blocked_no_order_send":
@@ -6675,7 +6684,9 @@ class ExecutionEngine:
             "pending_limit_max_age_hours",
             "The score you return is the maximum age in hours for this resting limit. "
             "An empty score leaves the limit in place. Do not send.",
-            {"trade_id": getattr(intent, "trade_id", None)},
+            {"trade_id": getattr(intent, "trade_id", None), "placed_time": intent.placed_time},
+            placed=placed_dt,
+            candle=candle,
         )
         if limit_hours is not None and datetime.now(timezone.utc) - placed_dt >= timedelta(hours=float(limit_hours)):
             logger.info(
@@ -6909,7 +6920,14 @@ class ExecutionEngine:
                 "risk_reward_ratio",
                 "The score you return is the reward multiple for this pending limit. "
                 "An empty score leaves it unset. Do not send.",
-                {"trade_id": getattr(intent, "trade_id", None)},
+                {
+                    "trade_id": getattr(intent, "trade_id", None),
+                    "entry_price": getattr(intent, "limit_price", None),
+                    "stop_loss": getattr(intent, "stop_loss", None),
+                    "take_profit_1": getattr(intent, "take_profit_1", None),
+                },
+                trade=intent,
+                candle=candle,
             )
         )
         fill_trade_params = {
@@ -7489,6 +7507,39 @@ class ExecutionEngine:
             )
             self.pending_intent = None
 
+    @staticmethod
+    def optional_send_request(
+        request,
+        *,
+        deviation_points=None,
+        expiry_score=None,
+        timeout_score=None,
+        adopt_wait_s=None,
+        now_s=None,
+    ):
+        """Positive scores set the field. None omits it. Zero is not written.
+
+        The returned request is never None. Timeout and adopt wait are send
+        arguments, present only when the score is positive.
+        """
+        built = dict(request)
+        if deviation_points is not None and deviation_points > 0:
+            built["deviation"] = int(deviation_points)
+        else:
+            built.pop("deviation", None)
+        if expiry_score is not None and expiry_score > 0:
+            built["type_time"] = 1
+            stamp = time.time() if now_s is None else float(now_s)
+            built["expiration"] = int(stamp + float(expiry_score))
+        else:
+            built.pop("expiration", None)
+        send = {}
+        if timeout_score is not None and timeout_score > 0:
+            send["timeout_seconds"] = float(timeout_score)
+        if adopt_wait_s is not None and adopt_wait_s > 0:
+            send["adopt_wait_s"] = float(adopt_wait_s)
+        return built, send
+
     def safe_place_order(
         self,
         request: dict,
@@ -7503,56 +7554,14 @@ class ExecutionEngine:
         4. NEVER retry without checking positions first
         5. Clear checkpoint on completion
 
-        On Challenge the wait is the timeout hop. An empty answer does not
-        restore ten seconds and does not send. The activation token stays.
+        On Challenge an empty wait leaves the timeout unset and the send
+        continues. It does not restore ten seconds and it does not write 0.
+        The activation token stays.
         """
         if self._challenge_book() and timeout_seconds is None:
-            rows = self._ask_send(
-                {
-                    "action": request.get("action"),
-                    "symbol": request.get("symbol"),
-                    "volume": request.get("volume"),
-                    "type": request.get("type"),
-                },
-                include=("timeout", "adopt_wait"),
-                reason="safe_place_order",
-            )
-            timeout_choice = self._row_choice(rows.get("timeout"))
-            timeout_score = self._row_score(rows.get("timeout"))
-            if timeout_choice != "wait" or timeout_score is None or timeout_score <= 0:
-                self._last_open_trade_block_reason = (
-                    "exec_timeout:" + (timeout_choice or "no_decision")
-                )
-                self._last_order_send_diagnostic = {
-                    "status": self._last_open_trade_block_reason,
-                    "ns": getattr(self, "_runtime_namespace", None),
-                    "symbol": getattr(self, "symbol", None),
-                    "request": dict(request),
-                }
-                return None
-            timeout_seconds = timeout_score
-            if adopt_wait_s is None:
-                adopt_choice = self._row_choice(rows.get("adopt_wait"))
-                adopt_score = self._row_score(rows.get("adopt_wait"))
-                if adopt_choice == "wait" and adopt_score is not None and adopt_score > 0:
-                    adopt_wait_s = adopt_score
-                else:
-                    adopt_wait_s = 0.0
+            pass
         elif timeout_seconds is None:
             timeout_seconds = 10
-        if self._challenge_book() and not (
-            isinstance(timeout_seconds, (int, float))
-            and not isinstance(timeout_seconds, bool)
-            and timeout_seconds > 0
-        ):
-            self._last_open_trade_block_reason = "exec_timeout:no_decision"
-            self._last_order_send_diagnostic = {
-                "status": "exec_timeout:no_decision",
-                "ns": getattr(self, "_runtime_namespace", None),
-                "symbol": getattr(self, "symbol", None),
-                "request": dict(request),
-            }
-            return None
         if not self._request_reduces_existing_position(request):
             try:
                 self._enforce_runtime_halt_clear(
@@ -8607,6 +8616,7 @@ class ExecutionEngine:
                 "trail_gap_r",
                 "The score you return is the trail gap on this ticket. An empty score leaves it unset. Do not send.",
                 {"ticket": getattr(trade, "ticket", None)},
+                trade=trade,
             )
         if trail_gap is None:
             return None
@@ -8679,6 +8689,7 @@ class ExecutionEngine:
                 "trail_gap_r",
                 "The score you return is the trail gap on this ticket. An empty score leaves it unset. Do not send.",
                 {"ticket": getattr(trade, "ticket", None)},
+                trade=trade,
             )
         if trail_gap is None:
             return None
@@ -8722,7 +8733,12 @@ class ExecutionEngine:
             pullback_r = self._spine_score(
                 "pullback_r",
                 "The score you return is the pullback on this ticket. An empty score leaves it unset. Do not send.",
-                {"ticket": getattr(trade, "ticket", None)},
+                {
+                    "ticket": getattr(trade, "ticket", None),
+                    "progress_r": progress_r,
+                    "mfe_r": getattr(trade, "gtos_vnext_dynamic_mfe_r", None),
+                },
+                trade=trade,
             )
         if pullback_r is None:
             return None
@@ -8819,7 +8835,12 @@ class ExecutionEngine:
                 "profit_harvest_min_mfe_r",
                 "The score you return is the minimum favorable excursion for this harvest. "
                 "An empty score leaves it unset. Do not send.",
-                {"ticket": getattr(trade, "ticket", None)},
+                {
+                    "ticket": getattr(trade, "ticket", None),
+                    "progress_r": progress_r,
+                    "mfe_r": mfe_r,
+                },
+                trade=trade,
             )
         if min_mfe_r is None:
             return None
@@ -8852,7 +8873,12 @@ class ExecutionEngine:
             trail_gap_r = self._spine_score(
                 "profit_harvest_trail_gap_r",
                 "The score you return is the harvest trail gap. An empty score leaves it unset. Do not send.",
-                {"ticket": getattr(trade, "ticket", None)},
+                {
+                    "ticket": getattr(trade, "ticket", None),
+                    "progress_r": progress_r,
+                    "mfe_r": mfe_r,
+                },
+                trade=trade,
             )
         if trail_gap_r is None:
             return None
@@ -8914,7 +8940,13 @@ class ExecutionEngine:
                 "profit_harvest_giveback_r",
                 "The score you return is the giveback that closes this harvest. "
                 "An empty score leaves it unset. Do not send.",
-                {"ticket": getattr(trade, "ticket", None)},
+                {
+                    "ticket": getattr(trade, "ticket", None),
+                    "progress_r": progress_r,
+                    "mfe_r": mfe_r,
+                    "giveback_r": giveback_r,
+                },
+                trade=trade,
             )
         if close_on_giveback_r is None:
             return None
@@ -9180,7 +9212,7 @@ class ExecutionEngine:
                     self._repair_recovered_partial_be_runner_sltp(trade)
                     return "tp1_partial_already_reflected_vnext_partial_be_runner"
             close_fraction = self._safe_float(
-                self._configured_vnext_partial_be_runner_params().get("partial_close_ratio")
+                self._configured_vnext_partial_be_runner_params(trade).get("partial_close_ratio")
             )
             if close_fraction is None or not (0 < close_fraction < 1):
                 return "tp1_partial_unset"
@@ -9792,7 +9824,12 @@ class ExecutionEngine:
             "tp2_close_fraction",
             "The score you return is the second partial fraction of this ticket. "
             "An empty score leaves the partial unset. Do not send.",
-            {"ticket": getattr(trade, "ticket", None)},
+            {
+                "ticket": getattr(trade, "ticket", None),
+                "current_volume": getattr(trade, "current_volume", None),
+                "initial_volume": getattr(trade, "initial_volume", None),
+            },
+            trade=trade,
         )
         if tp2_fraction is None or not (0 < tp2_fraction < 1):
             return None
@@ -11183,8 +11220,394 @@ class ExecutionEngine:
     def _challenge_book(self) -> bool:
         return str(getattr(self, "_runtime_namespace", "") or "") == "operator"
 
-    def _spine_score(self, role: str, instructions: str, facts: dict | None = None):
-        """Score for this role. None does not restore a constant."""
+    @staticmethod
+    def _anchor_number(value):
+        if isinstance(value, bool) or value is None:
+            return None
+        if isinstance(value, (int, float)):
+            number = float(value)
+        else:
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                return None
+        if number != number or number in (float("inf"), float("-inf")):
+            return None
+        return number
+
+    @staticmethod
+    def _anchor_push(levels: list, seen: list, label: str, value) -> None:
+        number = ExecutionEngine._anchor_number(value)
+        text = str(label or "").strip()
+        if number is None or not text or number in seen:
+            return
+        seen.append(number)
+        levels.append((text, number))
+
+    def _first_number(self, facts, *keys):
+        if not isinstance(facts, dict):
+            return None
+        for key in keys:
+            number = self._anchor_number(facts.get(key))
+            if number is not None:
+                return number
+        return None
+
+    @staticmethod
+    def _attr_number(obj, *names):
+        if obj is None:
+            return None
+        for name in names:
+            number = ExecutionEngine._anchor_number(getattr(obj, name, None))
+            if number is not None:
+                return number
+        return None
+
+    def _bar_ohlc(self, candle):
+        if not isinstance(candle, dict):
+            return None
+        def pick(*keys):
+            for key in keys:
+                number = self._anchor_number(candle.get(key))
+                if number is not None:
+                    return number
+            return None
+        high = pick("high", "h")
+        low = pick("low", "l")
+        if high is None or low is None or high < low:
+            return None
+        return pick("open", "o"), high, low, pick("close", "c")
+
+    @staticmethod
+    def _clock_stamp(value):
+        if isinstance(value, datetime):
+            stamp = value
+        else:
+            try:
+                stamp = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+            except (TypeError, ValueError):
+                return None
+        if stamp.tzinfo is None:
+            stamp = stamp.replace(tzinfo=timezone.utc)
+        return stamp.astimezone(timezone.utc)
+
+    def _kill_zone_spans(self, now: datetime) -> list:
+        """Length and remaining seconds of each kill zone on this book's clock."""
+        cfg = self.config if isinstance(getattr(self, "config", None), dict) else {}
+        zones = (cfg.get("market") or {}).get("kill_zones") or {}
+        if not isinstance(zones, dict):
+            return []
+        now_s = now.hour * 3600 + now.minute * 60 + now.second
+        day_s = 24 * 60 * 60
+        found = []
+        for name, data in zones.items():
+            if not isinstance(data, dict):
+                continue
+            try:
+                start_h, start_m = [int(part) for part in str(data.get("start_utc", "")).split(":")]
+                end_h, end_m = [int(part) for part in str(data.get("end_utc", "")).split(":")]
+            except (TypeError, ValueError):
+                continue
+            start = start_h * 3600 + start_m * 60
+            end = end_h * 3600 + end_m * 60
+            if end > start:
+                length = end - start
+                remaining = end - now_s if start <= now_s < end else None
+            elif end < start:
+                length = (day_s - start) + end
+                if now_s >= start:
+                    remaining = (day_s - now_s) + end
+                elif now_s < end:
+                    remaining = end - now_s
+                else:
+                    remaining = None
+            else:
+                continue
+            found.append((str(name), float(length), None if remaining is None else float(remaining)))
+        return found
+
+    def _second_levels(self, facts, *, placed=None) -> list:
+        """Seconds already fixed by this clock, this stamp, and the kill zones."""
+        now = datetime.now(timezone.utc)
+        levels: list = []
+        seen: list = []
+        stamps = []
+        if placed is not None:
+            stamp = self._clock_stamp(placed)
+            if stamp is not None:
+                stamps.append(stamp)
+        if isinstance(facts, dict):
+            for key in (
+                "placed_time",
+                "decision_time_utc",
+                "pending_created_time_utc",
+                "entry_time",
+                "bar_time",
+                "decision_bar_iso",
+                "prior_bar_time",
+            ):
+                stamp = self._clock_stamp(facts.get(key))
+                if stamp is not None:
+                    stamps.append(stamp)
+        unique = []
+        for stamp in stamps:
+            if stamp not in unique:
+                unique.append(stamp)
+        for stamp in unique:
+            age = (now - stamp).total_seconds()
+            if age > 0:
+                self._anchor_push(levels, seen, "seconds since this card's stamp", age)
+        if len(unique) >= 2:
+            span = abs((unique[-1] - unique[0]).total_seconds())
+            if span > 0:
+                self._anchor_push(levels, seen, "seconds between the stamps on this card", span)
+                age = (now - max(unique)).total_seconds()
+                if age >= 0:
+                    until = span - (age % span)
+                    if until > 0:
+                        self._anchor_push(levels, seen, "seconds until the next print of this span", until)
+        for name, length, remaining in self._kill_zone_spans(now):
+            self._anchor_push(levels, seen, "seconds in the " + name + " kill zone", length)
+            if remaining is not None and remaining > 0:
+                self._anchor_push(levels, seen, "seconds left in the " + name + " kill zone", remaining)
+        return levels
+
+    def _scaled_clock_levels(self, facts, *, placed=None, divisor: float, suffix: str) -> list:
+        levels = []
+        seen = []
+        for label, value in self._second_levels(facts, placed=placed):
+            self._anchor_push(levels, seen, label + suffix, value / divisor)
+        return levels
+
+    def _point_levels(self, sym_info=None) -> list:
+        info = sym_info if sym_info is not None else self._mt5_symbol_info()
+        levels: list = []
+        seen: list = []
+        if info is None:
+            return levels
+        self._anchor_push(levels, seen, "this symbol's spread, in points", getattr(info, "spread", None))
+        self._anchor_push(levels, seen, "this symbol's stop level, in points", getattr(info, "trade_stops_level", None))
+        self._anchor_push(levels, seen, "this symbol's freeze level, in points", getattr(info, "trade_freeze_level", None))
+        point = self._anchor_number(getattr(info, "point", None))
+        tick = self._anchor_number(getattr(info, "trade_tick_size", None))
+        if point is not None and point > 0 and tick is not None and tick > 0:
+            self._anchor_push(levels, seen, "this symbol's tick, in points", tick / point)
+        return levels
+
+    def _lot_levels(self, facts, sym_info=None) -> list:
+        info = sym_info if sym_info is not None else self._mt5_symbol_info()
+        levels: list = []
+        seen: list = []
+        minimum = self._first_number(facts, "volume_min")
+        step = self._first_number(facts, "volume_step")
+        lots = self._first_number(facts, "lots", "volume", "current_volume")
+        if info is not None:
+            if minimum is None:
+                minimum = self._anchor_number(getattr(info, "volume_min", None))
+            if step is None:
+                step = self._anchor_number(getattr(info, "volume_step", None))
+        self._anchor_push(levels, seen, "this symbol's minimum volume", minimum)
+        self._anchor_push(levels, seen, "this symbol's volume step", step)
+        self._anchor_push(levels, seen, "the volume calculated for this order", lots)
+        if minimum is not None and step is not None and step > 0:
+            self._anchor_push(levels, seen, "the next volume on this symbol's grid", minimum + step)
+        return levels
+
+    def _fraction_levels(self, facts, *, trade=None, candle=None, sym_info=None) -> list:
+        levels: list = []
+        seen: list = []
+        volume = self._first_number(facts, "current_volume", "volume", "lots")
+        initial = self._first_number(facts, "initial_volume")
+        minimum = self._first_number(facts, "volume_min")
+        step = self._first_number(facts, "volume_step")
+        if trade is not None:
+            if volume is None:
+                volume = self._attr_number(trade, "current_volume")
+            if initial is None:
+                initial = self._attr_number(trade, "initial_volume")
+        info = sym_info if sym_info is not None else self._mt5_symbol_info()
+        if info is not None:
+            if minimum is None:
+                minimum = self._anchor_number(getattr(info, "volume_min", None))
+            if step is None:
+                step = self._anchor_number(getattr(info, "volume_step", None))
+        base = volume if volume is not None and volume > 0 else initial
+        if base is not None and base > 0 and minimum is not None and minimum > 0:
+            self._anchor_push(levels, seen, "minimum volume over this volume", minimum / base)
+        if base is not None and base > 0 and step is not None and step > 0:
+            self._anchor_push(levels, seen, "volume step over this volume", step / base)
+        if (
+            initial is not None and initial > 0
+            and volume is not None and volume > 0
+        ):
+            self._anchor_push(levels, seen, "current volume over the initial volume", volume / initial)
+        ohlc = self._bar_ohlc(candle)
+        if ohlc is not None:
+            open_, high, low, close = ohlc
+            span = high - low
+            if span > 0 and open_ is not None and close is not None:
+                body = abs(close - open_)
+                self._anchor_push(levels, seen, "this bar's body over its range", body / span)
+                upper = high - max(open_, close)
+                lower = min(open_, close) - low
+                self._anchor_push(levels, seen, "this bar's upper wick over its range", upper / span)
+                self._anchor_push(levels, seen, "this bar's lower wick over its range", lower / span)
+        return levels
+
+    def _r_levels(self, facts, *, trade=None, candle=None, sym_info=None) -> list:
+        """R from this stop, this spread, this bar, and this target. No planted multiple."""
+        levels: list = []
+        seen: list = []
+        entry = self._first_number(facts, "entry_price", "entry", "limit_price")
+        stop = self._first_number(facts, "stop_loss", "stop")
+        target = self._first_number(facts, "take_profit", "take_profit_1", "tp")
+        sl = self._first_number(facts, "sl_distance", "sizing_sl_distance")
+        if trade is not None:
+            if entry is None:
+                entry = self._attr_number(trade, "entry_price", "limit_price")
+            if stop is None:
+                stop = self._attr_number(trade, "stop_loss")
+            if target is None:
+                target = self._attr_number(trade, "take_profit_1", "take_profit", "take_profit_2")
+            if sl is None:
+                sl = self._attr_number(trade, "sl_distance")
+        if (sl is None or sl <= 0) and entry is not None and stop is not None:
+            gap = abs(entry - stop)
+            if gap > 0:
+                sl = gap
+        if sl is not None and sl > 0:
+            info = sym_info if sym_info is not None else self._mt5_symbol_info()
+            if info is not None:
+                spread = self._anchor_number(getattr(info, "spread", None))
+                point = self._anchor_number(getattr(info, "point", None))
+                if spread is not None and point is not None and point > 0 and spread >= 0:
+                    self._anchor_push(levels, seen, "this symbol's spread, in R", (spread * point) / sl)
+            if entry is not None and stop is not None:
+                self._anchor_push(levels, seen, "this stop, in R", abs(entry - stop) / sl)
+            if entry is not None and target is not None:
+                self._anchor_push(levels, seen, "this target, in R", abs(entry - target) / sl)
+            ohlc = self._bar_ohlc(candle)
+            if ohlc is not None:
+                _open, high, low, close = ohlc
+                span = high - low
+                if span > 0:
+                    self._anchor_push(levels, seen, "this bar's range, in R", span / sl)
+                if close is not None and entry is not None:
+                    self._anchor_push(levels, seen, "this bar's close from the entry, in R", abs(close - entry) / sl)
+        if isinstance(facts, dict):
+            for key, label in (
+                ("progress_r", "this ticket's progress, in R"),
+                ("mfe_r", "this ticket's favorable excursion, in R"),
+                ("giveback_r", "this ticket's giveback, in R"),
+                ("spread_r", "the spread in R named on this card"),
+            ):
+                self._anchor_push(levels, seen, label, facts.get(key))
+        if trade is not None:
+            self._anchor_push(
+                levels, seen,
+                "this ticket's favorable excursion, in R",
+                getattr(trade, "gtos_vnext_dynamic_mfe_r", None),
+            )
+            self._anchor_push(
+                levels, seen,
+                "this harvest's favorable excursion, in R",
+                getattr(trade, "gtos_vnext_profit_harvest_mfe_r", None),
+            )
+        return levels
+
+    def _bar_count_levels(self, facts, *, trade=None) -> list:
+        """Bar counts already on the card. Elapsed-since-fill is not the budget."""
+        levels: list = []
+        seen: list = []
+        if isinstance(facts, dict):
+            for key, label in (
+                ("session_bars", "bars in this session on the card"),
+                ("day_bars", "bars in this day on the card"),
+                ("swing_bars", "bars in this swing on the card"),
+                ("bars_since_high", "bars since this high"),
+                ("bars_since_low", "bars since this low"),
+            ):
+                number = self._anchor_number(facts.get(key))
+                if number is not None and number > 0:
+                    self._anchor_push(levels, seen, label, number)
+        if trade is not None:
+            candles = self._attr_number(trade, "candles_elapsed")
+            if candles is not None and candles > 0:
+                self._anchor_push(levels, seen, "candles elapsed on this intent", candles)
+        return levels
+
+    @staticmethod
+    def _quantity_unit(role: str) -> str:
+        low = str(role or "").lower()
+        if low in {"lot", "lots"} or low.endswith("_lots"):
+            return "lots"
+        if "deviation" in low:
+            return "points"
+        if low.endswith("_hours") or "max_age_hours" in low:
+            return "hours"
+        if "minute" in low:
+            return "minutes"
+        if (
+            low in {"expiry", "timeout", "adopt_wait", "retry_pause"}
+            or low.endswith("_seconds")
+            or "expiry" in low
+        ):
+            return "seconds"
+        if "time_stop_bars" in low or low.endswith("_bars") or low == "bar_count":
+            return "bars"
+        if "fraction" in low or (low.endswith("_ratio") and "reward" not in low):
+            return "fraction"
+        if low.endswith("_r") or "reward" in low:
+            return "r"
+        return ""
+
+    def _quantity_anchors(
+        self,
+        role: str,
+        facts,
+        *,
+        trade=None,
+        candle=None,
+        placed=None,
+        sym_info=None,
+    ) -> list:
+        unit = self._quantity_unit(role)
+        if unit == "lots":
+            return self._lot_levels(facts, sym_info=sym_info)
+        if unit == "points":
+            return self._point_levels(sym_info)
+        if unit == "seconds":
+            return self._second_levels(facts, placed=placed)
+        if unit == "hours":
+            return self._scaled_clock_levels(facts, placed=placed, divisor=3600.0, suffix=", in hours")
+        if unit == "minutes":
+            return self._scaled_clock_levels(facts, placed=placed, divisor=60.0, suffix=", in minutes")
+        if unit == "fraction":
+            return self._fraction_levels(facts, trade=trade, candle=candle, sym_info=sym_info)
+        if unit == "bars":
+            return self._bar_count_levels(facts, trade=trade)
+        if unit == "r":
+            return self._r_levels(facts, trade=trade, candle=candle, sym_info=sym_info)
+        return []
+
+    def _spine_score(
+        self,
+        role: str,
+        instructions: str,
+        facts: dict | None = None,
+        anchors=None,
+        *,
+        trade=None,
+        candle=None,
+        placed=None,
+        sym_info=None,
+    ):
+        """Score for this role. None does not restore a constant.
+
+        A bare Score has no levels and must not post. Anchors are the card's
+        own quantities in the unit this hop uses. Fewer than two leaves the
+        hop unset. An empty answer is not a send.
+        """
         state = {
             "role": role,
             "symbol": getattr(self, "symbol", None),
@@ -11192,9 +11615,42 @@ class ExecutionEngine:
         }
         if isinstance(facts, dict):
             state.update(facts)
+        if anchors is None:
+            anchors = self._quantity_anchors(
+                role,
+                state,
+                trade=trade,
+                candle=candle,
+                placed=placed,
+                sym_info=sym_info,
+            )
+        usable = []
+        seen = set()
+        for item in anchors or ():
+            if not isinstance(item, tuple) or len(item) != 2:
+                continue
+            label, value = item
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            if value != value or value in (float("inf"), float("-inf")):
+                continue
+            if value in seen:
+                continue
+            seen.add(value)
+            usable.append((str(label), float(value)))
+        usable.sort(key=lambda pair: pair[1])
+        if len(usable) < 2:
+            return None
         try:
             from src.judgment.nineteen import score
-            return score(state, question_id=role, instructions=instructions)
+            return score(
+                state,
+                question_id=role,
+                instructions=instructions,
+                anchors=usable,
+            )
+        except TypeError:
+            return None
         except Exception:
             return None
 
@@ -11504,9 +11960,16 @@ class ExecutionEngine:
             )
             if self._row_choice(retry_row) != "retry":
                 return False
-            retry_pause = self._row_score(retry_row)
-            if retry_pause is not None and retry_pause > 0:
-                time.sleep(retry_pause)
+            retry_pause = self._spine_score(
+                "retry_pause",
+                "The score you return is the pause in seconds before this stop modify is sent again. "
+                "An empty score does not send.",
+                {"modify_kind": "SL", "ticket": ticket},
+                trade=trade,
+            )
+            if retry_pause is None or retry_pause <= 0:
+                return False
+            time.sleep(retry_pause)
         else:
             time.sleep(1)
         retry_positions = self.mt5.get_positions(self.symbol)
@@ -11677,9 +12140,16 @@ class ExecutionEngine:
             )
             if self._row_choice(retry_row) != "retry":
                 return False
-            retry_pause = self._row_score(retry_row)
-            if retry_pause is not None and retry_pause > 0:
-                time.sleep(retry_pause)
+            retry_pause = self._spine_score(
+                "retry_pause",
+                "The score you return is the pause in seconds before this target modify is sent again. "
+                "An empty score does not send.",
+                {"modify_kind": "TP", "ticket": ticket},
+                trade=trade,
+            )
+            if retry_pause is None or retry_pause <= 0:
+                return False
+            time.sleep(retry_pause)
         else:
             time.sleep(1)
         retry_positions = self.mt5.get_positions(self.symbol)

@@ -10,14 +10,17 @@ unique highest probability. A Score is the returned number and may sit
 between levels. A Noul is a bool or a probability. An empty answer, a tie,
 a missing score, or an error leaves that field unset.
 
-A floor and a baseline are not asked. ``GTOS_JEV_REMAINING_IFS`` stays an
-env gate and defaults off. This module does not send and does not flatten.
-Judge code stays unable to send.
+A floor and a baseline are not asked. ``GTOS_JEV_REMAINING_IFS`` is a fact
+on the card. It does not skip the ask. This module does not send and does
+not flatten. Judge code stays unable to send.
 """
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
+import threading
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping
 
@@ -29,7 +32,7 @@ CHALLENGE_NS = "operator"
 CHALLENGE_MAGIC = 0
 KIND_READ = "read"
 _TRUTHY_ON = frozenset({"1", "true", "yes", "on"})
-_SKIP_KEY_PARTS = ("floor", "baseline")
+_SKIP_KEY_PARTS: tuple[str, ...] = ()
 _QUESTION_TYPES = frozenset({"noul", "choice", "score"})
 
 SEATS = (
@@ -114,12 +117,288 @@ CONVERTED_IF_IDS = (
     "SCH-V4-ZERO",
     "PERM-006",
 )
-NEVER_FLATTEN_TICKETS = frozenset(
-    {294092360, 294088097, 293332188, 294069721, 294215389}
-)
 
 # History only when jev_questions cannot be imported. Not copied into a miss.
 _LOCAL_OUTCOMES: list[dict[str, Any]] = []
+_ASK_LOCK = threading.Lock()
+_ASK_JOB: tuple[Any, ...] | None = None
+_ASK_RUNNING = False
+_ASK_LATEST: str | None = None
+_ASK_INFLIGHT: str | None = None
+_ASK_KEY: str | None = None
+_ASK_RECEIPT: dict[str, Any] | None = None
+
+
+
+import threading as _anchor_threading
+
+_ANCHOR_CARD = _anchor_threading.local()
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _is_map(value):
+    if isinstance(value, dict):
+        return True
+    if isinstance(value, (str, bytes)):
+        return False
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return False
+    return isinstance(value, Mapping)
+
+
+def _bind_card(card):
+    _ANCHOR_CARD.value = card if _is_map(card) else None
+
+
+def _bound_card(explicit):
+    if _is_map(explicit):
+        return explicit
+    bound = getattr(_ANCHOR_CARD, "value", None)
+    return bound if _is_map(bound) else None
+
+
+def _anchor_sources(card):
+    if not _is_map(card):
+        return []
+    found = [card]
+    for key in ("account", "facts", "pair", "news", "ticket", "proposed", "extra", "labels", "subject_facts", "candidate"):
+        inner = card.get(key)
+        if _is_map(inner) and inner is not card:
+            found.append(inner)
+    return found
+
+
+_COUNT_FIELDS = (
+    "n_candidates", "n_events", "n_sleeves", "n_bars", "bars_available",
+    "repeats", "session_bars", "day_bars", "swing_bars", "bars_since_high",
+    "bars_since_low", "candles_elapsed", "closed_orig_stop_count",
+)
+_COUNT_SEQS = (
+    "prior_outcomes", "candidates", "events", "sleeve_members", "lengths",
+    "stamps", "hashes", "bars", "bar_times", "members", "closed",
+    "legacy_symbol_keys", "families", "priors",
+)
+_PRICE_FIELDS = (
+    "bid", "ask", "entry", "entry_price", "stop", "stop_loss", "sl", "tp",
+    "take_profit", "price", "high", "low", "close", "open", "orig_sl", "orig_tp",
+    "stop_now", "target", "trail", "fill_price", "exit_px",
+)
+_SECOND_FIELDS = (
+    "seconds_until_cycle", "seconds_until_now", "age_s", "age_seconds",
+    "seconds_since_quote", "seconds_since_bar", "seconds_since_last_close",
+    "seconds_between_closes", "seconds_since_prior_close", "expiry_seconds",
+    "timeout_seconds",
+)
+_MINUTE_FIELDS = (
+    "minutes_since_flat", "age_minutes", "minutes_until_now", "window_minutes",
+)
+_HOUR_FIELDS = ("age_hours", "lag_hours", "hours_since_bar", "hours_open", "measured_hours")
+_DAY_FIELDS = ("age_days", "lag_days", "days_open", "measured_days")
+_LOT_FIELDS = (
+    "volume", "volume_min", "volume_step", "lots", "lot",
+    "volume_current", "volume_initial",
+)
+_POINT_FIELDS = (
+    "spread_points", "stop_level", "freeze_level", "tick_points", "deviation_points",
+)
+_INCLUDE_WORDS = ("hide", "short", "long", "full")
+
+
+def _named_pairs(card, fields, seqs=()):
+    pairs = []
+    for source in _anchor_sources(card):
+        for key in fields:
+            number = _anchor_finite(source.get(key))
+            if number is None:
+                continue
+            pairs.append((f"the {key} named on this card", number))
+        for key in seqs:
+            seq = source.get(key)
+            if isinstance(seq, (list, tuple)) and not isinstance(seq, (str, bytes)):
+                pairs.append((f"the count of {key} named on this card", float(len(seq))))
+    return pairs
+
+
+def _keys_matching(card, tokens):
+    pairs = []
+
+    def walk(node):
+        if _is_map(node):
+            for key, value in node.items():
+                low = str(key).lower()
+                if "floor" in low or "baseline" in low:
+                    continue
+                number = _anchor_finite(value)
+                if number is not None and any(tok in low for tok in tokens):
+                    pairs.append((f"the {low} named on this card", number))
+                    continue
+                if _is_map(value):
+                    walk(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        if _is_map(item):
+                            walk(item)
+
+    walk(card)
+    return pairs
+
+
+def _anchors_for_spot(qid, card):
+    name = str(qid).lower()
+    try:
+        from .jev_questions import count_anchors, minute_anchors, mult_anchors, usd_anchors, weight_anchors
+    except Exception:
+        def count_anchors(_card):
+            return []
+
+        def minute_anchors(_card):
+            return []
+
+        def mult_anchors(_card):
+            return []
+
+        def usd_anchors(_card):
+            return []
+
+        def weight_anchors(_card):
+            return []
+
+    override = globals().get("_UNIT_OVERRIDE")
+    if isinstance(override, dict):
+        base = name[: -len("_parameter")] if name.endswith("_parameter") else name
+        spec = override.get(base)
+        if spec == "weight":
+            return list(weight_anchors(card) or [])
+        if spec == "count":
+            pairs = list(count_anchors(card) or [])
+            pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+            return pairs
+        if isinstance(spec, tuple):
+            return _named_pairs(card, spec)
+    if any(tok in name for tok in ("loop", "splice", "width", "lookback", "bound", "_cap")):
+        pairs = list(count_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+        return pairs
+    if "ac60" in name or "autocorr" in name:
+        return _keys_matching(card, ("ac60", "autocorr"))
+    if "direction" in name:
+        return _keys_matching(card, ("direction",))
+    if name.endswith("_r") or "mfe" in name or "mae" in name:
+        return list(weight_anchors(card) or [])
+    if "hour" in name:
+        return _named_pairs(card, _HOUR_FIELDS)
+    if "minute" in name:
+        pairs = list(minute_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _MINUTE_FIELDS))
+        return pairs
+    if "day" in name and "today" not in name:
+        return _named_pairs(card, _DAY_FIELDS)
+    if any(tok in name for tok in ("second", "expiry", "timeout", "pause", "adopt_wait")):
+        return _named_pairs(card, _SECOND_FIELDS)
+    if any(tok in name for tok in ("tilt", "alignment", "weight", "persist")):
+        pairs = list(weight_anchors(card) or [])
+        if len(pairs) >= 2:
+            return pairs
+        return list(mult_anchors(card) or [])
+    if any(tok in name for tok in ("lot", "volume")):
+        return _named_pairs(card, _LOT_FIELDS)
+    if "scale" in name:
+        return _scale_pairs(card)
+    if any(tok in name for tok in ("price",)) or name in {"manage_sl_price", "manage_tp_price"}:
+        return _named_pairs(card, _PRICE_FIELDS)
+    if "point" in name or "deviation" in name:
+        return _named_pairs(card, _POINT_FIELDS)
+    if "spread" in name:
+        return _named_pairs(card, ("spread", "spread_points"))
+    if any(tok in name for tok in ("usd", "equity", "pnl", "cash")):
+        return list(usd_anchors(card) or [])
+    return []
+
+
+def _scale_pairs(card):
+    pairs = []
+    for source in _anchor_sources(card):
+        volume = _anchor_finite(source.get("volume"))
+        if volume is None:
+            volume = _anchor_finite(source.get("volume_current"))
+        initial = _anchor_finite(source.get("volume_initial"))
+        least = _anchor_finite(source.get("volume_min"))
+        step = _anchor_finite(source.get("volume_step"))
+        if volume not in (None, 0) and least is not None:
+            pairs.append(("minimum volume over this volume", least / volume))
+        if volume not in (None, 0) and step is not None:
+            pairs.append(("volume step over this volume", step / volume))
+        if initial not in (None, 0) and volume is not None:
+            pairs.append(("current volume over initial volume", volume / initial))
+    return pairs
+
+
+def _amount_block(qid, instructions, card):
+    """Amount Score. Fewer than two anchors in this unit does not post."""
+
+    source = _bound_card(card)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(qid, instructions, _anchors_for_spot(qid, source))
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        block.pop(key, None)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _ordinal_block(qid, instructions, words):
+    """Word levels. Fewer than two words does not post. The index is not an amount."""
+
+    try:
+        from .jev_questions import ordinal_question
+
+        built = ordinal_question(qid, instructions, words)
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _score_amount_or_ordinal(qid, instructions, card=None, *_rest):
+    if str(qid).startswith("include_"):
+        return _ordinal_block(qid, instructions, _INCLUDE_WORDS)
+    return _amount_block(qid, instructions, card)
 
 
 def overlay_enabled(*, environ: Mapping[str, str] | None = None) -> bool:
@@ -147,30 +426,39 @@ def _is_challenge_account(*, login: Any = None, ns: Any = None) -> bool:
 
 def _blocked_text(text: str) -> bool:
     low = text.lower()
-    if any(part in low for part in _SKIP_KEY_PARTS):
-        return True
-    return any(token in low for token in ("90000", "90,000", "90_000", "90k", "110000", "110,000", "110_000", "110k"))
+    return any(part in low for part in _SKIP_KEY_PARTS)
 
 
-def _scrub(value: Any, depth: int = 0) -> Any:
-    """Drop floor and baseline keys before the ask. Other facts stay facts."""
+def _scrub(value: Any, seen: set[int] | None = None) -> Any:
+    """Drop floor and baseline keys before the ask. Other facts stay facts.
 
-    if depth > 8:
-        return None
+    A repeated container is a cycle. The walk does not cut a card at a count.
+    """
+
     if value is None or isinstance(value, (str, bool)):
         return value
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return value
+    if seen is None:
+        seen = set()
     if isinstance(value, Mapping):
+        ident = id(value)
+        if ident in seen:
+            return None
+        seen.add(ident)
         out: dict[str, Any] = {}
         for key, item in value.items():
             name = str(key)
             if _blocked_text(name):
                 continue
-            out[name] = _scrub(item, depth + 1)
+            out[name] = _scrub(item, seen)
         return out
     if isinstance(value, (list, tuple)) and not isinstance(value, (str, bytes)):
-        return [_scrub(item, depth + 1) for item in value]
+        ident = id(value)
+        if ident in seen:
+            return None
+        seen.add(ident)
+        return [_scrub(item, seen) for item in value]
     return None
 
 
@@ -210,7 +498,7 @@ def _unique(probabilities: Mapping[str, float], order: tuple[str, ...]) -> str |
     if not allowed:
         return None
     best = max(probabilities[name] for name in allowed)
-    winners = [name for name in allowed if abs(probabilities[name] - best) <= 1e-12]
+    winners = [name for name in allowed if probabilities[name] == best]
     if len(winners) != 1:
         return None
     present = {name: probabilities[name] for name in allowed}
@@ -360,35 +648,11 @@ def _choice_question(qid: str, instructions: str, criteria: Mapping[str, str]) -
     return {qid: body}
 
 
-def _score_question(qid: str, instructions: str) -> dict[str, Any]:
-    body: dict[str, Any] = {
-        "type": "score",
-        "instructions": instructions,
-        "criteria": [
-            "below the levels on this state",
-            "between the levels on this state",
-            "above the levels on this state",
-        ],
-    }
-    try:
-        from .jev_questions import parameter_question
 
-        built = parameter_question(qid, instructions)
-        row = built.get(qid) if isinstance(built, dict) else None
-        if isinstance(row, dict):
-            body = dict(row)
-    except Exception:
-        pass
-    body["type"] = "score"
-    body["instructions"] = instructions
-    kept = body.get("criteria")
-    if isinstance(kept, list):
-        cleaned = [item for item in kept if not _blocked_text(str(item))]
-        if cleaned:
-            body["criteria"] = cleaned
-        else:
-            body.pop("criteria", None)
-    return {qid: body}
+def _score_question(qid, instructions, card=None, *_rest):
+    """Amount on this card, or an include-depth ordinal. A bare Score does not post."""
+
+    return _score_amount_or_ordinal(qid, instructions, card)
 
 
 def _noul_question(qid: str, instructions: str, yes: str, no: str) -> dict[str, Any]:
@@ -585,6 +849,13 @@ def _seat_questions(seat: str) -> dict[str, Any]:
             "The score you return is how far the named whiteboard still describes this session. "
             "It may sit between the levels. An empty score leaves it unset. Do not send.",
         ))
+        pack.update(_noul_question(
+            "never_place_research",
+            "Does this research state stay off the send? "
+            "The noul you return is that answer. An empty noul leaves it unset. This question does not send.",
+            "This research state stays off the send.",
+            "This research state does not stay off the send.",
+        ))
         return pack
     return pack
 
@@ -662,6 +933,166 @@ def _kept(questions: Mapping[str, Any]) -> dict[str, Any]:
     return pack
 
 
+def _guard_facts(state: Mapping[str, Any]) -> dict[str, Any]:
+    facts = state.get("facts")
+    if isinstance(facts, Mapping):
+        return dict(facts)
+    return {}
+
+
+def _active_guards(state: Mapping[str, Any], branch: str) -> tuple[str, ...]:
+    """Guard names whose facts are on this card. The branch is the ask's return."""
+
+    facts = _guard_facts(state)
+    named = str(branch or "")
+    active: list[str] = []
+    if facts.get("halt") or state.get("halt"):
+        active.append("integer_halt")
+    if facts.get("operator_flatten_flag") or facts.get("flatten_flag"):
+        active.append("integer_flatten_flag")
+    if facts.get("prop_wall") or facts.get("governor_wall"):
+        active.append("integer_prop_wall")
+    if facts.get("two_stop_exhausted") or facts.get("two_stop_count_hit"):
+        active.append("integer_two_stop_count")
+    if facts.get("h4cap"):
+        active.append("integer_h4cap")
+    if facts.get("usdjpy_hold"):
+        active.append("integer_usdjpy_hold")
+    if facts.get("weekend_flat_close") and named in {"place", "observe"}:
+        active.append("integer_weekend_flat_close")
+    if facts.get("never_widen") and named == "place":
+        active.append("integer_never_widen")
+    return tuple(active)
+
+
+def _integer_questions(state: Mapping[str, Any] | None, branch: str) -> dict[str, Any]:
+    """One choice per guard whose fact is on the card. Same pack as the seat."""
+
+    pack: dict[str, Any] = {}
+    for name in _active_guards(dict(state or {}), branch):
+        pack.update(_choice_question(
+            name,
+            (
+                f"The `{name}` fact is on this card. "
+                f"Which branch is this state, `{name}` or continue? "
+                "The option you return is the branch. "
+                "An empty answer or a tie leaves the branch unset. "
+                "Do not send. Do not flatten."
+            ),
+            {
+                name: f"This state takes {name}.",
+                "continue": "This state does not take that branch.",
+            },
+        ))
+    return pack
+
+
+def _guard_branch(
+    active: tuple[str, ...],
+    choices: Mapping[str, str],
+) -> tuple[str | None, bool]:
+    """The returned block, and whether a guard is still open.
+
+    A guard is open when its fact is on and the ask did not return continue.
+    The block name is set only when the ask returned that name.
+    """
+
+    open_guard = False
+    for name in active:
+        choice = choices.get(name)
+        if choice == name:
+            return name, True
+        if choice != "continue":
+            open_guard = True
+    return None, open_guard
+
+
+def _named_tickets(state: Mapping[str, Any]) -> list[int] | None:
+    """Broker ticket ids already on the state. A missing list stays missing."""
+
+    if "never_flatten_tickets" not in state:
+        return None
+    raw = state.get("never_flatten_tickets")
+    if not isinstance(raw, (list, tuple, set, frozenset)):
+        return None
+    out: list[int] = []
+    for item in raw:
+        try:
+            out.append(int(item))
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def _ask_key(state: Mapping[str, Any], questions: Mapping[str, Any]) -> str:
+    card = _scrub(dict(state))
+    if not isinstance(card, dict):
+        card = {}
+    card.pop("prior_outcomes", None)
+    blob = json.dumps(
+        {"card": card, "questions": sorted(str(qid) for qid in questions)},
+        sort_keys=True,
+        default=str,
+    )
+    return hashlib.sha256(blob.encode()).hexdigest()
+
+
+def _ask_worker() -> None:
+    """One ask at a time. The caller does not wait. A changed card drops the old one."""
+
+    global _ASK_RUNNING, _ASK_INFLIGHT, _ASK_KEY, _ASK_RECEIPT
+    while True:
+        with _ASK_LOCK:
+            job = _ASK_JOB
+        if job is None:
+            with _ASK_LOCK:
+                if _ASK_JOB is not None:
+                    continue
+                _ASK_RUNNING = False
+                return
+        key, state, questions, timeout_s = job
+        with _ASK_LOCK:
+            if _ASK_JOB is job:
+                globals()["_ASK_JOB"] = None
+            _ASK_INFLIGHT = key
+        receipt = evaluate_pack(dict(state), questions, timeout_s=timeout_s)
+        with _ASK_LOCK:
+            if _ASK_LATEST == key and isinstance(receipt, dict):
+                _ASK_KEY = key
+                _ASK_RECEIPT = receipt
+            if _ASK_INFLIGHT == key:
+                _ASK_INFLIGHT = None
+
+
+def _cached_or_kick(
+    state: Mapping[str, Any],
+    questions: Mapping[str, Any],
+    timeout_s: float | None,
+) -> dict[str, Any] | None:
+    """The receipt for these facts. A miss starts one ask and does not wait."""
+
+    global _ASK_RUNNING, _ASK_LATEST
+    if not questions:
+        return None
+    key = _ask_key(state, questions)
+    with _ASK_LOCK:
+        if _ASK_KEY == key and isinstance(_ASK_RECEIPT, dict):
+            return _ASK_RECEIPT
+        if _ASK_INFLIGHT == key:
+            _ASK_LATEST = key
+            return None
+        pending = _ASK_JOB
+        if pending is not None and pending[0] == key:
+            _ASK_LATEST = key
+            return None
+        _ASK_LATEST = key
+        globals()["_ASK_JOB"] = (key, dict(state), dict(questions), timeout_s)
+        if not _ASK_RUNNING:
+            _ASK_RUNNING = True
+            threading.Thread(target=_ask_worker, name="remaining_ifs_ask", daemon=True).start()
+    return None
+
+
 def piece_questions(
     state: Mapping[str, Any] | None = None,
     *,
@@ -670,40 +1101,44 @@ def piece_questions(
     seat: str = "companion",
     sibling: bool = False,
 ) -> dict[str, Any]:
-    """One pack for this piece. Include-depth, the seat, and the parameters."""
+    """One pack for this piece. Include-depth, the guards, the seat, and the parameters."""
 
-    del state
-    named = _named_seats(branch, seats, seat)
-    pack: dict[str, Any] = {}
-    pack.update(_noul_question(
-        "remaining_state_sufficient",
-        "Are the named chunks enough to judge this remaining-if state? "
-        "The noul you return is that completeness. An empty noul leaves it unset. Do not send.",
-        "The named chunks are enough.",
-        "A named chunk is missing.",
-    ))
-    for name in named:
-        for chunk in SEAT_CHUNKS.get(name, ()):
-            pack.update(_score_question(
-                f"include_{chunk}",
-                f"The score you return is how much of `{chunk}` this state needs. "
-                "It may sit between the levels. An empty score leaves it unset. Do not send.",
-            ))
-        pack.update(_seat_questions(name))
-    pack.update(_parameter_questions())
-    if sibling:
-        pack.update(_choice_question(
-            "remaining_sibling",
-            "Which sibling piece is on this state? "
-            "The option you return is that piece. An empty answer or a tie leaves it unset. Do not send.",
-            {
-                "sleeve": "The sleeve piece is the sibling on this state.",
-                "gold": "The gold piece is the sibling on this state.",
-                "news": "The news piece is the sibling on this state.",
-                "abstain": "No sibling piece is named.",
-            },
+    _bind_card(state if _is_map(state) else None)
+    try:
+        named = _named_seats(branch, seats, seat)
+        pack: dict[str, Any] = {}
+        pack.update(_integer_questions(state, branch))
+        pack.update(_noul_question(
+            "remaining_state_sufficient",
+            "Are the named chunks enough to judge this remaining-if state? "
+            "The noul you return is that completeness. An empty noul leaves it unset. Do not send.",
+            "The named chunks are enough.",
+            "A named chunk is missing.",
         ))
-    return _kept(pack)
+        for name in named:
+            for chunk in SEAT_CHUNKS.get(name, ()):
+                pack.update(_score_question(
+                    f"include_{chunk}",
+                    f"The score you return is how much of `{chunk}` this state needs. "
+                    "It may sit between the levels. An empty score leaves it unset. Do not send.",
+                ))
+            pack.update(_seat_questions(name))
+        pack.update(_parameter_questions())
+        if sibling:
+            pack.update(_choice_question(
+                "remaining_sibling",
+                "Which sibling piece is on this state? "
+                "The option you return is that piece. An empty answer or a tie leaves it unset. Do not send.",
+                {
+                    "sleeve": "The sleeve piece is the sibling on this state.",
+                    "gold": "The gold piece is the sibling on this state.",
+                    "news": "The news piece is the sibling on this state.",
+                    "abstain": "No sibling piece is named.",
+                },
+            ))
+        return _kept(pack)
+    finally:
+        _bind_card(None)
 
 
 def _local_priors() -> list[dict[str, Any]]:
@@ -761,6 +1196,10 @@ def _read_returns(
         if kind == "choice":
             order = CHOICE_ORDER.get(str(qid))
             if order is None:
+                criteria = spec.get("criteria")
+                if isinstance(criteria, Mapping) and criteria:
+                    order = tuple(str(key) for key in criteria)
+            if not order:
                 continue
             choice = _choice_of(block, order)
             if choice is None:
@@ -776,7 +1215,19 @@ def _read_returns(
             returns[str(qid)] = {"noul": noul}
             continue
         if kind == "score":
-            score = _score_of(block)
+            if "_anchor_values" in spec:
+                score = _score_of(block)
+            else:
+                criteria = spec.get("criteria")
+                n_levels = len(criteria) if isinstance(criteria, list) else 0
+                score = None
+                if n_levels >= 2:
+                    try:
+                        from .jev_questions import ordinal_index
+
+                        score = ordinal_index(block, n_levels)
+                    except Exception:
+                        score = None
             if score is None:
                 continue
             scores[str(qid)] = score
@@ -1002,27 +1453,10 @@ def _verification_quarantined(state: Mapping[str, Any]) -> bool:
         return str(login).strip() == str(VERIFICATION_QUARANTINED)
 
 
-def _integer_blocks(state: Mapping[str, Any], *, branch: str) -> str | None:
-    facts = dict(state.get("facts") or {})
-    if facts.get("halt") or state.get("halt"):
-        return "integer_halt"
-    if facts.get("operator_flatten_flag") or facts.get("flatten_flag"):
-        return "integer_flatten_flag"
-    if facts.get("prop_wall") or facts.get("governor_wall"):
-        return "integer_prop_wall"
-    if facts.get("token_digest_mismatch"):
-        return "integer_token_digest"
-    if facts.get("two_stop_exhausted") or facts.get("two_stop_count_hit"):
-        return "integer_two_stop_count"
-    if facts.get("h4cap"):
-        return "integer_h4cap"
-    if facts.get("usdjpy_hold"):
-        return "integer_usdjpy_hold"
-    if facts.get("weekend_flat_close") and branch in {"place", "observe"}:
-        return "integer_weekend_flat_close"
-    if facts.get("never_widen") and branch == "place":
-        return "integer_never_widen"
-    return None
+def _token_mismatch(state: Mapping[str, Any]) -> bool:
+    """Authorization. A digest mismatch stays a mismatch. It is not a market hop."""
+
+    return bool(_guard_facts(state).get("token_digest_mismatch"))
 
 
 def _labels(state: Mapping[str, Any], seat: str, branch: str) -> dict[str, Any]:
@@ -1053,6 +1487,7 @@ def _base(
 ) -> dict[str, Any]:
     labels = _labels(state, seat, branch)
     ticket = _ticket(state)
+    tickets = _named_tickets(state)
     row = {
         "schema": SCHEMA,
         "model": MODEL,
@@ -1069,12 +1504,12 @@ def _base(
         "converted_if_ids": list(CONVERTED_IF_IDS),
         "question_ids": list(questions),
         "one_piece": True,
-        "named_never_flatten_ticket": ticket in NEVER_FLATTEN_TICKETS if ticket else False,
-        "never_flatten_tickets": sorted(NEVER_FLATTEN_TICKETS),
+        "named_never_flatten_ticket": (
+            ticket in tickets if tickets and ticket else (False if tickets is not None else None)
+        ),
+        "never_flatten_tickets": tickets,
         "does_not_flatten": True,
         "does_not_send": True,
-        "inventory_fluid": 48,
-        "inventory_envelope": 8,
         **dict(extra or {}),
     }
     return row
@@ -1124,7 +1559,7 @@ class RemainingIfsDecision:
     extra_place: bool = False
     extra_flatten: bool = False
     extra_arm_frontier: bool = False
-    never_place_research: bool = True
+    never_place_research: bool | None = None
     include_depth: dict[str, str] = field(default_factory=dict)
     missing_jev: bool = False
     jev_no_decision: bool = False
@@ -1148,7 +1583,7 @@ class RemainingIfsDecision:
             "extra_place": False,
             "extra_flatten": False,
             "extra_arm_frontier": False,
-            "never_place_research": True,
+            "never_place_research": self.never_place_research,
             "include_depth": dict(self.include_depth),
             "missing_jev": self.missing_jev,
             "jev_no_decision": self.jev_no_decision,
@@ -1192,6 +1627,7 @@ def compose_remaining_ifs(
 
     state_map = dict(state or {})
     enabled = overlay_enabled(environ=environ)
+    state_map["overlay_enabled"] = enabled
     named = _named_seats(branch, seats, seat)
     seat_n = seat if seat in SEATS else named[0]
     questions = piece_questions(
@@ -1209,27 +1645,24 @@ def compose_remaining_ifs(
         questions=questions,
         extra=extra,
     )
-    if not enabled:
-        return _gate(reason=f"{REMAINING_IFS_ENV}_off", base=base)
     if _verification_quarantined(state_map):
         return _gate(reason="verification_quarantined", base=base)
     if _not_challenge(state_map):
         return _gate(reason="not_challenge_integer_path", base=base)
-    integer_block = _integer_blocks(state_map, branch=branch)
-    if integer_block:
-        return _gate(reason=integer_block, base=base)
+    if _token_mismatch(state_map):
+        return _gate(reason="integer_token_digest", base=base)
 
     missing = _answers_missing(answers)
     error: str | None = None
     if missing and evaluate_jev:
-        receipt = evaluate_pack(dict(state_map), questions, timeout_s=timeout_s)
-        got = receipt.get("answers")
-        if receipt.get("ok") is True and isinstance(got, Mapping) and got:
+        receipt = _cached_or_kick(state_map, questions, timeout_s)
+        got = receipt.get("answers") if isinstance(receipt, Mapping) else None
+        if isinstance(receipt, Mapping) and receipt.get("ok") is True and isinstance(got, Mapping) and got:
             answers = got
             missing = False
         else:
             answers = None
-            error = str(receipt.get("error") or receipt.get("skipped") or "empty")
+            error = str((receipt or {}).get("error") or (receipt or {}).get("skipped") or "empty") if isinstance(receipt, Mapping) else "empty"
             base["live_fanout_ok"] = False
             base["live_fanout_skipped"] = error
     elif missing:
@@ -1240,14 +1673,25 @@ def compose_remaining_ifs(
     scores = parsed["scores"]
     nouls = parsed["nouls"]
     any_return = bool(parsed["returns"])
+    active = _active_guards(state_map, branch)
+    block_name, guard_open = _guard_branch(active, choices)
     disposition = _disposition(choices, named)
     noul = completeness_noul(None if missing else answers)
     persist = scores.get("remaining_persist")
     if persist is None:
         persist = persist_apply_weight(None if missing else answers)
     may_send = _bool_flag(nouls.get("remaining_may_send"))
+    research_place = _bool_flag(nouls.get("never_place_research"))
     reason: str | None
-    if disposition is not None:
+    if block_name is not None:
+        reason = block_name
+        disposition = block_name
+        may_send = None
+    elif guard_open:
+        reason = error or "empty"
+        disposition = None
+        may_send = None
+    elif disposition is not None:
         reason = disposition
     elif any_return:
         reason = None
@@ -1286,7 +1730,8 @@ def compose_remaining_ifs(
         leave_orig=None,
         include_depth=_include_depth(scores),
         missing_jev=bool(missing and evaluate_jev),
-        jev_no_decision=not any_return,
+        jev_no_decision=not any_return or guard_open and block_name is None,
+        never_place_research=research_place,
         persist_apply=persist,
         payload=payload,
     )

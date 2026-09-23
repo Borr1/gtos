@@ -1,8 +1,7 @@
 """Labels for market state. One post per state.
 
-The unique highest probability is the decision. A tie (absolute
-difference at most 1e-12) or an empty probability map is not a
-decision. A bare label is not a probability. An empty answer, a tie,
+The unique highest probability is the decision. A tie or an empty
+probability map is not a decision. A bare label is not a probability. An empty answer, a tie,
 or an error is None. It does not restore a cutoff.
 
 The wait on the post is the expiry on the facts. No expiry means no
@@ -28,7 +27,6 @@ from typing import Any, Mapping, Sequence
 MODEL = "jev-1.13.0"
 API_URL = "https://api.typesafe.ai/v1/systemone"
 CHALLENGE_NS = "operator"
-TIE = 1e-12
 _ASK = (
     "The facts are on the card. "
     "The unique highest probability is the decision. "
@@ -127,7 +125,7 @@ def _unique(probs: Mapping[str, float]) -> str | None:
     if not probs:
         return None
     best = max(probs.values())
-    winners = [name for name, value in probs.items() if abs(value - best) <= TIE]
+    winners = [name for name, value in probs.items() if value == best]
     if len(winners) != 1:
         return None
     return winners[0]

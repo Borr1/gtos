@@ -2,15 +2,15 @@
 
 ``sleeve.xau_dsp_shakeout_a_plus_ready`` SHADOW Choice.
 
-Mute (revised): close ∈ boj/warsh T±60 **or** fill ∈ T−90..T+60.
-``FILL_IN_ANY_HIGH`` alone is not mute.
-
-Fixtures S0–S6. S0 = live ticket 293611741 blocked.
-Honesty: n_in = 3. Not an admit Choice.
+On the Challenge writer the mute and the sleeve choice are one ask.
+An empty answer leaves both unset. Off that writer the recorded
+prove-seed comparison stays. Not an admit Choice.
 """
 
 from __future__ import annotations
 
+import json
+import threading
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -100,10 +100,10 @@ PACK6_FIELD_SPEC: dict[str, dict[str, Any]] = {
             {"question": "event_size", "ids": ("FLUID-SIZ-006",)},
         ),
         "criteria": {
-            A_PLUS: "Named DSP shakeout structure ok and not event-muted",
-            ALMOST: "Structure ok; event window unknown",
-            BLOCKED: "Muted (close∈boj/warsh T±60 or fill∈T−90..T+60) or seed S0",
-            NULL_STATE: "Required event/structure unassembled",
+            A_PLUS: "The structure on the card is the sleeve and the event does not mute it.",
+            ALMOST: "The structure is present and the event is not assembled.",
+            BLOCKED: "The event mutes this sleeve, or the seed state blocks it.",
+            NULL_STATE: "Event or structure is not assembled.",
         },
         "role": "XAU DSP shakeout A+ PROVE_SEED. SHADOW. Not admit.",
     },
@@ -165,13 +165,105 @@ def assert_pack6_maps_existing_families() -> dict[str, Any]:
     return {"ok": not bad, "bad": bad, "never_admit": True, "n_in": N_IN}
 
 
+_ASK_CACHE: dict[str, dict[str, Any]] = {}
+_ASK_LOCK = threading.Lock()
+
+
+def _challenge() -> bool:
+    try:
+        from .state_choices import on_challenge
+    except Exception:
+        return False
+    try:
+        return bool(on_challenge())
+    except Exception:
+        return False
+
+
+def _pack6_ask(facts: dict[str, Any]) -> dict[str, Any]:
+    """One post: the mute noul and the sleeve choice. Empty leaves both unset."""
+    blob = json.dumps(facts, sort_keys=True, default=str)
+    with _ASK_LOCK:
+        cached = _ASK_CACHE.get(blob)
+    if cached is not None:
+        return dict(cached)
+    missed = {"mute": None, "choice": None}
+    try:
+        from .jev_client import evaluate
+        from .jev_questions import unique_highest
+    except Exception:
+        return dict(missed)
+    choice_id = CHOICE_ID
+    mute_id = "pack6.event_mute"
+    criteria = dict(PACK6_FIELD_SPEC[CHOICE_ID]["criteria"])
+    questions = {
+        mute_id: {
+            "type": "noul",
+            "instructions": (
+                "Does this event mute the sleeve? "
+                "The event class and the minute distances are facts. "
+                "An empty answer leaves the mute unset. Do not send."
+            ),
+            "criteria": {
+                "true": "The event mutes the sleeve.",
+                "false": "The event does not mute the sleeve.",
+            },
+        },
+        choice_id: {
+            "type": "choice",
+            "instructions": (
+                "The structure and the event are on the card. "
+                "The unique highest sleeve state is the decision. "
+                "An empty answer or a tie leaves the choice unset. "
+                "Do not admit. Do not send."
+            ),
+            "criteria": {str(key): str(text) for key, text in criteria.items()},
+        },
+    }
+    try:
+        receipt = evaluate(
+            {"facts": facts, "order_send": False, "flatten": False},
+            questions=questions,
+            merge_sleeve=False,
+            model="jev-1.13.0",
+        )
+    except Exception:
+        return dict(missed)
+    answers = receipt.get("answers") if isinstance(receipt, dict) else None
+    if not isinstance(answers, dict):
+        answers = {}
+    mute_block = answers.get(mute_id) if isinstance(answers.get(mute_id), dict) else {}
+    mute = mute_block.get("noul") if isinstance(mute_block, dict) else None
+    if mute is not True and mute is not False:
+        mute = None
+    choice_block = answers.get(choice_id) if isinstance(answers.get(choice_id), dict) else {}
+    probs = choice_block.get("probabilities") if isinstance(choice_block, dict) else None
+    try:
+        picked = unique_highest(probs if isinstance(probs, dict) else None, tuple(criteria))
+    except Exception:
+        picked = None
+    row = {"mute": mute, "choice": picked}
+    with _ASK_LOCK:
+        _ASK_CACHE[blob] = dict(row)
+    return row
+
+
 def hypothesis_mute(
     *,
     event_class: str | None = None,
     fill_mins: int | None = None,
     close_mins: int | None = None,
 ) -> dict[str, Any]:
-    """PROVE_SEED hypothesis: boj ∈ {print, guidance_live} OR Warsh T±60."""
+    """Mute hypothesis. On Challenge the noul is the return."""
+    if _challenge():
+        got = _pack6_ask(
+            {
+                "event_class": event_class,
+                "fill_mins": fill_mins,
+                "close_mins": close_mins,
+            }
+        )
+        return {"mute": got.get("mute"), "reason": None, "hypothesis": "pack6"}
     klass = str(event_class or "").strip().lower()
     if klass in BOJ_PRINT_GUIDANCE:
         return {
@@ -196,7 +288,22 @@ def event_mute(
     event_class: str | None = None,
     fill_in_any_high: bool = False,
 ) -> dict[str, Any]:
-    """Window mute. print|guidance_live mutes without a minute window. FILL_IN_ANY_HIGH alone is not mute."""
+    """Window mute. On Challenge the noul is the return. Empty does not mute."""
+    if _challenge():
+        got = _pack6_ask(
+            {
+                "event_class": event_class,
+                "fill_mins": fill_mins,
+                "close_mins": close_mins,
+                "fill_in_any_high": bool(fill_in_any_high),
+            }
+        )
+        return {
+            "mute": got.get("mute"),
+            "reason": None,
+            "fill_in_any_high": bool(fill_in_any_high),
+            "fill_in_any_high_alone_mutes": None,
+        }
     hyp = hypothesis_mute(
         event_class=event_class,
         fill_mins=fill_mins,
@@ -243,6 +350,36 @@ def score_shakeout(
     fill_in_any_high: bool = False,
     seed_blocked: bool = False,
 ) -> dict[str, Any]:
+    if _challenge():
+        got = _pack6_ask(
+            {
+                "structure_ok": structure_ok,
+                "fill_mins": fill_mins,
+                "close_mins": close_mins,
+                "event_class": event_class,
+                "fill_in_any_high": bool(fill_in_any_high),
+                "seed_blocked": bool(seed_blocked),
+            }
+        )
+        return {
+            "type": "choice",
+            "choice": got.get("choice"),
+            "fail_reason": None,
+            "mute": {
+                "mute": got.get("mute"),
+                "reason": None,
+                "fill_in_any_high": bool(fill_in_any_high),
+                "fill_in_any_high_alone_mutes": None,
+            },
+            "structure_ok": structure_ok,
+            "criteria": dict(PACK6_FIELD_SPEC[CHOICE_ID]["criteria"]),
+            "never_admit": True,
+            "never_refuse": True,
+            "never_apply_size": True,
+            "shadow_only": True,
+            "invented": False,
+            "edge": EDGE,
+        }
     mute = event_mute(
         fill_mins=fill_mins,
         close_mins=close_mins,
@@ -500,7 +637,11 @@ def assemble_pack6_fields(
         "prove_seed_ids": list(PROVE_SEED_IDS),
         "revised_ids": list(REVISED_IDS),
         "revised_mute": REVISED_MUTE_LOCK,
-        "fill_in_any_high_alone_mutes": False,
+        "fill_in_any_high_alone_mutes": (
+            payload.get("mute", {}).get("fill_in_any_high_alone_mutes")
+            if isinstance(payload.get("mute"), dict)
+            else None
+        ),
     }
 
 

@@ -12,12 +12,6 @@ from ..admission import TradeIntent
 
 SLEEVE = "crypto"
 ON_SURFACE = ("BTCUSD", "DASHUSD")
-# Historical research pins. Not read by the live gate, lookback, distance, or target.
-AC_THR = 0.15
-DON_LB = 20
-SD_ATR = 2.0
-TARGET_R = 4.0
-
 _MODEL = "jev-1.13.0"
 
 
@@ -61,38 +55,46 @@ def _returned_value(block):
     return _finite(choice)
 
 
-def _questions():
-    from src.judgment.jev_questions import parameter_question
+def _questions(facts, bars, i):
+    from .spot_choice import amount_question, anchors_for
 
-    return {
-        **parameter_question(
-            "ac_thr",
+    texts = {
+        "ac_thr": (
             "What autocorrelation clears the persistence gate on this closed bar? "
             "The score you return is that gate. "
-            "An empty answer leaves the gate unset.",
+            "An empty answer leaves the gate unset."
         ),
-        **parameter_question(
-            "don_lb",
+        "don_lb": (
             "How many prior closed bars form the channel on this bar? "
             "The score you return is that lookback. "
-            "An empty answer leaves the lookback unset.",
+            "An empty answer leaves the lookback unset."
         ),
-        **parameter_question(
-            "sd_atr",
+        "sd_atr": (
             "What multiple of the measured average range is the stop distance on this bar? "
             "The score you return is that distance in range units. "
-            "An empty answer leaves the distance unset.",
+            "An empty answer leaves the distance unset."
         ),
-        **parameter_question(
-            "target_r",
+        "target_r": (
             "What multiple of the stop distance is the target on this bar? "
             "The score you return is that target. "
-            "An empty answer leaves the target unset.",
+            "An empty answer leaves the target unset."
+        ),
+        "persist_bars": (
+            "How many closed bars does the persistence window use on this bar? "
+            "The score you return is that window. "
+            "An empty answer leaves the window unset."
         ),
     }
+    packed = {}
+    built = {}
+    for spot, text in texts.items():
+        anchors = anchors_for(spot, facts, bars=bars, index=i)
+        built[spot] = anchors
+        packed.update(amount_question(spot, text, anchors))
+    return packed, built
 
 
-def _ask(state, questions):
+def _ask(state, questions, anchors):
     from src.judgment.jev_client import evaluate
     from src.judgment.jev_questions import prior_outcomes
 
@@ -103,7 +105,6 @@ def _ask(state, questions):
     try:
         receipt = evaluate(
             state,
-            timeout_s=8.0,
             model=_MODEL,
             questions=questions,
             merge_sleeve=False,
@@ -116,7 +117,12 @@ def _ask(state, questions):
         raw = receipt.get("answers")
         if isinstance(raw, dict):
             answers = raw
-    values = {spot: _returned_value(answers.get(spot)) for spot in questions}
+    from .spot_choice import value_at
+
+    values = {
+        spot: value_at(_returned_value(answers.get(spot)), anchors.get(spot))
+        for spot in questions
+    }
     try:
         from src.judgment.jev_questions import append_outcome
 
@@ -128,9 +134,19 @@ def _ask(state, questions):
     return values
 
 
+def _whole(value):
+    number = _finite(value)
+    if number is None:
+        return None
+    whole = int(round(number))
+    if whole != number or whole < 1:
+        return None
+    return whole
+
+
 def _decide(B, i, symbol=None):
     """Gate, lookback, distance, and target for closed bar i. Missing tape is None."""
-    if B is None or i < 60:
+    if B is None or i < 0:
         return None
     try:
         a = atr14(B, i)
@@ -138,10 +154,6 @@ def _decide(B, i, symbol=None):
         return None
     if a is None or a <= 0:
         return None
-    try:
-        ac = autocorr(B, i, 60)
-    except Exception:
-        ac = None
     try:
         bar = B[i]
         state = {
@@ -153,11 +165,22 @@ def _decide(B, i, symbol=None):
             "close": bar.c,
             "volume": getattr(bar, "v", None),
             "atr": a,
-            "autocorr": ac,
+            "bar_index": i,
+            "n_bars": len(B),
+            "order_send": False,
         }
     except Exception:
         return None
-    values = _ask(state, _questions())
+    questions, anchors = _questions(state, B, i)
+    values = _ask(state, questions, anchors)
+    window = _whole(values.get("persist_bars"))
+    if window is None or i < window:
+        return None
+    try:
+        ac = autocorr(B, i, window)
+    except Exception:
+        ac = None
+    state["autocorr"] = ac
     lookback = _finite(values.get("don_lb"))
     if lookback is None or lookback <= 0:
         return None

@@ -245,6 +245,25 @@ def _finite_number(value):
     return number
 
 
+def _anchor_pairs(pairs):
+    """Distinct finite facts in one unit. Fewer than two is not a Score."""
+    found = []
+    seen = []
+    for item in pairs or ():
+        if not isinstance(item, tuple) or len(item) != 2:
+            continue
+        label, raw = item
+        number = _finite_number(raw)
+        text = "" if label is None else str(label).strip()
+        if number is None or number in (float("inf"), float("-inf")) or not text or number in seen:
+            continue
+        seen.append(number)
+        found.append((text, number))
+    if len(found) < 2:
+        return None
+    return found
+
+
 def _read_jev_return(kind, block, criteria):
     """A return is a Noul, a Choice, or a Score. Anything else is unset."""
     from src.judgment.jev_questions import returned_number, unique_highest
@@ -683,29 +702,30 @@ def _challenge_withholds(namespace, question, state, criteria, withhold, cache_k
 def _parameter_score(question, state, instructions, criteria=None):
     """The Score for this parameter. None when it is missing.
 
-    The number is used as returned, including between the named levels.
-    A miss does not restore a constant.
+    A word level is not an amount. The only Score is numeric anchors in
+    this hop's unit. Fewer than two stays unset. A miss does not restore
+    a constant and does not send.
     """
-    levels = criteria
-    if levels is None:
-        levels = (
-            "tighter than the last returned score",
-            "the last returned score",
-            "wider than the last returned score",
-        )
+    anchors = _anchor_pairs(criteria) if criteria is not None else None
+    if not anchors:
+        return None
     text = (
         str(instructions or "")
         + " The score you return may sit between levels."
         + " An empty score does not restore a constant."
         + " A floor dollar and a baseline dollar are not a limit."
     )
-    return _ask_jev(
-        str(question),
-        state if isinstance(state, dict) else {},
-        kind="score",
-        instructions=text,
-        criteria=tuple(levels),
-    )
+    try:
+        from src.judgment.nineteen import score
+
+        return score(
+            state if isinstance(state, dict) else {},
+            question_id=str(question),
+            instructions=text,
+            anchors=anchors,
+        )
+    except Exception:
+        return None
 
 
 def _noul_withholds(question, state, instructions, criteria=None):
@@ -2052,9 +2072,13 @@ class UltimateBookOwner:
                     except (TypeError, ValueError):
                         ttl = None
                     age_s = (now - written).total_seconds()
+                    band_lo = F5_MANAGE_TTL_MIN_S.value()
+                    band_hi = F5_MANAGE_TTL_MAX_S.value()
                     in_window = (
                         ttl is not None
-                        and float(F5_MANAGE_TTL_MIN_S) <= ttl <= float(F5_MANAGE_TTL_MAX_S)
+                        and band_lo is not None
+                        and band_hi is not None
+                        and band_lo <= ttl <= band_hi
                         and age_s < ttl
                     )
                     if not in_window:
@@ -5161,7 +5185,7 @@ class UltimateBookOwner:
                                     },
                                     "zero_multiplier_stands",
                                     f"ai_companion_zero_risk|{intent.sleeve}|{intent.symbol}",
-                                    "The companion risk multiplier for this candidate is zero. Is that a fact beside the unit, or a reason not to send? The unit is 150 dollars when a send happens. Do not close an open ticket.",
+                                    "The companion risk multiplier for this candidate is zero. Is that a fact beside the unit, or a reason not to send? Do not close an open ticket.",
                                 ))
                             except Exception:
                                 _block_zero = False
@@ -11166,14 +11190,45 @@ class UltimateBookOwner:
         if max_chase is None:
             try:
                 from src.judgment.nineteen import score
-                max_chase = score(
-                    {"symbol": symbol, "sleeve": sleeve},
-                    question_id="max_chase_stop_fraction",
-                    instructions=(
-                        "The score you return is the chase fraction of the stop that ends this series. "
-                        "An empty score leaves the chase unset. Do not send."
-                    ),
-                )
+                spread_r = _finite_number(last.get("spread_r"))
+                chase_now = _finite_number(chase)
+                chase_clear = _finite_number(rollup.get("chase_at_first_clear"))
+                min_over_stop = None
+                max_over_stop = None
+                if distance is not None and distance > 0:
+                    min_spr = _finite_number(rollup.get("min_spr"))
+                    max_spr = _finite_number(rollup.get("max_spr"))
+                    if min_spr is not None:
+                        min_over_stop = min_spr / distance
+                    if max_spr is not None:
+                        max_over_stop = max_spr / distance
+                chase_anchors = _anchor_pairs((
+                    ("spread_r", spread_r),
+                    ("chase", chase_now),
+                    ("chase_at_first_clear", chase_clear),
+                    ("min_spread_over_stop", min_over_stop),
+                    ("max_spread_over_stop", max_over_stop),
+                ))
+                if chase_anchors is not None:
+                    max_chase = score(
+                        {
+                            "symbol": symbol,
+                            "sleeve": sleeve,
+                            "stop_dist": distance,
+                            "frozen_entry": frozen_entry,
+                            "bid": last.get("bid"),
+                            "ask": last.get("ask"),
+                            "spread_r": spread_r,
+                            "chase": chase_now,
+                            "chase_at_first_clear": chase_clear,
+                        },
+                        question_id="max_chase_stop_fraction",
+                        instructions=(
+                            "The score you return is the chase fraction of the stop that ends this series. "
+                            "An empty score leaves the chase unset. Do not send."
+                        ),
+                        anchors=chase_anchors,
+                    )
             except Exception:
                 max_chase = None
         if (
@@ -12174,18 +12229,32 @@ class UltimateBookOwner:
             )
             if pip is None or stop_before <= 0:
                 return intent, None
-            pips = score(
-                {
-                    "symbol": symbol,
-                    "sleeve": str(getattr(intent, "sleeve", "") or ""),
-                    "stop_dist": stop_before,
-                },
-                question_id="market_stop_min_pips",
-                instructions=(
-                    "The score you return is the minimum protective distance in pips. "
-                    "An empty score leaves the stop unchanged. Do not send."
-                ),
-            )
+            stop_pips = stop_before / float(pip)
+            target_pips = None
+            target_dist = _finite_number(getattr(intent, "target_dist", None))
+            if target_dist is not None and target_dist > 0:
+                target_pips = target_dist / float(pip)
+            pip_anchors = _anchor_pairs((
+                ("stop_pips", stop_pips),
+                ("target_pips", target_pips),
+            ))
+            pips = None
+            if pip_anchors is not None:
+                pips = score(
+                    {
+                        "symbol": symbol,
+                        "sleeve": str(getattr(intent, "sleeve", "") or ""),
+                        "stop_dist": stop_before,
+                        "target_dist": target_dist,
+                        "pip_size": float(pip),
+                    },
+                    question_id="market_stop_min_pips",
+                    instructions=(
+                        "The score you return is the minimum protective distance in pips. "
+                        "An empty score leaves the stop unchanged. Do not send."
+                    ),
+                    anchors=pip_anchors,
+                )
             if pips is None:
                 return intent, None
             stop_after = float(pips) * float(pip)

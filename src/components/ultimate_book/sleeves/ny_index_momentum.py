@@ -1,161 +1,229 @@
-"""ny_index_momentum.py — NEW SLEEVE: NY-killzone INDEX momentum-continuation, MID-VOL only (M15).
+"""NY-killzone index continuation.
 
-5th new sleeve (2026-06-17), PRINCIPAL-VERIFIED. Same NY-killzone continuation mechanic as ny_crypto_momentum,
-but on stock INDICES and CONDITIONED on a MID vol-state (the base NY|index cell is MARGINAL; the edge lives in the
-mid-ATR-percentile regime — the ultimate system trades it only there). At the NY decision bar (server 17:00), if
-the 12-bar NY-window directional efficiency |de|>=0.50 AND the current ATR is in the MID percentile band of its
-trailing 480-bar distribution, enter in the move direction; wide 1.3xATR stop, hold to session close.
-
-PRINCIPAL re-derivation (my own, matches the correct-null sweep): pooled n=863, every-split positive
-(train +0.178 / oos +0.175 / sealed +0.257), CORRECT random-entry-same-exit null p=0.0000, balanced direction
-(LONG 538 +0.221 / SHORT 325 +0.162 -> both sides positive, NOT index bullish-drift), drift-null p=0.005.
-Per-symbol: SPX500 +0.351, US30_cash +0.317, GER40 +0.274 (deep+strong); UK100 -0.083 (the weak member, kept for
-no-post-hoc-selection — the pooled cell is robustly every-split+ despite it); NAS100/JP225 thin. Only 1 negative
-year (2023). DEFAULT-OFF candidate (not in live BUILT); live wiring owner-gated.
-
-MECHANIC (leak-free, decides on the latest CLOSED M15 bar i): only at NY decision bar (hour==17, minute==0) AND
-mid vol-state. de = (close[i]-close[i-WINDOW]) / (window_high-window_low) over [i-WINDOW, i]; |de|>=DE_THRESH ->
-enter sign(de). stop = STOP_MULT*ATR14[i]; EXIT = hold to session close (MAXBARS time-stop) or stop; target None.
-vol-state = ATR14[i] percentile rank over the trailing VOL_WIN ATRs (MID = [VOL_LO, VOL_HI)). Decision uses only
-bars <= i; entry at close[i] -> no look-ahead.
+The bar's hour, minute, range, efficiency, and volatility rank are facts.
+Each bound is a score on that card. An empty score, a tie, or an error
+leaves the bound unset and does not restore a printed level. Surface
+membership and a missing clock are Choices on the same post.
 """
 from __future__ import annotations
-from typing import Optional
-from ..primitives import atr14
-from ..admission import TradeIntent
-from ._server_clock import server_hour_minute
-from .spot_choice import all_false, ask, bar_id
 
-DE_THRESH = 0.50
-STOP_MULT = 1.3
-WINDOW = 12
-DECISION_HOUR = 17
-DECISION_MIN = 0
-MAXBARS = 20
-VOL_WIN = 480            # trailing window for the ATR-percentile vol-state
-VOL_LO = 0.34            # MID band = percentile rank in [VOL_LO, VOL_HI)
-VOL_HI = 0.67
-MIN_BARS = 520           # need >= VOL_WIN + a little for the vol-state percentile
-ON_SURFACE = ("SPX500", "GER40", "UK100", "NAS100", "JP225")   # verified NY|index|mid cell
+from typing import Any, Optional
+
+from ..admission import TradeIntent
+from ..primitives import atr14
+from ._server_clock import server_hour_minute
+from .spot_choice import all_false, arm_card, bar_id, post_answers, read_number, read_side, score_questions
+
+ON_SURFACE = ("SPX500", "GER40", "UK100", "NAS100", "JP225")
 SLEEVE = "ny_index_momentum"
+_SIDES = ("condition_true", "condition_false")
 
 
 def _hm(t):
-    """SERVER-LOCAL (hour, minute). DECISION_HOUR here is an FTMO server hour (F7/B29) while
-    the live feed is true UTC, so this converts before comparing. None -> fail closed.
-
-    This sleeve is NOT in the deployed candidate allowlist (agent_config.yaml:1275-1283), so
-    this carries no live-behaviour change. It is corrected with the deployed eight so the
-    package does not end up with two different meanings for DECISION_HOUR."""
+    """Server-local hour and minute. None when the stamp cannot be read."""
     return server_hour_minute(t)
 
 
-def _mid_vol(bars, i) -> bool:
-    """True iff ATR14[i] is in the MID percentile band of the trailing VOL_WIN ATRs (matches the gen vol_state)."""
-    if i < VOL_WIN:
-        return False
-    a_i = atr14(bars, i)
-    if a_i <= 0:
-        return False
-    lo = i - VOL_WIN
-    hist = [a for a in (atr14(bars, k) for k in range(lo, i)) if a > 0]
-    if len(hist) < 50:
-        return False
-    rank = sum(1 for a in hist if a <= a_i) / len(hist)
-    return VOL_LO <= rank < VOL_HI
+def _whole(value: Any, *, least: int | None = None) -> int | None:
+    number = value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+    if number is None:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+    if isinstance(number, bool) or number != number or number in (float("inf"), float("-inf")):
+        return None
+    whole = int(round(float(number)))
+    if least is not None and whole < least:
+        return None
+    return whole
 
 
-def measured(symbol, bars, *, bar_time=None, bar_times=None) -> dict:
-    """Facts for the latest closed bar. Not a decision."""
+def _choice(spot: str, condition: str, measured: bool) -> dict[str, Any]:
+    return {
+        spot: {
+            "type": "choice",
+            "instructions": (
+                f"Condition: {condition}. "
+                f"Measured fact for this condition is {measured}. "
+                "condition_true means the condition holds. "
+                "condition_false means the condition does not hold. "
+                "An empty answer, a tie, or an error is not a side."
+            ),
+            "criteria": {
+                "condition_true": f"The condition holds. {condition}",
+                "condition_false": f"The condition does not hold. {condition}",
+            },
+        }
+    }
+
+
+def _facts(symbol, bars, *, bar_time=None, bar_times=None) -> dict[str, Any]:
     i = len(bars) - 1 if bars else -1
     t = bar_time if bar_time is not None else (
         bar_times[i] if bar_times and bars and len(bar_times) == len(bars) else None
     )
     hm = _hm(t) if t is not None else None
-    a = atr14(bars, i) if bars and i >= 0 else 0.0
-    warmup_short = i < MIN_BARS or i < WINDOW
-    mid = False
-    rng = 0.0
-    net = 0.0
-    if bars and not warmup_short:
-        mid = _mid_vol(bars, i)
-        w = bars[i - WINDOW:i + 1]
-        hi = max(b.h for b in w)
-        lo = min(b.l for b in w)
-        rng = hi - lo
-        net = bars[i].c - bars[i - WINDOW].c
-    efficiency = abs(net / rng) if rng > 0 else 0.0
-    direction = 1 if net > 0 else -1
+    atr = None
+    last = None
+    if bars and i >= 0:
+        try:
+            raw = atr14(bars, i)
+        except Exception:
+            raw = None
+        if isinstance(raw, (int, float)) and not isinstance(raw, bool) and raw > 0:
+            atr = float(raw)
+        bar = bars[i]
+        last = (float(bar.o), float(bar.h), float(bar.l), float(bar.c))
     return {
+        "sleeve": SLEEVE,
+        "symbol": symbol,
+        "namespace": "operator",
+        "login": 0,
+        "bar": bar_id("", len(bars) if bars else 0, bar_time, bar_times),
+        "n_bars": len(bars) if bars else 0,
+        "bar_index": i,
+        "hour": None if hm is None else hm[0],
+        "minute": None if hm is None else hm[1],
+        "clock_known": hm is not None,
+        "atr": atr,
+        "open": None if last is None else last[0],
+        "high": None if last is None else last[1],
+        "low": None if last is None else last[2],
+        "close": None if last is None else last[3],
+        "named_surface": list(ON_SURFACE),
+        "on_named_surface": symbol in ON_SURFACE,
         "off_surface": symbol not in ON_SURFACE,
-        "warmup_short": warmup_short,
         "no_bar_time": t is None or hm is None,
-        "not_ny_decision_bar": hm is None or hm[0] != DECISION_HOUR or hm[1] != DECISION_MIN,
-        "atr_not_a_scale": not (a > 0),
-        "not_mid_vol": not mid,
-        "range_flat": not (rng > 0),
-        "efficiency_below": efficiency < DE_THRESH,
-        "atr": float(a),
-        "direction": direction,
-        "efficiency": efficiency,
+        "order_send": False,
+        "flatten": False,
     }
+
+
+def _questions(facts: dict[str, Any]) -> dict[str, Any]:
+    packed = score_questions({
+        "de_thresh": "The score you return is the absolute directional-efficiency level that opens this bar.",
+        "stop_mult": "The score you return is the ATR multiple of the stop on this bar.",
+        "window": "The score you return is how many closed bars the efficiency window uses.",
+        "decision_hour": "The score you return is the server hour of the decision bar.",
+        "decision_min": "The score you return is the minute of the decision bar.",
+        "maxbars": "The score you return is how many bars this position may stay open.",
+        "vol_win": "The score you return is how many trailing ATR values the percentile uses.",
+        "vol_lo": "The score you return is the low edge of the mid volatility percentile band.",
+        "vol_hi": "The score you return is the high edge of the mid volatility percentile band.",
+        "min_bars": "The score you return is how many closed bars this scan needs.",
+        "hist_min": "The score you return is how many positive ATR values the percentile needs.",
+    })
+    packed.update(_choice(
+        "off_surface",
+        f"{facts.get('symbol')} is not one of the named index symbols",
+        bool(facts.get("off_surface")),
+    ))
+    packed.update(_choice(
+        "no_bar_time",
+        "the decision bar has no server clock",
+        bool(facts.get("no_bar_time")),
+    ))
+    return packed
+
+
+def _rank(bars, i: int, vol_win: int, hist_min: int) -> float | None:
+    if i < vol_win:
+        return None
+    try:
+        current = atr14(bars, i)
+    except Exception:
+        return None
+    if not isinstance(current, (int, float)) or isinstance(current, bool) or current <= 0:
+        return None
+    hist = []
+    for k in range(i - vol_win, i):
+        try:
+            value = atr14(bars, k)
+        except Exception:
+            continue
+        if isinstance(value, (int, float)) and not isinstance(value, bool) and value > 0:
+            hist.append(float(value))
+    if len(hist) < hist_min:
+        return None
+    return sum(1 for value in hist if value <= float(current)) / len(hist)
+
+
+def _window_move(bars, i: int, window: int) -> tuple[float, float] | None:
+    if window < 1 or i < window:
+        return None
+    span = bars[i - window:i + 1]
+    if not span:
+        return None
+    high = max(bar.h for bar in span)
+    low = min(bar.l for bar in span)
+    span_range = high - low
+    net = bars[i].c - bars[i - window].c
+    if not (span_range > 0):
+        return None
+    return float(net), abs(float(net) / float(span_range))
 
 
 def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
              aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
-    """NY-killzone index continuation. Each gate is one spot Choice."""
+    """One post. The scores are the bounds. A missing bound does not emit."""
+    del aux_bars, aux_times
     if not bars:
         return None
-    facts = measured(symbol, bars, bar_time=bar_time, bar_times=bar_times)
-    sides = ask(
-        sleeve=SLEEVE,
-        symbol=symbol,
-        bar_id=bar_id(decision_day, len(bars), bar_time, bar_times),
-        spots={
-            "off_surface": {
-                "condition": f"{symbol} is not one of SPX500, GER40, UK100, NAS100, JP225",
-                "measured": facts["off_surface"],
-            },
-            "warmup_short": {
-                "condition": f"closed M15 count is below {MIN_BARS}",
-                "measured": facts["warmup_short"],
-            },
-            "no_bar_time": {
-                "condition": "the decision bar has no server clock",
-                "measured": facts["no_bar_time"],
-            },
-            "not_ny_decision_bar": {
-                "condition": "the bar is not the NY decision print at server 17:00",
-                "measured": facts["not_ny_decision_bar"],
-            },
-            "atr_not_a_scale": {
-                "condition": "ATR14 is not a positive scale for the 1.3 stop",
-                "measured": facts["atr_not_a_scale"],
-            },
-            "not_mid_vol": {
-                "condition": "ATR14 is outside the mid percentile band of the trailing 480 bars",
-                "measured": facts["not_mid_vol"],
-            },
-            "range_flat": {
-                "condition": "the 12-bar window range is not positive",
-                "measured": facts["range_flat"],
-            },
-            "efficiency_below": {
-                "condition": "absolute directional efficiency is below 0.50",
-                "measured": facts["efficiency_below"],
-            },
-        },
-    )
+    facts = _facts(symbol, bars, bar_time=bar_time, bar_times=bar_times)
+    facts["bar"] = bar_id(decision_day, len(bars), bar_time, bar_times)
+    arm_card(facts, bars=bars, index=len(bars) - 1, bar_times=bar_times)
+    answers = post_answers(facts, _questions(facts))
+    sides = {
+        "off_surface": read_side(answers, "off_surface", _SIDES),
+        "no_bar_time": read_side(answers, "no_bar_time", _SIDES),
+    }
     if not all_false(sides):
         return None
-    sd = STOP_MULT * facts["atr"]
-    if not (sd > 0):
+    i = len(bars) - 1
+    min_bars = _whole(read_number(answers, "min_bars"), least=1)
+    window = _whole(read_number(answers, "window"), least=1)
+    vol_win = _whole(read_number(answers, "vol_win"), least=1)
+    hist_min = _whole(read_number(answers, "hist_min"), least=1)
+    decision_hour = _whole(read_number(answers, "decision_hour"))
+    decision_min = _whole(read_number(answers, "decision_min"))
+    de_thresh = read_number(answers, "de_thresh")
+    stop_mult = read_number(answers, "stop_mult")
+    vol_lo = read_number(answers, "vol_lo")
+    vol_hi = read_number(answers, "vol_hi")
+    if None in (min_bars, window, vol_win, hist_min, decision_hour, decision_min, de_thresh, stop_mult, vol_lo, vol_hi):
+        return None
+    if i < min_bars or facts.get("hour") is None:
+        return None
+    if facts["hour"] != decision_hour or facts["minute"] != decision_min:
+        return None
+    atr = facts.get("atr")
+    if atr is None or not (stop_mult * atr > 0):
+        return None
+    move = _window_move(bars, i, window)
+    if move is None:
+        return None
+    net, efficiency = move
+    if efficiency < de_thresh:
+        return None
+    rank = _rank(bars, i, vol_win, hist_min)
+    if rank is None or not (vol_lo <= rank < vol_hi):
+        return None
+    if net > 0:
+        direction = 1
+    elif net < 0:
+        direction = -1
+    else:
+        return None
+    horizon = _whole(read_number(answers, "maxbars"), least=1)
+    if horizon is None:
         return None
     return TradeIntent(
         sleeve=SLEEVE,
         symbol=symbol,
-        direction=facts["direction"],
+        direction=direction,
         decision_day=decision_day,
-        stop_dist=sd,
+        stop_dist=stop_mult * atr,
         target_dist=None,
+        expiry_bars=horizon,
     )

@@ -31,14 +31,6 @@ from src.components.selector_v4 import (
 from src.components.dynamic_target_stop_geometry_v4 import (
     build_target_stop_geometry_v4_contract,
 )
-from src.research.moonshot_default_off_policy_router import (
-    DEFAULT_POLICY as MOONSHOT_DEFAULT_EXECUTION_POLICY,
-    EXECUTION_POLICY_IDS as MOONSHOT_EXECUTION_POLICY_IDS,
-    MoonshotPolicyRouterDecision,
-    RETIRED_STATIC_BASELINE_COMPARATOR,
-    select_asof_displacement_policy,
-    route_moonshot_dynamic_execution,
-)
 from src.research_infra.wave3_follow_avoid_mixed_numeric_confluence import (
     build_numeric_confluence_source,
     final_numeric_confluence_mapping,
@@ -16309,6 +16301,12 @@ def _moonshot_selected_cell_risk_match(
     cfg: dict[str, Any],
     event: dict[str, Any],
 ) -> dict[str, Any]:
+    from src.research.moonshot_default_off_policy_router import (
+        DEFAULT_POLICY as MOONSHOT_DEFAULT_EXECUTION_POLICY,
+        EXECUTION_POLICY_IDS as MOONSHOT_EXECUTION_POLICY_IDS,
+        select_asof_displacement_policy,
+    )
+
     critical_prefixes = (
         "digits_",
         "filling_mode_",
@@ -17329,6 +17327,10 @@ def evaluate_vnext_moonshot_dynamic_execution(
     candidate_context: dict[str, Any] | None = None,
 ) -> GTOSVNextMoonshotDynamicExecutionDecision:
     """Evaluate the production moonshot dynamic execution router."""
+    from src.research.moonshot_default_off_policy_router import (
+        route_moonshot_dynamic_execution,
+    )
+
     cfg = (config or {}).get("gtos_vnext_runtime", {}) or {}
     enabled = bool(cfg.get("moonshot_dynamic_execution_router_enabled", False))
     apply_flag = bool(cfg.get("moonshot_dynamic_execution_router_apply_to_execution", False))
@@ -17408,11 +17410,24 @@ def attach_vnext_moonshot_dynamic_execution_to_record(
     return record
 
 
+_MOONSHOT_REPLACED_POLICY_UNSET = object()
+
+
+def _retired_static_baseline_comparator() -> str:
+    from src.research.moonshot_default_off_policy_router import (
+        RETIRED_STATIC_BASELINE_COMPARATOR,
+    )
+
+    return RETIRED_STATIC_BASELINE_COMPARATOR
+
+
 def vnext_moonshot_dynamic_replaces_policy(
     decision: GTOSVNextMoonshotDynamicExecutionDecision,
-    replaced_policy: str = RETIRED_STATIC_BASELINE_COMPARATOR,
+    replaced_policy: object = _MOONSHOT_REPLACED_POLICY_UNSET,
 ) -> bool:
     """Return whether the activated moonshot router replaces a named policy."""
+    if replaced_policy is _MOONSHOT_REPLACED_POLICY_UNSET:
+        replaced_policy = _retired_static_baseline_comparator()
     return bool(
         decision.applied
         and _match_key(decision.replaced_policy) == _match_key(replaced_policy)
@@ -17422,7 +17437,7 @@ def vnext_moonshot_dynamic_replaces_policy(
 
 def _vnext_moonshot_dynamic_contains_old_fallback(
     decision: GTOSVNextMoonshotDynamicExecutionDecision | None,
-    replaced_policy: str = RETIRED_STATIC_BASELINE_COMPARATOR,
+    replaced_policy: object = _MOONSHOT_REPLACED_POLICY_UNSET,
 ) -> bool:
     """Return whether the dynamic router prevents old-policy fallthrough.
 
@@ -17434,6 +17449,8 @@ def _vnext_moonshot_dynamic_contains_old_fallback(
     """
     if decision is None:
         return False
+    if replaced_policy is _MOONSHOT_REPLACED_POLICY_UNSET:
+        replaced_policy = _retired_static_baseline_comparator()
     if _match_key(decision.replaced_policy) != _match_key(replaced_policy):
         return False
     return bool(

@@ -82,6 +82,61 @@ def _finite(v: Any) -> float | None:
     return x
 
 
+_HOP: dict[tuple, dict[str, float | None]] = {}
+
+
+_SIDE_WORDS = ("short", "still timing", "long")
+
+
+def _side_index(cache_key: tuple, facts: dict, instructions: str) -> int | None:
+    """Direction is an ordinal. The index is not a price. Empty stays unset."""
+    if cache_key in _HOP:
+        stored = _HOP[cache_key].get("xasset_side")
+        if stored is None:
+            return None
+        try:
+            return int(stored)
+        except (TypeError, ValueError):
+            return None
+    payload = {
+        str(key): value
+        for key, value in dict(facts or {}).items()
+        if str(key) not in {"denominator", "other"}
+    }
+    index = None
+    try:
+        from src.judgment.jev_client import evaluate
+        from src.judgment.jev_questions import ordinal_index, ordinal_question
+
+        packed = ordinal_question("xasset_side", instructions, _SIDE_WORDS)
+        block = packed.get("xasset_side") if isinstance(packed, dict) else None
+        words = block.get("criteria") if isinstance(block, dict) else None
+        if isinstance(words, list) and len(words) >= 2:
+            receipt = evaluate(payload, questions=packed, merge_sleeve=False)
+            answer = None
+            if (
+                isinstance(receipt, dict)
+                and receipt.get("ok") is not False
+                and not receipt.get("error")
+                and receipt.get("tie") is not True
+                and isinstance(receipt.get("answers"), dict)
+            ):
+                answer = receipt["answers"].get("xasset_side")
+            snapped = ordinal_index(answer, len(words))
+            if snapped is not None and 0 <= snapped < len(words):
+                label = str(words[snapped])
+                if label == "long":
+                    index = 1
+                elif label == "short":
+                    index = -1
+                else:
+                    index = 0
+    except Exception:
+        index = None
+    _HOP[cache_key] = {"xasset_side": None if index is None else float(index)}
+    return index
+
+
 def _digitize(x: float, cuts: tuple[float, ...] = CUTS) -> int:
     """np.digitize(x, cuts) with right=False. No numpy."""
     q = 0
@@ -144,12 +199,21 @@ def direction_resolver(
     cx = _aligned_from_peer_panel(peer_panel)
     if cx is None:
         return 0
-    q = _digitize(cx)
-    if q <= 0:
-        return -1
-    if q >= NQ - 1:
-        return 1
-    return 0
+    side = _side_index(
+        ("xasset_side", canon_name(setup_name), round(cx, 6), bool(only_ready)),
+        {
+            "setup": canon_name(setup_name),
+            "aligned_move": cx,
+            "only_ready": bool(only_ready),
+        },
+        (
+            "The score you return is the direction for this state. "
+            "The levels are short, still timing, and long. An empty score is not a side. Do not send."
+        ),
+    )
+    if side is None or side == 0:
+        return 0
+    return 1 if side > 0 else -1
 
 
 def stay_timing(

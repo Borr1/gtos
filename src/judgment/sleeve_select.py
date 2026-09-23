@@ -111,6 +111,278 @@ _PHI_CANDIDATE_PATHS = (
 
 
 
+
+import threading as _anchor_threading
+
+_ANCHOR_CARD = _anchor_threading.local()
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _is_map(value):
+    if isinstance(value, dict):
+        return True
+    if isinstance(value, (str, bytes)):
+        return False
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return False
+    return isinstance(value, Mapping)
+
+
+def _bind_card(card):
+    _ANCHOR_CARD.value = card if _is_map(card) else None
+
+
+def _bound_card(explicit):
+    if _is_map(explicit):
+        return explicit
+    bound = getattr(_ANCHOR_CARD, "value", None)
+    return bound if _is_map(bound) else None
+
+
+def _anchor_sources(card):
+    if not _is_map(card):
+        return []
+    found = [card]
+    for key in ("account", "facts", "pair", "news", "ticket", "proposed", "extra", "labels", "subject_facts", "candidate"):
+        inner = card.get(key)
+        if _is_map(inner) and inner is not card:
+            found.append(inner)
+    return found
+
+
+_COUNT_FIELDS = (
+    "n_candidates", "n_events", "n_sleeves", "n_bars", "bars_available",
+    "repeats", "session_bars", "day_bars", "swing_bars", "bars_since_high",
+    "bars_since_low", "candles_elapsed", "closed_orig_stop_count",
+)
+_COUNT_SEQS = (
+    "prior_outcomes", "candidates", "events", "sleeve_members", "lengths",
+    "stamps", "hashes", "bars", "bar_times", "members", "closed",
+    "legacy_symbol_keys", "families", "priors",
+)
+_PRICE_FIELDS = (
+    "bid", "ask", "entry", "entry_price", "stop", "stop_loss", "sl", "tp",
+    "take_profit", "price", "high", "low", "close", "open", "orig_sl", "orig_tp",
+    "stop_now", "target", "trail", "fill_price", "exit_px",
+)
+_SECOND_FIELDS = (
+    "seconds_until_cycle", "seconds_until_now", "age_s", "age_seconds",
+    "seconds_since_quote", "seconds_since_bar", "seconds_since_last_close",
+    "seconds_between_closes", "seconds_since_prior_close", "expiry_seconds",
+    "timeout_seconds",
+)
+_MINUTE_FIELDS = (
+    "minutes_since_flat", "age_minutes", "minutes_until_now", "window_minutes",
+)
+_HOUR_FIELDS = ("age_hours", "lag_hours", "hours_since_bar", "hours_open", "measured_hours")
+_DAY_FIELDS = ("age_days", "lag_days", "days_open", "measured_days")
+_LOT_FIELDS = (
+    "volume", "volume_min", "volume_step", "lots", "lot",
+    "volume_current", "volume_initial",
+)
+_POINT_FIELDS = (
+    "spread_points", "stop_level", "freeze_level", "tick_points", "deviation_points",
+)
+_INCLUDE_WORDS = ("hide", "short", "long", "full")
+
+
+def _named_pairs(card, fields, seqs=()):
+    pairs = []
+    for source in _anchor_sources(card):
+        for key in fields:
+            number = _anchor_finite(source.get(key))
+            if number is None:
+                continue
+            pairs.append((f"the {key} named on this card", number))
+        for key in seqs:
+            seq = source.get(key)
+            if isinstance(seq, (list, tuple)) and not isinstance(seq, (str, bytes)):
+                pairs.append((f"the count of {key} named on this card", float(len(seq))))
+    return pairs
+
+
+def _keys_matching(card, tokens):
+    pairs = []
+
+    def walk(node):
+        if _is_map(node):
+            for key, value in node.items():
+                low = str(key).lower()
+                if "floor" in low or "baseline" in low:
+                    continue
+                number = _anchor_finite(value)
+                if number is not None and any(tok in low for tok in tokens):
+                    pairs.append((f"the {low} named on this card", number))
+                    continue
+                if _is_map(value):
+                    walk(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        if _is_map(item):
+                            walk(item)
+
+    walk(card)
+    return pairs
+
+
+def _anchors_for_spot(qid, card):
+    name = str(qid).lower()
+    try:
+        from .jev_questions import count_anchors, minute_anchors, mult_anchors, usd_anchors, weight_anchors
+    except Exception:
+        def count_anchors(_card):
+            return []
+
+        def minute_anchors(_card):
+            return []
+
+        def mult_anchors(_card):
+            return []
+
+        def usd_anchors(_card):
+            return []
+
+        def weight_anchors(_card):
+            return []
+
+    override = globals().get("_UNIT_OVERRIDE")
+    if isinstance(override, dict):
+        base = name[: -len("_parameter")] if name.endswith("_parameter") else name
+        spec = override.get(base)
+        if spec == "weight":
+            return list(weight_anchors(card) or [])
+        if spec == "count":
+            pairs = list(count_anchors(card) or [])
+            pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+            return pairs
+        if isinstance(spec, tuple):
+            return _named_pairs(card, spec)
+    if any(tok in name for tok in ("loop", "splice", "width", "lookback", "bound", "_cap")):
+        pairs = list(count_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+        return pairs
+    if "ac60" in name or "autocorr" in name:
+        return _keys_matching(card, ("ac60", "autocorr"))
+    if "direction" in name:
+        return _keys_matching(card, ("direction",))
+    if name.endswith("_r") or "mfe" in name or "mae" in name:
+        return list(weight_anchors(card) or [])
+    if "hour" in name:
+        return _named_pairs(card, _HOUR_FIELDS)
+    if "minute" in name:
+        pairs = list(minute_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _MINUTE_FIELDS))
+        return pairs
+    if "day" in name and "today" not in name:
+        return _named_pairs(card, _DAY_FIELDS)
+    if any(tok in name for tok in ("second", "expiry", "timeout", "pause", "adopt_wait")):
+        return _named_pairs(card, _SECOND_FIELDS)
+    if any(tok in name for tok in ("tilt", "alignment", "weight", "persist")):
+        pairs = list(weight_anchors(card) or [])
+        if len(pairs) >= 2:
+            return pairs
+        return list(mult_anchors(card) or [])
+    if any(tok in name for tok in ("lot", "volume")):
+        return _named_pairs(card, _LOT_FIELDS)
+    if "scale" in name:
+        return _scale_pairs(card)
+    if any(tok in name for tok in ("price",)) or name in {"manage_sl_price", "manage_tp_price"}:
+        return _named_pairs(card, _PRICE_FIELDS)
+    if "point" in name or "deviation" in name:
+        return _named_pairs(card, _POINT_FIELDS)
+    if "spread" in name:
+        return _named_pairs(card, ("spread", "spread_points"))
+    if any(tok in name for tok in ("usd", "equity", "pnl", "cash")):
+        return list(usd_anchors(card) or [])
+    return []
+
+
+def _scale_pairs(card):
+    pairs = []
+    for source in _anchor_sources(card):
+        volume = _anchor_finite(source.get("volume"))
+        if volume is None:
+            volume = _anchor_finite(source.get("volume_current"))
+        initial = _anchor_finite(source.get("volume_initial"))
+        least = _anchor_finite(source.get("volume_min"))
+        step = _anchor_finite(source.get("volume_step"))
+        if volume not in (None, 0) and least is not None:
+            pairs.append(("minimum volume over this volume", least / volume))
+        if volume not in (None, 0) and step is not None:
+            pairs.append(("volume step over this volume", step / volume))
+        if initial not in (None, 0) and volume is not None:
+            pairs.append(("current volume over initial volume", volume / initial))
+    return pairs
+
+
+def _amount_block(qid, instructions, card):
+    """Amount Score. Fewer than two anchors in this unit does not post."""
+
+    source = _bound_card(card)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(qid, instructions, _anchors_for_spot(qid, source))
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        block.pop(key, None)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _ordinal_block(qid, instructions, words):
+    """Word levels. Fewer than two words does not post. The index is not an amount."""
+
+    try:
+        from .jev_questions import ordinal_question
+
+        built = ordinal_question(qid, instructions, words)
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _score_amount_or_ordinal(qid, instructions, card=None, *_rest):
+    if str(qid).startswith("include_"):
+        return _ordinal_block(qid, instructions, _INCLUDE_WORDS)
+    return _amount_block(qid, instructions, card)
+
+
 def _number(value: Any) -> float | None:
     """A returned number. Booleans, blanks, and non-finite values stay empty."""
 
@@ -306,23 +578,11 @@ def _choice_question(qid: str, instructions: str, criteria: Mapping[str, str]) -
     return {qid: block}
 
 
-def _score_question(qid: str, instructions: str, criteria: list[str]) -> dict[str, Any]:
-    block: dict[str, Any] = {}
-    try:
-        from .jev_questions import parameter_question
 
-        built = parameter_question(qid, instructions)
-        raw = built.get(qid) if isinstance(built, dict) else None
-        if isinstance(raw, dict):
-            block = dict(raw)
-    except Exception:
-        block = {}
-    for key in _STRIP:
-        block.pop(key, None)
-    block["type"] = "score"
-    block["instructions"] = instructions
-    block["criteria"] = [str(item) for item in criteria]
-    return {qid: block}
+def _score_question(qid, instructions, card=None, *_rest):
+    """Amount on this card, or an include-depth ordinal. A bare Score does not post."""
+
+    return _score_amount_or_ordinal(qid, instructions, card)
 
 
 def _noul_question(qid: str, instructions: str, true_text: str, false_text: str) -> dict[str, Any]:
@@ -395,74 +655,78 @@ def sleeve_select_decision_questions(state: Mapping[str, Any] | None = None) -> 
 
     cleaned = _scrub(dict(state or {}))
     st = cleaned if isinstance(cleaned, dict) else {}
-    owner_text, owner_criteria = _owner_spec(st)
-    scale = _levels(st) or list(_BETWEEN)
-    pack: dict[str, Any] = {}
-    _accept(pack, _noul_question(
-        _NOUL_Q,
-        (
-            "Is this state complete enough to name which sleeve owns the fire? "
-            "An empty answer leaves completeness unset. "
-            "Do not send."
-        ),
-        "The named siblings are present enough for this hop.",
-        "A required sibling or symbol block is missing.",
-    ))
-    _accept(pack, sleeve_select_include_depth_questions())
-    _accept(pack, _choice_question(_OWNER_Q, owner_text, owner_criteria))
-    _accept(pack, _score_question(
-        _THRESHOLD_Q,
-        (
-            "The score you return is the threshold for this state. "
-            "It may sit between the levels. "
-            "An empty score leaves the threshold unset. "
-            "Do not send."
-        ),
-        scale,
-    ))
-    _accept(pack, _score_question(
-        _PARAMETER_Q,
-        (
-            "The score you return is the parameter for this state. "
-            "It may sit between the levels. "
-            "An empty score leaves the parameter unset. "
-            "Do not send."
-        ),
-        scale,
-    ))
-    _accept(pack, _score_question(
-        _LOOP_Q,
-        (
-            "The score you return is the loop bound for this state. "
-            "It may sit between the levels. "
-            "An empty score leaves the bound unset. "
-            "Do not send."
-        ),
-        scale,
-    ))
-    names = _component_names(st)
-    if names:
-        _accept(pack, _choice_question(
-            _WHICH_Q,
+    _bind_card(st)
+    try:
+        owner_text, owner_criteria = _owner_spec(st)
+        scale = _levels(st) or list(_BETWEEN)
+        pack: dict[str, Any] = {}
+        _accept(pack, _noul_question(
+            _NOUL_Q,
             (
-                "Which named component exists for this state? "
-                "The unique highest probability is the decision. "
-                "An empty answer or a tie is not a decision. "
+                "Is this state complete enough to name which sleeve owns the fire? "
+                "An empty answer leaves completeness unset. "
                 "Do not send."
             ),
-            {name: f"{name} exists on this state." for name in names},
+            "The named siblings are present enough for this hop.",
+            "A required sibling or symbol block is missing.",
         ))
-    _accept(pack, _noul_question(
-        _EXISTS_Q,
-        (
-            "Does the component exist for this state? "
-            "An empty answer leaves existence unset. "
-            "Do not send."
-        ),
-        "The component exists on this state.",
-        "The component does not exist on this state.",
-    ))
-    return pack
+        _accept(pack, sleeve_select_include_depth_questions())
+        _accept(pack, _choice_question(_OWNER_Q, owner_text, owner_criteria))
+        _accept(pack, _score_question(
+            _THRESHOLD_Q,
+            (
+                "The score you return is the threshold for this state. "
+                "It may sit between the levels. "
+                "An empty score leaves the threshold unset. "
+                "Do not send."
+            ),
+            scale,
+        ))
+        _accept(pack, _score_question(
+            _PARAMETER_Q,
+            (
+                "The score you return is the parameter for this state. "
+                "It may sit between the levels. "
+                "An empty score leaves the parameter unset. "
+                "Do not send."
+            ),
+            scale,
+        ))
+        _accept(pack, _score_question(
+            _LOOP_Q,
+            (
+                "The score you return is the loop bound for this state. "
+                "It may sit between the levels. "
+                "An empty score leaves the bound unset. "
+                "Do not send."
+            ),
+            scale,
+        ))
+        names = _component_names(st)
+        if names:
+            _accept(pack, _choice_question(
+                _WHICH_Q,
+                (
+                    "Which named component exists for this state? "
+                    "The unique highest probability is the decision. "
+                    "An empty answer or a tie is not a decision. "
+                    "Do not send."
+                ),
+                {name: f"{name} exists on this state." for name in names},
+            ))
+        _accept(pack, _noul_question(
+            _EXISTS_Q,
+            (
+                "Does the component exist for this state? "
+                "An empty answer leaves existence unset. "
+                "Do not send."
+            ),
+            "The component exists on this state.",
+            "The component does not exist on this state.",
+        ))
+        return pack
+    finally:
+        _bind_card(None)
 
 
 def _criteria_order(questions: Mapping[str, Any], qid: str) -> tuple[str, ...]:
@@ -491,7 +755,7 @@ def _unique(probabilities: Mapping[str, Any] | None, order: tuple[str, ...]) -> 
     if not numeric:
         return None
     best = max(numeric.values())
-    winners = [name for name in order if name in numeric and abs(numeric[name] - best) <= 1e-12]
+    winners = [name for name in order if name in numeric and numeric[name] == best]
     if len(winners) != 1:
         return None
     return winners[0]
@@ -563,7 +827,7 @@ def _tied(probabilities: Mapping[str, Any] | None, order: tuple[str, ...]) -> bo
     if len(numeric) < 2:
         return False
     best = max(numeric.values())
-    winners = [name for name in order if name in numeric and abs(numeric[name] - best) <= 1e-12]
+    winners = [name for name in order if name in numeric and numeric[name] == best]
     return len(winners) != 1
 
 

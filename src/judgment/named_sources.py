@@ -150,7 +150,7 @@ def inspect_dxy_csv(path: Path | None = None) -> dict[str, Any]:
             "n_rows": 0,
             "first": None,
             "last": None,
-            "ice_band": [ICE_DXY_LOW, ICE_DXY_HIGH],
+            "ice_band": None if _on_challenge() else [ICE_DXY_LOW, ICE_DXY_HIGH],
             "challenge_true": False,
         }
     closes: list[float] = []
@@ -171,10 +171,7 @@ def inspect_dxy_csv(path: Path | None = None) -> dict[str, Any]:
                 first = stamp
             last = stamp
     last_close = closes[-1] if closes else None
-    usable = bool(
-        last_close is not None and ICE_DXY_LOW <= last_close <= ICE_DXY_HIGH
-    )
-    reason = None if usable else DXY_REJECTED_REASON
+    usable, reason, ice_band, note = _dxy_usability(last_close, len(closes))
     return {
         "file_present": True,
         "path": _rel(dest),
@@ -186,14 +183,92 @@ def inspect_dxy_csv(path: Path | None = None) -> dict[str, Any]:
         "n_rows": len(closes),
         "first": first,
         "last": last,
-        "ice_band": [ICE_DXY_LOW, ICE_DXY_HIGH],
+        "ice_band": ice_band,
         "challenge_true": False,
-        "note": (
-            None
-            if usable
-            else "Prints outside ICE DXY band. Do not rescale. Do not treat as USD impulse."
-        ),
+        "note": note,
     }
+
+
+def _on_challenge() -> bool:
+    try:
+        from src.judgment.state_choices import on_challenge
+
+        return bool(on_challenge())
+    except Exception:
+        return False
+
+
+def _dxy_usability(
+    last_close: float | None, n_rows: int
+) -> tuple[bool, str | None, list[float] | None, str | None]:
+    """Usable ICE DXY, reason, band on the card, note.
+
+    Off the Challenge writer the close must sit in the named band. On it,
+    only the answer ``usable`` accepts the file. Empty, tie, and error
+    reject it and do not apply the band. The band is not put on the card.
+    """
+    if last_close is None:
+        band = None if _on_challenge() else [ICE_DXY_LOW, ICE_DXY_HIGH]
+        return False, DXY_REJECTED_REASON, band, (
+            "No close on the file. Do not treat as USD impulse."
+        )
+    if not _on_challenge():
+        usable = ICE_DXY_LOW <= last_close <= ICE_DXY_HIGH
+        if usable:
+            return True, None, [ICE_DXY_LOW, ICE_DXY_HIGH], None
+        return False, DXY_REJECTED_REASON, [ICE_DXY_LOW, ICE_DXY_HIGH], (
+            "Prints outside ICE DXY band. Do not rescale. Do not treat as USD impulse."
+        )
+    try:
+        from src.judgment.state_choices import side
+
+        chosen = side(
+            "named_sources.dxy_usable",
+            {"last_close": float(last_close), "n_rows": int(n_rows)},
+            "usable",
+            "reject",
+            "Is this close a usable ICE dollar index print?",
+        )
+    except Exception:
+        chosen = None
+    if chosen == "usable":
+        return True, None, None, None
+    if chosen == "reject":
+        return False, DXY_REJECTED_REASON, None, (
+            "Not a usable ICE DXY print. Do not rescale. Do not treat as USD impulse."
+        )
+    return False, "dxy_usability_unset", None, (
+        "Usability unset. Do not treat the file as ICE DXY. Do not rescale."
+    )
+
+
+def _rows_thin(n_rows: int) -> bool | None:
+    """True adds the thin-series repair. False does not. None does not.
+
+    Off the Challenge writer a short file is thin. On it, only ``thin``
+    adds the repair. ``enough``, empty, tie, and error do not restore
+    the row count.
+    """
+    n = int(n_rows or 0)
+    if not _on_challenge():
+        return n < 20
+    try:
+        from src.judgment.state_choices import side
+
+        chosen = side(
+            "named_sources.sierra_zn_rows",
+            {"n_rows": n},
+            "thin",
+            "enough",
+            "Is this control series too thin to treat as a rates print?",
+        )
+    except Exception:
+        chosen = None
+    if chosen == "thin":
+        return True
+    if chosen == "enough":
+        return False
+    return None
 
 
 def _tf_row(directory: Path, symbol: str, tf: str) -> dict[str, Any]:
@@ -337,15 +412,22 @@ def _repair_items(
             }
         )
     if dxy.get("file_present") and not dxy.get("usable_as_ice_dxy"):
+        if dxy.get("ice_band") is None:
+            repair = (
+                "Replace data/DXY_D1.csv with a named ICE DXY series, "
+                "or delete the mislabeled print. Do not invent a rescale."
+            )
+        else:
+            repair = (
+                "Replace data/DXY_D1.csv with a named ICE DXY series in the "
+                f"{ICE_DXY_LOW}-{ICE_DXY_HIGH} band, or delete the ~25 print. "
+                "Do not invent a ×4 rescale."
+            )
         items.append(
             {
                 "id": "replace_mislabeled_dxy",
                 "blocked": dxy.get("path") or "data/DXY_D1.csv",
-                "repair": (
-                    "Replace data/DXY_D1.csv with a named ICE DXY series in the "
-                    f"{ICE_DXY_LOW}-{ICE_DXY_HIGH} band, or delete the ~25 print. "
-                    "Do not invent a ×4 rescale."
-                ),
+                "repair": repair,
             }
         )
     elif not dxy.get("file_present"):
@@ -367,7 +449,7 @@ def _repair_items(
                 ),
             }
         )
-    if sierra_zn.get("present") and int(sierra_zn.get("n_rows") or 0) < 20:
+    if sierra_zn.get("present") and _rows_thin(int(sierra_zn.get("n_rows") or 0)):
         items.append(
             {
                 "id": "extend_sierra_zn_or_leave_control",

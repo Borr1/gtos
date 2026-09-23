@@ -91,9 +91,9 @@ def crypto_side(
         f"{instructions} The condition measured {fact}. "
         f"Do not close ticket {DO_NOT_CLOSE}."
     )
-    hour = datetime.now(timezone.utc).strftime("%Y%m%d%H")
-    digest = hashlib.sha256(sent.encode("utf-8")).hexdigest()[:16]
-    cache_key = f"{spot}|{digest}|{fact}|{hour}"
+    fact_text = json.dumps(facts or {}, sort_keys=True, default=str)
+    digest = hashlib.sha256(f"{sent}|{fact_text}".encode("utf-8")).hexdigest()
+    cache_key = f"{spot}|{digest}|{fact}"
     cached = _CACHE.get(cache_key)
     if cached is not None:
         crypto_side.last = cached
@@ -134,7 +134,6 @@ def _post(
         "measured": bool(measured),
         "login": LOGIN,
         "ns": NS,
-        "persist": 0.0,
         "at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     try:
@@ -173,7 +172,6 @@ def _post(
             "namespace": NS,
             "login": LOGIN,
             "measured": bool(measured),
-            "persist": 0.0,
             "do_not_close": DO_NOT_CLOSE,
             "facts": safe_facts,
         },
@@ -196,8 +194,21 @@ def _post(
             "User-Agent": "gtos-crypto-choice/1",
         },
     )
+    wait = None
+    for key_name in ("seconds_from_clock", "seconds_until_cycle", "cycle_wait"):
+        raw_wait = safe_facts.get(key_name)
+        try:
+            number = float(raw_wait)
+        except (TypeError, ValueError):
+            continue
+        if number == number and number > 0 and number not in (float("inf"), float("-inf")):
+            wait = number if wait is None else min(wait, number)
     try:
-        with urllib.request.urlopen(req, timeout=8.0) as resp:
+        if wait is not None:
+            handle = urllib.request.urlopen(req, timeout=wait)
+        else:
+            handle = urllib.request.urlopen(req)
+        with handle as resp:
             body = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         row["error"] = f"http_{exc.code}"
@@ -217,22 +228,28 @@ def _post(
         _remember(spot, row)
         return row
     best = None
-    best_p = -1.0
+    best_p = None
     tied = False
+    seen = False
     numeric: dict[str, float] = {}
     for name in order:
+        if name not in probs or probs.get(name) is None:
+            continue
         try:
-            p = float(probs.get(name, 0.0) or 0.0)
+            p = float(probs.get(name))
         except (TypeError, ValueError):
-            p = 0.0
+            continue
+        if p != p:
+            continue
         numeric[name] = p
-        if best is None or p > best_p + 1e-12:
+        seen = True
+        if best_p is None or p > best_p + 1e-12:
             best = name
             best_p = p
             tied = False
         elif abs(p - best_p) <= 1e-12:
             tied = True
-    alternative = None if tied or best is None else best
+    alternative = None if (not seen) or tied or best is None else best
     side = None
     if alternative == true_name:
         side = "true"

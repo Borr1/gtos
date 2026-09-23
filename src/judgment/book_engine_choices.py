@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -343,6 +344,15 @@ _CHOICE_TAIL: dict[tuple[str, str, str], str] = {}
 _CHOICE_OFFSET = 0
 _CHOICE_PATH: str | None = None
 _STATE_MEMO: dict[str, str] = {}
+_INFLIGHT: dict[str, "_Gate"] = {}
+_LOCK = threading.Lock()
+_OWNER = threading.local()
+
+
+class _Gate:
+    def __init__(self) -> None:
+        self.event = threading.Event()
+        self.value: str | None = None
 
 
 def _state_key(question: str, facts: Mapping[str, Any] | None) -> str:
@@ -569,88 +579,131 @@ def record_path() -> Path:
 
 
 def _append(row: Mapping[str, Any]) -> None:
+    """One complete line. The memo lock keeps concurrent slots from tearing it."""
     try:
         path = record_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(dict(row), sort_keys=True, default=str) + "\n")
+        line = json.dumps(dict(row), sort_keys=True, default=str) + "\n"
     except OSError:
         return
+    with _LOCK:
+        try:
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write(line)
+        except OSError:
+            return
 
 
 def spot(question: str, *, spot: str, facts: Mapping[str, Any] | None = None) -> str | None:
     """Return the unique highest alternative, or None when there is no decision.
 
     None does not restore a config boolean and does not name an unanswered hop.
-    A previous answer is not reused. A miss does not delay the next ask.
+    The same question and the same facts share one flight. A stored choice is
+    a decision that already came back. An empty answer is not stored and is
+    not replayed. A line already in the record is not that choice.
     """
 
     spec = QUESTIONS.get(question)
     if spec is None:
         return None
     options = tuple(spec["criteria"])
-    remembered = _STATE_MEMO.get(_state_key(question, facts))
-    if remembered in options:
-        return remembered
-    instructions = spec["instructions"]
-    if question == "unit":
-        instructions = unit_question_text(facts)
-    elif question == "last_bar":
-        instructions = last_bar_question_text(facts)
-    row: dict[str, Any] = {
-        "schema": SCHEMA,
-        "logged_at_utc": _now(),
-        "login": CHALLENGE_LOGIN,
-        "ns": CHALLENGE_NS,
-        "question": question,
-        "question_id": spec["id"],
-        "spot": str(spot),
-        "choice": None,
-        "decision_emitted": False,
-        "order_send": False,
-        "model": MODEL,
-        "error": None,
-    }
-    if question in {"unit", "last_bar"}:
-        row["question_text"] = instructions
-        row["facts"] = dict(facts or {})
-    winner: str | None = None
-    try:
-        from src.judgment.jev_client import calls_enabled
-        from src.judgment.rung_choice import ask_choice
-
-        if not calls_enabled():
-            row["error"] = "call_not_made"
+    key = _state_key(question, facts)
+    with _LOCK:
+        remembered = _STATE_MEMO.get(key)
+        if remembered in options:
+            return remembered
+        gate = _INFLIGHT.get(key)
+        if gate is None:
+            gate = _Gate()
+            _INFLIGHT[key] = gate
+            owner = True
         else:
-            hop = ask_choice(
-                {
-                    "login": CHALLENGE_LOGIN,
-                    "ns": CHALLENGE_NS,
-                    "question": question,
-                    "spot": str(spot),
-                    "facts": dict(facts or {}),
-                },
-                question_id=spec["id"],
-                instructions=instructions,
-                criteria=spec["criteria"],
-            ) or {}
-            weight = _returned_persist(hop)
-            if weight is not None:
-                row["persist"] = weight
-            choice = hop.get("choice")
-            if hop.get("decision_emitted") and choice in options:
-                winner = str(choice)
-                row["choice"] = winner
-                row["probability"] = hop.get("probability")
-                row["probabilities"] = hop.get("probabilities") or {}
-                row["decision_emitted"] = True
-                row["model"] = hop.get("model") or MODEL
-                _STATE_MEMO[_state_key(question, facts)] = winner
+            owner = False
+    if not owner:
+        owned = getattr(_OWNER, "keys", None)
+        if owned is not None and key in owned:
+            return None
+        gate.event.wait()
+        return gate.value
+    winner: str | None = None
+    cache_it = False
+    row: dict[str, Any] | None = None
+    owned = getattr(_OWNER, "keys", None)
+    if owned is None:
+        owned = set()
+        _OWNER.keys = owned
+    owned.add(key)
+    try:
+        instructions = spec["instructions"]
+        if question == "unit":
+            instructions = unit_question_text(facts)
+        elif question == "last_bar":
+            instructions = last_bar_question_text(facts)
+        row = {
+            "schema": SCHEMA,
+            "logged_at_utc": _now(),
+            "login": CHALLENGE_LOGIN,
+            "ns": CHALLENGE_NS,
+            "question": question,
+            "question_id": spec["id"],
+            "spot": str(spot),
+            "choice": None,
+            "decision_emitted": False,
+            "order_send": False,
+            "model": MODEL,
+            "error": None,
+        }
+        if question in {"unit", "last_bar"}:
+            row["question_text"] = instructions
+            row["facts"] = dict(facts or {})
+        try:
+            from src.judgment.jev_client import calls_enabled
+            from src.judgment.rung_choice import ask_choice
+
+            if not calls_enabled():
+                row["error"] = "call_not_made"
             else:
-                row["error"] = hop.get("error") or "no_unique_highest"
-                row["probabilities"] = hop.get("probabilities") or {}
-    except Exception as exc:  # noqa: BLE001 — generation must not raise
-        row["error"] = type(exc).__name__
-        winner = None
-    _append(row)
+                hop = ask_choice(
+                    {
+                        "login": CHALLENGE_LOGIN,
+                        "ns": CHALLENGE_NS,
+                        "question": question,
+                        "spot": str(spot),
+                        "facts": dict(facts or {}),
+                    },
+                    question_id=spec["id"],
+                    instructions=instructions,
+                    criteria=spec["criteria"],
+                ) or {}
+                weight = _returned_persist(hop)
+                if weight is not None:
+                    row["persist"] = weight
+                choice = hop.get("choice")
+                if hop.get("decision_emitted") and choice in options:
+                    winner = str(choice)
+                    cache_it = True
+                    row["choice"] = winner
+                    row["probability"] = hop.get("probability")
+                    row["probabilities"] = hop.get("probabilities") or {}
+                    row["decision_emitted"] = True
+                    row["model"] = hop.get("model") or MODEL
+                else:
+                    row["error"] = hop.get("error") or "no_unique_highest"
+                    row["probabilities"] = hop.get("probabilities") or {}
+        except Exception as exc:  # noqa: BLE001 — generation must not raise
+            row["error"] = type(exc).__name__
+            winner = None
+            cache_it = False
+    finally:
+        owned.discard(key)
+        if cache_it and winner in options:
+            with _LOCK:
+                _STATE_MEMO[key] = winner
+        gate.value = winner
+        gate.event.set()
+        with _LOCK:
+            if _INFLIGHT.get(key) is gate:
+                _INFLIGHT.pop(key, None)
+    if row is not None:
+        _append(row)
     return winner

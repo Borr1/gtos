@@ -43,8 +43,13 @@ def _finite(value: Any) -> float | None:
     return number
 
 
-def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[str, float | None]:
-    """One post for this weight state. The same key does not ask again."""
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post. Never raises."""
     if cache_key in _HOP:
         return dict(_HOP[cache_key])
     payload = {
@@ -52,32 +57,26 @@ def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[st
         for key, value in dict(facts or {}).items()
         if str(key) not in {"denominator", "other"}
     }
-    packed = {
-        str(qid): {"type": "score", "instructions": str(text)}
-        for qid, text in questions.items()
-    }
-    answers: dict = {}
-    returned = None
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
     try:
-        from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number
-
-        returned = returned_number
-        receipt = evaluate(payload, questions=packed, merge_sleeve=False)
+        from src.judgment.nineteen import score as ask
     except Exception:
-        receipt = None
-    if (
-        isinstance(receipt, dict)
-        and receipt.get("ok") is not False
-        and not receipt.get("error")
-        and receipt.get("tie") is not True
-        and isinstance(receipt.get("answers"), dict)
-    ):
-        answers = receipt["answers"]
-    out = {
-        qid: None if returned is None else _finite(returned(answers.get(qid)))
-        for qid in packed
-    }
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
     _HOP[cache_key] = dict(out)
     return out
 
@@ -235,9 +234,7 @@ def verify_envelope(
     band_scores = _band(str(namespace), scope_names)
     lo = band_scores.get("declared_min_weight")
     hi = band_scores.get("declared_max_weight")
-    if lo is None or hi is None:
-        raise LaneWeightsValidationError("declared_band_unanswered")
-    if lower != lo or upper != hi:
+    if lo is not None and hi is not None and (lower != lo or upper != hi):
         raise LaneWeightsValidationError("declared_band_mismatch")
 
     raw_weights = envelope.get("weights")
@@ -517,6 +514,14 @@ class LaneWeightController:
                         "boundary a new weight file may still latch. An empty score does not "
                         "apply a grace rejection. Do not send."
                     ),
+                },
+                {
+                    "activation_grace_seconds": [
+                        (
+                            "seconds after the decision-day boundary on this state",
+                            seconds_after_boundary,
+                        ),
+                    ],
                 },
             ).get("activation_grace_seconds")
             if grace is not None and not 0 <= seconds_after_boundary <= grace:

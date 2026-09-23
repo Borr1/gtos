@@ -305,7 +305,7 @@ def joint_room_ok(gs: Any, limits: Any, new_open_risk_pct: float) -> bool:
                 else gs.get("open_risk_pct")) or 0.0
     hard = FTMO_DAILY
     worst = max(0.0, -realized) + max(0.0, open_r) + max(0.0, new_open_risk_pct)
-    return worst <= (hard - JOINT_BUFFER) + 1e-12
+    return worst <= (hard - JOINT_BUFFER)
 
 
 def maybe_score_governor(gov: Any, gs: Any, limits: Any, intents: Sequence[Any] = (), **ctx: Any) -> Any:

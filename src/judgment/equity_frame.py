@@ -5,11 +5,13 @@ read is a fact (`terminal_read=missing`). Chair day-start files stay facts
 when they exist. This module does not invent one when the terminal has none.
 
 Each decision on the card, and each parameter, is the System One return for
-that state. One call: ``jev_client.evaluate`` with model ``jev-1.13.0`` and
-``merge_sleeve=False`` (POST https://api.typesafe.ai/v1/systemone). Questions
-are only Noul, Choice, or Score. Prior outcomes ride on that ask. An empty
-answer, a tie, or an error leaves that field unset. Floor and baseline are
-not questions. This module does not send.
+that account snapshot. The card questions share the decision post when this
+snapshot has no frame yet. ``attach_account`` copies a frame and does not
+post. ``assemble_account_card`` posts once when a caller builds the card.
+A later question in the cycle copies that return. The post runs again only
+when the account facts change. Questions are only Noul, Choice, or Score.
+Prior outcomes ride on that ask. An empty answer, a tie, or an error leaves
+that field unset. Floor and baseline are not questions. This module does not send.
 """
 
 from __future__ import annotations
@@ -85,6 +87,34 @@ _SCORES: dict[str, str] = {
     ),
 }
 _LIMIT_WORDS = ("floor", "baseline")
+_DECISION_IDS = (
+    "score_is",
+    "never_enlarge_because_to_pass",
+    "friends_copy_lots",
+    "never_book_owner",
+    "day_start_max",
+    "day_net",
+    "open_pnl",
+    "cash_unit_usd",
+)
+_SNAPSHOT_FACTS = (
+    "login",
+    "ns",
+    "equity",
+    "balance",
+    "open_pnl",
+    "to_pass",
+    "floor_room",
+    "day_start_balance",
+    "day_start_equity",
+    "day_start_reset_utc",
+    "terminal_read",
+    "source",
+)
+# One return per account snapshot. Callers in the same cycle share it.
+_FRAME: dict[str, dict[str, Any]] = {}
+_FLIGHT: dict[str, threading.Event] = {}
+_FRAME_LOCK = threading.Lock()
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 _CHAIR_BASELINE = (
@@ -368,24 +398,21 @@ def _choice_question(qid: str, instructions: str, criteria: Mapping[str, str]) -
     return body
 
 
-def _score_question(qid: str, instructions: str) -> dict[str, Any]:
-    body: dict[str, Any] = {"type": "score", "instructions": instructions}
-    try:
-        from .jev_questions import parameter_question
+def _score_question(qid: str, instructions: str, anchors: Any = None) -> dict[str, Any]:
+    """Amount Score for this card. Fewer than two money facts does not post."""
 
-        built = parameter_question(qid, instructions)
-        row = built.get(qid) if isinstance(built, dict) else None
-        if isinstance(row, dict):
-            body = dict(row)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(qid, instructions, anchors)
     except Exception:
-        pass
-    body["type"] = "score"
-    body["instructions"] = instructions
-    criteria = body.get("criteria")
-    if isinstance(criteria, list):
-        kept = [item for item in criteria if not _mentions_limit(item)]
-        body["criteria"] = kept or ["none", "trace", "small", "modest", "notable", "heavy"]
-    return body
+        return {}
+    row = built.get(qid) if isinstance(built, dict) else None
+    if isinstance(row, dict):
+        criteria = row.get("criteria")
+        if isinstance(criteria, list) and len(criteria) >= 2:
+            return dict(row)
+    return {}
 
 
 def _noul_question(instructions: str) -> dict[str, Any]:
@@ -399,8 +426,8 @@ def _noul_question(instructions: str) -> dict[str, Any]:
     }
 
 
-def equity_questions() -> dict[str, dict[str, Any]]:
-    """One card. The menu names what an answer may return. It does not decide."""
+def equity_questions(card: Mapping[str, Any] | None = None) -> dict[str, dict[str, Any]]:
+    """One card. Amount Scores use this card's own money. The menu does not decide."""
 
     pack: dict[str, dict[str, Any]] = {
         "score_is": _choice_question(
@@ -416,8 +443,16 @@ def equity_questions() -> dict[str, dict[str, Any]]:
     }
     for qid, instructions in _NOULS.items():
         pack[qid] = _noul_question(instructions)
+    try:
+        from .jev_questions import usd_anchors
+
+        anchors = usd_anchors(card)
+    except Exception:
+        anchors = []
     for qid, instructions in _SCORES.items():
-        pack[qid] = _score_question(qid, instructions)
+        block = _score_question(qid, instructions, anchors)
+        if isinstance(block.get("criteria"), list) and len(block.get("criteria") or []) >= 2:
+            pack[qid] = block
     return {
         qid: body
         for qid, body in pack.items()
@@ -440,7 +475,7 @@ def _probabilities(block: Any) -> dict[str, float]:
 
 def _local_unique(probabilities: Mapping[str, float], order: tuple[str, ...]) -> str | None:
     best: str | None = None
-    best_p = -1.0
+    best_p: float | None = None
     tied = False
     seen = False
     for name in order:
@@ -448,11 +483,11 @@ def _local_unique(probabilities: Mapping[str, float], order: tuple[str, ...]) ->
             continue
         seen = True
         p = probabilities[name]
-        if best is None or p > best_p + 1e-12:
+        if best_p is None or p > best_p:
             best = name
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     if not seen or tied or best is None:
         return None
@@ -553,42 +588,72 @@ def _pairs(values: Mapping[str, Any]) -> tuple[tuple[str, Any], ...]:
     return tuple((key, values.get(key)) for key in keys)
 
 
-def _decide(row: dict[str, Any], ask: Callable[..., Any] | None = None) -> dict[str, Any]:
-    """One System One ask. A miss leaves the decision fields unset."""
-
-    if getattr(_ASK, "on", False):
-        return row
-    _ASK.on = True
+def _snapshot_facts() -> tuple[str, ...]:
     try:
-        questions = equity_questions()
-        posted: dict[str, Any] = {
-            "schema": SCHEMA,
-            "model": MODEL,
-            "login": CHALLENGE_LOGIN,
-            "ns": CHALLENGE_NS,
-            "account": dict(row),
-        }
-        posted["prior_outcomes"] = _priors(posted, questions)
-        call = ask
-        if call is None:
-            from .jev_client import evaluate
+        from .jev_client import _ACCOUNT_FACTS
+    except Exception:
+        return _SNAPSHOT_FACTS
+    if isinstance(_ACCOUNT_FACTS, tuple) and _ACCOUNT_FACTS:
+        return tuple(str(name) for name in _ACCOUNT_FACTS)
+    return _SNAPSHOT_FACTS
 
-            call = evaluate
-        receipt = call(
-            posted,
-            questions=questions,
-            merge_sleeve=False,
-            model=MODEL,
-        )
-    except Exception as exc:  # noqa: BLE001 — a dark ask must not raise into the card
-        _remember(row, _pairs({}), type(exc).__name__)
-        return row
-    finally:
-        _ASK.on = False
+
+def _snapshot_key(row: Mapping[str, Any]) -> str:
+    facts = {name: row.get(name) for name in _snapshot_facts()}
+    return json.dumps(facts, sort_keys=True, default=str)
+
+
+def _blank_values() -> dict[str, Any]:
+    return {key: None for key in _DECISION_IDS}
+
+
+def _copy_frame(row: dict[str, Any], saved: Mapping[str, Any]) -> dict[str, Any]:
+    """Stamp the shared return. A terminal open profit stays the terminal fact."""
+
+    for key in _DECISION_IDS:
+        if key == "open_pnl":
+            if row.get("open_pnl") is None:
+                row["open_pnl"] = saved.get("open_pnl")
+            continue
+        row[key] = saved.get(key)
+    return row
+
+
+def _memo_receipt(row: Mapping[str, Any]) -> dict[str, Any] | None:
+    try:
+        from .jev_client import _ACCOUNT_LOCK, _ACCOUNT_MEMO, _account_key
+    except Exception:
+        return None
+    key = _account_key(row)
+    with _ACCOUNT_LOCK:
+        hit = _ACCOUNT_MEMO.get(key)
+    if not isinstance(hit, dict):
+        return None
+    answers = hit.get("answers")
+    if not isinstance(answers, dict) or not answers:
+        return None
+    return dict(hit)
+
+
+def _values_of(answers: Mapping[str, Any]) -> dict[str, Any]:
+    values = _blank_values()
+    values["score_is"] = _choice(answers.get("score_is"), _SCORE_IS_ORDER)
+    values["day_start_max"] = _score(answers.get("day_start_max"))
+    values["day_net"] = _score(answers.get("day_net"))
+    values["open_pnl"] = _score(answers.get("open_pnl"))
+    values["cash_unit_usd"] = _score(answers.get("cash_unit_usd"))
+    for qid in _NOULS:
+        values[qid] = _noul(answers.get(qid))
+    return values
+
+
+def _read_receipt(row: dict[str, Any], receipt: Any) -> dict[str, Any]:
+    """Apply one receipt. Empty, tie, and error stay unset."""
 
     if not isinstance(receipt, dict):
         _remember(row, _pairs({}), "evaluate_not_a_dict")
-        return row
+        _copy_frame(row, _blank_values())
+        return _blank_values()
     answers = receipt.get("answers")
     if not isinstance(answers, dict):
         answers = {}
@@ -597,27 +662,145 @@ def _decide(row: dict[str, Any], ask: Callable[..., Any] | None = None) -> dict[
         error = "empty"
     if not answers:
         _remember(row, _pairs({}), error)
-        return row
-
-    returned_open = _score(answers.get("open_pnl"))
-    values: dict[str, Any] = {
-        "score_is": _choice(answers.get("score_is"), _SCORE_IS_ORDER),
-        "day_start_max": _score(answers.get("day_start_max")),
-        "day_net": _score(answers.get("day_net")),
-        "open_pnl": returned_open,
-        "cash_unit_usd": _score(answers.get("cash_unit_usd")),
-    }
-    for qid in _NOULS:
-        values[qid] = _noul(answers.get(qid))
-    row["score_is"] = values["score_is"]
-    row["day_start_max"] = values["day_start_max"]
-    row["day_net"] = values["day_net"]
-    row["cash_unit_usd"] = values["cash_unit_usd"]
-    for qid in _NOULS:
-        row[qid] = values[qid]
-    if row.get("open_pnl") is None:
-        row["open_pnl"] = returned_open
+        _copy_frame(row, _blank_values())
+        return _blank_values()
+    values = _values_of(answers)
+    _copy_frame(row, values)
     _remember(row, _pairs(values), None if error in (None, "") else error)
+    return values
+
+
+def frame_ready(account: Mapping[str, Any] | None) -> bool:
+    """True when this snapshot already has a frame. It does not post."""
+
+    if not isinstance(account, Mapping):
+        return False
+    key = _snapshot_key(account)
+    with _FRAME_LOCK:
+        if key in _FRAME:
+            return True
+    return _memo_receipt(account) is not None
+
+
+def note_receipt(account: dict[str, Any], receipt: Mapping[str, Any]) -> None:
+    """Store account answers that arrived on a decision post. It does not post.
+
+    An empty score on that post is the answer for this snapshot. A transport
+    error does not reach here, so a miss is asked again with the next decision.
+    """
+
+    if not isinstance(account, dict) or not isinstance(receipt, Mapping):
+        return
+    if not receipt.get("ok"):
+        return
+    answers = receipt.get("answers")
+    if not isinstance(answers, dict):
+        return
+    if not any(qid in answers for qid in _DECISION_IDS):
+        return
+    values = _read_receipt(account, receipt)
+    key = _snapshot_key(account)
+    with _FRAME_LOCK:
+        _FRAME[key] = dict(values)
+    try:
+        from .jev_client import _ACCOUNT_LOCK, _ACCOUNT_MEMO, _account_key
+
+        akey = _account_key(account)
+        kept = {qid: answers.get(qid) for qid in _DECISION_IDS if qid in answers}
+        with _ACCOUNT_LOCK:
+            _ACCOUNT_MEMO[akey] = {"ok": True, "answers": kept}
+    except Exception:
+        return
+
+
+def _cached(row: Mapping[str, Any], key: str) -> dict[str, Any] | None:
+    with _FRAME_LOCK:
+        saved = _FRAME.get(key)
+    if saved is not None:
+        return dict(saved)
+    receipt = _memo_receipt(row)
+    if receipt is None:
+        return None
+    values = _values_of(receipt.get("answers") or {})
+    with _FRAME_LOCK:
+        _FRAME.setdefault(key, dict(values))
+        return dict(_FRAME[key])
+
+
+def _post_frame(row: Mapping[str, Any], ask: Callable[..., Any] | None) -> Any:
+    questions = equity_questions(row)
+    posted: dict[str, Any] = {
+        "schema": SCHEMA,
+        "model": MODEL,
+        "login": CHALLENGE_LOGIN,
+        "ns": CHALLENGE_NS,
+        "account": dict(row),
+    }
+    posted["prior_outcomes"] = _priors(posted, questions)
+    call = ask
+    if call is None:
+        from .jev_client import evaluate
+
+        call = evaluate
+    return call(
+        posted,
+        questions=questions,
+        merge_sleeve=False,
+        model=MODEL,
+    )
+
+
+def _decide(row: dict[str, Any], ask: Callable[..., Any] | None = None) -> dict[str, Any]:
+    """One frame for this account snapshot. A later call copies it.
+
+    Inside an ask that already holds the thread, a miss stays the facts.
+    It does not start another post.
+    """
+
+    key = _snapshot_key(row)
+    saved = _cached(row, key)
+    if saved is not None:
+        return _copy_frame(row, saved)
+    if getattr(_ASK, "on", False):
+        return row
+    with _FRAME_LOCK:
+        saved = _FRAME.get(key)
+        if saved is not None:
+            event = None
+            leader = False
+        else:
+            event = _FLIGHT.get(key)
+            if event is None:
+                event = threading.Event()
+                _FLIGHT[key] = event
+                leader = True
+            else:
+                leader = False
+    if saved is not None:
+        return _copy_frame(row, saved)
+    if not leader:
+        event.wait()
+        with _FRAME_LOCK:
+            saved = _FRAME.get(key)
+        if saved is not None:
+            return _copy_frame(row, saved)
+        return row
+    values = _blank_values()
+    _ASK.on = True
+    try:
+        try:
+            receipt = _post_frame(row, ask)
+        except Exception as exc:  # noqa: BLE001 — a dark ask must not raise into the card
+            _remember(row, _pairs({}), type(exc).__name__)
+            _copy_frame(row, values)
+        else:
+            values = _read_receipt(row, receipt)
+    finally:
+        _ASK.on = False
+        with _FRAME_LOCK:
+            _FRAME[key] = dict(values)
+            _FLIGHT.pop(key, None)
+        event.set()
     return row
 
 
@@ -756,7 +939,9 @@ def attach_account(
             card = _assemble_facts(injected=existing, mt5=mt5, owner=owner)
         except Exception:
             card = _card_shell(terminal_read="missing")
-    card = _decide(card)
+    saved = _cached(card, _snapshot_key(card))
+    if saved is not None:
+        card = _copy_frame(card, saved)
     for key in MONEY_KEYS:
         card.setdefault(key, None)
     card["reason"] = None

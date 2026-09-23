@@ -411,18 +411,17 @@ def _challenge_scores(
     spot: str,
     facts: dict[str, Any],
     questions: dict[str, str],
+    anchors: dict | None = None,
 ) -> dict[str, float | None]:
-    """One Score post for this state. Empty, error, or disagreement is None.
+    """One nineteen.score per question. Fewer than two anchors does not post.
 
-    Friends never call this. The cache key is the facts, so a new quote or
-    config is a new ask. The socket wait is the stored dynamic timeout when
-    one has already been returned; otherwise the ask has no timeout.
+    Friends never call this. Empty, tie, and error stay unset. The key is not logged.
     """
 
     if not questions:
         return {}
     blob = json.dumps(
-        {"spot": spot, "facts": facts, "questions": questions},
+        {"spot": spot, "facts": facts, "questions": questions, "anchors": anchors},
         sort_keys=True,
         separators=(",", ":"),
         default=str,
@@ -432,56 +431,41 @@ def _challenge_scores(
         cached = _SCORE_CACHE.get(key)
     if cached is not None:
         return dict(cached)
-    empty = {name: None for name in questions}
+    empty = {str(name): None for name in questions}
     try:
         from src.judgment.jev_client import resolve_key
-        from src.judgment.state_choices import MODEL, API_URL
     except Exception:
         return empty
     token, _source = resolve_key()
     if not token:
         return empty
+    del token
     payload = {
-        "model": MODEL,
-        "state": {"spot": spot, "facts": facts},
-        "questions": {
-            name: {
-                "type": "score",
-                "instructions": text,
-            }
-            for name, text in questions.items()
-        },
+        str(name): value
+        for name, value in dict(facts or {}).items()
+        if str(name) not in {"denominator", "other"}
     }
-    req = urllib.request.Request(
-        API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "User-Agent": "gtos-judgment/0.1",
-        },
-    )
-    wait = None
+    payload["spot"] = spot
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = dict(empty)
+    ask = None
     try:
-        from src.judgment.jev_client import _stored_score
-
-        stored = _stored_score("jev_call_timeout")
-        if stored is not None and stored > 0:
-            wait = stored
+        from src.judgment.nineteen import score as ask
     except Exception:
-        wait = None
-    try:
-        with urllib.request.urlopen(req, timeout=wait) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
-        return empty
-    except Exception:
-        return empty
-    answers = body.get("answers") if isinstance(body, dict) else None
-    if not isinstance(answers, dict):
-        return empty
-    out = {name: _score_block(answers.get(name)) for name in questions}
+        ask = None
+    if ask is not None:
+        for name, text in questions.items():
+            try:
+                out[str(name)] = _finite_score(
+                    ask(
+                        payload,
+                        question_id=str(name),
+                        instructions=str(text),
+                        anchors=levels.get(str(name)),
+                    )
+                )
+            except Exception:
+                out[str(name)] = None
     with _SCORE_LOCK:
         _SCORE_CACHE[key] = dict(out)
     return out
@@ -1078,15 +1062,36 @@ def build_pretrade_cost_packet(
         if not _on_challenge():
             max_spread_r = 0.10
         else:
+            r_levels = []
+            spread_level = _as_float(tick_cost.get("spread_r"))
+            if spread_level is not None:
+                r_levels.append(("the spread in R on this state", spread_level))
+            commission_level = _as_float(commission_cost.get("cost_r"))
+            if commission_level is not None:
+                r_levels.append(("the commission in R on this state", commission_level))
+            swap_level = _as_float(swap_cost.get("cost_r"))
+            if swap_level is not None:
+                r_levels.append(("the swap in R on this state", swap_level))
+            slip_level = _as_float(expected_slippage_r)
+            if slip_level is not None:
+                r_levels.append(("the slippage in R on this state", slip_level))
             asked_spread = _challenge_scores(
                 "broker_net_cost.max_spread_r",
-                {"sleeve": cost_sleeve, "symbol": clean_symbol},
+                {
+                    "sleeve": cost_sleeve,
+                    "symbol": clean_symbol,
+                    "spread_r": spread_level,
+                    "commission_r": commission_level,
+                    "swap_r": swap_level,
+                    "slippage_r": slip_level,
+                },
                 {
                     "max_spread_r": (
                         "The score you return is the spread ceiling in R for this state. "
                         "An empty score leaves the ceiling unset and does not send."
                     ),
                 },
+                {"max_spread_r": r_levels},
             )
             max_spread_r = asked_spread.get("max_spread_r")
             max_spread_bound_unset = max_spread_r is None
@@ -1125,8 +1130,6 @@ def build_pretrade_cost_packet(
         cost_sleeve,
     )
     limit_tolerance_r = _as_float(runtime_cfg.get("selected_cell_pretrade_cost_limit_tolerance_r"))
-    if limit_tolerance_r is None:
-        limit_tolerance_r = 1e-6
     trade_mode = _as_float(spec["fields"].get("trade_mode"))
 
     packet = {

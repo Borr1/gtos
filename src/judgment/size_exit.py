@@ -14,9 +14,10 @@ Gold walk 2026-09-21 (JEV_EVERYWHERE size+close seats + JEV_HISTORICAL):
 
   * Size IDs: ``persistence``, ``geometry_vs_tape``, ``session_fitness``,
     ``cost_hurtful``, ``conviction_vs_tape``, ``event_proximity``.
-  * Close: ``exit_class`` must list ``time_stop`` (5/5 Challenge XAU winners).
+  * Close: ``exit_class`` lists ``time_stop``. The Choice is the noun.
 
-Leave-orig is the default until Jev names a change. The writer prints.
+An empty answer, a tie, or an error stays unset. It does not become leave-orig.
+The writer prints.
 Plumbing (``if path``, ``if err``, config parse, operator FLATTEN.flag,
 weekend-flat compliance) stays code.
 
@@ -51,7 +52,7 @@ FLATTEN = "flatten"
 ORIG_STOP = "orig_stop"
 BROKER_TP = "broker_tp"
 BREACH_FLATTEN = "breach_flatten"
-OTHER = "other"
+UNLISTED_EXIT = "unlisted_exit"
 
 _LOG = logging.getLogger("gtos.judgment.size_exit")
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -62,14 +63,11 @@ DEFAULT_PRINT = REPO_ROOT / "judgment" / "astra" / "lab" / "a1" / "size_exit_pri
 SIZE_IDS: tuple[str, ...] = SIZE_SEAT_IDS
 
 EXIT_CLASS_CRITERIA = {
-    ORIG_STOP: "Original broker stop. Challenge XAU losers (16/16) were this class.",
+    ORIG_STOP: "Original broker stop.",
     BROKER_TP: "Broker target fill.",
-    TIME_STOP: (
-        "Horizon / time-stop close. 5/5 Challenge XAU winners. First-class — "
-        "never fold this into other / manual_other."
-    ),
+    TIME_STOP: "Horizon / time-stop close. The option is this noun.",
     BREACH_FLATTEN: "Governor flatten named.",
-    OTHER: "Other / unknown. Do not prefer this for a paying time-stop.",
+    UNLISTED_EXIT: "The close noun is outside the named exits. Do not prefer this for a paying time-stop.",
 }
 
 SIZE_ACTION_CRITERIA = {
@@ -93,8 +91,7 @@ MOVE_SL_CRITERIA = {
 TIME_STOP_CRITERIA = {
     LEAVE_ORIG: "Do not time-stop. Original horizon / broker SL stays.",
     TIME_STOP: (
-        "Close now as a time stop. Writer prints the close. Challenge XAU: "
-        "this is the only paying class (5/5 winners)."
+        "Close now as a time stop. The option you return is the close."
     ),
 }
 
@@ -150,43 +147,56 @@ SIZE_QUESTION_PACK: dict[str, dict[str, Any]] = {
     **question_subtree("size"),
     **SIZE_OVERLAY,
 }
-CATALOG_SPLICE_N = 50
-
 CLOSE_QUESTION_PACK: dict[str, dict[str, Any]] = {
+    "manage_life": {
+        "type": "choice",
+        "instructions": (
+            "This open ticket, this tick. Giveback is on the state when the "
+            "peak favourable excursion and the excursion now are both known. "
+            "That giveback is the case. Move the stop, scale out, close, or "
+            "let it run. The option you return is the manage. "
+            "An empty answer or a tie does not send."
+        ),
+        "criteria": {
+            "move_sl": "Move the stop.",
+            "scale_out": "Scale out.",
+            "close": "Close this ticket.",
+            "let_it_run": "Let this ticket run. Do not send.",
+        },
+    },
     "exit_class": {
         "type": "choice",
         "instructions": (
-            "What noun is this exit? time_stop is first-class in criteria. "
-            "Challenge XAU 0: 5/5 winners = time_stop; 16/16 losers = "
-            "orig_stop. V1 labelled the paying class manual_other — do not. "
-            "On an open ticket this Choice names whether the writer may "
-            "time-stop or governor-flatten. Default leave orig until named."
+            "What noun is this exit on this open ticket? "
+            "The option you return is the noun. "
+            "An empty answer or a tie is not an exit. Do not send."
         ),
         "criteria": dict(EXIT_CLASS_CRITERIA),
     },
     "move_sl": {
         "type": "choice",
         "instructions": (
-            "Should the writer move SL/TP on this open Challenge ticket? "
-            "Auto-BE stays off until this Choice names move_be or trail. "
-            "Default leave_orig."
+            "Should the writer move the stop on this open Challenge ticket? "
+            "The option you return is the move. "
+            "An empty answer or a tie is not a move."
         ),
         "criteria": dict(MOVE_SL_CRITERIA),
     },
     "time_stop": {
         "type": "choice",
         "instructions": (
-            "Should the writer time-stop this open Challenge ticket? "
-            "Default leave_orig. Naming time_stop is how the close hits the "
-            "broker. Same noun as exit_class=time_stop (5/5 Challenge XAU winners)."
+            "Should the writer close this open Challenge ticket as a time stop? "
+            "The option you return is the close. "
+            "An empty answer or a tie is not a close."
         ),
         "criteria": dict(TIME_STOP_CRITERIA),
     },
     "scale_out": {
         "type": "choice",
         "instructions": (
-            "Should the writer scale out (TP1/TP2 partial) on this ticket? "
-            "Default leave_orig."
+            "Should the writer scale out this open Challenge ticket? "
+            "The option you return is the scale. "
+            "An empty answer or a tie is not a scale."
         ),
         "criteria": dict(SCALE_CRITERIA),
     },
@@ -194,8 +204,9 @@ CLOSE_QUESTION_PACK: dict[str, dict[str, Any]] = {
         "type": "choice",
         "instructions": (
             "Governor signalled a breach flatten. Should the writer flatten "
-            "open Challenge positions? Default leave_orig. Operator FLATTEN.flag "
-            "is not this question."
+            "open Challenge positions? The option you return is the flatten. "
+            "Operator FLATTEN.flag is not this question. "
+            "An empty answer or a tie is not a flatten."
         ),
         "criteria": dict(FLATTEN_GOV_CRITERIA),
     },
@@ -260,71 +271,70 @@ def exit_class_lists_time_stop(pack: Mapping[str, Any] | None = None) -> bool:
 
 
 def highest_probability(probabilities: Mapping[str, Any], order: tuple[str, ...]) -> str | None:
-    """Unique argmax. A tie is not a decision. The first name is not a default."""
-    best: str | None = None
-    best_p = -1.0
-    tied = False
-    for name in order:
-        try:
-            p = float(probabilities.get(name, 0.0) or 0.0)
-        except (TypeError, ValueError):
-            p = 0.0
-        if best is None or p > best_p + 1e-12:
-            best = name
-            best_p = p
-            tied = False
-        elif abs(p - best_p) <= 1e-12:
-            tied = True
-    if tied or best is None:
+    """Unique argmax. A missing probability is not zero. A tie is not a decision."""
+    from .jev_questions import unique_highest
+
+    if not isinstance(probabilities, Mapping) or not probabilities:
         return None
-    return best
+    return unique_highest(probabilities, order)
 
 
-def size_persist_questions() -> dict[str, dict[str, Any]]:
-    """Function, branch, loop bound, cash, and persistence. One card."""
-    from .jev_questions import parameter_question, spot_question
+def _logged_parameter(spot: str) -> float | None:
+    """Latest returned number for this spot. A miss on that row stays missing."""
+    try:
+        from .jev_questions import last_logged_value
+    except Exception:
+        return None
+    try:
+        return _num(last_logged_value(spot))
+    except Exception:
+        return None
 
+
+def size_persist_questions(state: Mapping[str, Any] | None = None) -> dict[str, dict[str, Any]]:
+    """Function, branch, loop bound, and the catalog splice. One card.
+
+    Cash and persistence are the unit_usd and persist_weight already returned
+    on parameter_outcomes. This card does not ask those scores again.
+    The loop bound and the splice are counts on this card. Fewer than two
+    counts leaves that Score off the post.
+    """
+    from .jev_questions import amount_question, count_anchors, spot_question
+
+    counts = count_anchors(state)
     return {
         **spot_question(
             "size_function",
-            "Which function returns cash and persistence on this state? "
+            "Which function returns the already-returned cash and persistence on this state? "
             "The name you return is the function that runs. "
-            "A pass line and a floor do not limit this. "
             "Do not name an amount.",
             {
-                "returned_score": "The function is the score hop. Its return is the cash and the weight.",
-                "last_outcome": "The function reads the previous returned cash and weight and returns those.",
-                "withhold": "The function returns no cash and no weight.",
+                "returned_score": "Use the returned unit_usd and persist_weight.",
+                "last_outcome": "Use the previous returned unit_usd and persist_weight.",
+                "withhold": "Do not use the returned cash or weight.",
             },
         ),
         **spot_question(
             "size_if",
             "Does this state take the cash branch? "
-            "The name you return is the branch. "
-            "A pass line and a floor do not limit this.",
+            "The name you return is the branch.",
             {
-                "take": "Take the branch. The chosen function returns cash and persistence.",
+                "take": "Take the branch. The returned unit_usd and persist_weight are the size.",
                 "skip": "Do not take the branch. Cash and persistence stay unset.",
             },
         ),
-        **parameter_question(
+        **amount_question(
             "size_loop",
             "How far does the learning loop read prior returned cash and persistence on this state? "
+            "The score you return is that bound.",
+            counts,
+        ),
+        **amount_question(
+            "size_splice",
+            "How many posted answers may sit on this state before the catalog is leftover? "
             "The score you return is that bound. "
-            "A pass line and a floor do not limit it.",
-        ),
-        **parameter_question(
-            "size_cash",
-            "Given the facts and prior_outcomes on this state, what cash does the next new unit risk? "
-            "The score you return is that cash. "
-            "A pass line and a floor do not limit it. "
-            "Do not invent a number when the card is empty.",
-        ),
-        **parameter_question(
-            "persist_weight",
-            "Given the facts and prior_outcomes on this state, what weight does persistence carry? "
-            "The score you return is that weight. "
-            "A pass line and a floor do not limit it.",
+            "An empty score does not discard the card.",
+            counts,
         ),
     }
 
@@ -344,7 +354,7 @@ def _num(value: Any) -> float | None:
 def _prior_outcomes_for_card(card: Mapping[str, Any]) -> Any:
     from .jev_questions import prior_outcomes
 
-    return prior_outcomes(state=card, questions=size_persist_questions())
+    return prior_outcomes(state=card, questions=size_persist_questions(card))
 
 
 def _outcome_identity(raw: Mapping[str, Any], ticket: Any) -> tuple[Any, Any, Any]:
@@ -502,77 +512,121 @@ def _probs(block: Any) -> dict[str, float] | None:
     return out or None
 
 
+def _score_on(payload: Mapping[str, Any], key: str) -> float | None:
+    """The score on this ask. A present empty score stays empty."""
+    from .jev_questions import returned_number
+
+    if key not in payload:
+        return None
+    try:
+        return _num(returned_number(payload.get(key)))
+    except Exception:
+        return None
+
+
+def _parameter_on(payload: Mapping[str, Any], asked: str, logged: str) -> tuple[float | None, bool]:
+    """This ask's score, or the logged return when this ask did not post the spot.
+
+    A key that is present and empty does not fall back to an older number.
+    """
+    if asked in payload:
+        return _score_on(payload, asked), True
+    return _logged_parameter(logged), False
+
+
 def _row_from_answers(facts: Mapping[str, Any], answers: Mapping[str, Any]) -> dict[str, Any]:
-    from .jev_questions import last_logged_value, returned_number, unique_highest
+    from .jev_questions import returned_number, unique_highest
 
     payload = answers if isinstance(answers, Mapping) else {}
     fn_block = payload.get("size_function")
     if_block = payload.get("size_if")
     loop_block = payload.get("size_loop")
-    size_block = payload.get("size_cash")
-    persist_block = payload.get("persist_weight")
     fn_probs = _probs(fn_block)
     if_probs = _probs(if_block)
-    size_probs = _probs(size_block)
-    persist_probs = _probs(persist_block)
     function_name = unique_highest(fn_probs)
     branch = unique_highest(if_probs)
-    loop_bound = returned_number(loop_block)
-    cash_score = returned_number(size_block)
-    weight_score = returned_number(persist_block)
-    cash = None
-    weight = None
-    if function_name is not None and branch == "take":
-        if function_name == "returned_score":
-            cash = cash_score
-            weight = weight_score
-        elif function_name == "last_outcome":
-            cash = last_logged_value("size_cash")
-            weight = last_logged_value("persist_weight")
-        elif function_name == "withhold":
-            cash = None
-            weight = None
+    loop_bound = None
+    try:
+        loop_bound = _num(returned_number(loop_block))
+    except Exception:
+        loop_bound = None
+    if "unit_usd" in payload:
+        unit, asked_unit = _parameter_on(payload, "unit_usd", "unit_usd")
+    elif "size_cash" in payload:
+        unit, asked_unit = _parameter_on(payload, "size_cash", "unit_usd")
+    else:
+        unit, asked_unit = _logged_parameter("unit_usd"), False
+    weight, asked_weight = _parameter_on(payload, "persist_weight", "persist_weight")
+    splice = _score_on(payload, "size_splice") if "size_splice" in payload else None
+    blocked = splice is not None and len(payload) >= splice
+    size_action = _choice(payload, "size_action")
+    decline = (
+        blocked
+        or function_name == "withhold"
+        or branch == "skip"
+        or size_action == LEAVE_ORIG
+    )
+    cash = None if decline else unit
+    used_weight = None if decline else weight
     return {
         "schema": "gtos.judgment.size_persist_choice.v1",
         "facts": dict(facts),
         "size_function": function_name,
         "size_if": branch,
+        "size_action": size_action,
         "loop_bound": loop_bound,
         "size_alternative": function_name if cash is not None else None,
-        "persist_alternative": function_name if weight is not None else None,
+        "persist_alternative": function_name if used_weight is not None else None,
         "cash_usd": cash,
-        "persist_weight": weight,
+        "persist_weight": used_weight,
+        "returned_unit_usd": unit,
+        "returned_weight": weight,
         "size_decided": cash is not None,
-        "persist_decided": weight is not None,
-        "size_probabilities": size_probs or {},
-        "persist_probabilities": persist_probs or {},
-        "size_confidence": size_block.get("confidence") if isinstance(size_block, dict) else None,
-        "persist_confidence": persist_block.get("confidence") if isinstance(persist_block, dict) else None,
+        "persist_decided": used_weight is not None,
+        "asked_unit": asked_unit,
+        "asked_persist": asked_weight,
+        "asked_loop": "size_loop" in payload,
+        "splice_bound": splice,
+        "blocked": blocked,
+        "size_probabilities": {},
+        "persist_probabilities": {},
+        "size_confidence": None,
+        "persist_confidence": None,
         "model": "jev-1.13.0",
     }
 
 
 def _remember(facts: Mapping[str, Any], row: Mapping[str, Any]) -> None:
+    """Remember this ask's own spots. Do not write a miss over unit_usd or persist_weight."""
     from .jev_questions import append_outcome
 
-    append_outcome(
-        "size_cash",
-        row.get("cash_usd") if row.get("size_decided") else None,
-        facts,
-        error=None if row.get("size_decided") else row.get("error"),
-    )
-    append_outcome(
-        "persist_weight",
-        row.get("persist_weight") if row.get("persist_decided") else None,
-        facts,
-        error=None if row.get("persist_decided") else row.get("error"),
-    )
-    append_outcome(
-        "size_loop",
-        row.get("loop_bound"),
-        facts,
-        error=None if row.get("loop_bound") is not None else row.get("error"),
-    )
+    logged = dict(facts)
+    logged.pop("prior_outcomes", None)
+    error = row.get("error")
+    if row.get("asked_loop"):
+        loop_bound = row.get("loop_bound")
+        append_outcome(
+            "size_loop",
+            loop_bound,
+            logged,
+            error=None if loop_bound is not None else error,
+        )
+    if row.get("asked_unit"):
+        unit = row.get("returned_unit_usd")
+        append_outcome(
+            "unit_usd",
+            unit,
+            logged,
+            error=None if unit is not None else error,
+        )
+    if row.get("asked_persist"):
+        weight = row.get("returned_weight")
+        append_outcome(
+            "persist_weight",
+            weight,
+            logged,
+            error=None if weight is not None else error,
+        )
 
 
 def _post_size_persist(facts: Mapping[str, Any]) -> dict[str, Any]:
@@ -585,17 +639,16 @@ def _post_size_persist(facts: Mapping[str, Any]) -> dict[str, Any]:
     try:
         receipt = evaluate(
             dict(facts),
-            questions=size_persist_questions(),
-            timeout_s=20.0,
+            questions=size_persist_questions(facts),
             model=MODEL,
             merge_sleeve=False,
-            require_equity=False,
         )
     except Exception as exc:
         row["error"] = type(exc).__name__
         _remember(facts, row)
         return row
-    if not receipt.get("ok"):
+    if not isinstance(receipt, dict) or not receipt.get("ok"):
+        receipt = receipt if isinstance(receipt, dict) else {}
         row["error"] = receipt.get("error") or receipt.get("skipped") or "post_failed"
         row["key_source"] = receipt.get("key_source")
         _remember(facts, row)
@@ -603,9 +656,9 @@ def _post_size_persist(facts: Mapping[str, Any]) -> dict[str, Any]:
     packed = _row_from_answers(facts, receipt.get("answers") or {})
     packed["model"] = receipt.get("model") or MODEL
     packed["key_source"] = receipt.get("key_source")
-    packed["unanswered"] = packed.get("size_function") is None or packed.get("size_if") is None
-    if packed["unanswered"]:
-        packed["error"] = "score_missing"
+    packed["unanswered"] = packed.get("cash_usd") is None and packed.get("size_function") is None
+    if packed["unanswered"] and not packed.get("size_decided"):
+        packed["error"] = packed.get("error") or "score_missing"
     _remember(facts, packed)
     return packed
 
@@ -667,7 +720,7 @@ def _write_choice_receipt(row: Mapping[str, Any]) -> None:
 
 @dataclass(frozen=True)
 class SizeDecision:
-    action: str = LEAVE_ORIG
+    action: str | None = None
     named_change: bool = False
     source: str = "unanswered"
     jev_ok: bool | None = None
@@ -681,6 +734,8 @@ class SizeDecision:
     size_function: str | None = None
     size_if: str | None = None
     loop_bound: float | None = None
+    returned_unit_usd: float | None = None
+    returned_persist_weight: float | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -698,13 +753,14 @@ class SizeDecision:
             "size_ids": list(SIZE_IDS),
             "cash_unit_usd": self.cash_usd,
             "cash_usd": self.cash_usd,
+            "unit_usd": self.returned_unit_usd,
             "persist_weight": self.persist_weight,
             "size_alternative": self.size_alternative,
             "persist_alternative": self.persist_alternative,
             "size_decided": self.size_decided,
             "persist_decided": self.persist_decided,
-            "printed_unit_usd": None,
-            "printed_persist_weight": None,
+            "printed_unit_usd": self.returned_unit_usd,
+            "printed_persist_weight": self.returned_persist_weight,
             "open_ticket_not_resized": None,
             "size_function": self.size_function,
             "size_if": self.size_if,
@@ -714,10 +770,10 @@ class SizeDecision:
 
 @dataclass(frozen=True)
 class ManageDecision:
-    move_sl: str = LEAVE_ORIG
-    time_stop: str = LEAVE_ORIG
-    scale_out: str = LEAVE_ORIG
-    flatten_governor: str = LEAVE_ORIG
+    move_sl: str | None = None
+    time_stop: str | None = None
+    scale_out: str | None = None
+    flatten_governor: str | None = None
     exit_class: str | None = None
     source: str = "unanswered"
     jev_ok: bool | None = None
@@ -792,13 +848,7 @@ def decide_size(
     jev_ok: bool | None = None,
     skipped: str | None = None,
 ) -> SizeDecision:
-    """Leave-orig until Jev names a size change.
-
-    A named change is ``size_action=named_tilt`` or a present gold-walk size
-    Score / Noul (persistence, geometry_vs_tape, session_fitness,
-    conviction_vs_tape, cost_hurtful, event_proximity). Unanswered / dark
-    Jev → leave orig.
-    """
+    """The size Choice on these answers. An empty answer stays unanswered."""
     del ticket  # receipt context; leave-orig default is not ticket-locked here
     answers = answers or {}
     action = _choice(answers, "size_action")
@@ -829,15 +879,15 @@ def decide_size(
     )
 
 
-def _named_or_orig(answers: Mapping[str, Any] | None, key: str, named: str) -> str:
+def _named_or_orig(answers: Mapping[str, Any] | None, key: str, named: str) -> str | None:
     got = _choice(answers, key)
     if got == named:
         return named
-    if key == "move_sl" and got in {MOVE_BE, TRAIL}:
+    if key == "move_sl" and got in {MOVE_BE, TRAIL, "move_sl"}:
         return got
     if got:
         return got
-    return ""
+    return None
 
 
 def decide_manage(
@@ -847,26 +897,47 @@ def decide_manage(
     skipped: str | None = None,
     extra: Mapping[str, Any] | None = None,
 ) -> ManageDecision:
-    """Leave-orig BE / trail / time-stop / scale / governor-flatten until named.
+    """Each manage field is that question's Choice. Empty and tie stay unset.
 
-    ``exit_class=time_stop`` also names the time-stop close (5/5 Challenge
-    XAU winners). ``exit_class=breach_flatten`` names governor flatten.
+    ``manage_life`` is the one lifetime Choice: move the stop, scale out,
+    close, or let it run. Giveback on the state is that case.
+    ``exit_class=time_stop`` names the time-stop close.
+    ``exit_class=breach_flatten`` names governor flatten.
     """
     answers = answers or {}
     source = "jev_choices" if answers else "not_decided"
+    life = _choice(answers, "manage_life")
     exit_cls = _choice(answers, "exit_class")
     time_stop = _named_or_orig(answers, "time_stop", TIME_STOP)
+    move_sl = _named_or_orig(answers, "move_sl", MOVE_BE)
+    scale_out = _named_or_orig(answers, "scale_out", SCALE_OUT)
+    flatten = _named_or_orig(answers, "flatten_governor", FLATTEN)
+    if life == "let_it_run":
+        return ManageDecision(
+            source="let_it_run",
+            jev_ok=jev_ok,
+            skipped=skipped,
+            extra=dict(extra or {}),
+        )
+    if life == "close":
+        time_stop = TIME_STOP
+        source = "manage_life"
+    elif life == "scale_out":
+        scale_out = SCALE_OUT
+        source = "manage_life"
+    elif life == "move_sl":
+        move_sl = move_sl or "move_sl"
+        source = "manage_life"
     if exit_cls == TIME_STOP:
         time_stop = TIME_STOP
         source = "jev_exit_class"
-    flatten = _named_or_orig(answers, "flatten_governor", FLATTEN)
     if exit_cls == BREACH_FLATTEN:
         flatten = FLATTEN
         source = "jev_exit_class"
     return ManageDecision(
-        move_sl=_named_or_orig(answers, "move_sl", MOVE_BE),
+        move_sl=move_sl,
         time_stop=time_stop,
-        scale_out=_named_or_orig(answers, "scale_out", SCALE_OUT),
+        scale_out=scale_out,
         flatten_governor=flatten,
         exit_class=exit_cls,
         source=source,
@@ -887,7 +958,7 @@ def manage_state(
     extra: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Closed state object for a manage/exit Choice. No invented NEWS."""
-    trade: dict[str, Any] = {"leave_orig_default": True}
+    trade: dict[str, Any] = {}
     if isinstance(record, Mapping):
         for key in (
             "ticket",
@@ -899,10 +970,21 @@ def manage_state(
             "orig_sl",
             "orig_tp",
             "fav_r",
+            "mfe_r",
+            "progress_r",
+            "open_r",
             "bars_held",
         ):
             if record.get(key) is not None:
                 trade[key] = record.get(key)
+    peak = _num(trade.get("mfe_r"))
+    if peak is None:
+        peak = _num(trade.get("fav_r"))
+    now = _num(trade.get("progress_r"))
+    if now is None:
+        now = _num(trade.get("open_r"))
+    if peak is not None and now is not None:
+        trade["giveback"] = peak - now
     state = {
         "schema": SCHEMA,
         "identity": {
@@ -915,10 +997,9 @@ def manage_state(
         "occupancy": dict(occupancy or {}),
         "governor": dict(governor or {}),
         "trade": trade,
-        "surface_law": {"leave_orig_default": True, "auto_be": "off_until_jev_names"},
+        "giveback": trade.get("giveback"),
         "gold_walk": {
-            "exit_class_must_list_time_stop": True,
-            "challenge_xau_winners_time_stop": "5/5",
+            "exit_class_lists_time_stop": TIME_STOP in EXIT_CLASS_CRITERIA,
             "size_ids": list(SIZE_IDS),
         },
     }
@@ -954,20 +1035,11 @@ def evaluate_size_exit(
         ):
             receipt = evaluate(
                 dict(state),
-                questions=size_persist_questions(),
+                questions=size_persist_questions(state),
                 merge_sleeve=False,
             ) or {}
         else:
             receipt = evaluate(dict(state), questions=pack, merge_sleeve=False) or {}
-        posted = list((receipt.get("answers") or {}).keys()) if isinstance(receipt, dict) else []
-        if len(posted) >= CATALOG_SPLICE_N:
-            receipt = {
-                "ok": False,
-                "skipped": "leftover_catalog_splice",
-                "error": "leftover_catalog_splice",
-                "answers": {},
-                "n_posted": len(posted),
-            }
     except Exception as exc:  # noqa: BLE001 — writer path must never raise
         receipt = {"ok": False, "skipped": None, "error": type(exc).__name__, "answers": {}}
     packed = receipt.get("answers") if isinstance(receipt.get("answers"), dict) else {}
@@ -1013,14 +1085,19 @@ def decide_size_exit(
         )
     row = choose_size_and_persist(state, answers=answers)
     size_alt = row.get("size_alternative")
-    cash = row.get("cash_usd")
+    cash = row.get("cash_usd") if row.get("size_decided") else None
+    action = size_alt or row.get("size_function")
+    if action is None and cash is not None:
+        action = "returned_score"
+    if action is None:
+        action = "unanswered"
     return SizeDecision(
-        action=size_alt or row.get("size_function") or "unanswered",
+        action=action,
         named_change=bool(row.get("size_decided") and cash is not None),
         source=str(row.get("source") or "size_persist_choice"),
-        jev_ok=bool(row.get("size_function") and row.get("size_if")),
+        jev_ok=bool(row.get("size_function") and row.get("size_if")) or cash is not None,
         skipped=row.get("error"),
-        cash_usd=cash if row.get("size_decided") else None,
+        cash_usd=cash,
         persist_weight=row.get("persist_weight") if row.get("persist_decided") else None,
         size_alternative=size_alt,
         persist_alternative=row.get("persist_alternative"),
@@ -1029,6 +1106,8 @@ def decide_size_exit(
         size_function=row.get("size_function"),
         size_if=row.get("size_if"),
         loop_bound=row.get("loop_bound"),
+        returned_unit_usd=row.get("returned_unit_usd"),
+        returned_persist_weight=row.get("returned_weight"),
     )
 
 
@@ -1094,9 +1173,8 @@ CONVERTED_SITES: tuple[dict[str, str], ...] = (
         "site": "src/judgment/apply_size.py:haircut_challenge_unit",
         "was": "compose_shadow local H4/spread_r picked size when Jev was dark",
         "now": (
-            "Jev size IDs persistence / geometry_vs_tape / session_fitness / "
-            "cost_hurtful / conviction_vs_tape / event_proximity; default "
-            "leave-orig factor 1.0; writer prints"
+            "The returned unit_usd and persist_weight are the size. "
+            "An empty answer stays unset. Writer prints"
         ),
         "slice": "size",
         "consume": "persistence,geometry_vs_tape,session_fitness,cost_hurtful,conviction_vs_tape,event_proximity",
@@ -1120,9 +1198,8 @@ CONVERTED_SITES: tuple[dict[str, str], ...] = (
         "site": "src/components/ultimate_book/book_owner.py:_manage_engine time_stop",
         "was": "static check_time_stop_and_close every tick",
         "now": (
-            "Jev exit_class (must list time_stop) + time_stop Choice; default "
-            "leave-orig; writer prints named close. 5/5 Challenge XAU winners "
-            "were time_stop."
+            "Jev manage_life and time_stop Choice. An empty answer stays unset. "
+            "Writer prints a named close."
         ),
         "slice": "close",
         "consume": "exit_class",

@@ -42,7 +42,7 @@ _LIVE_FIELDS = ("ticket", "symbol", "sleeve", "close_action", "realized", "plan_
 
 _SPECS: dict[str, dict[str, Any]] = {
     "learn_loop.asset_class": {
-        "order": ("XAU", "CRYPTO", "INDEX", "FX", "OTHER"),
+        "order": ("XAU", "CRYPTO", "INDEX", "FX", "UNLISTED"),
         "parameter": "asset-class parameter",
         "instructions": (
             "Learning question: the asset class of the symbol on this state. "
@@ -56,11 +56,11 @@ _SPECS: dict[str, dict[str, Any]] = {
                 "(US30, UK100, US500, NAS100, US100, USTEC, GER40, DE40, JP225)."
             ),
             "FX": "The symbol is a six-letter alphabetic FX pair.",
-            "OTHER": "The symbol is empty or outside XAU, crypto, index, and FX.",
+            "UNLISTED": "The symbol is empty or outside XAU, crypto, index, and FX.",
         },
     },
-    "learn_loop.exit_other": {
-        "order": ("other", "locked_exit"),
+    "learn_loop.exit_kind": {
+        "order": ("free_exit", "locked_exit"),
         "parameter": "exit parameter",
         "instructions": (
             "Learning question: the named exit on this state. "
@@ -68,7 +68,7 @@ _SPECS: dict[str, dict[str, Any]] = {
             "A tie does not relabel the exit."
         ),
         "criteria": {
-            "other": (
+            "free_exit": (
                 "The named exit is outside orig_stop, orig_tp, time_stop, "
                 "and breach_flatten."
             ),
@@ -101,7 +101,7 @@ _SPECS: dict[str, dict[str, Any]] = {
         },
     },
     "trained_models.asset_bucket": {
-        "order": ("XAU", "other"),
+        "order": ("XAU", "NON_XAU"),
         "parameter": "bucket parameter",
         "instructions": (
             "Trained-model question: the asset bucket of the symbol on this state. "
@@ -109,7 +109,7 @@ _SPECS: dict[str, dict[str, Any]] = {
         ),
         "criteria": {
             "XAU": "The symbol starts with XAU or equals GOLD.",
-            "other": "The symbol does not start with XAU and is not GOLD.",
+            "NON_XAU": "The symbol does not start with XAU and is not GOLD.",
         },
     },
     "trained_models.plan_r_bin": {
@@ -179,19 +179,528 @@ _SPECS: dict[str, dict[str, Any]] = {
         },
     },
     "trained_models.keep_surface": {
-        "order": ("KEEP", "other"),
+        "order": ("KEEP", "OFF_KEEP"),
         "parameter": "keep-surface parameter",
         "instructions": "Trained-model question: whether this sleeve or family is a keep surface.",
         "criteria": {
             "KEEP": "The sleeve or family is a spring, vss, vss_fxcross, or sub_mid keep surface.",
-            "other": "The sleeve and family are outside those keep surfaces.",
+            "OFF_KEEP": "The sleeve and family are outside those keep surfaces.",
         },
     },
 }
 
 _LIVE_LOCK = threading.Lock()
 _LIVE_CACHE: dict[str, Any] = {"stamp": None, "cards": []}
+# Closes this process has already stored, plus rows seen on the log tail.
+_LIVE_SEEN: set[tuple[str, str]] = set()
+# Byte offset already folded. Missing means the file has not been anchored.
+_TAIL_AT: dict[str, int] = {}
 
+
+
+def _card_var():
+    var = globals().get("_OBSERVE_CARD")
+    if var is None:
+        import contextvars
+
+        var = contextvars.ContextVar("observe_card_" + __name__, default=None)
+        globals()["_OBSERVE_CARD"] = var
+    return var
+
+
+def _bind_card(state):
+    """The card whose facts may anchor an amount. A miss binds nothing."""
+
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return None
+    card = state if isinstance(state, Mapping) else None
+    return _card_var().set(card)
+
+
+def _bound_card():
+    try:
+        return _card_var().get()
+    except Exception:
+        return None
+
+
+_ORDINAL_WIDTH: dict[str, int] = {}
+_AMOUNT_UNIT: dict[str, str] = {}
+_ORDINAL_WORDS = ("none", "trace", "small", "modest", "notable", "heavy")
+_PRICE_KEYS = {
+    "entry",
+    "stop",
+    "target",
+    "bid",
+    "ask",
+    "price",
+    "sl",
+    "tp",
+    "open",
+    "high",
+    "low",
+    "close",
+    "limit_price",
+}
+_MONEY_KEYS = {
+    "equity",
+    "balance",
+    "open_pnl",
+    "profit",
+    "day_start_balance",
+    "day_start_equity",
+    "realized_closed_profit",
+    "day_equity",
+    "broker_net",
+    "mean_net",
+    "realized",
+}
+_SKIP_WALK = {
+    "prior_outcomes",
+    "questions",
+    "answers",
+    "probabilities",
+    "criteria",
+    "instructions",
+}
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    banned = globals().get("_banned_number")
+    if callable(banned):
+        try:
+            if banned(number):
+                return None
+        except Exception:
+            return None
+    return number
+
+
+def _label_ok(text: str) -> bool:
+    if not text or not str(text).strip():
+        return False
+    sample = str(text)
+    for name, bad in (
+        ("_limit_key", True),
+        ("_banned_text", True),
+        ("_blocked_text", True),
+        ("_text_banned", True),
+        ("_skip_key", True),
+    ):
+        fn = globals().get(name)
+        if not callable(fn):
+            continue
+        try:
+            if bool(fn(sample)) is bad:
+                return False
+        except Exception:
+            return False
+    scrub = globals().get("_scrub_text")
+    if callable(scrub):
+        try:
+            if scrub(sample) is None:
+                return False
+        except Exception:
+            return False
+    ok = globals().get("_question_text_ok")
+    if callable(ok):
+        try:
+            if not ok(sample):
+                return False
+        except Exception:
+            return False
+    return True
+
+
+def _amount_unit(qid: str, text: str = "") -> str | None:
+    """The unit this score returns. None means the score is an ordinal."""
+
+    name = str(qid).lower()
+    if name.endswith("_hour") or name.endswith("_hours"):
+        return "hours"
+    if "minute" in name and not name.endswith("_parameter"):
+        return "minutes"
+    tokens = name.replace(".", "_").split("_")
+    if (
+        "lot" in tokens
+        or "lots" in tokens
+        or name.endswith("_lot")
+        or name.endswith("_lots")
+        or name.endswith("min_lot")
+    ):
+        return "lots"
+    if "persist" in name or name.endswith("_weight"):
+        return "weight"
+    if "ceiling" in name:
+        return "size"
+    if "concurrent" in name:
+        return "count"
+    if name.endswith("_net") or "broker_net" in name:
+        return "money"
+    if (
+        "prob" in name
+        or ".p_" in name
+        or "p_time" in name
+        or "p_positive" in name
+    ):
+        return "probability"
+    if (
+        "plan_r" in name
+        or "mean_r" in name
+        or name.endswith("_r")
+        or "predicted_e_r" in name
+    ):
+        return "r"
+    if "fitness" in name or name.endswith("_fit"):
+        return None
+    if "expected_" in name:
+        return "count"
+    tail = name.rsplit(".", 1)[-1]
+    tail_tokens = tail.split("_")
+    if (
+        tail.endswith("_loop")
+        or tail.endswith("_loop_bound")
+        or tail == "loop"
+        or "retry" in tail_tokens
+        or "walk_depth" in tail
+        or "posts" in tail_tokens
+        or "min_n" in tail
+        or tail.endswith("_count")
+        or tail.endswith("_n")
+    ):
+        return "count"
+    if "window" in name:
+        return "window"
+    if "threshold" in name:
+        return "price"
+    blob = name + "\n" + str(text).lower()
+    if "stop or target" in blob or "the stop" in blob or "the target" in blob:
+        return "price"
+    if "e[r]" in blob or "mean r" in blob:
+        return "r"
+    if "broker net" in blob:
+        return "money"
+    if "the lot " in blob or blob.rstrip(".").endswith("the lot"):
+        return "lots"
+    if "fluid count" in blob or "envelope count" in blob or "promotion count" in blob:
+        return "count"
+    if "how many" in blob:
+        return "count"
+    if name.startswith("a1_") and name.endswith("_parameter"):
+        return "price"
+    return None
+
+
+def _is_ordinal(qid: str) -> bool:
+    """True when this id was built as words, or no amount unit is known."""
+
+    key = str(qid)
+    if key in _AMOUNT_UNIT:
+        return False
+    if key in _ORDINAL_WIDTH:
+        return True
+    return _amount_unit(key, "") is None
+
+
+def _key_unit(name: str, unit: str) -> bool:
+    low = str(name).lower()
+    if unit == "price":
+        return low in _PRICE_KEYS
+    if unit == "hours":
+        return low == "hour" or low.endswith("_hour") or low.endswith("_hours")
+    if unit == "minutes":
+        return low == "minute" or low.endswith("_minute") or low.endswith("_minutes") or low.endswith("_min")
+    if unit == "seconds":
+        return "second" in low or low in {"age_s", "seconds_until_cycle"}
+    if unit == "lots":
+        return low in {"volume", "volume_min", "volume_step", "lot", "lots", "min_lot"} or low.endswith("_lot") or low.endswith("_lots")
+    if unit == "r":
+        return low.endswith("_r") or low in {"plan_r", "locked_r", "mean_r"}
+    if unit == "weight":
+        return low == "weight" or low.endswith("_weight")
+    if unit == "money":
+        return low in _MONEY_KEYS
+    if unit == "probability":
+        return "prob" in low or low.startswith("p_") or "p_time" in low or "p_positive" in low
+    if unit == "count":
+        return low in {"n", "asked", "step_index"} or low.startswith("n_") or low.endswith("_count") or low.endswith("_len") or low.endswith("_posts")
+    if unit == "multiple":
+        return low.endswith("_mult") or low.endswith("_multiple")
+    return False
+
+
+def _walk_pairs(state, unit: str) -> list[tuple[str, float]]:
+    found: list[tuple[str, float]] = []
+
+    def walk(blob, depth: int) -> None:
+        if depth > 4 or not isinstance(blob, dict):
+            return
+        for key, value in blob.items():
+            name = str(key)
+            if name in _SKIP_WALK or name.startswith("_"):
+                continue
+            if not _label_ok(name):
+                continue
+            if isinstance(value, dict):
+                walk(value, depth + 1)
+                continue
+            if isinstance(value, (list, tuple)) and not isinstance(value, (str, bytes)):
+                if unit == "count":
+                    found.append((f"the count of {name} named on this card", float(len(value))))
+                continue
+            if unit == "count" and not _key_unit(name, unit):
+                continue
+            if unit != "count" and not _key_unit(name, unit):
+                continue
+            number = _anchor_finite(value)
+            if number is None:
+                continue
+            found.append((f"the {name} named on this card", number))
+
+    if isinstance(state, dict):
+        walk(state, 0)
+    return found
+
+
+def _distinct(pairs) -> int:
+    seen = []
+    for _label, value in pairs:
+        if value not in seen:
+            seen.append(value)
+    return len(seen)
+
+
+def _anchors_for(state, unit: str) -> list[tuple[str, float]]:
+    card = state if isinstance(state, dict) else {}
+    if unit == "count":
+        extra = []
+        try:
+            from .jev_questions import count_anchors
+
+            extra = list(count_anchors(card) or [])
+        except Exception:
+            try:
+                from src.judgment.jev_questions import count_anchors
+
+                extra = list(count_anchors(card) or [])
+            except Exception:
+                extra = []
+        return list(extra) + _walk_pairs(card, "count")
+    if unit == "money":
+        extra = []
+        try:
+            from .jev_questions import usd_anchors
+
+            extra = list(usd_anchors(card) or [])
+        except Exception:
+            try:
+                from src.judgment.jev_questions import usd_anchors
+
+                extra = list(usd_anchors(card) or [])
+            except Exception:
+                extra = []
+        return list(extra) + _walk_pairs(card, "money")
+    if unit == "minutes":
+        extra = []
+        try:
+            from .jev_questions import minute_anchors
+
+            extra = list(minute_anchors(card) or [])
+        except Exception:
+            try:
+                from src.judgment.jev_questions import minute_anchors
+
+                extra = list(minute_anchors(card) or [])
+            except Exception:
+                extra = []
+        return list(extra) + _walk_pairs(card, "minutes")
+    if unit == "size":
+        lots = _walk_pairs(card, "lots")
+        multiples = _walk_pairs(card, "multiple")
+        try:
+            from .jev_questions import mult_anchors
+
+            multiples = list(mult_anchors(card) or []) + multiples
+        except Exception:
+            try:
+                from src.judgment.jev_questions import mult_anchors
+
+                multiples = list(mult_anchors(card) or []) + multiples
+            except Exception:
+                pass
+        if _distinct(lots) >= 2:
+            return lots
+        if _distinct(multiples) >= 2:
+            return multiples
+        return []
+    if unit == "window":
+        minutes = _walk_pairs(card, "minutes")
+        seconds = _walk_pairs(card, "seconds")
+        if _distinct(minutes) >= 2:
+            return minutes
+        return seconds
+    return _walk_pairs(card, unit)
+
+
+def _custom_words(words) -> bool:
+    """A scale of words is an ordinal. The generic parameter menu is not."""
+
+    if not words:
+        return False
+    texts = []
+    numeric = 0
+    for item in words:
+        text = str(item).strip()
+        if not text:
+            continue
+        try:
+            float(text)
+            numeric += 1
+        except (TypeError, ValueError):
+            pass
+        texts.append(text)
+    if len(texts) < 2 or numeric == len(texts):
+        return False
+    generic = {
+        ("none", "trace", "small", "modest", "notable", "heavy"),
+        (
+            "below the levels on this state",
+            "between the levels on this state",
+            "above the levels on this state",
+        ),
+    }
+    return tuple(texts) not in generic
+
+
+def _word_levels(words) -> list[str]:
+    if not words:
+        return list(_ORDINAL_WORDS)
+    texts = []
+    numeric = 0
+    for item in words:
+        text = str(item).strip()
+        if not text:
+            continue
+        try:
+            float(text)
+            numeric += 1
+        except (TypeError, ValueError):
+            pass
+        texts.append(text)
+    if texts and numeric == len(texts):
+        return [item for item in _ORDINAL_WORDS if _label_ok(item)]
+    kept = [item for item in texts if _label_ok(item)]
+    if len(kept) >= 2:
+        return kept
+    return [item for item in _ORDINAL_WORDS if _label_ok(item)]
+
+
+def _jev_amount(qid, text, anchors):
+    try:
+        from .jev_questions import amount_question
+
+        return amount_question(qid, text, anchors)
+    except Exception:
+        from src.judgment.jev_questions import amount_question
+
+        return amount_question(qid, text, anchors)
+
+
+def _jev_ordinal(qid, text, levels):
+    try:
+        from .jev_questions import ordinal_question
+
+        return ordinal_question(qid, text, levels)
+    except Exception:
+        from src.judgment.jev_questions import ordinal_question
+
+        return ordinal_question(qid, text, levels)
+
+
+def _shape_score(qid: str, instructions: str, words=None, *, wrapped: bool = True):
+    """An amount posts only with two anchors. An ordinal keeps its words."""
+
+    text = str(instructions or "").strip()
+    scrub = globals().get("_scrub_text")
+    if callable(scrub):
+        try:
+            cleaned = scrub(text)
+        except Exception:
+            return {}
+        if not isinstance(cleaned, str) or not cleaned.strip():
+            return {}
+        text = cleaned.strip()
+    if not text or not _label_ok(text):
+        return {}
+    unit = None if _custom_words(words) else _amount_unit(qid, text)
+    try:
+        if unit is None:
+            built = _jev_ordinal(qid, text, _word_levels(words))
+        else:
+            anchors = [
+                (label, value)
+                for label, value in _anchors_for(_bound_card(), unit)
+                if _label_ok(label)
+            ]
+            built = _jev_amount(qid, text, anchors)
+    except Exception:
+        return {}
+    row = built.get(str(qid)) if isinstance(built, dict) else None
+    if not isinstance(row, dict):
+        return {}
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        row.pop(key, None)
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    if unit is None:
+        _ORDINAL_WIDTH[str(qid)] = len(criteria)
+        _AMOUNT_UNIT.pop(str(qid), None)
+    else:
+        _AMOUNT_UNIT[str(qid)] = unit
+        _ORDINAL_WIDTH.pop(str(qid), None)
+    row["type"] = "score"
+    row["instructions"] = text
+    if wrapped:
+        return {str(qid): row}
+    return row
+
+
+def _ordinal_read(block, qid: str):
+    """Nearest word. The index is not an amount. A miss stays unset."""
+
+    width = _ORDINAL_WIDTH.get(str(qid))
+    if not isinstance(width, int) or width < 2:
+        criteria = block.get("criteria") if isinstance(block, dict) else None
+        if isinstance(criteria, list) and len(criteria) >= 2:
+            width = len(criteria)
+        else:
+            probs = block.get("probabilities") if isinstance(block, dict) else None
+            if isinstance(probs, dict) and len(probs) >= 2:
+                width = len(probs)
+    if not isinstance(width, int) or width < 2:
+        return None
+    try:
+        from .jev_questions import ordinal_index
+    except Exception:
+        try:
+            from src.judgment.jev_questions import ordinal_index
+        except Exception:
+            return None
+    try:
+        return ordinal_index(block, width)
+    except Exception:
+        return None
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
@@ -282,10 +791,10 @@ def _question_pack(spot: str) -> dict[str, Any]:
     param_id = spot + "_parameter"
     pack: dict[str, Any] | None = None
     try:
-        from .jev_questions import parameter_question, spot_question
+        from .jev_questions import spot_question
 
         built = spot_question(spot, choice_text, criteria)
-        extra = parameter_question(param_id, score_text)
+        extra = _shape_score(param_id, score_text, list(_BETWEEN), wrapped=True)
         if isinstance(built, Mapping) and isinstance(extra, Mapping):
             pack = {}
             for key, value in dict(built).items():
@@ -304,12 +813,10 @@ def _question_pack(spot: str) -> dict[str, Any]:
     choice_q["instructions"] = choice_text
     choice_q["criteria"] = criteria
     param_q = pack.get(param_id)
-    if not isinstance(param_q, dict):
-        param_q = {}
-        pack[param_id] = param_q
-    param_q["type"] = "score"
-    param_q["instructions"] = score_text
-    param_q["criteria"] = list(_BETWEEN)
+    if isinstance(param_q, dict) and param_q.get("type") == "score":
+        param_q["instructions"] = score_text
+    elif param_id in pack:
+        pack.pop(param_id, None)
     return pack
 
 
@@ -356,7 +863,10 @@ def _unique(probabilities: Mapping[str, Any] | None, order: tuple[str, ...]) -> 
     return str(picked)
 
 
-def _score(block: Any) -> float | None:
+def _score(block: Any, qid: str | None = None) -> float | None:
+    if qid is not None and _is_ordinal(str(qid)):
+        return _ordinal_read(block, str(qid))
+
     if not isinstance(block, Mapping) or not block:
         return None
     number: Any = None
@@ -424,7 +934,7 @@ def _read_return(hop: Mapping[str, Any], spot: str, order: tuple[str, ...]) -> d
     choice = _unique(probs, order)
     row["probabilities"] = kept
     row["choice"] = choice
-    row["parameter"] = _score(score_block) if score_block else None
+    row["parameter"] = _score(score_block, spot + "_parameter") if score_block else None
     row["decision_emitted"] = choice is not None
     if choice is None:
         row["error"] = "tie_or_empty"
@@ -607,18 +1117,36 @@ def _value_token(value: Any) -> str:
     return format(number, ".10g")
 
 
-def _logged_live(root: Path) -> set[tuple[str, str]]:
+def _fold_tail(root: Path) -> None:
+    """Fold bytes written after the anchor. The body already on disk stays unread."""
+
     path = _ns_root(root) / "judgment" / "parameter_outcomes.jsonl"
-    found: set[tuple[str, str]] = set()
-    if not path.is_file():
-        return found
+    key = str(path)
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        size = path.stat().st_size if path.is_file() else 0
     except OSError:
-        return found
-    for line in lines:
-        line = line.strip()
-        if not line.startswith("{") or ("live_close:" not in line and "live_plan:" not in line):
+        return
+    offset = _TAIL_AT.get(key)
+    if offset is None or size < offset:
+        _TAIL_AT[key] = size
+        return
+    if size <= offset:
+        _TAIL_AT[key] = size
+        return
+    try:
+        with path.open("rb") as handle:
+            handle.seek(offset)
+            blob = handle.read(size - offset)
+    except OSError:
+        return
+    end = blob.rfind(b"\n")
+    if end < 0:
+        return
+    chunk = blob[: end + 1]
+    _TAIL_AT[key] = offset + len(chunk)
+    for raw in chunk.splitlines():
+        line = raw.strip()
+        if not line.startswith(b"{") or (b"live_close:" not in line and b"live_plan:" not in line):
             continue
         try:
             row = json.loads(line)
@@ -629,54 +1157,45 @@ def _logged_live(root: Path) -> set[tuple[str, str]]:
         spot = str(row.get("spot") or "")
         if not (spot.startswith("live_close:") or spot.startswith("live_plan:")):
             continue
-        found.add((spot, _value_token(row.get("value"))))
-    return found
+        _LIVE_SEEN.add((spot, _value_token(row.get("value"))))
+
+
+def _remember_one(append_outcome: Any, spot: str, value: float | None, facts: Mapping[str, Any]) -> None:
+    token = _value_token(value)
+    if (spot, token) in _LIVE_SEEN:
+        return
+    try:
+        append_outcome(
+            spot,
+            value,
+            facts,
+            error=None if value is not None else "unpriced",
+        )
+    except Exception:
+        return
+    _LIVE_SEEN.add((spot, token))
 
 
 def _remember_live(root: Path, cards: list[dict[str, Any]]) -> None:
-    """Append a close the log does not already hold. A miss stays a miss."""
+    """Append a close this process has not stored. A miss stays a miss."""
 
     try:
         from .jev_questions import append_outcome
     except Exception:
         return
-    try:
-        seen = _logged_live(root)
-    except Exception:
-        return
+    _fold_tail(root)
     for card in cards:
-        spot = _live_spot(card)
         realized = _finite(card.get("realized"))
-        token = _value_token(realized)
-        if (spot, token) in seen:
-            continue
         facts = {
             "realized_closed_profit": realized,
             "ticket": card.get("ticket"),
             "symbol": card.get("symbol"),
         }
-        try:
-            append_outcome(
-                spot,
-                realized,
-                facts,
-                error=None if realized is not None else "unpriced",
-            )
-        except Exception:
-            continue
-        seen.add((spot, token))
+        _remember_one(append_outcome, _live_spot(card), realized, facts)
         plan = _finite(card.get("plan_r"))
         if plan is None:
             continue
-        plan_spot = "live_plan:%s" % (card.get("ticket") or "",)
-        plan_token = _value_token(plan)
-        if (plan_spot, plan_token) in seen:
-            continue
-        try:
-            append_outcome(plan_spot, plan, facts, error=None)
-        except Exception:
-            continue
-        seen.add((plan_spot, plan_token))
+        _remember_one(append_outcome, "live_plan:%s" % (card.get("ticket") or "",), plan, facts)
 
 
 def _load_live(root: Path) -> list[dict[str, Any]]:
@@ -719,6 +1238,7 @@ def _latest_close(cards: list[dict[str, Any]]) -> dict[str, Any] | None:
 def _decide(spot: str, facts: Mapping[str, Any]) -> dict[str, Any]:
     """One System One ask. The choice and the parameter are that return."""
 
+    _bind_card(facts)
     spec = _SPECS[spot]
     order = tuple(spec["order"])
     clean = _copy(dict(facts))
@@ -780,9 +1300,9 @@ def asset_class_choice(symbol: str | None) -> Any:
 
 
 def exit_other_choice(named: str | None) -> Any:
-    """``other`` or ``locked_exit``. A tie does not relabel."""
+    """``free_exit`` or ``locked_exit``. A tie does not relabel."""
 
-    return _choice("learn_loop.exit_other", {"named_exit": named})
+    return _choice("learn_loop.exit_kind", {"named_exit": named})
 
 
 def promotion_branch_choice(miss: str | None, exit_class: str | None) -> Any:
@@ -879,7 +1399,7 @@ def historical_counts(root: Path | None = None) -> dict[str, Any]:
             "n": None,
             "asset_class": None,
             "exit_class": None,
-            "exit_other": None,
+            "free_exits": None,
             "miss_type": None,
             "decision_emitted": False,
         }
@@ -895,23 +1415,23 @@ def historical_counts(root: Path | None = None) -> dict[str, Any]:
                 assets[str(name)] = _count(block)
     misses = _count_map(batch.get("miss_type"))
     locked = {"orig_stop", "orig_tp", "time_stop", "breach_flatten"}
-    other_exits: int | None
+    free_exits: int | None
     if exits is None:
-        other_exits = None
+        free_exits = None
     else:
-        other_exits = 0
+        free_exits = 0
         for key, value in exits.items():
             if key in locked:
                 continue
             number = _count(value)
             if isinstance(number, int):
-                other_exits += number
+                free_exits += number
     return {
         "source": str(batch_path),
         "n": _count(batch.get("n")),
         "asset_class": assets,
         "exit_class": exits,
-        "exit_other": other_exits,
+        "free_exits": free_exits,
         "miss_type": misses,
         "decision_emitted": False,
     }
@@ -958,7 +1478,7 @@ def _ask_all(facts: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
 
     jobs = (
         ("asset_class", "learn_loop.asset_class"),
-        ("exit_other", "learn_loop.exit_other"),
+        ("exit_kind", "learn_loop.exit_kind"),
         ("promotion", "learn_loop.promotion"),
         ("asset_bucket", "trained_models.asset_bucket"),
         ("plan_r_bin", "trained_models.plan_r_bin"),
@@ -971,7 +1491,7 @@ def _ask_all(facts: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
         name, spot = job
         try:
             return name, _decide(spot, facts)
-        except Exception as exc:  # noqa: BLE001 — one spot must not drop the others
+        except Exception as exc:  # noqa: BLE001 — one spot must not drop the rest
             row = _blank()
             row["error"] = type(exc).__name__
             return name, row

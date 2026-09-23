@@ -100,10 +100,9 @@ def metals_side(
         return side
     fact = "true" if measured else "false"
     sent = f"{instructions} The condition measured {fact}."
-    hour = datetime.now(timezone.utc).strftime("%Y%m%d%H")
     blob = sent + "\n" + json.dumps(clean, sort_keys=True, default=str)
-    digest = hashlib.sha256(blob.encode("utf-8")).hexdigest()[:16]
-    cache_key = f"{spot}|{digest}|{fact}|{hour}"
+    digest = hashlib.sha256(blob.encode("utf-8")).hexdigest()
+    cache_key = f"{spot}|{digest}|{fact}"
     cached = _CACHE.get(cache_key)
     if cached is not None:
         metals_side.last = cached
@@ -137,6 +136,27 @@ def _jsonable(facts: dict | None) -> dict[str, Any]:
             except (TypeError, ValueError):
                 out[str(key)] = str(value)
     return out
+
+
+def _socket_wait(facts: dict | None) -> float | None:
+    """Seconds until this bar prints, when that fact is already on the card.
+
+    No expiry means no timeout.
+    """
+
+    if not isinstance(facts, dict):
+        return None
+    for key in ("seconds_until_print", "seconds_from_clock", "bar_deadline_s", "timeout_s"):
+        raw = facts.get(key)
+        if isinstance(raw, bool) or raw is None:
+            continue
+        try:
+            number = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if number == number and number not in (float("inf"), float("-inf")) and number > 0:
+            return number
+    return None
 
 
 def _returned_score(answer: Any) -> float | None:
@@ -231,8 +251,10 @@ def _post(
             "User-Agent": "gtos-metals-choice/1",
         },
     )
+    wait = _socket_wait(facts)
     try:
-        with urllib.request.urlopen(req, timeout=6.0) as resp:
+        opened = urllib.request.urlopen(req, timeout=wait) if wait is not None else urllib.request.urlopen(req)
+        with opened as resp:
             body = json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         row["error"] = f"http_{exc.code}"
@@ -257,9 +279,6 @@ def _post(
         row["key_source"] = source
         _remember(spot, row)
         return row
-    best = None
-    best_p = -1.0
-    tied = False
     numeric: dict[str, float] = {}
     for name in order:
         if name not in probs or probs.get(name) is None or isinstance(probs.get(name), bool):
@@ -271,13 +290,12 @@ def _post(
         if p != p or p in (float("inf"), float("-inf")):
             continue
         numeric[name] = p
-        if best is None or p > best_p + 1e-12:
-            best = name
-            best_p = p
-            tied = False
-        elif abs(p - best_p) <= 1e-12:
-            tied = True
-    alternative = None if tied or best is None else best
+    try:
+        from src.judgment.jev_questions import unique_highest
+
+        alternative = unique_highest(numeric, order)
+    except Exception:
+        alternative = None
     side = None
     if alternative == true_name:
         side = "true"
@@ -293,7 +311,7 @@ def _post(
             "model": body.get("model") or MODEL,
             "key_fingerprint": key_fingerprint(key),
             "key_source": source,
-            "error": None if side else "tie",
+            "error": None if side else ("tie" if len(numeric) >= 2 else "empty"),
             "order_send": False,
             "flatten": False,
         }
@@ -311,7 +329,7 @@ def _repo() -> Path:
     for parent in here.parents:
         if (parent / "src" / "judgment").is_dir():
             return parent
-    return here.parents[4]
+    return here.parents[-1]
 
 
 def _remember(spot: str, row: dict[str, Any]) -> None:

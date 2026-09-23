@@ -1,34 +1,27 @@
-"""sub_mid_dn_re_proxy_nzdusd_short_m15_atr — Chair KEEP activate NZDUSD (2026-09-20). Affinity instrument×sleeve — NEVER port AUDUSD.
+"""NZDUSD M15 stretch fade. Never alias this sleeve to sub_mid_dn_revert.
 
-GROK_KEEP_ACTIVATE_20260920 — hist KEEP NZDUSD×sub_mid_dn_re_proxy SHORT Module_ATR (n=1786 sumR=+476.7 yf=1.0).
-PLACE=True APPLY=True LIVE_ARMED=True. place=writer only; Jev never places.
-NEVER alias to live sub_mid_dn_revert (H4 LONG).
+The session, the stretch, the warmup, and the other gates are Choices on
+this bar. The ATR window, the stop pad, and the size are Scores in that
+same post. The side is its own Choice. An empty answer, a tie, or an
+error does not emit and does not restore a printed constant. The hour
+text is read off the stamp. This module does not send.
 
-EXIT HONESTY — NEVER alias to live `sub_mid_dn_revert`:
-  LIVE `sub_mid_dn_revert`: H4 · FIXED LONG · geom stop=1.0*ATR target=3*stop · session=ny
-                                 · CLEAN3 surface excludes NZDUSD · affinity NARROW on NZDUSD
-  THIS sleeve: M15 · SHORT only · NZDUSD only ON_SURFACE · Module_ATR research exit
-               (structure stop + time_stop@32) matching KEEP blotter
-
-Idea (causal): NZDUSD mid = SMA20; upside stretch close > mid + 1.0*ATR14 in London/NY
-→ SHORT mean-revert toward mid (dn_re). Stop beyond stretch high (+0.1*ATR). No fixed 3R
-target — horizon honesty is PRIMARY_HORIZON=32 M15 bars (~8h) close (Module_ATR affinity).
-
-Provenance KEEP (cite, do not re-merge Dig R):
+Never port AUDUSD. Cite, do not re-merge:
   /workspace/instrument-edge/packs/NZDUSD_SUB_MID_DN_RE_SHORT_DEEPEN_20260920.json
-  n=1786 avg_R=0.266912 sumR=476.7043 yearfold=1.0 KEEP; do_not_port_AUD
 """
 from __future__ import annotations
 
-from . import fx_spot
+import threading
+from datetime import datetime, timezone
+from typing import Any, Optional
 
-from typing import Optional
+from . import fx_spot
 
 
 class _DraftTradeIntent:
     __slots__ = (
         "sleeve", "symbol", "direction", "decision_day",
-        "stop_dist", "target_dist", "intra_size",
+        "stop_dist", "target_dist", "intra_size", "expiry_bars",
     )
 
     def __init__(
@@ -39,7 +32,8 @@ class _DraftTradeIntent:
         decision_day: str,
         stop_dist: float,
         target_dist: float | None = None,
-        intra_size: float = 1.0,
+        intra_size: float | None = None,
+        expiry_bars: int | None = None,
     ):
         self.sleeve = sleeve
         self.symbol = symbol
@@ -48,6 +42,7 @@ class _DraftTradeIntent:
         self.stop_dist = stop_dist
         self.target_dist = target_dist
         self.intra_size = intra_size
+        self.expiry_bars = expiry_bars
 
     def __repr__(self) -> str:
         return (
@@ -65,20 +60,10 @@ def _resolve_trade_intent_cls():
         return _DraftTradeIntent
 
 
-TradeIntent = _DraftTradeIntent  # default for recovered/ standalone import
-
+TradeIntent = _DraftTradeIntent
 
 TAG = "sub_mid_dn_re_proxy_nzdusd_short_m15_atr"
-ON_SURFACE: tuple[str, ...] = ("NZDUSD",)  # NEVER add AUDUSD — insufficient_span honesty
-
-SMA_N = 20
-ATR_N = 14
-STRETCH_ATR = 1.0
-STOP_PAD_ATR = 0.10
-PRIMARY_HORIZON_BARS = 32
-DIRECTION = -1
-LONDON_HOURS = range(7, 12)
-NY_HOURS = range(12, 21)
+ON_SURFACE: tuple[str, ...] = ("NZDUSD",)
 
 PLACE = True
 APPLY = True
@@ -87,10 +72,88 @@ NEVER_ALIAS_TO = "sub_mid_dn_revert"
 LENS = "Module_ATR_affinity_ONLY"
 CITE_SEPARATE_FROM = ("Dig_TRAIN", "Module_blotter", NEVER_ALIAS_TO)
 
-_WARMUP = SMA_N + ATR_N + 5
+_MODEL = "jev-1.13.0"
+_UNSET = " An empty score leaves it unset. A tie leaves it unset. An error leaves it unset."
+_LOCK = threading.Lock()
+_CACHE: dict[tuple, dict[str, Any]] = {}
+_SCORE_SPOTS = ("sma_bars", "atr_bars", "stretch_atr", "stop_pad", "intra_size")
+_DIRECTION = "direction"
+_BOOK_SIDE = {"long": 1, "short": -1}
+_SCORE_TEXT = {
+    "sma_bars": "The score you return is how many closes form the midpoint on this bar.",
+    "atr_bars": "The score you return is how many bars the ATR on this stop uses.",
+    "stretch_atr": "The score you return is how many ATR above the midpoint count as stretched.",
+    "stop_pad": "The score you return is the ATR pad beyond the stretch high.",
+    "intra_size": "The score you return is this sleeve's size on this bar.",
+}
+
+
+def _finite(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _whole(value: Any) -> int | None:
+    number = _finite(value)
+    if number is None:
+        return None
+    whole = int(round(number))
+    if whole < 1:
+        return None
+    return whole
+
+
+def _epoch(value: Any) -> float | None:
+    if isinstance(value, datetime):
+        stamp = value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+        return stamp.timestamp()
+    if isinstance(value, bool) or value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.timestamp()
+    return None
+
+
+def _seconds_until_next(bar_time, bar_times) -> float | None:
+    """Observed spacing until the next print. No spacing means no deadline."""
+
+    del bar_time
+    stamps: list[float] = []
+    if bar_times is None:
+        return None
+    for item in list(bar_times)[-2:]:
+        epoch = _epoch(item)
+        if epoch is not None:
+            stamps.append(epoch)
+    if len(stamps) < 2:
+        return None
+    span = stamps[-1] - stamps[-2]
+    if span <= 0:
+        return None
+    remain = stamps[-1] + span - datetime.now(timezone.utc).timestamp()
+    if remain <= 0:
+        return None
+    return remain
 
 
 def _hour(bar_time, bar_times, i: int) -> Optional[int]:
+    """Hour field off the stamp. Two digits is the clock text, not a decision."""
+
     t = None
     if bar_time is not None:
         t = bar_time
@@ -114,25 +177,30 @@ def _hour(bar_time, bar_times, i: int) -> Optional[int]:
     return None
 
 
-def _atr14(bars, i: int) -> float:
-    if i < ATR_N:
-        return 0.0
-    s = 0.0
-    for j in range(i - ATR_N + 1, i + 1):
-        prev_c = bars[j - 1].c if j > 0 else bars[j].c
-        tr = max(
+def _sma(bars, i: int, n: int) -> float | None:
+    if n < 1 or i < n - 1:
+        return None
+    total = 0.0
+    for j in range(i - n + 1, i + 1):
+        close = _finite(getattr(bars[j], "c", None))
+        if close is None:
+            return None
+        total += close
+    return total / n
+
+
+def _atr(bars, i: int, n: int) -> float | None:
+    if i < n or i < 1:
+        return None
+    total = 0.0
+    for j in range(i - n + 1, i + 1):
+        prev = bars[j - 1].c
+        total += max(
             bars[j].h - bars[j].l,
-            abs(bars[j].h - prev_c),
-            abs(bars[j].l - prev_c),
+            abs(bars[j].h - prev),
+            abs(bars[j].l - prev),
         )
-        s += tr
-    return s / ATR_N
-
-
-def _sma(bars, i: int, n: int) -> float:
-    if i + 1 < n:
-        return float("nan")
-    return sum(bars[j].c for j in range(i - n + 1, i + 1)) / n
+    return total / n
 
 
 def spot_pack(
@@ -146,59 +214,29 @@ def spot_pack(
     aux_times=None,
     **_,
 ):
-    """Facts for this bar. The Choice, not these booleans, decides the emit."""
+    """Raw facts and the Choice questions. The numbers are not decided here."""
+
     del aux_bars, aux_times
     n = len(bars) if bars else 0
     i = n - 1 if n else -1
-    on_surface = bool(symbol in ON_SURFACE and bars)
-    armed = bool(LIVE_ARMED)
-    warmup_ok = bool(i >= _WARMUP)
     hr = _hour(bar_time, bar_times, i) if i >= 0 else None
-    hour_known = hr is not None
-    in_session = bool(hour_known and (hr in LONDON_HOURS or hr in NY_HOURS))
-    atr = _atr14(bars, i) if i >= ATR_N else 0.0
-    atr_ok = bool(atr > 0.0)
-    mid = _sma(bars, i, SMA_N) if i >= 0 else float("nan")
-    mid_ok = bool(mid == mid)
-    stretch = bool(
-        i >= 0 and atr_ok and mid_ok and bars[i].c > mid + STRETCH_ATR * atr
-    )
-    if i >= 0 and atr_ok:
-        stop_dist = (float(bars[i].h) + STOP_PAD_ATR * atr) - float(bars[i].c)
-    else:
-        stop_dist = 0.0
-    stop_ok = bool(stop_dist > 0.0)
-    pattern_printed = bool(
-        on_surface
-        and armed
-        and warmup_ok
-        and hour_known
-        and in_session
-        and atr_ok
-        and mid_ok
-        and stretch
-        and stop_ok
-    )
+    close = high = low = None
+    if bars and i >= 0:
+        close = getattr(bars[i], "c", None)
+        high = getattr(bars[i], "h", None)
+        low = getattr(bars[i], "l", None)
     state = fx_spot.book_state(
         TAG,
         symbol,
-        on_surface=on_surface,
+        on_named_surface=symbol in ON_SURFACE,
         n_bars=n,
-        armed=armed,
-        warmup_bars=_WARMUP,
-        warmup_complete=warmup_ok,
+        marked_live_armed=bool(LIVE_ARMED),
         hour=hr,
-        hour_known=hour_known,
-        inside_london_or_ny=in_session,
-        atr=atr if atr_ok else None,
-        atr_positive=atr_ok,
-        mid=mid if mid_ok else None,
-        mid_finite=mid_ok,
-        close_above_mid_plus_one_atr=stretch,
-        stop_dist=float(stop_dist) if stop_ok else None,
-        stop_positive=stop_ok,
-        pattern_printed=pattern_printed,
+        close=close,
+        high=high,
+        low=low,
         decision_day=decision_day,
+        named_surface=list(ON_SURFACE),
     )
     ask = "Which side of this condition is this bar?"
     questions = {
@@ -232,9 +270,9 @@ def spot_pack(
         ),
         "session": fx_spot.q(
             "inside_london_or_ny",
-            "The hour is inside the London or New York window.",
+            "The hour is inside the London or New York window for this sleeve.",
             "outside_london_and_ny",
-            "The hour is outside both the London and New York windows.",
+            "The hour is outside that window.",
             ask,
         ),
         "atr": fx_spot.q(
@@ -246,16 +284,16 @@ def spot_pack(
         ),
         "mid": fx_spot.q(
             "mid_finite",
-            "The SMA20 midpoint is a finite price.",
+            "The midpoint of this bar is a finite price.",
             "mid_not_a_number",
-            "The SMA20 midpoint is not a finite price.",
+            "The midpoint is not a finite price.",
             ask,
         ),
         "stretch": fx_spot.q(
-            "close_above_mid_plus_one_atr",
-            "The close is above the midpoint by at least one ATR.",
+            "close_stretched_above_mid",
+            "The close is stretched above the midpoint.",
             "stretch_absent",
-            "The close is not that far above the midpoint.",
+            "The close is not stretched above the midpoint.",
             ask,
         ),
         "stop": fx_spot.q(
@@ -266,17 +304,129 @@ def spot_pack(
             ask,
         ),
     }
-    build = None
-    if i >= 0 and stop_ok:
-        build = {
-            "sleeve": TAG,
-            "symbol": symbol,
-            "direction": DIRECTION,
-            "decision_day": decision_day,
-            "stop_dist": float(stop_dist),
-            "target_dist": None,
+    return {"state": state, "questions": questions, "i": i, "close": close, "high": high}
+
+
+def _cache_key(state: dict) -> tuple:
+    return (
+        state.get("sleeve"),
+        state.get("symbol"),
+        state.get("decision_day"),
+        state.get("n_bars"),
+        _finite(state.get("close")),
+        _finite(state.get("high")),
+        _finite(state.get("low")),
+        state.get("hour"),
+    )
+
+
+def _continues(picks: dict, questions: dict) -> bool:
+    for qid, spec in questions.items():
+        if picks.get(qid) != spec["a"]:
+            return False
+    return bool(questions)
+
+
+def _ask(state: dict, questions: dict, bars=None, index=None, bar_times=None) -> dict[str, Any]:
+    """Choices and the three scores in one post. The same facts reuse the pack."""
+
+    key = _cache_key(state)
+    with _LOCK:
+        hit = _CACHE.get(key)
+    if hit is not None:
+        return dict(hit)
+    pack = _post(state, questions, bars, index, bar_times)
+    symbol = state.get("symbol")
+    with _LOCK:
+        for old in list(_CACHE):
+            if old[1] == symbol and old != key:
+                _CACHE.pop(old, None)
+        _CACHE[key] = pack
+    return dict(pack)
+
+
+def _post(state: dict, choice_questions: dict, bars=None, index=None, bar_times=None) -> dict[str, Any]:
+    out: dict[str, Any] = {spot: None for spot in _SCORE_SPOTS}
+    out["picks"] = {qid: None for qid in choice_questions}
+    out["direction"] = None
+    try:
+        from src.judgment.jev_client import evaluate
+        from src.judgment.jev_questions import (
+            append_outcome,
+            prior_outcomes,
+            returned_number,
+            spot_question,
+            unique_highest,
+        )
+    except Exception:
+        return out
+    payload: dict[str, Any] = {}
+    order: dict[str, tuple[str, str]] = {}
+    for qid, spec in choice_questions.items():
+        side_a = spec["a"]
+        side_b = spec["b"]
+        order[qid] = (side_a, side_b)
+        payload[qid] = {
+            "type": "choice",
+            "instructions": spec["instructions"],
+            "criteria": {side_a: spec["a_text"], side_b: spec["b_text"]},
         }
-    return {"state": state, "questions": questions, "build": build}
+    from .spot_choice import amount_question, anchors_for
+
+    _post.anchors = {}
+    for spot in _SCORE_SPOTS:
+        anchors = anchors_for(spot, state, bars=bars, index=index, bar_times=bar_times)
+        _post.anchors[spot] = anchors
+        payload.update(amount_question(spot, _SCORE_TEXT[spot], anchors))
+    payload.update(
+        spot_question(
+            _DIRECTION,
+            "Which side does this stretch take on this state? "
+            "An empty answer, a tie, or an error is not a side.",
+            {
+                "short": "The stretch fades short.",
+                "long": "The stretch goes long.",
+            },
+        )
+    )
+    card = dict(state)
+    try:
+        card["prior_outcomes"] = prior_outcomes(state=card, questions=payload)
+    except Exception:
+        card["prior_outcomes"] = []
+    try:
+        receipt = evaluate(card, questions=payload, model=_MODEL, merge_sleeve=False)
+    except Exception:
+        return out
+    if not isinstance(receipt, dict) or not receipt.get("ok"):
+        return out
+    raw = receipt.get("answers")
+    answers = raw if isinstance(raw, dict) else {}
+    picks: dict[str, str | None] = {}
+    for qid, names in order.items():
+        block = answers.get(qid)
+        probs = block.get("probabilities") if isinstance(block, dict) else None
+        try:
+            picks[qid] = unique_highest(probs, names)
+        except Exception:
+            picks[qid] = None
+    out["picks"] = picks
+    for spot in _SCORE_SPOTS:
+        from .spot_choice import value_at
+
+        number = value_at(returned_number(answers.get(spot)), _post.anchors.get(spot))
+        out[spot] = number
+        try:
+            append_outcome(spot, number, card, error=None if number is not None else "empty")
+        except Exception:
+            pass
+    direction_block = answers.get(_DIRECTION)
+    direction_probs = direction_block.get("probabilities") if isinstance(direction_block, dict) else None
+    try:
+        out["direction"] = unique_highest(direction_probs, ("short", "long"))
+    except Exception:
+        out["direction"] = None
+    return out
 
 
 def generate(
@@ -290,7 +440,8 @@ def generate(
     aux_times=None,
     **_,
 ):
-    """Emit the SHORT stretch fade when every spot's continue side is the unique highest."""
+    """Emit when every gate's continue side is unique and the scores form a stop."""
+
     trade_intent = _resolve_trade_intent_cls()
     packed = spot_pack(
         symbol,
@@ -300,34 +451,61 @@ def generate(
         bar_times=bar_times,
         aux_bars=aux_bars,
         aux_times=aux_times,
-        **_,
     )
-    n_bars = packed["state"]["n_bars"]
-    picks = fx_spot.unique_sides(
-        packed["questions"],
-        packed["state"],
-        f"{TAG}|{symbol}|{n_bars}|{decision_day}",
-    )
-    if not fx_spot.continues(picks, packed["questions"]):
+    state = dict(packed["state"])
+    remain = _seconds_until_next(bar_time, bar_times)
+    if remain is not None:
+        state["seconds_until_cycle"] = remain
+    asked = _ask(state, packed["questions"], bars, packed.get("i"), bar_times)
+    if not _continues(asked.get("picks") or {}, packed["questions"]):
         return None
-    build = packed["build"]
-    if not build:
+    direction = _BOOK_SIDE.get(asked.get("direction"))
+    sma_n = _whole(asked.get("sma_bars"))
+    atr_n = _whole(asked.get("atr_bars"))
+    stretch = _finite(asked.get("stretch_atr"))
+    pad = _finite(asked.get("stop_pad"))
+    intra = _finite(asked.get("intra_size"))
+    i = packed["i"]
+    close = _finite(packed.get("close"))
+    high = _finite(packed.get("high"))
+    if None in (direction, sma_n, atr_n, stretch, pad, intra, close, high) or not bars or i < 1:
         return None
-    return trade_intent(**build)
+    atr = _atr(bars, i, atr_n)
+    mid = _sma(bars, i, sma_n)
+    if atr is None or atr <= 0 or mid is None:
+        return None
+    if close <= mid + stretch * atr:
+        return None
+    stop_dist = (high + pad * atr) - close
+    if stop_dist <= 0:
+        return None
+    try:
+        return trade_intent(
+            sleeve=TAG,
+            symbol=symbol,
+            direction=direction,
+            decision_day=decision_day,
+            stop_dist=float(stop_dist),
+            target_dist=None,
+            intra_size=intra,
+        )
+    except TypeError:
+        return None
+
 
 DRAFT_SLEEVESPEC = {
     "tag": TAG,
     "timeframe": "M15",
     "cluster": "fx_reversion_research",
     "on_surface": list(ON_SURFACE),
-    "direction_fixed": DIRECTION,
+    "direction_fixed": None,
     "exit": {
         "model": "Module_ATR_research",
         "structure_stop": True,
-        "stop_pad_atr": STOP_PAD_ATR,
-        "time_stop_bars": PRIMARY_HORIZON_BARS,
+        "stop_pad_atr": None,
+        "time_stop_bars": None,
         "fixed_rr_target": None,
-        "note": "match KEEP blotter: structure stop OR time_stop@32; NEVER live H4 1:3",
+        "note": "stop pad and horizon are scores. This spec does not write them.",
     },
     "never_alias_to": NEVER_ALIAS_TO,
     "live_armed": True,

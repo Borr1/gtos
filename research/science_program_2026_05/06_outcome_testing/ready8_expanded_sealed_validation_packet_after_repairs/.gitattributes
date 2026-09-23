@@ -1,4 +1,3 @@
-# sot: no Git LFS. Do not add filter=lfs rules.
 *.json text eol=lf
 *.jsonl text eol=lf
 *.md text eol=lf

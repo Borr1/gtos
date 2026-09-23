@@ -1,96 +1,199 @@
-"""Vendored VOLUME / AUCTION PROFILE engine for the live vp_euidx_pocgrav sleeve.
+"""Prior-day volume profile for the live POC sleeve.
 
-BYTE-FAITHFUL port of the LOCKED route engine
-  research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/volume_profile.py
-The ONLY adaptation is the M1 SOURCE: the route reads M1 CSVs from data/mt5_research_exports
-(volume_profile.load_m1, route lines 54-81); the live port has no CSV — it consumes the live M1
-feed as (aux_bars, aux_times) the book engine fetches (bar_provider TF_M1, tick_volume in Bar.v).
-Every other function is a verbatim copy with the cited source lines, so the live profile/POC/value-
-area/node computation is IDENTICAL to the validated book:
-
-  DayProfile            <- route volume_profile.py:87-105   (container, verbatim)
-  _distribute_bar_volume<- route volume_profile.py:108-127  (verbatim)
-  _value_area           <- route volume_profile.py:130-144  (verbatim)
-  _find_nodes           <- route volume_profile.py:147-172  (verbatim)
-  build_day_profile     <- route volume_profile.py:175-200  (verbatim)
-  daily_profiles        <- route volume_profile.py:203-232  (verbatim body; SOURCE line adapted:
-                            `T, B = load_m1(sym)` -> `T, B = load_m1(aux_bars, aux_times)`)
-  prior_profile_at      <- route volume_profile.py:239-250  (verbatim — the leak-free prior-day pick)
-  nearest_node_state    <- route volume_profile.py:253-286  (verbatim)
-  load_m1               <- route volume_profile.py:54-81    (ADAPTED: CSV -> (aux_bars, aux_times))
-  BIN_FRAC              <- route VP_confluence.py:29 (=0.03, the bin_atr_frac the VP sleeve passes
-                            via `vp.daily_profiles(sym, bin_atr_frac=vc.BIN_FRAC)`).
-
-LEAK DISCIPLINE (route docstring lines 15-22, preserved): a day-D profile is built ONLY from day-D
-M1 bars; an entry at H4 bar time t uses prior_profile_at -> the most recent COMPLETED day strictly
-before t.date(). Reproduced verbatim here. Pure compute: stdlib only, no IO/MT5/network.
+A day profile is built only from that day's M1 bars. The bin width, the value
+area, the node marks, and the near-node distance are scores for this feed.
+An empty score, a tie, or an error leaves that bound unset and does not put
+a printed width back. The prior completed day is the profile a later bar may use.
 """
 from __future__ import annotations
-import math, statistics
+
+import math
+import statistics
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import date, timezone
-from collections import OrderedDict
 
-# Route VP_confluence.py:29 — the bin_atr_frac the VP sleeve actually uses (NOT the volume_profile.py
-# default of 0.10). The generator passes this explicitly, exactly as the route does (vc.BIN_FRAC).
-BIN_FRAC = 0.03
+_MODEL = "jev-1.13.0"
+_UNSET = " An empty score leaves it unset. A tie leaves it unset. An error leaves it unset."
+_CACHE: dict[tuple, dict] = {}
+
+# Importers still load the name. It is not the bin width.
+BIN_FRAC = None
+
+_BUILD_SPOTS = (
+    "bin_atr_frac",
+    "value_area_frac",
+    "node_min_count",
+    "hvn_multiple",
+    "lvn_multiple",
+    "min_bin_count",
+    "range_window",
+)
+_NEAR_SPOT = "near_atr"
+
+_PROFILE_TEXT = {
+    "bin_atr_frac": "The score you return is this feed's bin width as a fraction of the trailing daily-range median.",
+    "value_area_frac": "The score you return is the share of the day's volume the value area covers.",
+    "node_min_count": "The score you return is how many bins a profile needs before a node can be marked.",
+    "hvn_multiple": "The score you return is the multiple of neighbourhood volume that marks a high-volume node.",
+    "lvn_multiple": "The score you return is the multiple of neighbourhood volume that marks a low-volume node.",
+    "min_bin_count": "The score you return is the least number of bins a day's profile uses.",
+    "range_window": "The score you return is how many prior daily ranges the bin-width median uses.",
+    "near_atr": "The score you return is the ATR distance that counts as standing on a profile node.",
+}
 
 
-# -------------------------------------------------------------------------
-# M1 loading — ADAPTED from route volume_profile.load_m1 (lines 54-81).
-# Route: reads {sym}_M1.csv across monthly bridge dirs, builds Bar(o,h,l,c,v) with v=TICK VOLUME,
-#        dedups by timestamp (merged[t]=Bar(...), last wins), returns (times, bars) ascending.
-# Live: the M1 feed already arrives as (aux_bars, aux_times) from the engine (bar_provider TF_M1;
-#       Bar.v carries tick_volume). This function reproduces the route's POST-LOAD INVARIANTS
-#       byte-for-byte — dedup by timestamp (last wins) + ascending sort — over the live feed instead
-#       of CSV rows. tz-aware times are normalized to UTC so the per-day grouping in daily_profiles
-#       (`t.date()`) is the UTC calendar date (the route's M1 timestamps are already day-local/naive;
-#       naive inputs are left untouched so synthetic-parity fixtures match the route exactly).
-# -------------------------------------------------------------------------
+def _num(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _count(value):
+    number = _num(value)
+    if number is None or number < 1:
+        return None
+    return int(round(number))
+
+
+def _plain(facts: dict) -> dict:
+    out = {}
+    for key, value in facts.items():
+        if isinstance(value, bool) or value is None or isinstance(value, (str, int)):
+            out[str(key)] = value
+            continue
+        number = _num(value)
+        if number is not None:
+            out[str(key)] = number
+        elif value is not None:
+            out[str(key)] = str(value)
+    return out
+
+
+def _cache_key(facts: dict, spots: tuple[str, ...], anchors: dict | None = None) -> tuple:
+    plain = _plain(facts)
+    levels = []
+    if isinstance(anchors, dict):
+        for spot in spots:
+            pairs = anchors.get(spot) or ()
+            levels.append((spot, tuple((label, value) for label, value in pairs)))
+    return (spots, tuple(sorted(plain.items())), tuple(levels))
+
+
+def ask_scores(facts: dict, texts: dict[str, str], bars=None, index=None, bar_times=None) -> dict:
+    """One post. Each spot is the returned score, or unset. A failed post is not cached."""
+
+    spots = tuple(texts)
+    out = {spot: None for spot in spots}
+    out["_asked"] = False
+    try:
+        from src.judgment.jev_client import evaluate
+        from src.judgment.jev_questions import (
+            append_outcome,
+            prior_outcomes,
+            returned_number,
+        )
+        from .spot_choice import amount_question, anchors_for, value_at
+    except Exception:
+        return out
+    questions: dict = {}
+    built = {}
+    for spot, text in texts.items():
+        anchors = anchors_for(spot, facts, bars=bars, index=index, bar_times=bar_times)
+        built[spot] = anchors
+        questions.update(amount_question(spot, str(text).strip(), anchors))
+    key = _cache_key(facts, spots, built)
+    hit = _CACHE.get(key)
+    if hit is not None:
+        return dict(hit)
+    if not questions:
+        return out
+    state = _plain(facts)
+    try:
+        state["prior_outcomes"] = prior_outcomes(state=state, questions=questions)
+    except Exception:
+        state["prior_outcomes"] = []
+    try:
+        receipt = evaluate(
+            state,
+            questions=questions,
+            model=_MODEL,
+            merge_sleeve=False,
+            require_equity=False,
+        )
+    except Exception:
+        return out
+    if not isinstance(receipt, dict) or not receipt.get("ok"):
+        return out
+    answers = receipt.get("answers")
+    if not isinstance(answers, dict):
+        answers = {}
+    for spot in spots:
+        number = value_at(returned_number(answers.get(spot)), built.get(spot))
+        out[spot] = number
+        try:
+            append_outcome(
+                spot,
+                number,
+                state,
+                error=None if number is not None else "empty",
+            )
+        except Exception:
+            pass
+    out["_asked"] = True
+    symbol = facts.get("symbol")
+    for old in list(_CACHE):
+        if old == key:
+            continue
+        blob = old[1] if isinstance(old, tuple) and len(old) > 1 else ()
+        if symbol is not None and ("symbol", symbol) in blob:
+            _CACHE.pop(old, None)
+    _CACHE[key] = dict(out)
+    return dict(out)
+
+
 def _to_utc(t):
-    """Normalize a tz-aware datetime to UTC (so `.date()` is the UTC day); leave naive datetimes
-    untouched (the route's M1 timestamps are naive — keeps synthetic parity exact)."""
+    """UTC day for an aware stamp. A naive stamp stays naive."""
     tz = getattr(t, "tzinfo", None)
     return t.astimezone(timezone.utc) if tz is not None else t
 
 
 def load_m1(aux_bars, aux_times):
-    """Return (times[list[datetime]], bars[list[Bar(o,h,l,c,v)]]) of M1, ascending, deduped — the
-    same shape route volume_profile.load_m1 returns, but sourced from the live (aux_bars, aux_times)
-    feed instead of CSV. v is TICK VOLUME (Bar.v). Returns ([], []) when the feed is empty/misaligned.
-
-    Route invariants reproduced: dedup by timestamp (merged[t]=bar, last wins — route line 69 overwrite
-    semantics) and ascending sort by timestamp (route lines 78-79)."""
+    """Deduped ascending M1 (times, bars). An empty or uneven feed is empty."""
     if not aux_bars or not aux_times or len(aux_bars) != len(aux_times):
         return [], []
     merged = {}
     for t, b in zip(aux_times, aux_bars):
-        merged[_to_utc(t)] = b            # dedup: last wins (route merged[t]=Bar(...) overwrite)
+        merged[_to_utc(t)] = b
     if not merged:
         return [], []
     items = sorted(merged.items(), key=lambda kv: kv[0])
-    T = [k for k, _ in items]; B = [v for _, v in items]
-    return T, B
+    times = [k for k, _ in items]
+    bars = [v for _, v in items]
+    return times, bars
 
 
-# -------------------------------------------------------------------------
-# DayProfile container + builders  (route volume_profile.py:87-200, verbatim)
-# -------------------------------------------------------------------------
 @dataclass
 class DayProfile:
     day: date
-    bin_w: float                      # price width of one bin
-    lo: float                         # bottom price of bin 0
-    hist: list = field(default_factory=list)   # volume per bin (index 0 = lowest price)
+    bin_w: float
+    lo: float
+    hist: list = field(default_factory=list)
     total_v: float = 0.0
-    poc: float = 0.0                  # price (bin center) of point-of-control
+    poc: float = 0.0
     poc_bin: int = 0
-    vah: float = 0.0                  # value-area high (price)
-    val: float = 0.0                  # value-area low (price)
+    vah: float = 0.0
+    val: float = 0.0
     day_h: float = 0.0
     day_l: float = 0.0
-    hvn: list = field(default_factory=list)   # list of HVN prices (bin centers), strongest first
-    lvn: list = field(default_factory=list)   # list of LVN/void prices (bin centers)
+    hvn: list = field(default_factory=list)
+    lvn: list = field(default_factory=list)
     n_m1: int = 0
 
     def bin_center(self, b):
@@ -98,9 +201,7 @@ class DayProfile:
 
 
 def _distribute_bar_volume(hist, lo, bin_w, nbins, bar):
-    """Distribute one M1 bar's volume across the price bins its range spans.
-    Uses uniform spread across [low,high] (the standard volume-profile approximation when
-    only OHLCV per bar is available). Leak-free: uses only this closed bar's own OHLC."""
+    """Spread one closed bar's volume across the bins its range covers."""
     if bar.h <= bar.l:
         b = int((bar.c - lo) / bin_w)
         if 0 <= b < nbins:
@@ -119,125 +220,174 @@ def _distribute_bar_volume(hist, lo, bin_w, nbins, bar):
             hist[b] += share
 
 
-def _value_area(hist, poc_bin, total_v, frac=0.70):
-    """Expand from POC bin outward, each step taking the heavier of the two neighbouring bins,
-    until cumulative volume >= frac*total. Returns (low_bin, high_bin)."""
+def _value_area(hist, poc_bin, total_v, frac=None):
+    """Bins that hold the returned volume share. An unset share returns None."""
+    number = _num(frac)
+    if number is None or number <= 0 or total_v <= 0 or not hist:
+        return None
     n = len(hist)
+    if poc_bin < 0 or poc_bin >= n:
+        return None
     lo_b = hi_b = poc_bin
     acc = hist[poc_bin]
-    target = frac * total_v
+    target = number * total_v
     while acc < target and (lo_b > 0 or hi_b < n - 1):
         down = hist[lo_b - 1] if lo_b > 0 else -1.0
         up = hist[hi_b + 1] if hi_b < n - 1 else -1.0
         if up >= down:
-            hi_b += 1; acc += hist[hi_b]
+            hi_b += 1
+            acc += hist[hi_b]
         else:
-            lo_b -= 1; acc += hist[lo_b]
+            lo_b -= 1
+            acc += hist[lo_b]
     return lo_b, hi_b
 
 
-def _find_nodes(hist, bin_w, lo, total_v):
-    """HVN = local maxima with volume >= 1.3x neighbourhood mean; LVN = local minima with
-    volume <= 0.5x neighbourhood mean (and > 0 occupancy somewhere around them, i.e. inside the
-    traded range). Returns (hvn_prices_sorted_by_strength, lvn_prices)."""
+def _find_nodes(hist, bin_w, lo, total_v, bounds=None):
+    """High and low nodes. Missing scores return no nodes."""
+    pack = bounds if isinstance(bounds, dict) else None
+    if pack is None:
+        pack = ask_scores(
+            {"n_bins": len(hist), "total_v": _num(total_v), "bin_w": _num(bin_w)},
+            {name: _PROFILE_TEXT[name] for name in ("node_min_count", "hvn_multiple", "lvn_multiple")},
+        )
+    need = _count(pack.get("node_min_count"))
+    hvn_m = _num(pack.get("hvn_multiple"))
+    lvn_m = _num(pack.get("lvn_multiple"))
     n = len(hist)
-    if n < 5 or total_v <= 0:
+    if need is None or hvn_m is None or lvn_m is None or n < need or total_v <= 0:
         return [], []
-    # occupied range
     occ = [i for i in range(n) if hist[i] > 0]
     if not occ:
         return [], []
     a, z = occ[0], occ[-1]
     mean_v = total_v / max(1, (z - a + 1))
-    hvn = []; lvn = []
+    hvn = []
+    lvn = []
     for i in range(a + 1, z):
         v = hist[i]
-        left = hist[i - 1]; right = hist[i + 1]
-        # local peak
-        if v >= left and v >= right and v >= 1.3 * mean_v:
+        left = hist[i - 1]
+        right = hist[i + 1]
+        if v >= left and v >= right and v >= hvn_m * mean_v:
             hvn.append((v, lo + (i + 0.5) * bin_w))
-        # local trough / void (must be a real interior trough between traded prices)
-        if v <= left and v <= right and v <= 0.5 * mean_v:
+        if v <= left and v <= right and v <= lvn_m * mean_v:
             lvn.append((v, lo + (i + 0.5) * bin_w))
     hvn.sort(key=lambda x: -x[0])
     lvn.sort(key=lambda x: x[0])
     return [p for _, p in hvn], [p for _, p in lvn]
 
 
-def build_day_profile(day, m1_bars, bin_w):
-    """Build a DayProfile from a list of CLOSED M1 bars belonging to `day`. bin_w in price units.
-    All inputs are that day's own bars -> for forward use, callers must take the PRIOR day."""
-    if not m1_bars or bin_w <= 0:
+def _feed_facts(aux_bars, aux_times) -> dict:
+    times, bars = load_m1(aux_bars, aux_times)
+    facts: dict = {"n_m1": len(bars)}
+    if times:
+        facts["first_stamp"] = str(times[0])
+        facts["last_stamp"] = str(times[-1])
+    if bars:
+        last = bars[-1]
+        facts["last_close"] = _num(getattr(last, "c", None))
+    return facts
+
+
+def build_day_profile(day, m1_bars, bin_w, bounds=None):
+    """One day's profile. A passed pack is used. A missing pack asks once."""
+    width = _num(bin_w)
+    if not m1_bars or width is None or width <= 0:
+        return None
+    pack = bounds if isinstance(bounds, dict) else None
+    if pack is None:
+        pack = ask_scores(
+            {"n_m1": len(m1_bars), "day": str(day), "bin_w": width},
+            {name: _PROFILE_TEXT[name] for name in ("value_area_frac", "node_min_count", "hvn_multiple", "lvn_multiple", "min_bin_count")},
+            bars=m1_bars,
+            index=len(m1_bars) - 1,
+        )
+    floor = _count(pack.get("min_bin_count"))
+    frac = _num(pack.get("value_area_frac"))
+    if floor is None or frac is None:
         return None
     day_l = min(b.l for b in m1_bars)
     day_h = max(b.h for b in m1_bars)
     rng = day_h - day_l
     if rng <= 0:
         return None
-    nbins = max(5, int(math.ceil(rng / bin_w)) + 1)
+    nbins = int(math.ceil(rng / width)) + 1
+    if nbins < floor:
+        nbins = floor
     lo = day_l
     hist = [0.0] * nbins
     for b in m1_bars:
-        _distribute_bar_volume(hist, lo, bin_w, nbins, b)
+        _distribute_bar_volume(hist, lo, width, nbins, b)
     total_v = sum(hist)
     if total_v <= 0:
         return None
     poc_bin = max(range(nbins), key=lambda i: hist[i])
-    lo_b, hi_b = _value_area(hist, poc_bin, total_v, 0.70)
-    hvn, lvn = _find_nodes(hist, bin_w, lo, total_v)
-    dp = DayProfile(day=day, bin_w=bin_w, lo=lo, hist=hist, total_v=total_v,
-                    poc_bin=poc_bin, poc=lo + (poc_bin + 0.5) * bin_w,
-                    vah=lo + (hi_b + 0.5) * bin_w, val=lo + (lo_b + 0.5) * bin_w,
-                    day_h=day_h, day_l=day_l, hvn=hvn, lvn=lvn, n_m1=len(m1_bars))
-    return dp
+    area = _value_area(hist, poc_bin, total_v, frac)
+    if area is None:
+        return None
+    lo_b, hi_b = area
+    hvn, lvn = _find_nodes(hist, width, lo, total_v, pack)
+    return DayProfile(
+        day=day,
+        bin_w=width,
+        lo=lo,
+        hist=hist,
+        total_v=total_v,
+        poc_bin=poc_bin,
+        poc=lo + (poc_bin + 0.5) * width,
+        vah=lo + (hi_b + 0.5) * width,
+        val=lo + (lo_b + 0.5) * width,
+        day_h=day_h,
+        day_l=day_l,
+        hvn=hvn,
+        lvn=lvn,
+        n_m1=len(m1_bars),
+    )
 
 
-def daily_profiles(aux_bars, aux_times, bin_atr_frac=0.10):
-    """Build a leak-free per-day profile dict {date: DayProfile} from the live M1 feed.
-    bin_w is set PER DAY from a TRAILING M1 ATR proxy (prior ~ rolling), so it never uses
-    that day's full range to set its own resolution beyond the natural day range it bins.
-    Returns (profiles_by_date, sorted_dates).
-
-    VERBATIM route volume_profile.daily_profiles (lines 203-232) EXCEPT the SOURCE line:
-    route `T, B = load_m1(sym)` -> live `T, B = load_m1(aux_bars, aux_times)`. The bin-width logic
-    (statistics.median(recent[-20:]); first day seeds with its own range) is unchanged, so SHORT
-    HISTORY (<20 prior M1 days, e.g. the ~16 live now) naturally uses the median of whatever prior
-    days exist — no special case, exactly the route's behavior."""
-    T, B = load_m1(aux_bars, aux_times)
-    if not B:
+def daily_profiles(aux_bars, aux_times, bin_atr_frac=None, bounds=None):
+    """Profiles by day. A passed pack is not asked again. A missing pack is one ask."""
+    times, bars = load_m1(aux_bars, aux_times)
+    if not bars:
         return {}, []
-    # group M1 by day
-    by_day = OrderedDict()
-    for t, b in zip(T, B):
+    del bin_atr_frac
+    if isinstance(bounds, dict):
+        pack = dict(bounds)
+    else:
+        pack = ask_scores(
+            _feed_facts(aux_bars, aux_times),
+            {name: _PROFILE_TEXT[name] for name in _BUILD_SPOTS},
+            bars=bars,
+            index=len(bars) - 1,
+            bar_times=times,
+        )
+    if any(pack.get(name) is None for name in _BUILD_SPOTS):
+        return {}, []
+    by_day: OrderedDict = OrderedDict()
+    for t, b in zip(times, bars):
         by_day.setdefault(t.date(), []).append(b)
     days = list(by_day.keys())
-    # per-day bin width = bin_atr_frac * (rolling median of recent daily ranges) — a stable,
-    # non-lookahead resolution (uses ONLY prior days' ranges).
     day_rng = {d: (max(x.h for x in bs) - min(x.l for x in bs)) for d, bs in by_day.items()}
+    window = _count(pack.get("range_window"))
+    frac = _num(pack.get("bin_atr_frac"))
+    if window is None or frac is None:
+        return {}, []
     profiles = {}
     recent = []
     for d in days:
-        # bin width from PRIOR days' median range (leak-free); seed with own range if first
-        if recent:
-            med_rng = statistics.median(recent[-20:])
-        else:
-            med_rng = day_rng[d]
-        bw = max(1e-9, bin_atr_frac * med_rng)
-        dp = build_day_profile(d, by_day[d], bw)
-        if dp is not None:
-            profiles[d] = dp
+        med_rng = statistics.median(recent[-window:]) if recent else day_rng[d]
+        bw = frac * med_rng
+        if bw is not None and bw > 0:
+            dp = build_day_profile(d, by_day[d], bw, pack)
+            if dp is not None:
+                profiles[d] = dp
         recent.append(day_rng[d])
     return profiles, [d for d in days if d in profiles]
 
 
-# -------------------------------------------------------------------------
-# Query helpers (leak-free)  (route volume_profile.py:239-286, verbatim)
-# -------------------------------------------------------------------------
 def prior_profile_at(profiles, sorted_days, t):
-    """Return the DayProfile of the most recent COMPLETED day strictly before t.date().
-    This is the leak-free profile available at decision time t."""
+    """The newest completed day strictly before this stamp."""
     td = t.date()
-    # binary-ish search: sorted_days ascending
     prev = None
     for d in sorted_days:
         if d < td:
@@ -247,37 +397,50 @@ def prior_profile_at(profiles, sorted_days, t):
     return profiles.get(prev) if prev is not None else None
 
 
-def nearest_node_state(dp, price, atr):
-    """Classify `price` against a DayProfile. Returns a dict of leak-free state features:
-      d_poc_atr   : signed (price-poc)/atr
-      in_va       : price within [VAL,VAH]
-      above_vah   : price > VAH ; below_val : price < VAL
-      near_lvn_atr: distance to nearest LVN/void in ATR (None if no LVN)
-      near_hvn_atr: distance to nearest HVN in ATR (None if no HVN)
-      at_lvn      : within 0.25 ATR of an LVN/void
-      at_hvn      : within 0.25 ATR of an HVN
-      at_poc      : within 0.25 ATR of POC
-      at_vah/at_val: within 0.25 ATR of the value-area edge
-    """
-    if dp is None or atr <= 0:
+def nearest_node_state(dp, price, atr, bounds=None):
+    """Node distances. The near bound is the score. An unset bound leaves the flags unset."""
+    if dp is None or _num(atr) is None or atr <= 0:
         return None
-    s = {}
-    s["d_poc_atr"] = (price - dp.poc) / atr
-    s["in_va"] = dp.val <= price <= dp.vah
-    s["above_vah"] = price > dp.vah
-    s["below_val"] = price < dp.val
-    def nearest(lst):
-        if not lst:
+    pack = bounds if isinstance(bounds, dict) else None
+    if pack is None:
+        pack = ask_scores(
+            {
+                "price": _num(price),
+                "atr": _num(atr),
+                "poc": _num(dp.poc),
+                "vah": _num(dp.vah),
+                "val": _num(dp.val),
+            },
+            {_NEAR_SPOT: _PROFILE_TEXT[_NEAR_SPOT]},
+        )
+    near = _num(pack.get(_NEAR_SPOT))
+    state = {
+        "d_poc_atr": (price - dp.poc) / atr,
+        "in_va": dp.val <= price <= dp.vah,
+        "above_vah": price > dp.vah,
+        "below_val": price < dp.val,
+    }
+
+    def nearest(levels):
+        if not levels:
             return None, None
-        best = min(lst, key=lambda p: abs(p - price))
+        best = min(levels, key=lambda p: abs(p - price))
         return best, abs(best - price) / atr
-    hvn_p, hvn_d = nearest(dp.hvn)
-    lvn_p, lvn_d = nearest(dp.lvn)
-    s["near_hvn_atr"] = hvn_d
-    s["near_lvn_atr"] = lvn_d
-    s["at_hvn"] = hvn_d is not None and hvn_d <= 0.25
-    s["at_lvn"] = lvn_d is not None and lvn_d <= 0.25
-    s["at_poc"] = abs(price - dp.poc) / atr <= 0.25
-    s["at_vah"] = abs(price - dp.vah) / atr <= 0.25
-    s["at_val"] = abs(price - dp.val) / atr <= 0.25
-    return s
+
+    _hvn_p, hvn_d = nearest(dp.hvn)
+    _lvn_p, lvn_d = nearest(dp.lvn)
+    state["near_hvn_atr"] = hvn_d
+    state["near_lvn_atr"] = lvn_d
+
+    def at(dist):
+        if near is None or dist is None:
+            return None
+        return dist <= near
+
+    state["at_hvn"] = at(hvn_d)
+    state["at_lvn"] = at(lvn_d)
+    state["at_poc"] = at(abs(price - dp.poc) / atr)
+    state["at_vah"] = at(abs(price - dp.vah) / atr)
+    state["at_val"] = at(abs(price - dp.val) / atr)
+    state["near_atr"] = near
+    return state

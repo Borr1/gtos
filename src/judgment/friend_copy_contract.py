@@ -27,7 +27,7 @@ PRINTER_MAGIC = CHALLENGE_MAGIC
 FRIEND_BOOKS: dict[str, dict[str, str]] = {
     "0": {
         "name": "friend_a",
-        "ns": "redacted_account_f5_minimal",
+        "ns": "friend_a_f5_minimal",
         "terminal": r"C:\MT5\FTMO_Trial",
     },
     "0": {
@@ -75,9 +75,44 @@ AGENT_PLACE_MIN_LOT_TICKETS = frozenset(
     {546434379, 546434380, 546434381, 546434384, 546434385, 546434386}
 )
 
-INVENTED_MIN_LOT = 0.01
-LOT_DECIMALS = 2
-PRICE_DECIMALS = 5
+# Bounds for one symbol. They expire when that symbol's fill facts change.
+_COPY: dict[str, dict[str, Any]] = {}
+
+
+def note_copy_bounds(
+    symbol: Any,
+    *,
+    fact: str,
+    lot_decimals: float | None = None,
+    price_decimals: float | None = None,
+    invented_min_lot: float | None = None,
+) -> None:
+    """Record the scores for this symbol. An empty score writes nothing."""
+
+    key = str(symbol or "")
+    row = _COPY.get(key)
+    if row is None or row.get("fact") != fact:
+        row = {"fact": fact}
+    if lot_decimals is not None:
+        row["lot_decimals"] = lot_decimals
+    if price_decimals is not None:
+        row["price_decimals"] = price_decimals
+    if invented_min_lot is not None:
+        row["invented_min_lot"] = invented_min_lot
+    _COPY[key] = row
+
+
+def _copy_bound(symbol: Any, name: str) -> float | None:
+    row = _COPY.get(str(symbol or ""))
+    if not row or name not in row:
+        return None
+    try:
+        number = float(row[name])
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
 
 COPY_KINDS = (
     "in_system_copy",
@@ -95,22 +130,37 @@ def _login_text(value: Any) -> str:
     return str(value).strip()
 
 
-def _lots(value: Any) -> float | None:
+def _places(symbol: Any, name: str) -> int | None:
+    number = _copy_bound(symbol, name)
+    if number is None or number < 0:
+        return None
+    return int(number)
+
+
+def _lots(value: Any, symbol: Any = None) -> float | None:
     if value is None or value == "":
         return None
     try:
-        return round(float(value), LOT_DECIMALS)
+        number = float(value)
     except (TypeError, ValueError):
         return None
+    places = _places(symbol, "lot_decimals")
+    if places is None:
+        return number
+    return round(number, places)
 
 
-def _price(value: Any) -> float | None:
+def _price(value: Any, symbol: Any = None) -> float | None:
     if value is None or value == "":
         return None
     try:
-        return round(float(value), PRICE_DECIMALS)
+        number = float(value)
     except (TypeError, ValueError):
         return None
+    places = _places(symbol, "price_decimals")
+    if places is None:
+        return number
+    return round(number, places)
 
 
 def _side(value: Any) -> str:
@@ -145,7 +195,7 @@ def identity_surface() -> dict[str, Any]:
         },
         "redacted_account_idle": redacted_account_IDLE,
         "verification_quarantined": VERIFICATION_QUARANTINED,
-        "invented_min_lot": INVENTED_MIN_LOT,
+        "invented_min_lot": None,
         "never_agent_place": True,
         "never_invent_min_lot": True,
     }
@@ -162,11 +212,11 @@ def score_copy(
 
     friend_login = _login_text(friend.get("login") or friend.get("account"))
     friend_ns = str(friend.get("ns") or friend.get("namespace") or "")
-    friend_lots = _lots(friend.get("lots") or friend.get("volume"))
-    friend_sl = _price(friend.get("sl"))
-    friend_tp = _price(friend.get("tp"))
-    friend_side = _side(friend.get("side"))
     friend_symbol = _symbol(friend.get("symbol"))
+    friend_lots = _lots(friend.get("lots") or friend.get("volume"), friend_symbol)
+    friend_sl = _price(friend.get("sl"), friend_symbol)
+    friend_tp = _price(friend.get("tp"), friend_symbol)
+    friend_side = _side(friend.get("side"))
     friend_ticket = friend.get("ticket")
 
     row: dict[str, Any] = {
@@ -213,9 +263,9 @@ def score_copy(
     if not src:
         return row
 
-    printer_lots = _lots(src.get("lots") or src.get("volume"))
-    printer_sl = _price(src.get("sl"))
-    printer_tp = _price(src.get("tp"))
+    printer_lots = _lots(src.get("lots") or src.get("volume"), friend_symbol)
+    printer_sl = _price(src.get("sl"), friend_symbol)
+    printer_tp = _price(src.get("tp"), friend_symbol)
     printer_side = _side(src.get("side"))
     printer_symbol = _symbol(src.get("symbol"))
     printer_ticket = src.get("ticket")
@@ -246,7 +296,14 @@ def score_copy(
     row["side_match"] = side_match
     row["symbol_match"] = symbol_match
 
-    invented = friend_lots == INVENTED_MIN_LOT and printer_lots != INVENTED_MIN_LOT
+    floor = _copy_bound(friend_symbol, "invented_min_lot")
+    invented = (
+        floor is not None
+        and friend_lots is not None
+        and printer_lots is not None
+        and friend_lots == floor
+        and printer_lots != floor
+    )
     row["invented_min_lot"] = invented
     if invented:
         row["kind"] = "agent_place_min_lot"

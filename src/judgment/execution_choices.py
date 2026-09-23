@@ -286,6 +286,278 @@ QUESTIONS: dict[str, dict[str, Any]] = {
 _CACHE: dict[tuple[Any, ...], dict[str, Any]] = {}
 
 
+
+import threading as _anchor_threading
+
+_ANCHOR_CARD = _anchor_threading.local()
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _is_map(value):
+    if isinstance(value, dict):
+        return True
+    if isinstance(value, (str, bytes)):
+        return False
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return False
+    return isinstance(value, Mapping)
+
+
+def _bind_card(card):
+    _ANCHOR_CARD.value = card if _is_map(card) else None
+
+
+def _bound_card(explicit):
+    if _is_map(explicit):
+        return explicit
+    bound = getattr(_ANCHOR_CARD, "value", None)
+    return bound if _is_map(bound) else None
+
+
+def _anchor_sources(card):
+    if not _is_map(card):
+        return []
+    found = [card]
+    for key in ("account", "facts", "pair", "news", "ticket", "proposed", "extra", "labels", "subject_facts", "candidate"):
+        inner = card.get(key)
+        if _is_map(inner) and inner is not card:
+            found.append(inner)
+    return found
+
+
+_COUNT_FIELDS = (
+    "n_candidates", "n_events", "n_sleeves", "n_bars", "bars_available",
+    "repeats", "session_bars", "day_bars", "swing_bars", "bars_since_high",
+    "bars_since_low", "candles_elapsed", "closed_orig_stop_count",
+)
+_COUNT_SEQS = (
+    "prior_outcomes", "candidates", "events", "sleeve_members", "lengths",
+    "stamps", "hashes", "bars", "bar_times", "members", "closed",
+    "legacy_symbol_keys", "families", "priors",
+)
+_PRICE_FIELDS = (
+    "bid", "ask", "entry", "entry_price", "stop", "stop_loss", "sl", "tp",
+    "take_profit", "price", "high", "low", "close", "open", "orig_sl", "orig_tp",
+    "stop_now", "target", "trail", "fill_price", "exit_px",
+)
+_SECOND_FIELDS = (
+    "seconds_until_cycle", "seconds_until_now", "age_s", "age_seconds",
+    "seconds_since_quote", "seconds_since_bar", "seconds_since_last_close",
+    "seconds_between_closes", "seconds_since_prior_close", "expiry_seconds",
+    "timeout_seconds",
+)
+_MINUTE_FIELDS = (
+    "minutes_since_flat", "age_minutes", "minutes_until_now", "window_minutes",
+)
+_HOUR_FIELDS = ("age_hours", "lag_hours", "hours_since_bar", "hours_open", "measured_hours")
+_DAY_FIELDS = ("age_days", "lag_days", "days_open", "measured_days")
+_LOT_FIELDS = (
+    "volume", "volume_min", "volume_step", "lots", "lot",
+    "volume_current", "volume_initial",
+)
+_POINT_FIELDS = (
+    "spread_points", "stop_level", "freeze_level", "tick_points", "deviation_points",
+)
+_INCLUDE_WORDS = ("hide", "short", "long", "full")
+
+
+def _named_pairs(card, fields, seqs=()):
+    pairs = []
+    for source in _anchor_sources(card):
+        for key in fields:
+            number = _anchor_finite(source.get(key))
+            if number is None:
+                continue
+            pairs.append((f"the {key} named on this card", number))
+        for key in seqs:
+            seq = source.get(key)
+            if isinstance(seq, (list, tuple)) and not isinstance(seq, (str, bytes)):
+                pairs.append((f"the count of {key} named on this card", float(len(seq))))
+    return pairs
+
+
+def _keys_matching(card, tokens):
+    pairs = []
+
+    def walk(node):
+        if _is_map(node):
+            for key, value in node.items():
+                low = str(key).lower()
+                if "floor" in low or "baseline" in low:
+                    continue
+                number = _anchor_finite(value)
+                if number is not None and any(tok in low for tok in tokens):
+                    pairs.append((f"the {low} named on this card", number))
+                    continue
+                if _is_map(value):
+                    walk(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        if _is_map(item):
+                            walk(item)
+
+    walk(card)
+    return pairs
+
+
+def _anchors_for_spot(qid, card):
+    name = str(qid).lower()
+    try:
+        from .jev_questions import count_anchors, minute_anchors, mult_anchors, usd_anchors, weight_anchors
+    except Exception:
+        def count_anchors(_card):
+            return []
+
+        def minute_anchors(_card):
+            return []
+
+        def mult_anchors(_card):
+            return []
+
+        def usd_anchors(_card):
+            return []
+
+        def weight_anchors(_card):
+            return []
+
+    override = globals().get("_UNIT_OVERRIDE")
+    if isinstance(override, dict):
+        base = name[: -len("_parameter")] if name.endswith("_parameter") else name
+        spec = override.get(base)
+        if spec == "weight":
+            return list(weight_anchors(card) or [])
+        if spec == "count":
+            pairs = list(count_anchors(card) or [])
+            pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+            return pairs
+        if isinstance(spec, tuple):
+            return _named_pairs(card, spec)
+    if any(tok in name for tok in ("loop", "splice", "width", "lookback", "bound", "_cap")):
+        pairs = list(count_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+        return pairs
+    if "ac60" in name or "autocorr" in name:
+        return _keys_matching(card, ("ac60", "autocorr"))
+    if "direction" in name:
+        return _keys_matching(card, ("direction",))
+    if name.endswith("_r") or "mfe" in name or "mae" in name:
+        return list(weight_anchors(card) or [])
+    if "hour" in name:
+        return _named_pairs(card, _HOUR_FIELDS)
+    if "minute" in name:
+        pairs = list(minute_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _MINUTE_FIELDS))
+        return pairs
+    if "day" in name and "today" not in name:
+        return _named_pairs(card, _DAY_FIELDS)
+    if any(tok in name for tok in ("second", "expiry", "timeout", "pause", "adopt_wait")):
+        return _named_pairs(card, _SECOND_FIELDS)
+    if any(tok in name for tok in ("tilt", "alignment", "weight", "persist")):
+        pairs = list(weight_anchors(card) or [])
+        if len(pairs) >= 2:
+            return pairs
+        return list(mult_anchors(card) or [])
+    if any(tok in name for tok in ("lot", "volume")):
+        return _named_pairs(card, _LOT_FIELDS)
+    if "scale" in name:
+        return _scale_pairs(card)
+    if any(tok in name for tok in ("price",)) or name in {"manage_sl_price", "manage_tp_price"}:
+        return _named_pairs(card, _PRICE_FIELDS)
+    if "point" in name or "deviation" in name:
+        return _named_pairs(card, _POINT_FIELDS)
+    if "spread" in name:
+        return _named_pairs(card, ("spread", "spread_points"))
+    if any(tok in name for tok in ("usd", "equity", "pnl", "cash")):
+        return list(usd_anchors(card) or [])
+    return []
+
+
+def _scale_pairs(card):
+    pairs = []
+    for source in _anchor_sources(card):
+        volume = _anchor_finite(source.get("volume"))
+        if volume is None:
+            volume = _anchor_finite(source.get("volume_current"))
+        initial = _anchor_finite(source.get("volume_initial"))
+        least = _anchor_finite(source.get("volume_min"))
+        step = _anchor_finite(source.get("volume_step"))
+        if volume not in (None, 0) and least is not None:
+            pairs.append(("minimum volume over this volume", least / volume))
+        if volume not in (None, 0) and step is not None:
+            pairs.append(("volume step over this volume", step / volume))
+        if initial not in (None, 0) and volume is not None:
+            pairs.append(("current volume over initial volume", volume / initial))
+    return pairs
+
+
+def _amount_block(qid, instructions, card):
+    """Amount Score. Fewer than two anchors in this unit does not post."""
+
+    source = _bound_card(card)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(qid, instructions, _anchors_for_spot(qid, source))
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        block.pop(key, None)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _ordinal_block(qid, instructions, words):
+    """Word levels. Fewer than two words does not post. The index is not an amount."""
+
+    try:
+        from .jev_questions import ordinal_question
+
+        built = ordinal_question(qid, instructions, words)
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _score_amount_or_ordinal(qid, instructions, card=None, *_rest):
+    if str(qid).startswith("include_"):
+        return _ordinal_block(qid, instructions, _INCLUDE_WORDS)
+    return _amount_block(qid, instructions, card)
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -367,6 +639,23 @@ def write_armed_stamp() -> None:
     except OSError:
         return
 
+
+
+_UNIT_OVERRIDE = {
+    "exec_fill": ("bid", "ask", "entry", "entry_price", "price", "fill_price", "high", "low", "close", "open"),
+    "exec_modify": ("stop", "stop_loss", "sl", "orig_sl", "stop_now", "price", "bid", "ask", "entry"),
+    "exec_trail": ("stop", "stop_loss", "sl", "trail", "price", "bid", "ask"),
+    "exec_partial": ("volume", "volume_min", "volume_step", "lots", "lot", "volume_current", "volume_initial"),
+    "exec_lot": ("volume", "volume_min", "volume_step", "lots", "lot", "volume_current", "volume_initial"),
+    "exec_deviation": ("spread_points", "stop_level", "freeze_level", "deviation_points", "tick_points"),
+    "exec_expiry": ("seconds_until_cycle", "age_s", "age_seconds", "seconds_since_bar", "seconds_since_quote", "expiry_seconds"),
+    "exec_timeout": ("seconds_until_cycle", "age_s", "age_seconds", "timeout_seconds", "seconds_since_quote"),
+    "exec_adopt_wait": ("seconds_until_cycle", "age_s", "age_seconds", "seconds_since_bar"),
+    "exec_retry": ("seconds_until_cycle", "age_s", "age_seconds", "seconds_since_quote"),
+    "exec_spread": ("spread", "spread_points"),
+    "exec_reject": "weight",
+    "exec_time_stop": "count",
+}
 
 _PARAMETER_NOUN = {
     "fill": "fill price",
@@ -468,32 +757,28 @@ def _parameter_levels(facts: Mapping[str, Any] | None) -> list[str]:
     return [format(number, ".10g") for number in ordered]
 
 
+
 def _question_pack(
     question: str,
     spec: Mapping[str, Any],
     levels: list[str],
+    card: Any = None,
 ) -> dict[str, Any]:
-    """Choice plus Score for this state. Same question objects the place hop posts."""
+    """Choice plus an amount Score. Fewer than two anchors omits the Score."""
 
+    del levels
     qid = str(spec["id"])
     choice_criteria = {str(key): str(value) for key, value in dict(spec["criteria"]).items()}
-    score_levels = list(levels) if levels else list(_BETWEEN)
     score_text = _score_instructions(question)
-    pack: dict[str, Any] | None = None
+    pack: dict[str, Any] = {}
     try:
-        from .jev_questions import parameter_question, spot_question
+        from .jev_questions import spot_question
 
         built = spot_question(qid, spec["instructions"], choice_criteria)
-        extra = parameter_question(qid + "_parameter", score_text)
-        if isinstance(built, Mapping) and isinstance(extra, Mapping):
-            pack = {}
+        if isinstance(built, Mapping):
             for key, value in dict(built).items():
                 pack[str(key)] = dict(value) if isinstance(value, Mapping) else value
-            for key, value in dict(extra).items():
-                pack[str(key)] = dict(value) if isinstance(value, Mapping) else value
     except Exception:
-        pack = None
-    if not isinstance(pack, dict):
         pack = {}
     choice_q = pack.get(qid)
     if not isinstance(choice_q, dict):
@@ -503,13 +788,10 @@ def _question_pack(
     choice_q["instructions"] = spec["instructions"]
     choice_q["criteria"] = choice_criteria
     param_id = qid + "_parameter"
-    param_q = pack.get(param_id)
-    if not isinstance(param_q, dict):
-        param_q = {}
-        pack[param_id] = param_q
-    param_q["type"] = "score"
-    param_q["instructions"] = score_text
-    param_q["criteria"] = list(score_levels)
+    source = card if _is_map(card) else _bound_card(None)
+    extra = _amount_block(param_id, score_text, source)
+    if extra:
+        pack.update(extra)
     return pack
 
 
@@ -538,7 +820,7 @@ def _choice_from_probabilities(
         return None, None
     best_p = max(numeric.values())
     winners = [
-        name for name in order if name in numeric and abs(numeric[name] - best_p) <= 1e-12
+        name for name in order if name in numeric and numeric[name] == best_p
     ]
     if len(winners) != 1:
         return None, None
@@ -731,7 +1013,10 @@ def choose(
             cached["cache"] = True
             return cached
     levels = _parameter_levels(fact_map)
-    pack = _question_pack(question, spec, levels)
+    card = {"facts": fact_map}
+    if isinstance(proposed, dict):
+        card["proposed"] = proposed
+    pack = _question_pack(question, spec, levels, card)
     state = {
         "login": CHALLENGE_LOGIN,
         "ns": CHALLENGE_NS,
@@ -851,9 +1136,12 @@ def ask_send(
                     cached[name] = copy
             return cached
     levels = _parameter_levels(fact_map)
+    card = {"facts": fact_map}
+    if isinstance(proposed, dict):
+        card["proposed"] = proposed
     pack: dict[str, Any] = {}
     for name in names:
-        pack.update(_question_pack(name, QUESTIONS[name], levels))
+        pack.update(_question_pack(name, QUESTIONS[name], levels, card))
     state = {
         "login": CHALLENGE_LOGIN,
         "ns": CHALLENGE_NS,

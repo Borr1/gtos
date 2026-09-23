@@ -17,6 +17,8 @@ login gate stays a gate.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Mapping
@@ -127,6 +129,511 @@ CONVERTED_IF_IDS = (
 _LOCAL_OUTCOMES: list[dict[str, Any]] = []
 
 
+
+def _card_var():
+    var = globals().get("_OBSERVE_CARD")
+    if var is None:
+        import contextvars
+
+        var = contextvars.ContextVar("observe_card_" + __name__, default=None)
+        globals()["_OBSERVE_CARD"] = var
+    return var
+
+
+def _bind_card(state):
+    """The card whose facts may anchor an amount. A miss binds nothing."""
+
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return None
+    card = state if isinstance(state, Mapping) else None
+    return _card_var().set(card)
+
+
+def _bound_card():
+    try:
+        return _card_var().get()
+    except Exception:
+        return None
+
+
+_ORDINAL_WIDTH: dict[str, int] = {}
+_AMOUNT_UNIT: dict[str, str] = {}
+_ORDINAL_WORDS = ("none", "trace", "small", "modest", "notable", "heavy")
+_PRICE_KEYS = {
+    "entry",
+    "stop",
+    "target",
+    "bid",
+    "ask",
+    "price",
+    "sl",
+    "tp",
+    "open",
+    "high",
+    "low",
+    "close",
+    "limit_price",
+}
+_MONEY_KEYS = {
+    "equity",
+    "balance",
+    "open_pnl",
+    "profit",
+    "day_start_balance",
+    "day_start_equity",
+    "realized_closed_profit",
+    "day_equity",
+    "broker_net",
+    "mean_net",
+    "realized",
+}
+_SKIP_WALK = {
+    "prior_outcomes",
+    "questions",
+    "answers",
+    "probabilities",
+    "criteria",
+    "instructions",
+}
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    banned = globals().get("_banned_number")
+    if callable(banned):
+        try:
+            if banned(number):
+                return None
+        except Exception:
+            return None
+    return number
+
+
+def _label_ok(text: str) -> bool:
+    if not text or not str(text).strip():
+        return False
+    sample = str(text)
+    for name, bad in (
+        ("_limit_key", True),
+        ("_banned_text", True),
+        ("_blocked_text", True),
+        ("_text_banned", True),
+        ("_skip_key", True),
+    ):
+        fn = globals().get(name)
+        if not callable(fn):
+            continue
+        try:
+            if bool(fn(sample)) is bad:
+                return False
+        except Exception:
+            return False
+    scrub = globals().get("_scrub_text")
+    if callable(scrub):
+        try:
+            if scrub(sample) is None:
+                return False
+        except Exception:
+            return False
+    ok = globals().get("_question_text_ok")
+    if callable(ok):
+        try:
+            if not ok(sample):
+                return False
+        except Exception:
+            return False
+    return True
+
+
+def _amount_unit(qid: str, text: str = "") -> str | None:
+    """The unit this score returns. None means the score is an ordinal."""
+
+    name = str(qid).lower()
+    if name.endswith("_hour") or name.endswith("_hours"):
+        return "hours"
+    if "minute" in name and not name.endswith("_parameter"):
+        return "minutes"
+    tokens = name.replace(".", "_").split("_")
+    if (
+        "lot" in tokens
+        or "lots" in tokens
+        or name.endswith("_lot")
+        or name.endswith("_lots")
+        or name.endswith("min_lot")
+    ):
+        return "lots"
+    if "persist" in name or name.endswith("_weight"):
+        return "weight"
+    if "ceiling" in name:
+        return "size"
+    if "concurrent" in name:
+        return "count"
+    if name.endswith("_net") or "broker_net" in name:
+        return "money"
+    if (
+        "prob" in name
+        or ".p_" in name
+        or "p_time" in name
+        or "p_positive" in name
+    ):
+        return "probability"
+    if (
+        "plan_r" in name
+        or "mean_r" in name
+        or name.endswith("_r")
+        or "predicted_e_r" in name
+    ):
+        return "r"
+    if "fitness" in name or name.endswith("_fit"):
+        return None
+    if "expected_" in name:
+        return "count"
+    tail = name.rsplit(".", 1)[-1]
+    tail_tokens = tail.split("_")
+    if (
+        tail.endswith("_loop")
+        or tail.endswith("_loop_bound")
+        or tail == "loop"
+        or "retry" in tail_tokens
+        or "walk_depth" in tail
+        or "posts" in tail_tokens
+        or "min_n" in tail
+        or tail.endswith("_count")
+        or tail.endswith("_n")
+    ):
+        return "count"
+    if "window" in name:
+        return "window"
+    if "threshold" in name:
+        return "price"
+    blob = name + "\n" + str(text).lower()
+    if "stop or target" in blob or "the stop" in blob or "the target" in blob:
+        return "price"
+    if "e[r]" in blob or "mean r" in blob:
+        return "r"
+    if "broker net" in blob:
+        return "money"
+    if "the lot " in blob or blob.rstrip(".").endswith("the lot"):
+        return "lots"
+    if "fluid count" in blob or "envelope count" in blob or "promotion count" in blob:
+        return "count"
+    if "how many" in blob:
+        return "count"
+    if name.startswith("a1_") and name.endswith("_parameter"):
+        return "price"
+    return None
+
+
+def _is_ordinal(qid: str) -> bool:
+    """True when this id was built as words, or no amount unit is known."""
+
+    key = str(qid)
+    if key in _AMOUNT_UNIT:
+        return False
+    if key in _ORDINAL_WIDTH:
+        return True
+    return _amount_unit(key, "") is None
+
+
+def _key_unit(name: str, unit: str) -> bool:
+    low = str(name).lower()
+    if unit == "price":
+        return low in _PRICE_KEYS
+    if unit == "hours":
+        return low == "hour" or low.endswith("_hour") or low.endswith("_hours")
+    if unit == "minutes":
+        return low == "minute" or low.endswith("_minute") or low.endswith("_minutes") or low.endswith("_min")
+    if unit == "seconds":
+        return "second" in low or low in {"age_s", "seconds_until_cycle"}
+    if unit == "lots":
+        return low in {"volume", "volume_min", "volume_step", "lot", "lots", "min_lot"} or low.endswith("_lot") or low.endswith("_lots")
+    if unit == "r":
+        return low.endswith("_r") or low in {"plan_r", "locked_r", "mean_r"}
+    if unit == "weight":
+        return low == "weight" or low.endswith("_weight")
+    if unit == "money":
+        return low in _MONEY_KEYS
+    if unit == "probability":
+        return "prob" in low or low.startswith("p_") or "p_time" in low or "p_positive" in low
+    if unit == "count":
+        return low in {"n", "asked", "step_index"} or low.startswith("n_") or low.endswith("_count") or low.endswith("_len") or low.endswith("_posts")
+    if unit == "multiple":
+        return low.endswith("_mult") or low.endswith("_multiple")
+    return False
+
+
+def _walk_pairs(state, unit: str) -> list[tuple[str, float]]:
+    found: list[tuple[str, float]] = []
+
+    def walk(blob, depth: int) -> None:
+        if depth > 4 or not isinstance(blob, dict):
+            return
+        for key, value in blob.items():
+            name = str(key)
+            if name in _SKIP_WALK or name.startswith("_"):
+                continue
+            if not _label_ok(name):
+                continue
+            if isinstance(value, dict):
+                walk(value, depth + 1)
+                continue
+            if isinstance(value, (list, tuple)) and not isinstance(value, (str, bytes)):
+                if unit == "count":
+                    found.append((f"the count of {name} named on this card", float(len(value))))
+                continue
+            if unit == "count" and not _key_unit(name, unit):
+                continue
+            if unit != "count" and not _key_unit(name, unit):
+                continue
+            number = _anchor_finite(value)
+            if number is None:
+                continue
+            found.append((f"the {name} named on this card", number))
+
+    if isinstance(state, dict):
+        walk(state, 0)
+    return found
+
+
+def _distinct(pairs) -> int:
+    seen = []
+    for _label, value in pairs:
+        if value not in seen:
+            seen.append(value)
+    return len(seen)
+
+
+def _anchors_for(state, unit: str) -> list[tuple[str, float]]:
+    card = state if isinstance(state, dict) else {}
+    if unit == "count":
+        extra = []
+        try:
+            from .jev_questions import count_anchors
+
+            extra = list(count_anchors(card) or [])
+        except Exception:
+            try:
+                from src.judgment.jev_questions import count_anchors
+
+                extra = list(count_anchors(card) or [])
+            except Exception:
+                extra = []
+        return list(extra) + _walk_pairs(card, "count")
+    if unit == "money":
+        extra = []
+        try:
+            from .jev_questions import usd_anchors
+
+            extra = list(usd_anchors(card) or [])
+        except Exception:
+            try:
+                from src.judgment.jev_questions import usd_anchors
+
+                extra = list(usd_anchors(card) or [])
+            except Exception:
+                extra = []
+        return list(extra) + _walk_pairs(card, "money")
+    if unit == "minutes":
+        extra = []
+        try:
+            from .jev_questions import minute_anchors
+
+            extra = list(minute_anchors(card) or [])
+        except Exception:
+            try:
+                from src.judgment.jev_questions import minute_anchors
+
+                extra = list(minute_anchors(card) or [])
+            except Exception:
+                extra = []
+        return list(extra) + _walk_pairs(card, "minutes")
+    if unit == "size":
+        lots = _walk_pairs(card, "lots")
+        multiples = _walk_pairs(card, "multiple")
+        try:
+            from .jev_questions import mult_anchors
+
+            multiples = list(mult_anchors(card) or []) + multiples
+        except Exception:
+            try:
+                from src.judgment.jev_questions import mult_anchors
+
+                multiples = list(mult_anchors(card) or []) + multiples
+            except Exception:
+                pass
+        if _distinct(lots) >= 2:
+            return lots
+        if _distinct(multiples) >= 2:
+            return multiples
+        return []
+    if unit == "window":
+        minutes = _walk_pairs(card, "minutes")
+        seconds = _walk_pairs(card, "seconds")
+        if _distinct(minutes) >= 2:
+            return minutes
+        return seconds
+    return _walk_pairs(card, unit)
+
+
+def _custom_words(words) -> bool:
+    """A scale of words is an ordinal. The generic parameter menu is not."""
+
+    if not words:
+        return False
+    texts = []
+    numeric = 0
+    for item in words:
+        text = str(item).strip()
+        if not text:
+            continue
+        try:
+            float(text)
+            numeric += 1
+        except (TypeError, ValueError):
+            pass
+        texts.append(text)
+    if len(texts) < 2 or numeric == len(texts):
+        return False
+    generic = {
+        ("none", "trace", "small", "modest", "notable", "heavy"),
+        (
+            "below the levels on this state",
+            "between the levels on this state",
+            "above the levels on this state",
+        ),
+    }
+    return tuple(texts) not in generic
+
+
+def _word_levels(words) -> list[str]:
+    if not words:
+        return list(_ORDINAL_WORDS)
+    texts = []
+    numeric = 0
+    for item in words:
+        text = str(item).strip()
+        if not text:
+            continue
+        try:
+            float(text)
+            numeric += 1
+        except (TypeError, ValueError):
+            pass
+        texts.append(text)
+    if texts and numeric == len(texts):
+        return [item for item in _ORDINAL_WORDS if _label_ok(item)]
+    kept = [item for item in texts if _label_ok(item)]
+    if len(kept) >= 2:
+        return kept
+    return [item for item in _ORDINAL_WORDS if _label_ok(item)]
+
+
+def _jev_amount(qid, text, anchors):
+    try:
+        from .jev_questions import amount_question
+
+        return amount_question(qid, text, anchors)
+    except Exception:
+        from src.judgment.jev_questions import amount_question
+
+        return amount_question(qid, text, anchors)
+
+
+def _jev_ordinal(qid, text, levels):
+    try:
+        from .jev_questions import ordinal_question
+
+        return ordinal_question(qid, text, levels)
+    except Exception:
+        from src.judgment.jev_questions import ordinal_question
+
+        return ordinal_question(qid, text, levels)
+
+
+def _shape_score(qid: str, instructions: str, words=None, *, wrapped: bool = True):
+    """An amount posts only with two anchors. An ordinal keeps its words."""
+
+    text = str(instructions or "").strip()
+    scrub = globals().get("_scrub_text")
+    if callable(scrub):
+        try:
+            cleaned = scrub(text)
+        except Exception:
+            return {}
+        if not isinstance(cleaned, str) or not cleaned.strip():
+            return {}
+        text = cleaned.strip()
+    if not text or not _label_ok(text):
+        return {}
+    unit = None if _custom_words(words) else _amount_unit(qid, text)
+    try:
+        if unit is None:
+            built = _jev_ordinal(qid, text, _word_levels(words))
+        else:
+            anchors = [
+                (label, value)
+                for label, value in _anchors_for(_bound_card(), unit)
+                if _label_ok(label)
+            ]
+            built = _jev_amount(qid, text, anchors)
+    except Exception:
+        return {}
+    row = built.get(str(qid)) if isinstance(built, dict) else None
+    if not isinstance(row, dict):
+        return {}
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        row.pop(key, None)
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    if unit is None:
+        _ORDINAL_WIDTH[str(qid)] = len(criteria)
+        _AMOUNT_UNIT.pop(str(qid), None)
+    else:
+        _AMOUNT_UNIT[str(qid)] = unit
+        _ORDINAL_WIDTH.pop(str(qid), None)
+    row["type"] = "score"
+    row["instructions"] = text
+    if wrapped:
+        return {str(qid): row}
+    return row
+
+
+def _ordinal_read(block, qid: str):
+    """Nearest word. The index is not an amount. A miss stays unset."""
+
+    width = _ORDINAL_WIDTH.get(str(qid))
+    if not isinstance(width, int) or width < 2:
+        criteria = block.get("criteria") if isinstance(block, dict) else None
+        if isinstance(criteria, list) and len(criteria) >= 2:
+            width = len(criteria)
+        else:
+            probs = block.get("probabilities") if isinstance(block, dict) else None
+            if isinstance(probs, dict) and len(probs) >= 2:
+                width = len(probs)
+    if not isinstance(width, int) or width < 2:
+        return None
+    try:
+        from .jev_questions import ordinal_index
+    except Exception:
+        try:
+            from src.judgment.jev_questions import ordinal_index
+        except Exception:
+            return None
+    try:
+        return ordinal_index(block, width)
+    except Exception:
+        return None
+
 def overlay_enabled(*, environ: Mapping[str, str] | None = None) -> bool:
     """Env gate. Default on. Explicit 0/false/off leaves the overlay off."""
 
@@ -159,25 +666,65 @@ def _blocked_text(text: str) -> bool:
     return any(part in low for part in _SKIP_KEY_PARTS)
 
 
-def _scrub(value: Any, depth: int = 0) -> Any:
-    """Drop floor and baseline keys before the ask. Other facts stay facts."""
+# The walk bound is the score for this card. It expires when the card changes.
+_WALK_KEY: str | None = None
+_WALK_SCORE: float | None = None
 
-    if depth > 8:
+
+def _card_key(value: Any) -> str:
+    try:
+        blob = json.dumps(value, sort_keys=True, default=str, separators=(",", ":"))
+    except (TypeError, ValueError):
+        blob = repr(value)
+    return hashlib.sha256(blob.encode("utf-8", "replace")).hexdigest()
+
+
+def _walk_bound(key: str) -> float | None:
+    if _WALK_KEY != key:
+        return None
+    return _WALK_SCORE
+
+
+def _remember_walk(key: str, score: float | None) -> None:
+    """Keep this card's score. An empty score does not write a number."""
+
+    global _WALK_KEY, _WALK_SCORE
+    if _WALK_KEY != key:
+        _WALK_KEY = key
+        _WALK_SCORE = None
+    if score is not None:
+        _WALK_SCORE = score
+
+
+def _scrub(value: Any, depth: int = 0, bound: float | None = None, seen: set[int] | None = None) -> Any:
+    """Drop floor and baseline keys before the ask. Other facts stay facts.
+
+    The walk stops past the returned bound. No bound leaves the rest of the card.
+    """
+
+    if seen is None:
+        seen = set()
+    if bound is not None and depth > bound:
         return None
     if value is None or isinstance(value, (str, bool)):
         return value
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return value
+    mark = id(value)
+    if mark in seen:
+        return None
     if isinstance(value, Mapping):
+        seen.add(mark)
         out: dict[str, Any] = {}
         for key, item in value.items():
             name = str(key)
             if _blocked_text(name):
                 continue
-            out[name] = _scrub(item, depth + 1)
+            out[name] = _scrub(item, depth + 1, bound, seen)
         return out
     if isinstance(value, (list, tuple)) and not isinstance(value, (str, bytes)):
-        return [_scrub(item, depth + 1) for item in value]
+        seen.add(mark)
+        return [_scrub(item, depth + 1, bound, seen) for item in value]
     return None
 
 
@@ -217,7 +764,7 @@ def _unique(probabilities: Mapping[str, float], order: tuple[str, ...]) -> str |
     if not allowed:
         return None
     best = max(probabilities[name] for name in allowed)
-    winners = [name for name in allowed if abs(probabilities[name] - best) <= 1e-12]
+    winners = [name for name in allowed if probabilities[name] == best]
     if len(winners) != 1:
         return None
     present = {name: probabilities[name] for name in allowed}
@@ -232,8 +779,11 @@ def _unique(probabilities: Mapping[str, float], order: tuple[str, ...]) -> str |
     return winners[0]
 
 
-def _score_of(block: Any) -> float | None:
+def _score_of(block: Any, qid: str | None = None) -> float | None:
     """The returned score. A tie leaves it unset. The number is not snapped."""
+    if qid is not None and _is_ordinal(str(qid)):
+        return _ordinal_read(block, str(qid))
+
 
     if not isinstance(block, dict) or block.get("error"):
         return None
@@ -346,31 +896,9 @@ def _choice_question(qid: str, instructions: str, criteria: Mapping[str, str]) -
 
 
 def _score_question(qid: str, instructions: str, criteria: list[str] | None = None) -> dict[str, Any]:
-    body: dict[str, Any] = {"type": "score", "instructions": instructions}
-    if criteria:
-        body["criteria"] = list(criteria)
-    try:
-        from .jev_questions import parameter_question
+    """Amount anchors from this card. An ordinal keeps its words."""
+    return _shape_score(qid, instructions, criteria, wrapped=True)
 
-        built = parameter_question(qid, instructions)
-        row = built.get(qid) if isinstance(built, dict) else None
-        if isinstance(row, dict):
-            body = dict(row)
-    except Exception:
-        pass
-    body["type"] = "score"
-    body["instructions"] = instructions
-    if criteria:
-        body["criteria"] = [item for item in criteria if not _blocked_text(str(item))]
-    else:
-        kept = body.get("criteria")
-        if isinstance(kept, list):
-            cleaned = [item for item in kept if not _blocked_text(str(item))]
-            if cleaned:
-                body["criteria"] = cleaned
-            else:
-                body.pop("criteria", None)
-    return {qid: body}
 
 
 def _noul_question(qid: str, instructions: str, yes: str, no: str) -> dict[str, Any]:
@@ -646,6 +1174,11 @@ def _parameter_questions() -> dict[str, Any]:
         "The component exists on this state.",
         "The component does not exist on this state.",
     ))
+    pack.update(_score_question(
+        "followthrough_walk_depth",
+        "The score you return is how deep this follow-through card is walked. "
+        "An empty score leaves the depth unset. Do not flatten. Do not send.",
+    ))
     return pack
 
 
@@ -690,6 +1223,7 @@ def piece_questions(
 ) -> dict[str, Any]:
     """One pack for this piece. Seat questions plus the parameter questions."""
 
+    _bind_card(state)
     named = _seats_for_branch(branch, seats)
     raw: Mapping[str, Any] | None = None
     try:
@@ -833,8 +1367,8 @@ def _base(
         "does_not_flatten": True,
         "does_not_send": True,
         "copied_persist_010": False,
-        "inventory_fluid": 48,
-        "inventory_envelope": 8,
+        "inventory_fluid": len(questions),
+        "inventory_envelope": len(SEATS),
         **dict(extra or {}),
     }
     return row
@@ -939,7 +1473,7 @@ def _read_returns(answers: Mapping[str, Any] | None) -> dict[str, Any]:
             nouls[name] = noul
             returns[name] = {"noul": noul}
             continue
-        score = _score_of(block)
+        score = _score_of(block, name)
         if score is None:
             continue
         scores[name] = score
@@ -1003,6 +1537,7 @@ def evaluate_pack(
 ) -> dict[str, Any]:
     """One evaluate. Priors go on this ask. Path and err stay here. Never raises."""
 
+    del timeout_s
     pack = {
         str(qid): dict(spec)
         for qid, spec in dict(questions or {}).items()
@@ -1010,7 +1545,9 @@ def evaluate_pack(
         and str(spec.get("type") or "") in _QUESTION_TYPES
         and not _question_blocked(qid, spec)
     }
-    asked = _scrub(dict(state or {}))
+    raw = dict(state or {})
+    card_key = _card_key(raw)
+    asked = _scrub(raw, bound=_walk_bound(card_key))
     if not isinstance(asked, dict):
         asked = {}
     asked.pop("prior_outcomes", None)
@@ -1032,7 +1569,6 @@ def evaluate_pack(
         receipt = evaluate(
             asked,
             questions=pack,
-            timeout_s=timeout_s,
             model=MODEL,
             merge_sleeve=False,
         )
@@ -1060,6 +1596,7 @@ def evaluate_pack(
         out.setdefault("error", error)
         out["answers"] = answers
     parsed = _read_returns(answers)
+    _remember_walk(card_key, parsed["scores"].get("followthrough_walk_depth"))
     _remember(asked, _return_pairs(parsed, pack), error)
     return out
 
@@ -1091,6 +1628,7 @@ def compose_followthrough(
 ) -> FollowthroughDecision:
     """Read this state's return. A miss does not restore a constant."""
 
+    _bind_card(state)
     del integer_window_elapsed, integer_min_lot, integer_retry_count, integer_retry_cap, auto_be_enabled
     state_map = dict(state or {})
     enabled = overlay_enabled(environ=environ)
@@ -1149,6 +1687,7 @@ def compose_followthrough(
         "leaveorig_fit": scores.get("leaveorig_fit"),
         "sibling_conviction": scores.get("sibling_conviction"),
         "paid_cluster_lesson": scores.get("paid_cluster_lesson"),
+        "walk_depth": scores.get("followthrough_walk_depth"),
         "returns": parsed["returns"],
     }
     return FollowthroughDecision(
@@ -1211,6 +1750,7 @@ def compose_from_intent(
 ) -> dict[str, Any]:
     """One intent, one evaluate, one piece. The return is the decision."""
 
+    _bind_card(state)
     st = _scrub(dict(state or {}))
     if not isinstance(st, dict):
         st = {}

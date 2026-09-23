@@ -2155,7 +2155,7 @@ def _replay_execution_fillability_atom(row: Mapping[str, Any]) -> dict[str, Any]
         }
     nested_matches = bool(
         nested_value is not None
-        and abs(float(value) - float(nested_value)) <= 1e-12
+        and float(value) == float(nested_value)
     )
     source = _text(row.get("execution_fill_probability_source"))
     source_time = row.get("execution_fill_probability_source_time_utc")

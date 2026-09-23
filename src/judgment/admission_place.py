@@ -357,12 +357,22 @@ def compose_admission_place(
     picked = _unique_option(answers.get("admission"), ADMISSION_ORDER)
     admit = picked["choice"]
     del intent
-    try:
-        from .gold_priors import applied_persistence_weight
+    persist_w = None
+    block = answers.get("persist_weight") if isinstance(answers, dict) else None
+    if isinstance(block, dict):
+        try:
+            from .jev_questions import returned_number
 
-        persist_w = applied_persistence_weight()
-    except Exception:
-        persist_w = None
+            persist_w = returned_number(block)
+        except Exception:
+            persist_w = None
+    if persist_w is None and answers:
+        try:
+            from .gold_priors import applied_persistence_weight
+
+            persist_w = applied_persistence_weight()
+        except Exception:
+            persist_w = None
     sleeve_order = tuple((extra.get("sleeve_select") or {}).get("criteria") or ())
     return AdmissionPlaceDecision(
         may_place=(admit == "this_candidate"),
