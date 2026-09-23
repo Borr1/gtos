@@ -1,0 +1,64 @@
+--- host-before/run_book.py
++++ session-co/run_book.py
+@@ -98,6 +98,11 @@
+                    help="State/ledger/log namespace under pipeline_state/ultimate_book/")
+     p.add_argument("--poll-seconds", type=float, default=60.0)
+     p.add_argument("--tags", default=None, help="Comma-separated sleeve tags to run (default: all BUILT)")
++    p.add_argument("--lane-weights", default=None,
++                   help="Signed gtos.lane_weights.v1 file; requires --lane-weights-key "
++                        "and explicit --tags. Invalid/stale input becomes x1.00 everywhere.")
++    p.add_argument("--lane-weights-key", default=None,
++                   help="External HMAC verification key for --lane-weights.")
+     p.add_argument("--kill-flag", default=None,
+                    help="Per-instance operator kill-switch path (default pipeline_state/ULTIMATE_BOOK_KILL.flag). "
+                         "Set a distinct path per account so FTMO and redacted_account can be braked independently.")
+@@ -256,6 +261,31 @@
+         vnext_runtime_cfg["broker_account_namespace"] = args.namespace
+     merged["broker_account_namespace"] = args.namespace
+
++    tags = tuple(t.strip() for t in args.tags.split(",") if t.strip()) if args.tags else None
++    # Validate and latch the external sizing carrier before opening an MT5 connection.
++    from src.components.ultimate_book.lane_weights import (
++        LaneWeightController,
++        LaneWeightsConfigurationError,
++    )
++    try:
++        lane_weight_controller = LaneWeightController(
++            namespace=args.namespace,
++            expected_sleeves=tags or (),
++            repo_root=".",
++            weights_path=args.lane_weights,
++            key_path=args.lane_weights_key,
++        )
++    except LaneWeightsConfigurationError as exc:
++        logging.error("lane-weight launch arguments refused: %s", exc)
++        return 4
++    lane_weight_snapshot = lane_weight_controller.snapshot()
++    if lane_weight_snapshot.get("status") != "active" and lane_weight_controller.enabled:
++        logging.error(
++            "LANE WEIGHTS NOT ACTIVE: status=%s reason=%s; every --tags sleeve is x1.00",
++            lane_weight_snapshot.get("status"),
++            lane_weight_snapshot.get("reason"),
++        )
++
+     # notification queue (best-effort; reuse the existing Telegram stack — creds from .env). The $/R
+     # nominal is configured AFTER mt5.connect() below, so it can use the LIVE balance + active book profile.
+     try:
+@@ -373,7 +403,6 @@
+     except Exception:
+         logging.getLogger(__name__).warning("notification $/R configure failed (non-fatal)", exc_info=True)
+
+-    tags = tuple(t.strip() for t in args.tags.split(",")) if args.tags else None
+     # Validated at LAUNCH, before any engine exists: an unparseable selection must stop the
+     # worker, not degrade to the committed contract at every tick in silence.
+     # `parse_frontier_exits` raises on an empty string and on an unknown sleeve name
+@@ -410,7 +439,8 @@
+         return 4
+     owner = UltimateBookOwner(merged, mt5, ".", namespace=args.namespace,
+                               frontier_exits=frontier_exits,
+-                              spread_geometry_floor=spread_geometry_floor)
++                              spread_geometry_floor=spread_geometry_floor,
++                              lane_weight_controller=lane_weight_controller)
+     for _s in frontier_exits:
+         # B1852: this banner used to render `float(_o["final_target_r"])`, which SIX of the eight
+         # wired sleeves do not carry -- so naming one of them killed the worker AFTER

@@ -1,0 +1,142 @@
+# src/components/ultimate_book/governor_state.py
+# a/ = the running host, redacted_host87668c5d503b52925d10be7dfb66540 (sha256 a1235ec8424c20a4ed9be3ed6e2af60a99daea33dd84fbdbefdc4cbda4a39182)
+# b/ = the activation carry, Session AC (sha256 53b745ed9aba5bc214e47410d3999b2f44df389c9abedcd53f47f2f1605c7db0)
+# applies with `patch -p1 -F 0` and with `git apply -p1`, zero fuzz.
+--- a/src/components/ultimate_book/governor_state.py
++++ b/src/components/ultimate_book/governor_state.py
+@@ -31,19 +31,27 @@
+ from __future__ import annotations
+ 
+ import json
++import logging
+ import os
+ import uuid
+ from datetime import datetime, timedelta, timezone
+ from typing import Optional
+ 
+ from .admission import GovernorState
++# Aliased: the constructor takes a float parameter of the same name, and a shadowed
++# function that silently resolves to a float would be a very quiet bug.
++from ...utils.broker_clock import UnknownBrokerClockError
++from ...utils.broker_clock import daily_reset_offset_hours as _reset_calendar_offset_hours
+ 
++LOGGER = logging.getLogger(__name__)
+ 
++
+ class GovernorStateBuilder:
+     def __init__(self, repo_root: str, namespace: str = "ftmo_primary", *,
+                  static_initial_balance: Optional[float] = None,
+                  daily_reset_offset_hours: float = 0.0,
+-                 offset_provider=None):
++                 offset_provider=None,
++                 reset_rule: Optional[str] = None):
+         self._dir = os.path.join(repo_root, "pipeline_state", "ultimate_book", namespace)
+         os.makedirs(self._dir, exist_ok=True)
+         self._hw_path = os.path.join(self._dir, "high_water.json")
+@@ -56,15 +64,53 @@
+         # This is the STATIC config fallback; when an offset_provider is supplied (the live book passes one
+         # reading the broker-detected offset) the reset window is DST-correct -- see _effective_offset_h.
+         self._reset_offset_h = float(daily_reset_offset_hours or 0.0)
++        # The account's DECLARED daily-reset calendar, e.g. "europe_prague" for FTMO. None (or
++        # "server") means the firm resets at its own server midnight, which is redacted_account's rule
++        # and is what the detected offset already gives. See _effective_offset_h.
++        self._reset_rule = (str(reset_rule).strip() or None) if reset_rule else None
+         self._offset_provider = offset_provider
+ 
+-    def _effective_offset_h(self) -> float:
+-        """The broker reset-window offset in hours, DST-correct. Prefer the LIVE-detected broker offset (the
+-        ACTUAL server clock, so it tracks EET<->EEST automatically across the Oct/Mar DST change) when it is
+-        a plausible WHOLE-HOUR value in the EET/EEST band [+1,+4]; else the static config offset. Rounding +
+-        the band guard stop a transient mis-detection from shifting the daily-loss window; the offset is
+-        stable within a server-day (DST flips at ~03:00 server, far from the ~21:00-22:00 UTC day boundary,
+-        so the reset-window DATE never spuriously advances mid-flip)."""
++    def _effective_offset_h(self, now_utc: Optional[datetime] = None) -> float:
++        """The offset in hours whose midnight is THIS ACCOUNT'S daily-loss reset instant.
++
++        Two brokers, two different rules, and they are not interchangeable:
++
++        * **redacted_account** resets at **00:00 SERVER time**, GMT+3 under DST and GMT+2 otherwise
++          (help.redacted_account.com/en/articles/8394309). The live-detected broker offset IS that
++          rule, so it is used directly and tracks the server's own DST flip automatically.
++        * **FTMO** resets at **00:00 CE(S)T** -- Central European time, NOT its server clock
++          (academy.ftmo.com/lesson/maximum-daily-loss/; recorded at config/profiles/ftmo.yaml:102
++          as ``daily_reset_time: 00:00 CE(S)T``). FTMO's MT5 server follows the **US** DST
++          calendar (measured -- see broker_clock.NEW_YORK_PLUS_7) while CE(S)T follows the
++          **EU** one, so server midnight is 1 h before the real reset normally and **2 h
++          before it during the ~4 weeks a year the two calendars disagree** (which includes
++          2026-03-08..03-28, inside the sealed March window).
++
++        Corrected 2026-07-26 (B56). Before this, every account used the detected server offset,
++        which is right for redacted_account and **early** for FTMO -- the dangerous direction, since
++        for that 1-2 h each night the governor believed the daily-loss budget had reset while
++        FTMO was still counting losses against the previous day.
++
++        When ``reset_rule`` names a calendar it wins, because it is the firm's stated rule.
++        Otherwise the live-detected server offset is preferred (rounded, and band-guarded to
++        [+1,+4] so a transient mis-detection cannot shift the window), then the static config
++        offset. The offset is stable within a server-day -- both DST flips happen at ~02:00-03:00
++        local, far from the ~21:00-23:00 UTC day boundary -- so the reset DATE never advances
++        spuriously mid-flip.
++        """
++        if self._reset_rule:
++            try:
++                hours = _reset_calendar_offset_hours(
++                    now_utc or datetime.now(timezone.utc), self._reset_rule)
++                if hours is not None:
++                    return float(hours)
++            except UnknownBrokerClockError:
++                # An unrecognised rule name is a configuration error, not a runtime condition.
++                # Fall through to the detected offset rather than raise into the decision path,
++                # but do not stay silent about it.
++                LOGGER.error("unknown daily-reset rule %r; falling back to the detected broker "
++                             "offset. The reset window may be wrong for this account.",
++                             self._reset_rule)
+         prov = self._offset_provider
+         if prov is not None:
+             try:
+@@ -110,18 +156,36 @@
+ 
+     def _reset_window_date(self, now_utc: datetime) -> str:
+         """The broker reset-window date (server-local): UTC shifted by the (DST-correct) daily-reset offset."""
+-        return (now_utc.astimezone(timezone.utc)
+-                + timedelta(hours=self._effective_offset_h())).strftime("%Y-%m-%d")
++        now = now_utc.astimezone(timezone.utc)
++        return (now + timedelta(hours=self._effective_offset_h(now))).strftime("%Y-%m-%d")
+ 
+     def _reset_window_start_utc(self, now_utc: Optional[datetime] = None) -> datetime:
+-        """UTC instant at which the CURRENT broker reset-window (server-local day) began. server = UTC +
+-        offset, so server-midnight today == (server-midnight) converted back to UTC by subtracting offset
+-        (e.g. offset +3h => the day boundary is 21:00 UTC)."""
++        """UTC instant at which the CURRENT reset-window (account-local day) began. local = UTC +
++        offset, so local midnight today == (local midnight) converted back to UTC by subtracting the
++        offset that was in force AT THAT MIDNIGHT (e.g. offset +3h => the day boundary is 21:00 UTC).
++
++        The second conversion is the subtle one, and it was wrong. Subtracting the offset at ``now``
++        assumes the offset has not changed since midnight -- true on 363 days a year and false on the
++        two the reset calendar shifts. Measured on the CE(S)T rule: at the autumn seam
++        (2026-10-25T01:00Z) the naive form moved the window START forward by an hour, which SHORTENS
++        the window and drops an hour of realized loss out of the daily budget. That is the same
++        direction as the defect this rule exists to fix, so it is repaired here rather than noted.
++
++        One correction pass converges for a one-hour transition: re-evaluate the offset at the
++        candidate instant, and if it disagrees with the offset at ``now``, redo the subtraction with
++        it. Verified at all four EU seams in 2026-2027 and hourly across two years. The detected-offset
++        path is unaffected by construction -- ``offset_provider`` takes no instant, so it returns the
++        same value for both evaluations and the correction is a no-op.
++        """
+         now = (now_utc or datetime.now(timezone.utc)).astimezone(timezone.utc)
+-        off = self._effective_offset_h()
+-        server_now = now + timedelta(hours=off)
+-        server_midnight = server_now.replace(hour=0, minute=0, second=0, microsecond=0)
+-        return server_midnight - timedelta(hours=off)
++        off = self._effective_offset_h(now)
++        local_now = now + timedelta(hours=off)
++        local_midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
++        start = local_midnight - timedelta(hours=off)
++        off_at_start = self._effective_offset_h(start)
++        if off_at_start != off:
++            start = local_midnight - timedelta(hours=off_at_start)
++        return start
+ 
+     def reconstruct_day_start_balance(self, mt5, now_utc: Optional[datetime] = None) -> Optional[float]:
+         """Broker-correct daily-loss baseline = current balance - realized closed P&L since the server-day

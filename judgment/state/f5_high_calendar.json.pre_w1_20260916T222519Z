@@ -1,0 +1,138 @@
+{
+  "schema": "gtos.f5.high_calendar.v1",
+  "updated_utc": "20260915T222400Z",
+  "window_pre_min": 15,
+  "window_post_min": 60,
+  "join": "candidate_symbol_not_occupancy",
+  "note": "Writer-readable HIGH spine. Reloaded by mtime. Warsh-class = Fed speaker / FOMC / CPI / NFP / ECB / BOE / BOJ rates+pressers. F5 WATCH refresh 2026-09-16. ISM/PMI/retail/claims excluded. Fed Sep calendar checked: no Fed Chair speech in next14d (Bowman/Waller/Barr excluded). BOJ time uncertain_estimate. FOMC meeting Sep15-16 → decision 18:00Z presser 18:30Z.",
+  "events": [
+    {
+      "name": "Fed Chair Kevin Warsh Jackson Hole remarks",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-08-28T14:00:00Z",
+      "currency": "USD",
+      "event_type": "fed_speaker",
+      "source": "federalreserve.gov",
+      "past": true
+    },
+    {
+      "name": "US Nonfarm Payrolls (NFP)",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-04T12:30:00Z",
+      "currency": "USD",
+      "event_type": "nfp",
+      "source": "bls.gov",
+      "past": true
+    },
+    {
+      "name": "US NFP print +162K (cons +53K)",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-04T12:30:21Z",
+      "currency": "USD",
+      "event_type": "unscheduled_nfp",
+      "source": "DeItaone/2095851961547395244",
+      "past": true
+    },
+    {
+      "name": "US NFP print +162K URATE 4.1% rev +55K",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-04T12:31:34Z",
+      "currency": "USD",
+      "event_type": "unscheduled_nfp",
+      "source": "DeItaone/2095852269971321307",
+      "past": true
+    },
+    {
+      "name": "ECB Rate Decision",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-10T12:15:00Z",
+      "currency": "EUR",
+      "event_type": "ecb_decision",
+      "source": "ecb.europa.eu",
+      "past": true
+    },
+    {
+      "name": "ECB Press Conference",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-10T12:45:00Z",
+      "currency": "EUR",
+      "event_type": "ecb_presser",
+      "source": "ecb.europa.eu",
+      "past": true
+    },
+    {
+      "name": "US CPI (August 2026)",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-11T12:30:00Z",
+      "currency": "USD",
+      "event_type": "cpi",
+      "source": "bls.gov",
+      "past": true
+    },
+    {
+      "name": "FOMC Rate Decision",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-16T18:00:00Z",
+      "currency": "USD",
+      "event_type": "fomc_decision",
+      "source": "federalreserve.gov"
+    },
+    {
+      "name": "FOMC Press Conference",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-16T18:30:00Z",
+      "currency": "USD",
+      "event_type": "fomc_presser",
+      "source": "federalreserve.gov"
+    },
+    {
+      "name": "BOE Rate Decision",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-17T11:00:00Z",
+      "currency": "GBP",
+      "event_type": "boe_decision",
+      "source": "bankofengland.co.uk"
+    },
+    {
+      "name": "BOJ Rate Decision",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-09-18T02:50:00Z",
+      "currency": "JPY",
+      "event_type": "boj_decision",
+      "source": "boj.or.jp",
+      "note": "MPM Sep 17-18 2026; official release time undecided; 02:50Z conventional midday JST estimate",
+      "time_certainty": "uncertain_estimate"
+    },
+    {
+      "name": "US Nonfarm Payrolls (NFP September 2026)",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-10-02T12:30:00Z",
+      "currency": "USD",
+      "event_type": "nfp",
+      "source": "bls.gov",
+      "beyond_horizon_14d": true
+    },
+    {
+      "name": "US CPI (September 2026)",
+      "impact": "HIGH",
+      "official_high": true,
+      "scheduled_utc": "2026-10-14T12:30:00Z",
+      "currency": "USD",
+      "event_type": "cpi",
+      "source": "bls.gov",
+      "beyond_horizon_14d": true
+    }
+  ]
+}

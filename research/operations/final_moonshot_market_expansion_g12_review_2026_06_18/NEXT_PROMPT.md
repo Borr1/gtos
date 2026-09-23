@@ -1,0 +1,11 @@
+# Market Expansion Default-Off Implementation Design Prompt
+
+Run mandatory GTOS preflight, do not rely on chat memory, reread this prompt plus the G12 review route artifacts from disk after any compaction/resume/interruption/uncertainty, and read `.context/00_core/goal_session_research_discipline.md`, `.context/00_core/research_operating_doctrine.md`, `.context/00_core/orchestrator_successor_operating_brief.md`, `.context/00_core/orchestrator_methodology_hardening_controls.md`, and `.context/00_core/parallel_goal_merge_playbook.md` as active instructions before acting.
+
+Evidence class: default-off implementation design for G12-reviewed market-expansion candidates. This is not live authority. Operate with maximum practical reasoning, active creativity, no conservative brake, no arbitrary top-N/top-3/top-5/top-10 cutoff, same-evidence-class blocker pursuit, full same-evidence-class pursuit, and inspire-not-kill preservation. Preserve all material rows before ranking.
+
+Allowed data: committed G12 review/follow-up/scoring artifacts, source-hashed local MT5 OHLCV/tick-volume exports, current active candidate-book replay/MC artifacts, and public docs only when source captures are saved. Do not use orderflow/depth. Forbidden surfaces: no production-change or live trading broker operation; no prompt/config/risk/execution/safety/canary/selector activation changes; no broker/account/order/history/deal/position mutation; no credentials; no remotes; no VPS processes; no MT5 order state; no paid API/vendor calls.
+
+Objective: turn `default_off_m1_supported_candidate` and `default_off_proxy_supported_candidate_requires_m1_repair` rows into a default-off implementation design package with selector-level de-duplication, family/symbol risk budgets, profile/spec prerequisites, exact cost/fill repair requirements, and tests. Result materialization is required: implementation decision, rejection/transformation decision, or exact source-safe impossibility for every default-off row.
+
+Required output: default-off implementation ledger, selector de-dup/risk-budget spec, profile/spec/cost repair ledger, exact M1 repair plan for proxy-supported rows, verifier, focused tests, completion audit, output manifest, and successor prompt. No compact summary or arbitrary top-N can substitute for full ledgers.

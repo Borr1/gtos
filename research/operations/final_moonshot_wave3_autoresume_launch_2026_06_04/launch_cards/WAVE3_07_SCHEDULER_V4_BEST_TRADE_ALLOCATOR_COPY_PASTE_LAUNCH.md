@@ -1,0 +1,24 @@
+# Wave3 07: Scheduler V4 Best Trade Allocator Copy-Paste Launch
+
+- Lane: `scheduler_v4_best_trade_allocator`
+- Worktree: `/Users/borr/Documents/gtos/worktrees/wave3-scheduler-v4-best-trade-allocator-2026-06-04`
+- Branch: `wave3-scheduler-v4-best-trade-allocator-2026-06-04`
+- Current launch HEAD: `56b0f0641465cb9bdffdd37bf42e8c27fc3fed0e`
+- Controlling prompt: `research/science_program_2026_05/04_goal_prompts/wave3_final_moonshot_after_hard_halt_2026_06_04/WAVE3_07_SCHEDULER_V4_BEST_TRADE_ALLOCATOR_GOAL_PROMPT_2026-06-04.md`
+
+## Terminal Command
+
+Paste this into the lane terminal:
+
+```bash
+cd /Users/borr/Documents/gtos/worktrees/wave3-scheduler-v4-best-trade-allocator-2026-06-04
+codex -m gpt-5-codex -s danger-full-access -a on-request -- --auto-resume-on-limit
+```
+
+## Starter Message
+
+Paste this into the Codex session after it opens:
+
+```text
+/goal Follow the full controlling prompt in research/science_program_2026_05/04_goal_prompts/wave3_final_moonshot_after_hard_halt_2026_06_04/WAVE3_07_SCHEDULER_V4_BEST_TRADE_ALLOCATOR_GOAL_PROMPT_2026-06-04.md as the complete objective; do mandatory preflight and context refresh first; do not rely on chat memory; after any compaction, resume, interruption, uncertainty, tool crash, or surprising disk state reread the prompt, this starter, goal_session_research_discipline.md, research_operating_doctrine.md, and latest route artifacts from disk as active instructions, not background; lane=scheduler_v4_best_trade_allocator; evidence class is production-code integration plus source-bound repair/replay/design fixtures; authorized local repo surfaces include production code, runtime code, config, prompts, selector/scheduler/execution, risk/safety/canary/runtime, profiles, tests, verifiers, manifests, and route artifacts; forbidden without separate owner approval: live trading deployment, broker operation, broker account/order/history/deal/position mutation, credentials, paid API/vendor calls, active VPS processes, and remote push; semantic ownership is mandatory: same-symbol lifecycle, same-instrument lifecycle, scale-in, close/reverse, long/short conflict, open trade versus new candidate competition, ticket-bound state, pending/partial/BE/trailing/stale-thesis state, broker-local risk, no duplicate exposure, calibrated probability, debate-team controls, numeric theses for long, short, no-trade, wait, scale, reduce, close, reverse, EV, uncertainty, vetoes, missing-source penalties, confidence calibration, disagreement, final action selection, FOLLOW/AVOID/MIXED numeric mapping with direction, strength, confidence, reliability history, evidence class, freshness, cost sensitivity, conflict reason, source completeness, FOLLOW is not automatic trade permission, AVOID invalidation type, MIXED structured disagreement, ML, Feature Store, Label Store, Digital Twin, ML baselines, training workers, walk-forward, leakage guards, Brier, ECE, reliability bins, logloss, promotion/demotion, model registry, and challenger ownership; use curiosity, truthfulness, active creativity, result materialization, no conservative brake, full same-evidence-class pursuit, ultimate final GTOS system mandate, context-pollution removal, examples are starting points, quality does not mean passivity, proof-or-impossibility, no arbitrary top-N or small-number caps, all material rows before ranking, source completeness, result-use status, exact-R/proxy-R/expectancy where owned, branch decision, implementation decision, manifest, verifier, focused tests, completion audit, scoped commit, output floor, not a ceiling, Verification floor, not a ceiling, Complete means saturation, pursue every lane-owned question, boundaries are rails, not brakes, RESULT_MATERIALIZATION_REQUIRED, validation_result_status=false, outcome_result_rows_status=false, broker_runtime_change_status=false; do not copy redacted_account lots/fills/cash/cost/specs/lifecycle truth to FTMO; use commit trailer Co-Authored-By: Codex GPT-5 <redacted@example.com>; mark complete only when the prompt completion standard is fully satisfied.
+```

@@ -1,0 +1,37 @@
+# Broker-local dates on which the market did NOT trade, DERIVED from the bar archive.
+# Session BA (B1900-B1949). Pass to `run_book.py --weekend-early-close <this file>`.
+#
+# Derivation: a week whose last H4 bar closes >1 bar and <=52 h before the broker Saturday
+# 00:00 that ends it, on >=60 % of the ELIGIBLE symbols that never print a weekend bar
+# (eligible = its archive reaches that week at all).
+# 187 candidate dates -> 13 kept.
+#
+# KNOWN CONFOUND, and it is why this is a starting point and not authority: bar absence
+# cannot distinguish a market holiday from an archive coverage gap. The 52 h ceiling and the
+# quorum remove the obvious coverage gaps and will not remove a subtle one. Every date below
+# is a recognisable market holiday (Christmas Eve / Christmas / New Year / Good Friday),
+# which is corroboration and not proof. The durable fix is capturing the broker's own
+# trading-session table; filed in the repair queue.
+#
+# WHAT IT IS FOR: with this list the live flatten deadline is never LATER than the priced
+# research exit on any of the archive's 271 weekend-flat exits (measured: 0 residual).
+# Without it, 7 of those 271 (2.6 %) aim the flatten at a market that shut a day earlier --
+# under the redacted_account funded-account rule that is a BREACH, not a cost.
+#
+# THIS LIST IS HISTORICAL. It contains no future date. An operator arming the policy must
+# extend it forward from the firm's / broker's own holiday calendar, or use
+# --weekend-flatten-before-hours 24 instead, which needs no list and costs an extra
+# 0.117 R/day across the armed four.
+2009-12-24
+2009-12-25
+2009-12-31
+2010-01-01
+2015-12-24
+2015-12-25
+2016-01-01
+2020-12-25
+2021-01-01
+2021-12-24
+2022-04-15
+2024-03-29
+2025-04-18

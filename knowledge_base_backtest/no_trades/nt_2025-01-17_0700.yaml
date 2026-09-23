@@ -1,0 +1,16 @@
+candle_time: '2025-01-17T07:00:00Z'
+data_quality_ok: true
+date: '2025-01-17'
+decision: NO_TRADE
+reason: Trade direction conflicts with Daily bias - CHoCH is bearish while Daily bias
+  is bullish
+reasoning:
+  daily_bias: null
+  full_explanation: 'Session produced 0 candidates. Primary reasons: No valid H1 pullback
+    to discount POI for long entry, and bearish M15 CHoCH conflicts with bullish Daily
+    bias, No valid H1 pullback to POI and CHoCH direction conflicts with Daily bias,
+    Trade direction conflicts with Daily bias - CHoCH is bearish while Daily bias
+    is bullish'
+  h4_alignment: null
+  stopped_at_step: null
+record_id: nt_2025-01-17_0700

@@ -1,0 +1,40 @@
+diff --git a/config/agent_config.yaml b/config/agent_config.yaml
+index d36bf5a14..dda5c2591 100644
+--- a/config/agent_config.yaml
++++ b/config/agent_config.yaml
+@@ -738,8 +738,34 @@ gtos_vnext_runtime:
+   # Runtime halt files remain the physical deployment control; these flags make
+   # V4 the local final-say authority when the runtime path is exercised.
+   selector_v4_enabled: true
+-  selector_v4_apply_to_execution: true
++  # STAGED GO-LIVE CHANGE (ultimate_book replacement): the broad V4 selector loses
++  # live (-0.25R/fill native; ULTIMATE_GO_LIVE_DOSSIER.md). Go-live REPLACES it with the
++  # validated deploy book, so this surface must NOT reach execution. Flipped true -> false.
++  selector_v4_apply_to_execution: false
+   selector_v4_live_activation_allowed: true
++
++  # ===========================================================================================
++  # ULTIMATE VALIDATED-BOOK STANDALONE REPLACEMENT (DEFAULT-OFF — owner flips to go live).
++  # Wires research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/
++  #   ultimate_book_runtime_bridge.evaluate_vnext_ultimate_book_admission ->
++  #   ultimate_book_live_package.admit_and_size (NO broker / NO orders in the module).
++  # TRIPLE-GATE: enabled AND apply_to_execution AND live_activation_allowed must ALL be true for
++  # any risk-bearing effect; runtime halt files remain the PHYSICAL deployment control. The book is
++  # the WAVE-7 final: clean_3 (11 sleeves) - {HEATOIL_c, NATGAS_cash} (tick-true) + Kelly-lite.
++  # ===========================================================================================
++  ultimate_book_enabled: false                  # master flag for the standalone book engine
++  ultimate_book_apply_to_execution: false       # only true once broker-authority cleared
++  ultimate_book_live_activation_allowed: false  # third gate; halt files are the physical control
++  ultimate_book_disable_broad_selector: true    # when book is live, broad selector MUST be off (fail-closed)
++  ultimate_book_profile: "clean3_w7_measured_nom1p25"  # owner first-cycle dial: 1.25% nominal half-Kelly
++  ultimate_book_include_clean3: true            # W7 final book = clean_3 (11 sleeves)
++  ultimate_book_include_clean4: false           # clean_4 session-leadlag sleeve NOT in the W7 final book
++  ultimate_book_overlays: false                 # confluence size-up selectors (opt-in)
++  ultimate_book_vp_acceptance: false            # W6 exit-honest noise-cut (opt-in)
++  ultimate_book_stress_derisk: false            # reactive ladder+coloss; enable AFTER first account clears
++  ultimate_book_kelly_lite: true                # W7 conviction sizing (leak-free day-level n_active)
++  ultimate_book_kelly_conservative: true        # first cycle = half-Kelly (breach-free); flip false at 1.50%
++  ultimate_book_drop_w7_symbols: true           # drop HEATOIL_c+NATGAS_cash (tick-true; cost-map artifact)
+   selector_v4_min_broker_net_trade_ev_r: 0.10
+   selector_v4_min_no_trade_ev_r: 0.02
+   selector_v4_min_confluence_score: 0.15

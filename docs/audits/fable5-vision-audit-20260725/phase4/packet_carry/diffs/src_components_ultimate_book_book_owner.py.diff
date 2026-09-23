@@ -1,0 +1,309 @@
+--- a/src/components/ultimate_book/book_owner.py (host-local)
++++ b/src/components/ultimate_book/book_owner.py (carry)
+@@ -28,6 +28,8 @@
+     build_runtime_learning_packet,
+     stable_hash,
+ )
++from .packet_economics import build_economics_block
++from .packet_guard import GuardedPacketWriter
+ from src.components.ai_companion.control_state import AICompanionRuntimeGate
+ 
+ _log = logging.getLogger(__name__)
+@@ -214,6 +216,11 @@
+                 self._repo_root,
+                 self._runtime_learning_packet_log_path,
+             )
++        # Spread observed by the pre-send cost screen, keyed (sleeve, symbol, decision_bar_iso).
++        # The screen already computes spread_r for every leg it evaluates but historically only
++        # surfaced it inside a refusal *string* when the leg failed, so `spread_r` was null on all
++        # 99,112 live packets. Recording the number here is what makes it emittable.
++        self._spread_observations: dict[tuple, dict] = {}
+         try:
+             self._broker_exit_history_lookup_attempts = max(
+                 1, int(rt.get("broker_exit_history_lookup_attempts", 5) or 5)
+@@ -990,6 +997,17 @@
+                 for key in (
+                     "entry_reconciliation_status",
+                     "broker_fill_time_utc",
++                    # `_iso_from_deal_time_near_reference` (:2818-2852) will shift a broker deal
++                    # time by up to +/-6 WHOLE HOURS to snap it to a local reference. The offset
++                    # is computed and stored on the execution record (:3055-3056) and then read by
++                    # nobody -- it appears in 0 of the 99,112 live packets. So for every packet in
++                    # the corpus it is impossible to tell a raw broker timestamp from one that was
++                    # silently moved six hours to agree with our clock, which is the
++                    # broker-time-labelled-as-UTC hazard in its most subtle form: the agreement
++                    # that licenses the label is partly manufactured by the label's own producer.
++                    # Emitting it makes the adjustment auditable; packet_economics downgrades the
++                    # entry provenance to `transferred` whenever it fired.
++                    "broker_fill_time_alignment_offset_seconds",
+                     "broker_entry_source_status",
+                 ):
+                     if execution.get(key) is not None:
+@@ -1190,50 +1208,114 @@
+             if src in policy_clock and policy_clock.get(src) is not None:
+                 ctx[dst] = policy_clock.get(src)
+         return ctx
++
++    def _broker_server_name(self) -> Optional[str]:
++        """The MT5 server string, needed to count swap nights on the broker's own clock.
++
++        Read from the live account when available, else the profile config. Returns None rather
++        than guessing -- `rollover_nights_crossed` fails closed on an unknown server, which is the
++        correct outcome: a guessed offset is silent and survives every test. Never raises.
++        """
++        for getter in ("get_account_server", "get_server"):
++            try:
++                fn = getattr(self._mt5, getter, None)
++                if callable(fn):
++                    value = fn()
++                    if value:
++                        return str(value)
++            except Exception:  # noqa: BLE001
++                pass
++        # Config fallbacks, in order of authority. `mt5.server` is FIRST for historical reasons and
++        # is measured to be ABSENT on both live profiles -- `mt5` carries only portable/terminal_*
++        # keys. The live server name lives under `broker_profile`. Without these two extra
++        # fallbacks, `_broker_server_name` returns None on the VPS for both namespaces, every
++        # `rollover_nights` on every live packet reads `unavailable`, and the carry silently
++        # delivers holding time WITHOUT the swap-night count -- which is half of what it exists to
++        # record, since swap is the largest single broker cost for eight of eleven sleeves.
++        # Both live values (`FTMO-Server3`, `redacted_account-Server 2`) are registered rules in
++        # `broker_clock`, so the count works the moment the name resolves.
++        # Neither getter above is defined anywhere in either lineage; they are kept for a future
++        # adapter, not because they fire. Found by an adversarial pass.
++        for source, key in (
++            (self.base_config.get("mt5"), "server"),
++            (self.base_config.get("broker_profile"), "server"),
++            ((self.base_config.get("broker_profile") or {}).get("expected_account"), "server"),
++        ):
++            try:
++                # Duck-typed rather than `isinstance(..., Mapping)`: this module imports only
++                # Any/Callable/Optional from typing, and a bare `Mapping` here is a NameError at
++                # runtime that no syntax check catches.
++                value = source.get(key) if hasattr(source, "get") else None
++                if value:
++                    return str(value)
++            except Exception:  # noqa: BLE001
++                continue
++        return None
+ 
++    def _runtime_learning_economics(self, row: dict) -> Optional[dict]:
++        """Build the optional economics block for one outcome row. Never raises.
++
++        Holding time is the reason this exists. Session N measured the W7 book's dominant
++        remaining uncertainty and it is carry: at one night of average carry the book of record
++        passes at P=0.951 and makes 1.97 %/month; run every trade to its structural horizon and
++        that becomes P=0.450 and 0.13 %/month. Nothing in 99,112 live packets distinguishes those
++        two worlds, because holding time was only ever *derivable* -- from a poll-loop observation
++        of the close, on 98 of 151 closes -- and never recorded as a measurement with a stated
++        provenance and a broker-clock night count.
++        """
++        try:
++            return build_economics_block(row, server=self._broker_server_name())
++        except Exception:  # noqa: BLE001 - observability must never raise into the book
++            return None
++
+     def _append_runtime_learning_packets(self, summary: dict, packets: list[dict]) -> None:
+         if not self._runtime_learning_packet_enabled:
+             summary["runtime_learning"] = self._runtime_learning_status(0)
+             return
+         if not self._runtime_learning_writer:
++            # `packet_enabled: true` + `packet_log_enabled: false` is a supported config and leaves
++            # the writer None (:223-228). Falling through would hand the guard a None writer, fail
++            # every packet as `unrecorded`, and feed that count to
++            # ai_companion/supervisor.py:517 -> :709 -> :734-741, which raises an integrity issue
++            # and issues `pause_new_entries` for every namespace. A logging switch must never be
++            # able to stop the books.
+             summary["runtime_learning"] = self._runtime_learning_status(0)
+             return
+-        try:
+-            written = self._runtime_learning_writer.append_many(packets)
+-            summary["runtime_learning"] = self._runtime_learning_status(written)
+-        except Exception as e:
+-            written = 0
+-            packet_errors: list[dict] = []
+-            seen_hashes: set[str] = set()
+-            for idx, packet in enumerate(packets):
+-                try:
+-                    packet_hash = packet.get("packet_hash_sha256")
+-                    if packet_hash:
+-                        packet_hash_str = str(packet_hash)
+-                        if packet_hash_str in seen_hashes:
+-                            continue
+-                    appended = self._runtime_learning_writer.append(packet)
+-                    if packet_hash:
+-                        seen_hashes.add(packet_hash_str)
+-                    written += int(appended) if isinstance(appended, int) else 1
+-                except Exception as row_exc:  # noqa: BLE001 - observability must degrade by row, not cycle.
+-                    packet_errors.append({
+-                        "index": idx,
+-                        "event_type": packet.get("event_type"),
+-                        "symbol": packet.get("symbol"),
+-                        "sleeve": packet.get("sleeve"),
+-                        "error": repr(row_exc),
+-                    })
+-            status = self._runtime_learning_status(written, error=e)
+-            status["packet_write_error_count"] = len(packet_errors)
+-            status["packet_write_errors"] = packet_errors[-10:]
+-            summary["runtime_learning"] = status
++        # Built per call, not cached, so replacing `_runtime_learning_writer` (which tests and
++        # operational tooling do) still governs where packets land.
++        guard = GuardedPacketWriter(self._runtime_learning_writer)
++        # The guard never raises and never silently drops: valid packets are written, invalid ones
++        # are quarantined to a sidecar AND leave a `packet_rejected` marker in the main log so the
++        # hole is visible to a reader of that log alone. The previous implementation raised out of
++        # `append_many` on the FIRST invalid packet -- which discarded the whole cycle's batch --
++        # and recorded the casualties only in this cycle summary, where nothing downstream of the
++        # packet log could ever see them.
++        report = guard.append_many(packets)
++        status = self._runtime_learning_status(report.accepted)
++        status["packet_guard"] = report.as_dict()
++        # Preserved key names: src/components/ai_companion/supervisor.py:517,539-540 reads both,
++        # and a silently-renamed field would degrade the companion's view without failing anything.
++        status["packet_write_error_count"] = report.quarantined + report.unrecorded
++        status["packet_write_errors"] = [
++            {
++                "index": issue.get("index"),
++                "event_type": issue.get("event_type"),
++                "error": ";".join(issue.get("issues") or []),
++            }
++            for issue in report.issues[-10:]
++        ]
++        summary["runtime_learning"] = status
++        if not report.healthy:
+             _log.warning(
+-                "book[%s]: runtime-learning batch write failed; preserved %d/%d packets; row errors=%s",
++                "book[%s]: runtime-learning guard refused %d/%d packets "
++                "(unrecorded=%d, markers=%d); quarantine=%s; issues=%s",
+                 self._namespace,
+-                written,
+-                len(packets),
+-                packet_errors[-5:],
++                report.quarantined,
++                report.submitted,
++                report.unrecorded,
++                report.markers_written,
++                guard.quarantine_path,
++                report.issues[-3:],
+             )
+ 
+     def _emit_cycle_runtime_learning(
+@@ -1314,6 +1396,7 @@
+                 "bar_consumable": bool(summary.get("bar_consumable", True)),
+             })
+             row.setdefault("source_completeness_status", "runtime_skip_summary_observed")
++            self._attach_spread_observation(row)
+             packets.append(build_runtime_learning_packet(
+                 namespace=self._namespace,
+                 event_type="unit_skipped",
+@@ -1332,12 +1415,14 @@
+                 ),
+                 "source_completeness_status": "runtime_placement_summary_observed",
+             })
++            self._attach_spread_observation(row)
+             packets.append(build_runtime_learning_packet(
+                 namespace=self._namespace,
+                 event_type="unit_placed",
+                 ts=ts,
+                 bridge=bridge,
+                 outcome=row,
++                economics=self._runtime_learning_economics(row),
+                 source="book_owner.run_cycle",
+             ))
+         self._append_runtime_learning_packets(summary, packets)
+@@ -1366,6 +1451,7 @@
+                     ts=ts,
+                     bridge=bridge,
+                     outcome=row,
++                    economics=self._runtime_learning_economics(row),
+                     source="book_owner.manage_open_positions",
+                 ))
+         for item in summary.get("closed", []) or []:
+@@ -1383,6 +1469,7 @@
+                 ts=ts,
+                 bridge=bridge,
+                 outcome=row,
++                economics=self._runtime_learning_economics(row),
+                 source="book_owner.manage_open_positions",
+             ))
+         self._append_runtime_learning_packets(summary, packets)
+@@ -1398,6 +1485,12 @@
+         # a flattened breach state, NEVER open new entries (otherwise a flatten -> re-enter -> flatten churn).
+         if getattr(self, "_breach_block", False):
+             place = False
++        # Spread observations are scoped to ONE cycle: the screen fills them during this cycle's
++        # per-intent loop and _emit_cycle_runtime_learning drains them at the end of the same
++        # cycle. Clearing here bounds a dict that would otherwise grow for the life of a process
++        # that runs for months, and removes any chance of a later packet picking up an earlier
++        # bar's measurement -- a wrong number wearing a "measured" label is worse than no number.
++        self._spread_observations.clear()
+         res = self.engine.evaluate(now_utc=now, tags=tags)
+         summary = {"ok": res["ok"], "reason": res["reason"], "n_intents": res["n_intents"],
+                    "runtime_effect_now": res["runtime_effect_now"], "placed": [], "shadow": 0,
+@@ -3983,7 +4076,53 @@
+         except Exception:
+             import logging
+             logging.getLogger(__name__).warning("notify_placed failed (non-fatal)", exc_info=True)
++
++    @staticmethod
++    def _spread_observation_key(sleeve, symbol, decision_bar_iso) -> tuple:
++        """Same key shape as _runtime_learning_skip_context, so the two join without a mapping."""
++        return (
++            str(sleeve) if sleeve else None,
++            str(symbol) if symbol else None,
++            str(decision_bar_iso) if decision_bar_iso else None,
++        )
++
++    def _record_spread_observation(self, intent, *, spread_r: float, spread_price: float,
++                                   max_spread_r: float, stop_dist: float) -> None:
++        """Store one measured spread observation. Best-effort; never raises into the screen."""
++        try:
++            key = self._spread_observation_key(
++                getattr(intent, "sleeve", None),
++                getattr(intent, "symbol", None),
++                getattr(intent, "decision_bar_iso", None),
++            )
++            self._spread_observations[key] = {
++                "spread_r": round(float(spread_r), 8),
++                "spread_price": round(float(spread_price), 10),
++                "spread_r_limit": round(float(max_spread_r), 8),
++                "stop_dist": round(float(stop_dist), 10),
++                "spread_observed_at_utc": datetime.now(timezone.utc).isoformat(),
++                # Measured from a live tick at screen time -- not a config value, not a model.
++                "spread_r_provenance": "measured",
++                "spread_r_source": "book_owner._spread_cost_screen_live_tick",
++            }
++        except Exception:  # noqa: BLE001 - observability must never break the cost screen
++            pass
+ 
++    def _attach_spread_observation(self, row: dict) -> dict:
++        """Attach the measured spread for this leg, if one was observed this cycle."""
++        try:
++            obs = self._spread_observations.get(
++                self._spread_observation_key(
++                    row.get("sleeve"), row.get("symbol"), row.get("decision_bar_iso")
++                )
++            )
++            if obs:
++                for key, value in obs.items():
++                    row.setdefault(key, value)
++        except Exception:  # noqa: BLE001
++            pass
++        return row
++
+     def _spread_cost_screen(self, intent, tick) -> Optional[str]:
+         """Deterministic pre-send mirror of the authoritative pretrade spread-cost gate
+         (broker_net_cost_engine: spread_r = (ask-bid)/sl_distance vs selected_cell_pretrade_max_spread_r,
+@@ -4013,6 +4152,12 @@
+                 except (TypeError, ValueError):
+                     pass
+             spread_r = (ask - bid) / rd
++            # Record the observation for EVERY evaluated leg, pass or fail. Recording only the
++            # failures would build the spread record out of a refusal log, which is the
++            # derive-don't-accumulate trap: the passing legs are most of the distribution and
++            # their absence would read as "no spread" rather than "spread was fine".
++            self._record_spread_observation(intent, spread_r=spread_r, spread_price=ask - bid,
++                                            max_spread_r=max_spread_r, stop_dist=rd)
+             if spread_r > max_spread_r:
+                 return (f"cost_screen_spread_r:{spread_r:.3f}>{max_spread_r:.3f} "
+                         f"(spread {ask - bid:.4f} vs {getattr(intent,'sleeve','?')} stop {rd:.4f})")

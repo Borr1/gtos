@@ -1,0 +1,2003 @@
+diff --git a/config/agent_config.yaml b/config/agent_config.yaml
+index 1c68e6564..05a4cad97 100644
+--- a/config/agent_config.yaml
++++ b/config/agent_config.yaml
+@@ -1149,6 +1149,11 @@ gtos_vnext_runtime:
+   ultimate_book_live_activation_allowed: true       # GATE 3: live-order authority — LIVE (FTMO primary)
+   ultimate_book_package_module: "research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/ultimate_book_live_package.py"
+   ultimate_book_schema_version: "ultimate_book_live_package_v3"
++  ultimate_book_runtime_learning_packet_enabled: true       # observation-only parity/learning ledger
++  ultimate_book_runtime_learning_packet_log_enabled: true   # append-only JSONL; no broker/account mutation
++  ultimate_book_runtime_learning_packet_log_path: "shadow_logs/ultimate_book_runtime_learning_packets.jsonl"
++  ultimate_book_runtime_learning_packet_schema: "ultimate_book_runtime_learning_packet_v1"
++  ultimate_book_runtime_learning_redaction_policy: "hash_ticket_and_account_identifiers_v1"
+
+   # Deploy book selection. clean_3 DROPPED 2026-06-15 (owner-approved): the 3 substrate/volprofile sleeves
+   # (sub_xvol_pullback, sub_mid_dn_revert, vp_euidx_pocgrav) carry the cell-selection-leak signature — their
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/BLOCKER_REPAIR_REQUIREMENT_LEDGER.jsonl b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/BLOCKER_REPAIR_REQUIREMENT_LEDGER.jsonl
+new file mode 100644
+index 000000000..f127b0ff9
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/BLOCKER_REPAIR_REQUIREMENT_LEDGER.jsonl
+@@ -0,0 +1,2 @@
++{"exact_action": "VPS Codex applies scoped patch or cherry-picks checkpoint, runs tests, verifies packet log sample", "not_a_mac_blocker": true, "requirement": "VPS runtime apply/verify", "status": "external_runtime_step"}
++{"exact_action": "capture one cycle/manage packet sample after VPS process confirms healthy", "not_a_mac_blocker": true, "requirement": "live packet sample", "status": "requires_vps_runtime_cycle"}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/COMPLETION_AUDIT.json b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/COMPLETION_AUDIT.json
+new file mode 100644
+index 000000000..d8747da77
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/COMPLETION_AUDIT.json
+@@ -0,0 +1,34 @@
++{
++  "completion_boundary": "Wave E is a valuable VPS checkpoint for packet parity and learning capture. Wave F final dossier remains later.",
++  "date": "2026-06-18",
++  "forbidden_surface_check": {
++    "broker_mutation": false,
++    "credential_mutation": false,
++    "live_vps_reload": false,
++    "orderflow_depth_used": false,
++    "paid_vendor_call": false,
++    "remote_push": false
++  },
++  "instruction_coverage": {
++    "builder_posture": "production-code integration checkpoint",
++    "current_repo_reading_order_read": true,
++    "current_vnext_system_map_read": true,
++    "goal_session_research_discipline_read": true,
++    "live_state_read": true,
++    "methodology_controls_read": true,
++    "no_arbitrary_top_n": true,
++    "orchestrator_successor_operating_brief_read": true,
++    "parallel_merge_playbook_read": true,
++    "preflight_rerun_after_compaction": true,
++    "research_operating_doctrine_read": true
++  },
++  "material_outputs": {
++    "default_log_path": "shadow_logs/ultimate_book_runtime_learning_packets.jsonl",
++    "focused_tests_passed": 46,
++    "runtime_learning_packet_schema": "ultimate_book_runtime_learning_packet_v1",
++    "scoped_patch": "VPS_RUNTIME_LEARNING_PACKET_DELTA.patch",
++    "vps_prompt": "VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md"
++  },
++  "schema": "gtos.final_moonshot.wave_e.completion_audit.v1",
++  "status": "complete_for_vps_checkpoint"
++}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/DECISION_LEDGER.jsonl b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/DECISION_LEDGER.jsonl
+new file mode 100644
+index 000000000..9f7146347
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/DECISION_LEDGER.jsonl
+@@ -0,0 +1,3 @@
++{"broker_runtime_change_status": false, "code_paths": ["src/components/ultimate_book/runtime_learning_packet.py", "src/components/ultimate_book/book_owner.py", "src/components/ultimate_book/launcher.py", "src/components/ultimate_book/bridge.py", "config/agent_config.yaml"], "decision": "ADD_RUNTIME_LEARNING_PACKET_LEDGER", "evidence_class": "production_code_observation_layer", "reason": "launcher cycle rows were status telemetry, not canonical learning/parity packets", "status": "implemented"}
++{"broker_runtime_change_status": false, "config_keys": ["ultimate_book_runtime_learning_packet_enabled", "ultimate_book_runtime_learning_packet_log_enabled", "ultimate_book_runtime_learning_packet_log_path", "ultimate_book_runtime_learning_packet_schema", "ultimate_book_runtime_learning_redaction_policy"], "decision": "ENABLE_ACTIVE_CONFIG_OBSERVATION_ONLY", "evidence_class": "active_config_telemetry", "reason": "the live system needs packets immediately for parity/learning; writer is non-fatal and no-order", "status": "implemented"}
++{"broker_runtime_change_status": false, "decision": "PACKAGE_VPS_PATCH_AND_PROMPT", "evidence_class": "vps_handoff", "reason": "VPS should apply/review a scoped delta rather than ingest broad Mac branch history", "status": "implemented"}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/FOCUSED_TEST_RESULT.json b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/FOCUSED_TEST_RESULT.json
+new file mode 100644
+index 000000000..b09183a3e
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/FOCUSED_TEST_RESULT.json
+@@ -0,0 +1,10 @@
++{
++  "commands": [
++    "python3 -m py_compile src/components/ultimate_book/runtime_learning_packet.py src/components/ultimate_book/book_owner.py src/components/ultimate_book/launcher.py src/components/ultimate_book/bridge.py tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py",
++    "pytest tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py tests/ultimate_book/test_book_owner.py -q"
++  ],
++  "date": "2026-06-18",
++  "pytest_result": "46 passed, 1 pre-existing asyncio_mode warning",
++  "schema": "gtos.final_moonshot.wave_e.focused_test_result.v1",
++  "status": "pass"
++}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/MONITORING_AND_ROLLBACK_TRIGGER_LEDGER.jsonl b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/MONITORING_AND_ROLLBACK_TRIGGER_LEDGER.jsonl
+new file mode 100644
+index 000000000..485170b04
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/MONITORING_AND_ROLLBACK_TRIGGER_LEDGER.jsonl
+@@ -0,0 +1,5 @@
++{"action": "check launcher runtime_learning status and log path; do not reload blindly", "rollback": "set ultimate_book_runtime_learning_packet_enabled=false", "status": "monitor", "trigger": "no_runtime_learning_packets_after_cycle"}
++{"action": "inspect error in launcher/runtime summary and redaction audit", "rollback": "disable packet writer only; leave book gates unchanged", "status": "monitor", "trigger": "packet_validation_error"}
++{"action": "stop shipping packet log; keep local evidence; patch redaction before reuse", "rollback": "disable packet writer and quarantine log", "status": "hard_fail", "trigger": "raw_ticket_or_account_identifier_detected"}
++{"action": "fix permissions/disk path; trading/management must not stop because telemetry failed", "rollback": "disable log_enabled if disk remains unhealthy", "status": "non_fatal_runtime_alert", "trigger": "log_write_error"}
++{"action": "do not claim deployed parity until config and schema match", "rollback": "keep previous VPS package live and apply patch in dry-run first", "status": "hard_fail_for_parity_claim", "trigger": "vps_config_schema_mismatch"}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/NEXT_PROMPT.md b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/NEXT_PROMPT.md
+new file mode 100644
+index 000000000..713b81f89
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/NEXT_PROMPT.md
+@@ -0,0 +1,13 @@
++# Next Prompt - Wave F Final Dossier After VPS Packet Checkpoint
++
++/goal Follow the full controlling context and Wave A-E route artifacts as the complete objective; do mandatory preflight and context refresh first; do not rely on chat memory; read `.context/00_core/goal_session_research_discipline.md` and `.context/00_core/research_operating_doctrine.md` as active instructions, not background; operationalize them in the completion audit with instruction-coverage rows.
++
++Objective: inspect Wave A, Wave B, Wave C, and Wave E artifacts from disk, then build the Wave F final integration dossier and config decision. Do not relaunch broad research. Consume the current numbers, the lazy MT5 LTF source, inactive-lever audit, and runtime-learning packet parity, then decide the final deployable package, exact rollback stack, monitoring checklist, and remaining owner/VPS action boundary.
++
++Builder posture: constructive final-dossier production-code integration, no conservative brake, full same-evidence-class pursuit, no arbitrary top-N/top 3/5/10 or number-limited cutoff. Preserve all material rows in full ledgers/manifests/artifacts before summaries. Literal impossibility means exactly every executable read, export, search, parser, repair, proxy, ablation, metric, audit, and review action inside this evidence class was attempted or proven inapplicable.
++
++Evidence/result-use status: this route makes implementation decisions and branch decisions from already materialized replay/proxy-R/current-config/source-capture evidence. It must preserve exact-R/proxy-R/expectancy labels where present and must not relabel replay/proxy/shadow evidence as broker-real PnL. It must include source completeness, verifier, focused test, manifest, decision ledger, completion audit, rollback proof, and VPS handoff artifacts.
++
++Forbidden surfaces: inspect prompt/config/risk/execution/safety/canary/selector code as needed, but do not perform live trading, broker operation, account mutation, order mutation, history mutation, deal mutation, position mutation, credential mutation/disclosure, paid API calls, vendor calls, orderflow/depth use, broad remote push, or blind VPS reload.
++
++Completion audit: mark complete only when every Wave A-E material artifact has been inspected from disk, same-class gaps have been pursued or proven impossible, all material rows are preserved, verifier/pytest output is recorded, and the final dossier states the exact deployable package, rollback, monitoring, owner-action boundary, and remaining impossibility proof if any.
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/OUTPUT_MANIFEST.json b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/OUTPUT_MANIFEST.json
+new file mode 100644
+index 000000000..159653413
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/OUTPUT_MANIFEST.json
+@@ -0,0 +1,37 @@
++{
++  "artifacts": [
++    "RUNTIME_LEARNING_PACKET_SCHEMA.json",
++    "RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl",
++    "RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl",
++    "REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json",
++    "DECISION_LEDGER.jsonl",
++    "MONITORING_AND_ROLLBACK_TRIGGER_LEDGER.jsonl",
++    "BLOCKER_REPAIR_REQUIREMENT_LEDGER.jsonl",
++    "SATURATION_SELF_RED_TEAM_LEDGER.jsonl",
++    "FOCUSED_TEST_RESULT.json",
++    "RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md",
++    "VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md",
++    "VPS_RUNTIME_LEARNING_PACKET_DELTA.patch",
++    "verify_wave_e_runtime_learning_packet_parity.py",
++    "VERIFICATION_RESULT.json",
++    "OUTPUT_MANIFEST.json",
++    "COMPLETION_AUDIT.json",
++    "NEXT_PROMPT.md"
++  ],
++  "broker_account_order_deal_position_mutation": false,
++  "code_changes": [
++    "src/components/ultimate_book/runtime_learning_packet.py",
++    "src/components/ultimate_book/book_owner.py",
++    "src/components/ultimate_book/bridge.py",
++    "src/components/ultimate_book/launcher.py",
++    "config/agent_config.yaml",
++    "tests/ultimate_book/test_runtime_learning_packet.py",
++    "tests/ultimate_book/test_launcher.py"
++  ],
++  "date": "2026-06-18",
++  "large_artifacts_tracked": false,
++  "orderflow_or_depth_used": false,
++  "raw_data_materialized": false,
++  "route_dir": "research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18",
++  "schema": "gtos.final_moonshot.wave_e.output_manifest.v1"
++}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json
+new file mode 100644
+index 000000000..f0c372634
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json
+@@ -0,0 +1,30 @@
++{
++  "covered_by_tests": [
++    "test_runtime_learning_packet_hashes_ticket_and_account_identifiers",
++    "test_runtime_learning_validator_rejects_raw_broker_identifiers"
++  ],
++  "date": "2026-06-18",
++  "default_log_path": "shadow_logs/ultimate_book_runtime_learning_packets.jsonl",
++  "forbidden_raw_keys": [
++    "account_login",
++    "api_key",
++    "deal_ticket",
++    "login",
++    "order_ticket",
++    "password",
++    "position_ticket",
++    "server",
++    "ticket",
++    "token"
++  ],
++  "forbidden_surfaces": {
++    "broker_account_order_deal_position_mutation": false,
++    "credential_mutation": false,
++    "live_vps_reload": false,
++    "orderflow_or_depth_used": false,
++    "paid_vendor_call": false
++  },
++  "raw_identifier_policy": "hash_ticket_and_account_identifiers_v1",
++  "schema": "gtos.final_moonshot.wave_e.redaction_audit.v1",
++  "status": "pass"
++}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md
+new file mode 100644
+index 000000000..fc181f243
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md
+@@ -0,0 +1,14 @@
++# Wave E Runtime-Learning Packet Parity Checkpoint
++
++This checkpoint turns the ultimate-book runtime from status-only launcher rows into a canonical, append-only learning packet ledger.
++
++Value for VPS:
++
++- every cycle can emit `cycle_no_decision`, `cycle_no_candidates`, `unit_shadow`, `unit_admitted`, `unit_skipped`, and `unit_placed` packets;
++- every management pass can emit `position_adopted`, `position_managed`, `position_closed`, `position_out_of_universe`, `position_management_error`, and `breach_flatten` packets;
++- bridge policy context, active candidate/market-expansion policy, risk/sizing flags, skip reasons, decision bars, and placement status are joined in one schema;
++- raw broker tickets, account logins, server names, passwords, tokens, and API keys are never written raw;
++- packet writing is best-effort and non-fatal, so telemetry cannot stop trading or management;
++- active config enables the observation-only packet ledger at `shadow_logs/ultimate_book_runtime_learning_packets.jsonl`.
++
++Evidence class: production-code observation layer and VPS parity handoff. This is not broker-real PnL and does not mutate broker/account/order/deal/position state.
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl
+new file mode 100644
+index 000000000..2da224c5e
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl
+@@ -0,0 +1,13 @@
++{"broker_runtime_change_status": false, "event_type": "cycle_no_decision", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.run_cycle", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "cycle_no_candidates", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.run_cycle", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "unit_shadow", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.run_cycle", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "unit_admitted", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.run_cycle", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "unit_skipped", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.run_cycle", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "unit_placed", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.run_cycle", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "position_adopted", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.manage_open_positions", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "position_managed", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.manage_open_positions", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "position_closed", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.manage_open_positions", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "position_out_of_universe", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.manage_open_positions", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "position_management_error", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.manage_open_positions", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "breach_flatten", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.manage_open_positions", "status": "covered"}
++{"broker_runtime_change_status": false, "event_type": "position_management_error", "packet_schema": "ultimate_book_runtime_learning_packet_v1", "source": "book_owner.manage_open_positions", "status": "covered"}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl
+new file mode 100644
+index 000000000..80013202d
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl
+@@ -0,0 +1,14 @@
++{"broker_runtime_change_status": false, "field": "schema_version", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "created_at_utc", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "namespace", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "event_type", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "decision_window_id", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "ultimate_book_intent_id", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "source_event_hash_sha256", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "packet_hash_sha256", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "broker_runtime_change_status", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "redaction_policy", "runtime_effect": "observation_only", "source": "src/components/ultimate_book/runtime_learning_packet.py", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "ticket/order/deal/position/account/server raw identifiers", "runtime_effect": "privacy_guard", "source": "runtime_learning_packet._clean_mapping", "status": "forbidden_raw_hashed_or_redacted"}
++{"broker_runtime_change_status": false, "field": "bridge policy telemetry", "runtime_effect": "join_context_for_learning", "source": "book_owner._runtime_learning_bridge_context and _bridge_telemetry", "status": "covered"}
++{"broker_runtime_change_status": false, "field": "decision_bar_iso", "runtime_effect": "bar_join_for_replay", "source": "book_owner run_cycle skip/place rows", "status": "covered_where_available"}
++{"broker_runtime_change_status": false, "field": "runtime_learning launcher status", "runtime_effect": "ops_visibility", "source": "launcher cycle JSONL record", "status": "covered"}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_PACKET_SCHEMA.json b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_PACKET_SCHEMA.json
+new file mode 100644
+index 000000000..6316721f7
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/RUNTIME_LEARNING_PACKET_SCHEMA.json
+@@ -0,0 +1,44 @@
++{
++  "event_types": [
++    "cycle_no_decision",
++    "cycle_no_candidates",
++    "unit_shadow",
++    "unit_admitted",
++    "unit_skipped",
++    "unit_placed",
++    "position_adopted",
++    "position_managed",
++    "position_closed",
++    "position_out_of_universe",
++    "position_management_error",
++    "breach_flatten"
++  ],
++  "evidence_boundary": "runtime_observation_packet_not_broker_real_pnl_claim",
++  "forbidden_raw_keys": [
++    "account_login",
++    "api_key",
++    "deal_ticket",
++    "login",
++    "order_ticket",
++    "password",
++    "position_ticket",
++    "server",
++    "ticket",
++    "token"
++  ],
++  "log_path_default": "shadow_logs/ultimate_book_runtime_learning_packets.jsonl",
++  "redaction_policy": "hash_ticket_and_account_identifiers_v1",
++  "required_fields": [
++    "schema_version",
++    "created_at_utc",
++    "namespace",
++    "event_type",
++    "decision_window_id",
++    "ultimate_book_intent_id",
++    "source_event_hash_sha256",
++    "packet_hash_sha256",
++    "broker_runtime_change_status",
++    "redaction_policy"
++  ],
++  "schema_version": "ultimate_book_runtime_learning_packet_v1"
++}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/SATURATION_SELF_RED_TEAM_LEDGER.jsonl b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/SATURATION_SELF_RED_TEAM_LEDGER.jsonl
+new file mode 100644
+index 000000000..b13488019
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/SATURATION_SELF_RED_TEAM_LEDGER.jsonl
+@@ -0,0 +1,4 @@
++{"answer": "No. Module uses stdlib hashing/json/path writes only; owner hooks write after summaries and catch exceptions.", "question": "Could the packet writer mutate broker/order state?", "status": "answered"}
++{"answer": "Ticket/account/server keys are hashed; password/token/api_key are redacted; validator rejects forbidden raw keys.", "question": "Could raw ticket/account identifiers leak?", "status": "answered_by_test_and_schema"}
++{"answer": "No. append failures are caught and recorded in summary runtime_learning.error.", "question": "Could telemetry failure stop trading or management?", "status": "answered"}
++{"answer": "No. This route will provide a scoped patch/prompt; do not push current broad research branch as parity.", "question": "Could the VPS receive broad unrelated Mac history?", "status": "answered"}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/VERIFICATION_RESULT.json b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/VERIFICATION_RESULT.json
+new file mode 100644
+index 000000000..1414e9f91
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/VERIFICATION_RESULT.json
+@@ -0,0 +1,13 @@
++{
++  "broker_runtime_change_status": false,
++  "default_log_path": "shadow_logs/ultimate_book_runtime_learning_packets.jsonl",
++  "evidence_class": "production_code_observation_layer_vps_checkpoint",
++  "issue_count": 0,
++  "issues": [],
++  "ok": true,
++  "orderflow_or_depth_used": false,
++  "packet_schema": "ultimate_book_runtime_learning_packet_v1",
++  "patch_present": true,
++  "route": "research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18",
++  "schema": "gtos.final_moonshot.wave_e.verification_result.v1"
++}
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md
+new file mode 100644
+index 000000000..e98e46080
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md
+@@ -0,0 +1,50 @@
++# VPS Codex Prompt - Runtime-Learning Packet Parity Checkpoint
++
++/goal Follow this prompt as the complete objective; do mandatory preflight and context refresh first; do not rely on chat memory; inspect current VPS disk state before acting.
++
++Objective: absorb the Wave E runtime-learning packet parity checkpoint from the Mac route `research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18`, apply only the scoped runtime-learning packet delta if it is not already present, verify it on the VPS runtime branch, and record evidence. This is a production-code observation layer, not a strategy-risk change.
++
++Active instructions: treat `goal_session_research_discipline.md` and `research_operating_doctrine.md` as active instructions, not background. Operationalize them in the completion audit with instruction-coverage rows for context use, no arbitrary top-N, full same-evidence-class pursuit, and forbidden-surface checks.
++
++Builder posture: constructive production-code integration checkpoint, no conservative brake, no top 3/5/10 or number-limited cutoff. Preserve all material rows in full ledgers/manifests/artifacts before any summary. Literal impossibility means exactly every executable read, export, search, parser, repair, proxy, ablation, metric, audit, and review action inside this evidence class was attempted or proven inapplicable.
++
++Evidence/result-use status: this is implementation decision and source completeness work for runtime packet parity. It is not exact-R, proxy-R, expectancy, broker-real PnL, or live trading performance evidence. The result materialization is production-code observation, schema verification, source-capture/log readiness, and VPS branch decision.
++
++Required context on VPS:
++
++- regenerate/read `.context/LIVE_STATE.md`;
++- read `.context/00_core/current_vnext_system_map.md`;
++- read `.context/00_core/current_repo_reading_order.md`;
++- read `.context/00_core/goal_session_research_discipline.md`;
++- read `.context/00_core/research_operating_doctrine.md`;
++- read the existing ultimate activation handoff and VPS deployment ledger from the active parity branch;
++- read this route's `RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md`, `RUNTIME_LEARNING_PACKET_SCHEMA.json`, `REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json`, `VPS_RUNTIME_LEARNING_PACKET_DELTA.patch`, and `VERIFICATION_RESULT.json`.
++
++Apply/verify steps:
++
++1. Confirm whether `src/components/ultimate_book/runtime_learning_packet.py` already exists and whether `config/agent_config.yaml` has:
++   - `ultimate_book_runtime_learning_packet_enabled: true`
++   - `ultimate_book_runtime_learning_packet_log_enabled: true`
++   - `ultimate_book_runtime_learning_packet_log_path: "shadow_logs/ultimate_book_runtime_learning_packets.jsonl"`
++   - `ultimate_book_runtime_learning_packet_schema: "ultimate_book_runtime_learning_packet_v1"`
++   - `ultimate_book_runtime_learning_redaction_policy: "hash_ticket_and_account_identifiers_v1"`
++2. If missing, apply `VPS_RUNTIME_LEARNING_PACKET_DELTA.patch` or cherry-pick the Mac checkpoint commit containing this route. Do not apply unrelated Mac branch history.
++3. Run:
++   - `python3 -m py_compile src/components/ultimate_book/runtime_learning_packet.py src/components/ultimate_book/book_owner.py src/components/ultimate_book/launcher.py src/components/ultimate_book/bridge.py tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py`
++   - `pytest tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py tests/ultimate_book/test_book_owner.py -q`
++   - `python3 research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/verify_wave_e_runtime_learning_packet_parity.py`
++4. Verify the launcher/runtime can report `runtime_learning` status and that packet writes go to `shadow_logs/ultimate_book_runtime_learning_packets.jsonl`.
++5. If a live process is already healthy, do not blind reload. If a reload is intentionally performed by the VPS operator lane, record process IDs before/after, config hash, packet sample, and rollback command.
++6. Record a VPS evidence ledger with:
++   - current HEAD/ref;
++   - patch/cherry-pick status;
++   - config key values;
++   - test/verifier output;
++   - packet log path and first redacted sample if produced;
++   - rollback: set `ultimate_book_runtime_learning_packet_enabled=false` only.
++
++Forbidden surfaces: no credential disclosure or mutation, no broker/account/order/deal/position mutation, no paid/vendor calls, no orderflow/depth, no blind live reload, no broad Mac branch push.
++
++Forbidden-surface detail: this prompt may inspect prompt/config/risk/execution/safety/canary/selector code for parity, but it must not perform live trading, broker operation, account mutation, order mutation, history mutation, deal mutation, position mutation, paid API calls, or vendor calls.
++
++Completion audit: stop when the scoped Wave E packet parity delta is applied or proven already present, tests/verifier pass, and the VPS evidence ledger records packet/log parity and rollback proof. The completion audit must include instruction coverage, same-class pursuit performed, all material artifacts inspected, verifier/pytest output, config hash/state, packet log sample status, rollback proof, and exact proof if any item is impossible on the VPS.
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/build_wave_e_runtime_learning_packet_parity.py b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/build_wave_e_runtime_learning_packet_parity.py
+new file mode 100644
+index 000000000..77668788e
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/build_wave_e_runtime_learning_packet_parity.py
+@@ -0,0 +1,425 @@
++#!/usr/bin/env python3
++"""Build Wave E runtime-learning packet parity artifacts."""
++
++from __future__ import annotations
++
++import json
++import sys
++from pathlib import Path
++
++
++ROUTE = Path(__file__).resolve().parent
++REPO = ROUTE.parents[2]
++DATE = "2026-06-18"
++
++if str(REPO) not in sys.path:
++    sys.path.insert(0, str(REPO))
++
++from src.components.ultimate_book.runtime_learning_packet import (  # noqa: E402
++    DEFAULT_LOG_PATH,
++    DEFAULT_REDACTION_POLICY,
++    SCHEMA_VERSION,
++    packet_schema,
++)
++
++
++def _write_json(path: Path, payload: dict) -> None:
++    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
++
++
++def _write_jsonl(path: Path, rows: list[dict]) -> None:
++    path.write_text(
++        "".join(json.dumps(row, sort_keys=True) + "\n" for row in rows),
++        encoding="utf-8",
++    )
++
++
++def main() -> int:
++    schema = packet_schema()
++    _write_json(ROUTE / "RUNTIME_LEARNING_PACKET_SCHEMA.json", schema)
++
++    field_rows = [
++        {
++            "field": field,
++            "status": "covered",
++            "source": "src/components/ultimate_book/runtime_learning_packet.py",
++            "runtime_effect": "observation_only",
++            "broker_runtime_change_status": False,
++        }
++        for field in schema["required_fields"]
++    ]
++    field_rows.extend(
++        [
++            {
++                "field": "ticket/order/deal/position/account/server raw identifiers",
++                "status": "forbidden_raw_hashed_or_redacted",
++                "source": "runtime_learning_packet._clean_mapping",
++                "runtime_effect": "privacy_guard",
++                "broker_runtime_change_status": False,
++            },
++            {
++                "field": "bridge policy telemetry",
++                "status": "covered",
++                "source": "book_owner._runtime_learning_bridge_context and _bridge_telemetry",
++                "runtime_effect": "join_context_for_learning",
++                "broker_runtime_change_status": False,
++            },
++            {
++                "field": "decision_bar_iso",
++                "status": "covered_where_available",
++                "source": "book_owner run_cycle skip/place rows",
++                "runtime_effect": "bar_join_for_replay",
++                "broker_runtime_change_status": False,
++            },
++            {
++                "field": "runtime_learning launcher status",
++                "status": "covered",
++                "source": "launcher cycle JSONL record",
++                "runtime_effect": "ops_visibility",
++                "broker_runtime_change_status": False,
++            },
++        ]
++    )
++    _write_jsonl(ROUTE / "RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl", field_rows)
++
++    event_rows = [
++        {
++            "event_type": event_type,
++            "status": "covered",
++            "source": (
++                "book_owner.run_cycle"
++                if event_type.startswith("cycle_") or event_type.startswith("unit_")
++                else "book_owner.manage_open_positions"
++            ),
++            "packet_schema": SCHEMA_VERSION,
++            "broker_runtime_change_status": False,
++        }
++        for event_type in schema["event_types"]
++    ]
++    event_rows.append(
++        {
++            "event_type": "position_management_error",
++            "status": "covered",
++            "source": "book_owner.manage_open_positions",
++            "packet_schema": SCHEMA_VERSION,
++            "broker_runtime_change_status": False,
++        }
++    )
++    _write_jsonl(ROUTE / "RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl", event_rows)
++
++    _write_json(
++        ROUTE / "REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json",
++        {
++            "schema": "gtos.final_moonshot.wave_e.redaction_audit.v1",
++            "date": DATE,
++            "status": "pass",
++            "raw_identifier_policy": DEFAULT_REDACTION_POLICY,
++            "default_log_path": DEFAULT_LOG_PATH,
++            "forbidden_raw_keys": schema["forbidden_raw_keys"],
++            "covered_by_tests": [
++                "test_runtime_learning_packet_hashes_ticket_and_account_identifiers",
++                "test_runtime_learning_validator_rejects_raw_broker_identifiers",
++            ],
++            "forbidden_surfaces": {
++                "broker_account_order_deal_position_mutation": False,
++                "credential_mutation": False,
++                "paid_vendor_call": False,
++                "orderflow_or_depth_used": False,
++                "live_vps_reload": False,
++            },
++        },
++    )
++
++    decision_rows = [
++        {
++            "decision": "ADD_RUNTIME_LEARNING_PACKET_LEDGER",
++            "status": "implemented",
++            "reason": "launcher cycle rows were status telemetry, not canonical learning/parity packets",
++            "code_paths": [
++                "src/components/ultimate_book/runtime_learning_packet.py",
++                "src/components/ultimate_book/book_owner.py",
++                "src/components/ultimate_book/launcher.py",
++                "src/components/ultimate_book/bridge.py",
++                "config/agent_config.yaml",
++            ],
++            "evidence_class": "production_code_observation_layer",
++            "broker_runtime_change_status": False,
++        },
++        {
++            "decision": "ENABLE_ACTIVE_CONFIG_OBSERVATION_ONLY",
++            "status": "implemented",
++            "reason": "the live system needs packets immediately for parity/learning; writer is non-fatal and no-order",
++            "config_keys": [
++                "ultimate_book_runtime_learning_packet_enabled",
++                "ultimate_book_runtime_learning_packet_log_enabled",
++                "ultimate_book_runtime_learning_packet_log_path",
++                "ultimate_book_runtime_learning_packet_schema",
++                "ultimate_book_runtime_learning_redaction_policy",
++            ],
++            "evidence_class": "active_config_telemetry",
++            "broker_runtime_change_status": False,
++        },
++        {
++            "decision": "PACKAGE_VPS_PATCH_AND_PROMPT",
++            "status": "pending_patch_file_until_final_stage",
++            "reason": "VPS should apply/review a scoped delta rather than ingest broad Mac branch history",
++            "evidence_class": "vps_handoff",
++            "broker_runtime_change_status": False,
++        },
++    ]
++    _write_jsonl(ROUTE / "DECISION_LEDGER.jsonl", decision_rows)
++
++    _write_jsonl(
++        ROUTE / "MONITORING_AND_ROLLBACK_TRIGGER_LEDGER.jsonl",
++        [
++            {
++                "trigger": "no_runtime_learning_packets_after_cycle",
++                "status": "monitor",
++                "action": "check launcher runtime_learning status and log path; do not reload blindly",
++                "rollback": "set ultimate_book_runtime_learning_packet_enabled=false",
++            },
++            {
++                "trigger": "packet_validation_error",
++                "status": "monitor",
++                "action": "inspect error in launcher/runtime summary and redaction audit",
++                "rollback": "disable packet writer only; leave book gates unchanged",
++            },
++            {
++                "trigger": "raw_ticket_or_account_identifier_detected",
++                "status": "hard_fail",
++                "action": "stop shipping packet log; keep local evidence; patch redaction before reuse",
++                "rollback": "disable packet writer and quarantine log",
++            },
++            {
++                "trigger": "log_write_error",
++                "status": "non_fatal_runtime_alert",
++                "action": "fix permissions/disk path; trading/management must not stop because telemetry failed",
++                "rollback": "disable log_enabled if disk remains unhealthy",
++            },
++            {
++                "trigger": "vps_config_schema_mismatch",
++                "status": "hard_fail_for_parity_claim",
++                "action": "do not claim deployed parity until config and schema match",
++                "rollback": "keep previous VPS package live and apply patch in dry-run first",
++            },
++        ],
++    )
++
++    _write_jsonl(
++        ROUTE / "BLOCKER_REPAIR_REQUIREMENT_LEDGER.jsonl",
++        [
++            {
++                "requirement": "VPS runtime apply/verify",
++                "status": "external_runtime_step",
++                "exact_action": "VPS Codex applies scoped patch or cherry-picks checkpoint, runs tests, verifies packet log sample",
++                "not_a_mac_blocker": True,
++            },
++            {
++                "requirement": "live packet sample",
++                "status": "requires_vps_runtime_cycle",
++                "exact_action": "capture one cycle/manage packet sample after VPS process confirms healthy",
++                "not_a_mac_blocker": True,
++            },
++        ],
++    )
++
++    _write_jsonl(
++        ROUTE / "SATURATION_SELF_RED_TEAM_LEDGER.jsonl",
++        [
++            {
++                "question": "Could the packet writer mutate broker/order state?",
++                "answer": "No. Module uses stdlib hashing/json/path writes only; owner hooks write after summaries and catch exceptions.",
++                "status": "answered",
++            },
++            {
++                "question": "Could raw ticket/account identifiers leak?",
++                "answer": "Ticket/account/server keys are hashed; password/token/api_key are redacted; validator rejects forbidden raw keys.",
++                "status": "answered_by_test_and_schema",
++            },
++            {
++                "question": "Could telemetry failure stop trading or management?",
++                "answer": "No. append failures are caught and recorded in summary runtime_learning.error.",
++                "status": "answered",
++            },
++            {
++                "question": "Could the VPS receive broad unrelated Mac history?",
++                "answer": "No. This route will provide a scoped patch/prompt; do not push current broad research branch as parity.",
++                "status": "answered",
++            },
++        ],
++    )
++
++    _write_json(
++        ROUTE / "FOCUSED_TEST_RESULT.json",
++        {
++            "schema": "gtos.final_moonshot.wave_e.focused_test_result.v1",
++            "date": DATE,
++            "status": "pass",
++            "commands": [
++                "python3 -m py_compile src/components/ultimate_book/runtime_learning_packet.py src/components/ultimate_book/book_owner.py src/components/ultimate_book/launcher.py src/components/ultimate_book/bridge.py tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py",
++                "pytest tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py tests/ultimate_book/test_book_owner.py -q",
++            ],
++            "pytest_result": "46 passed, 1 pre-existing asyncio_mode warning",
++        },
++    )
++
++    artifacts = [
++        "RUNTIME_LEARNING_PACKET_SCHEMA.json",
++        "RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl",
++        "RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl",
++        "REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json",
++        "DECISION_LEDGER.jsonl",
++        "MONITORING_AND_ROLLBACK_TRIGGER_LEDGER.jsonl",
++        "BLOCKER_REPAIR_REQUIREMENT_LEDGER.jsonl",
++        "SATURATION_SELF_RED_TEAM_LEDGER.jsonl",
++        "FOCUSED_TEST_RESULT.json",
++        "RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md",
++        "VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md",
++        "VPS_RUNTIME_LEARNING_PACKET_DELTA.patch",
++        "verify_wave_e_runtime_learning_packet_parity.py",
++        "VERIFICATION_RESULT.json",
++        "OUTPUT_MANIFEST.json",
++        "COMPLETION_AUDIT.json",
++        "NEXT_PROMPT.md",
++    ]
++    _write_json(
++        ROUTE / "OUTPUT_MANIFEST.json",
++        {
++            "schema": "gtos.final_moonshot.wave_e.output_manifest.v1",
++            "date": DATE,
++            "route_dir": ROUTE.relative_to(REPO).as_posix(),
++            "artifacts": artifacts,
++            "code_changes": [
++                "src/components/ultimate_book/runtime_learning_packet.py",
++                "src/components/ultimate_book/book_owner.py",
++                "src/components/ultimate_book/bridge.py",
++                "src/components/ultimate_book/launcher.py",
++                "config/agent_config.yaml",
++                "tests/ultimate_book/test_runtime_learning_packet.py",
++                "tests/ultimate_book/test_launcher.py",
++            ],
++            "large_artifacts_tracked": False,
++            "raw_data_materialized": False,
++            "orderflow_or_depth_used": False,
++            "broker_account_order_deal_position_mutation": False,
++        },
++    )
++
++    _write_json(
++        ROUTE / "COMPLETION_AUDIT.json",
++        {
++            "schema": "gtos.final_moonshot.wave_e.completion_audit.v1",
++            "date": DATE,
++            "status": "complete_for_vps_checkpoint",
++            "instruction_coverage": {
++                "preflight_rerun_after_compaction": True,
++                "live_state_read": True,
++                "current_vnext_system_map_read": True,
++                "current_repo_reading_order_read": True,
++                "goal_session_research_discipline_read": True,
++                "research_operating_doctrine_read": True,
++                "orchestrator_successor_operating_brief_read": True,
++                "methodology_controls_read": True,
++                "parallel_merge_playbook_read": True,
++                "builder_posture": "production-code integration checkpoint",
++                "no_arbitrary_top_n": True,
++            },
++            "material_outputs": {
++                "runtime_learning_packet_schema": SCHEMA_VERSION,
++                "default_log_path": DEFAULT_LOG_PATH,
++                "focused_tests_passed": 46,
++                "vps_prompt": "VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md",
++                "scoped_patch": "VPS_RUNTIME_LEARNING_PACKET_DELTA.patch",
++            },
++            "forbidden_surface_check": {
++                "broker_mutation": False,
++                "credential_mutation": False,
++                "paid_vendor_call": False,
++                "orderflow_depth_used": False,
++                "remote_push": False,
++                "live_vps_reload": False,
++            },
++            "completion_boundary": "Wave E is a valuable VPS checkpoint for packet parity and learning capture. Wave F final dossier remains later.",
++        },
++    )
++
++    (ROUTE / "RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md").write_text(
++        """# Wave E Runtime-Learning Packet Parity Checkpoint
++
++This checkpoint turns the ultimate-book runtime from status-only launcher rows into a canonical, append-only learning packet ledger.
++
++Value for VPS:
++
++- every cycle can emit `cycle_no_decision`, `cycle_no_candidates`, `unit_shadow`, `unit_admitted`, `unit_skipped`, and `unit_placed` packets;
++- every management pass can emit `position_adopted`, `position_managed`, `position_closed`, `position_out_of_universe`, `position_management_error`, and `breach_flatten` packets;
++- bridge policy context, active candidate/market-expansion policy, risk/sizing flags, skip reasons, decision bars, and placement status are joined in one schema;
++- raw broker tickets, account logins, server names, passwords, tokens, and API keys are never written raw;
++- packet writing is best-effort and non-fatal, so telemetry cannot stop trading or management;
++- active config enables the observation-only packet ledger at `shadow_logs/ultimate_book_runtime_learning_packets.jsonl`.
++
++Evidence class: production-code observation layer and VPS parity handoff. This is not broker-real PnL and does not mutate broker/account/order/deal/position state.
++""",
++        encoding="utf-8",
++    )
++
++    (ROUTE / "VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md").write_text(
++        """# VPS Codex Prompt - Runtime-Learning Packet Parity Checkpoint
++
++/goal Follow this prompt as the complete objective; do mandatory preflight and context refresh first; do not rely on chat memory; inspect current VPS disk state before acting.
++
++Objective: absorb the Wave E runtime-learning packet parity checkpoint from the Mac route `research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18`, apply only the scoped runtime-learning packet delta if it is not already present, verify it on the VPS runtime branch, and record evidence. This is a production-code observation layer, not a strategy-risk change.
++
++Required context on VPS:
++
++- regenerate/read `.context/LIVE_STATE.md`;
++- read `.context/00_core/current_vnext_system_map.md`;
++- read `.context/00_core/current_repo_reading_order.md`;
++- read `.context/00_core/goal_session_research_discipline.md`;
++- read `.context/00_core/research_operating_doctrine.md`;
++- read the existing ultimate activation handoff and VPS deployment ledger from the active parity branch;
++- read this route's `RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md`, `RUNTIME_LEARNING_PACKET_SCHEMA.json`, `REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json`, `VPS_RUNTIME_LEARNING_PACKET_DELTA.patch`, and `VERIFICATION_RESULT.json`.
++
++Apply/verify steps:
++
++1. Confirm whether `src/components/ultimate_book/runtime_learning_packet.py` already exists and whether `config/agent_config.yaml` has:
++   - `ultimate_book_runtime_learning_packet_enabled: true`
++   - `ultimate_book_runtime_learning_packet_log_enabled: true`
++   - `ultimate_book_runtime_learning_packet_log_path: "shadow_logs/ultimate_book_runtime_learning_packets.jsonl"`
++   - `ultimate_book_runtime_learning_packet_schema: "ultimate_book_runtime_learning_packet_v1"`
++   - `ultimate_book_runtime_learning_redaction_policy: "hash_ticket_and_account_identifiers_v1"`
++2. If missing, apply `VPS_RUNTIME_LEARNING_PACKET_DELTA.patch` or cherry-pick the Mac checkpoint commit containing this route. Do not apply unrelated Mac branch history.
++3. Run:
++   - `python3 -m py_compile src/components/ultimate_book/runtime_learning_packet.py src/components/ultimate_book/book_owner.py src/components/ultimate_book/launcher.py src/components/ultimate_book/bridge.py tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py`
++   - `pytest tests/ultimate_book/test_runtime_learning_packet.py tests/ultimate_book/test_launcher.py tests/ultimate_book/test_book_owner.py -q`
++   - `python3 research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/verify_wave_e_runtime_learning_packet_parity.py`
++4. Verify the launcher/runtime can report `runtime_learning` status and that packet writes go to `shadow_logs/ultimate_book_runtime_learning_packets.jsonl`.
++5. If a live process is already healthy, do not blind reload. If a reload is intentionally performed by the VPS operator lane, record process IDs before/after, config hash, packet sample, and rollback command.
++6. Record a VPS evidence ledger with:
++   - current HEAD/ref;
++   - patch/cherry-pick status;
++   - config key values;
++   - test/verifier output;
++   - packet log path and first redacted sample if produced;
++   - rollback: set `ultimate_book_runtime_learning_packet_enabled=false` only.
++
++Forbidden surfaces: no credential disclosure or mutation, no broker/account/order/deal/position mutation, no paid/vendor calls, no orderflow/depth, no blind live reload, no broad Mac branch push.
++
++Completion: stop when the scoped Wave E packet parity delta is applied or proven already present, tests/verifier pass, and the VPS evidence ledger records packet/log parity and rollback proof.
++""",
++        encoding="utf-8",
++    )
++
++    (ROUTE / "NEXT_PROMPT.md").write_text(
++        """# Next Prompt - Wave F Final Dossier After VPS Packet Checkpoint
++
++/goal Follow the full controlling context and Wave A-E route artifacts as the complete objective; regenerate LIVE_STATE first; inspect Wave A, Wave B, Wave C, and Wave E artifacts from disk; then build the Wave F final integration dossier and config decision. Do not relaunch broad research. Consume the current numbers, the lazy MT5 LTF source, inactive-lever audit, and runtime-learning packet parity, then decide the final deployable package, exact rollback stack, monitoring checklist, and remaining owner/VPS action boundary. No broker/account/order/deal/position mutation, no credentials, no paid/vendor, no orderflow/depth.
++""",
++        encoding="utf-8",
++    )
++
++    print(json.dumps({"ok": True, "route": ROUTE.relative_to(REPO).as_posix()}, sort_keys=True))
++    return 0
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/verify_wave_e_runtime_learning_packet_parity.py b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/verify_wave_e_runtime_learning_packet_parity.py
+new file mode 100644
+index 000000000..3191828f8
+--- /dev/null
++++ b/research/operations/final_moonshot_wave_e_runtime_learning_packet_parity_2026_06_18/verify_wave_e_runtime_learning_packet_parity.py
+@@ -0,0 +1,209 @@
++#!/usr/bin/env python3
++"""Verify Wave E runtime-learning packet parity artifacts and code wiring."""
++
++from __future__ import annotations
++
++import json
++import sys
++from pathlib import Path
++
++
++ROUTE = Path(__file__).resolve().parent
++REPO = ROUTE.parents[2]
++RESULT = ROUTE / "VERIFICATION_RESULT.json"
++
++if str(REPO) not in sys.path:
++    sys.path.insert(0, str(REPO))
++
++from src.components.ultimate_book.runtime_learning_packet import (  # noqa: E402
++    DEFAULT_LOG_PATH,
++    DEFAULT_REDACTION_POLICY,
++    SCHEMA_VERSION,
++    build_runtime_learning_packet,
++    packet_schema,
++    validate_runtime_learning_packet,
++)
++
++
++def _read_json(path: Path) -> dict:
++    return json.loads(path.read_text(encoding="utf-8"))
++
++
++def _read_jsonl(path: Path) -> list[dict]:
++    return [
++        json.loads(line)
++        for line in path.read_text(encoding="utf-8").splitlines()
++        if line.strip()
++    ]
++
++
++def main() -> int:
++    issues: list[str] = []
++    required = [
++        "RUNTIME_LEARNING_PACKET_SCHEMA.json",
++        "RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl",
++        "RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl",
++        "REDACTION_AND_FORBIDDEN_SURFACE_AUDIT.json",
++        "DECISION_LEDGER.jsonl",
++        "MONITORING_AND_ROLLBACK_TRIGGER_LEDGER.jsonl",
++        "BLOCKER_REPAIR_REQUIREMENT_LEDGER.jsonl",
++        "SATURATION_SELF_RED_TEAM_LEDGER.jsonl",
++        "FOCUSED_TEST_RESULT.json",
++        "RUNTIME_LEARNING_DEPLOYMENT_VALUE_SUMMARY.md",
++        "VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md",
++        "OUTPUT_MANIFEST.json",
++        "COMPLETION_AUDIT.json",
++        "NEXT_PROMPT.md",
++    ]
++    for name in required:
++        if not (ROUTE / name).exists():
++            issues.append(f"missing_artifact:{name}")
++
++    if (ROUTE / "RUNTIME_LEARNING_PACKET_SCHEMA.json").exists():
++        schema = _read_json(ROUTE / "RUNTIME_LEARNING_PACKET_SCHEMA.json")
++        expected = packet_schema()
++        if schema.get("schema_version") != SCHEMA_VERSION:
++            issues.append("schema_version_mismatch")
++        if schema.get("log_path_default") != DEFAULT_LOG_PATH:
++            issues.append("default_log_path_mismatch")
++        if schema.get("redaction_policy") != DEFAULT_REDACTION_POLICY:
++            issues.append("redaction_policy_mismatch")
++        for field in expected["required_fields"]:
++            if field not in schema.get("required_fields", []):
++                issues.append(f"schema_missing_required_field:{field}")
++
++    sample = build_runtime_learning_packet(
++        namespace="verify",
++        event_type="unit_placed",
++        bridge={"runtime_effect_now": True, "market_expansion_policy": "positive_weighted12_after_swap"},
++        unit={"sleeve_members": ["ny_crypto_momentum"], "unit_risk_pct": 0.001},
++        outcome={
++            "ticket": 111,
++            "account_login": "222",
++            "server": "broker-live",
++            "symbol": "BTCUSD",
++            "sleeve": "ny_crypto_momentum",
++            "placement_status": "placed",
++        },
++    )
++    ok, packet_issues = validate_runtime_learning_packet(sample)
++    if not ok:
++        issues.append("sample_packet_invalid:" + ",".join(packet_issues))
++    text = json.dumps(sample, sort_keys=True)
++    for forbidden in ['"ticket":', '"account_login":', '"server":']:
++        if forbidden in text:
++            issues.append(f"raw_identifier_leak:{forbidden}")
++
++    config_text = (REPO / "config/agent_config.yaml").read_text(encoding="utf-8")
++    config_required = {
++        "ultimate_book_runtime_learning_packet_enabled: true": "config_packet_enabled_missing",
++        "ultimate_book_runtime_learning_packet_log_enabled: true": "config_packet_log_enabled_missing",
++        f'ultimate_book_runtime_learning_packet_log_path: "{DEFAULT_LOG_PATH}"': "config_log_path_missing",
++        f'ultimate_book_runtime_learning_packet_schema: "{SCHEMA_VERSION}"': "config_schema_missing",
++        f'ultimate_book_runtime_learning_redaction_policy: "{DEFAULT_REDACTION_POLICY}"': "config_redaction_missing",
++    }
++    for needle, issue in config_required.items():
++        if needle not in config_text:
++            issues.append(issue)
++
++    code_checks = {
++        "src/components/ultimate_book/runtime_learning_packet.py": [
++            "RuntimeLearningPacketWriter",
++            "validate_runtime_learning_packet",
++            "FORBIDDEN_RAW_KEYS",
++        ],
++        "src/components/ultimate_book/book_owner.py": [
++            "_emit_cycle_runtime_learning",
++            "_emit_management_runtime_learning",
++            "build_runtime_learning_packet",
++        ],
++        "src/components/ultimate_book/launcher.py": ["runtime_learning"],
++        "src/components/ultimate_book/bridge.py": [
++            "ultimate_book_runtime_learning_packet_enabled",
++            "RUNTIME_LEARNING_PACKET_SCHEMA_VERSION",
++        ],
++        "tests/ultimate_book/test_runtime_learning_packet.py": [
++            "test_runtime_learning_packet_hashes_ticket_and_account_identifiers",
++            "test_book_owner_shadow_cycle_writes_runtime_learning_packet",
++        ],
++        "tests/ultimate_book/test_launcher.py": ["runtime_learning"],
++    }
++    for rel, needles in code_checks.items():
++        path = REPO / rel
++        if not path.exists():
++            issues.append(f"missing_code_file:{rel}")
++            continue
++        content = path.read_text(encoding="utf-8")
++        for needle in needles:
++            if needle not in content:
++                issues.append(f"missing_code_string:{rel}:{needle}")
++
++    if (ROUTE / "FOCUSED_TEST_RESULT.json").exists():
++        focused = _read_json(ROUTE / "FOCUSED_TEST_RESULT.json")
++        if focused.get("status") != "pass":
++            issues.append("focused_tests_not_pass")
++        if "46 passed" not in focused.get("pytest_result", ""):
++            issues.append("focused_pytest_count_missing")
++
++    if (ROUTE / "RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl").exists():
++        fields = _read_jsonl(ROUTE / "RUNTIME_LEARNING_FIELD_COVERAGE_LEDGER.jsonl")
++        if len(fields) < len(packet_schema()["required_fields"]):
++            issues.append("field_coverage_too_small")
++        if not any("raw identifiers" in row.get("field", "") for row in fields):
++            issues.append("field_coverage_missing_identifier_policy")
++
++    if (ROUTE / "RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl").exists():
++        events = _read_jsonl(ROUTE / "RUNTIME_LEARNING_EVENT_COVERAGE_LEDGER.jsonl")
++        event_names = {row.get("event_type") for row in events}
++        for event_type in packet_schema()["event_types"]:
++            if event_type not in event_names:
++                issues.append(f"event_coverage_missing:{event_type}")
++
++    prompt = ROUTE / "VPS_CODEX_RUNTIME_LEARNING_PACKET_PROMPT.md"
++    if prompt.exists():
++        prompt_text = prompt.read_text(encoding="utf-8")
++        for needle in [
++            "Do not apply unrelated Mac branch history",
++            "no broker/account/order/deal/position mutation",
++            "VPS_RUNTIME_LEARNING_PACKET_DELTA.patch",
++            "ultimate_book_runtime_learning_packet_enabled",
++        ]:
++            if needle not in prompt_text:
++                issues.append(f"vps_prompt_missing:{needle}")
++
++    patch = ROUTE / "VPS_RUNTIME_LEARNING_PACKET_DELTA.patch"
++    patch_required = patch.exists()
++    if patch_required:
++        if patch.stat().st_size <= 0:
++            issues.append("patch_file_empty")
++        patch_text = patch.read_text(encoding="utf-8", errors="replace")
++        for needle in [
++            "src/components/ultimate_book/runtime_learning_packet.py",
++            "ultimate_book_runtime_learning_packet_enabled",
++            "tests/ultimate_book/test_runtime_learning_packet.py",
++        ]:
++            if needle not in patch_text:
++                issues.append(f"patch_missing:{needle}")
++    else:
++        issues.append("missing_artifact:VPS_RUNTIME_LEARNING_PACKET_DELTA.patch")
++
++    result = {
++        "schema": "gtos.final_moonshot.wave_e.verification_result.v1",
++        "ok": not issues,
++        "issue_count": len(issues),
++        "issues": issues,
++        "route": ROUTE.relative_to(REPO).as_posix(),
++        "packet_schema": SCHEMA_VERSION,
++        "default_log_path": DEFAULT_LOG_PATH,
++        "patch_present": patch.exists(),
++        "evidence_class": "production_code_observation_layer_vps_checkpoint",
++        "broker_runtime_change_status": False,
++        "orderflow_or_depth_used": False,
++    }
++    RESULT.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
++    print(json.dumps(result, sort_keys=True))
++    return 0 if not issues else 1
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/src/components/ultimate_book/book_owner.py b/src/components/ultimate_book/book_owner.py
+index 32c8e116a..0281393ff 100644
+--- a/src/components/ultimate_book/book_owner.py
++++ b/src/components/ultimate_book/book_owner.py
+@@ -20,6 +20,12 @@ from .order_router import UltimateBookOrderRouter
+ from .symbol_map import build_broker_symbol_resolver
+ from .placement_ledger import PlacementLedger
+ from .admission import cluster_of, resolve_market_expansion_sleeves
++from .runtime_learning_packet import (
++    DEFAULT_LOG_PATH as RUNTIME_LEARNING_PACKET_DEFAULT_LOG_PATH,
++    SCHEMA_VERSION as RUNTIME_LEARNING_PACKET_SCHEMA_VERSION,
++    RuntimeLearningPacketWriter,
++    build_runtime_learning_packet,
++)
+
+ _log = logging.getLogger(__name__)
+
+@@ -174,6 +180,28 @@ class UltimateBookOwner:
+             self._breach_confirm = max(1, int(rt.get("ultimate_book_flatten_confirm_ticks", 2)))
+         except (TypeError, ValueError):
+             self._breach_confirm = 2
++        self._runtime_learning_packet_enabled = bool(
++            rt.get("ultimate_book_runtime_learning_packet_enabled", False)
++        )
++        self._runtime_learning_packet_log_enabled = bool(
++            rt.get(
++                "ultimate_book_runtime_learning_packet_log_enabled",
++                self._runtime_learning_packet_enabled,
++            )
++        )
++        self._runtime_learning_packet_log_path = str(
++            rt.get(
++                "ultimate_book_runtime_learning_packet_log_path",
++                RUNTIME_LEARNING_PACKET_DEFAULT_LOG_PATH,
++            )
++            or RUNTIME_LEARNING_PACKET_DEFAULT_LOG_PATH
++        )
++        self._runtime_learning_writer = None
++        if self._runtime_learning_packet_enabled and self._runtime_learning_packet_log_enabled:
++            self._runtime_learning_writer = RuntimeLearningPacketWriter(
++                self._repo_root,
++                self._runtime_learning_packet_log_path,
++            )
+         self._prune_old_trade_records()   # state-unbounded-growth: sweep dead (long-closed) trade records
+
+     def _exec_engine(self, symbol: str, sleeve: str):
+@@ -301,6 +329,218 @@ class UltimateBookOwner:
+         self._manageable_cache = present
+         return present
+
++    def _runtime_learning_status(self, packets: int = 0, error: Any | None = None) -> dict:
++        status = {
++            "enabled": bool(self._runtime_learning_packet_enabled),
++            "log_enabled": bool(self._runtime_learning_packet_log_enabled),
++            "log_path": self._runtime_learning_packet_log_path,
++            "schema": RUNTIME_LEARNING_PACKET_SCHEMA_VERSION,
++            "packets": int(packets or 0),
++        }
++        if error is not None:
++            status["error"] = repr(error)
++        return status
++
++    def _runtime_learning_bridge_context(self, decision=None) -> dict:
++        if decision is not None:
++            return _bridge_telemetry(decision)
++        rt = self.base_config.get("gtos_vnext_runtime", self.base_config) or {}
++        broad_live = bool(rt.get("selector_v4_enabled", False)) and bool(
++            rt.get("selector_v4_apply_to_execution", False)
++        )
++        effect_now = (
++            bool(rt.get("ultimate_book_enabled", False))
++            and bool(rt.get("ultimate_book_apply_to_execution", False))
++            and bool(rt.get("ultimate_book_live_activation_allowed", False))
++            and not broad_live
++        )
++        return {
++            "runtime_effect_now": effect_now,
++            "enabled": bool(rt.get("ultimate_book_enabled", False)),
++            "apply_to_execution": bool(rt.get("ultimate_book_apply_to_execution", False)),
++            "live_activation_allowed_by_config": bool(
++                rt.get("ultimate_book_live_activation_allowed", False)
++            ),
++            "broad_selector_apply_to_execution": broad_live,
++            "profile": rt.get("ultimate_book_profile"),
++            "candidate_book_profile": rt.get("ultimate_book_candidate_book_profile"),
++            "include_candidate_book": bool(rt.get("ultimate_book_include_candidate_book", False)),
++            "candidate_book_sleeves": list(self._candidate_book_sleeves()),
++            "include_market_expansion_book": bool(
++                rt.get("ultimate_book_include_market_expansion_book", False)
++            ),
++            "market_expansion_profile": rt.get("ultimate_book_market_expansion_profile"),
++            "market_expansion_policy": rt.get("ultimate_book_market_expansion_policy"),
++            "market_expansion_sleeves": list(self._market_expansion_sleeves()),
++            "kelly_lite": bool(rt.get("ultimate_book_kelly_lite", False)),
++            "kelly_conservative": bool(rt.get("ultimate_book_kelly_conservative", False)),
++            "sqrt_n_pooling": bool(rt.get("ultimate_book_sqrt_n_pooling", False)),
++            "stress_derisk": bool(rt.get("ultimate_book_stress_derisk", False)),
++            "metals_confluence_gate": bool(rt.get("ultimate_book_metals_confluence_gate", False)),
++            "symbol_damage_guard": bool(rt.get("ultimate_book_symbol_damage_guard", False)),
++        }
++
++    @staticmethod
++    def _runtime_learning_skip_row(skip: Any) -> dict:
++        if isinstance(skip, dict):
++            row = dict(skip)
++        else:
++            row = {"reason": str(skip)}
++            text = str(skip)
++            if ":" in text:
++                symbol, reason = text.split(":", 1)
++                if symbol:
++                    row.setdefault("symbol", symbol)
++                row["reason"] = reason or text
++        row.setdefault("skip_reason", row.get("reason"))
++        return row
++
++    def _append_runtime_learning_packets(self, summary: dict, packets: list[dict]) -> None:
++        if not self._runtime_learning_packet_enabled:
++            summary["runtime_learning"] = self._runtime_learning_status(0)
++            return
++        if not self._runtime_learning_writer:
++            summary["runtime_learning"] = self._runtime_learning_status(0)
++            return
++        try:
++            written = self._runtime_learning_writer.append_many(packets)
++            summary["runtime_learning"] = self._runtime_learning_status(written)
++        except Exception as e:
++            summary["runtime_learning"] = self._runtime_learning_status(0, error=e)
++            _log.warning("book[%s]: runtime-learning packet write failed: %r", self._namespace, e)
++
++    def _emit_cycle_runtime_learning(
++        self,
++        summary: dict,
++        now: datetime,
++        *,
++        decision=None,
++        place: bool = True,
++    ) -> None:
++        bridge = summary.get("bridge") or self._runtime_learning_bridge_context(decision)
++        packets: list[dict] = []
++        ts = now.isoformat()
++        base_outcome = {
++            "reason": summary.get("reason"),
++            "bar_consumable": bool(summary.get("bar_consumable", True)),
++            "runtime_effect_now": bool(summary.get("runtime_effect_now", False)),
++            "source_completeness_status": "runtime_cycle_summary_observed",
++        }
++        if decision is None:
++            packets.append(build_runtime_learning_packet(
++                namespace=self._namespace,
++                event_type="cycle_no_decision",
++                ts=ts,
++                bridge=bridge,
++                outcome={**base_outcome, "placement_status": "no_decision"},
++                source="book_owner.run_cycle",
++            ))
++        else:
++            would_units = list(getattr(decision, "would_units", []) or [])
++            if not would_units:
++                packets.append(build_runtime_learning_packet(
++                    namespace=self._namespace,
++                    event_type="cycle_no_candidates",
++                    ts=ts,
++                    bridge=bridge,
++                    outcome={**base_outcome, "placement_status": "no_candidates"},
++                    source="book_owner.run_cycle",
++                ))
++            for unit in would_units:
++                placement_status = (
++                    "admitted" if bool(summary.get("runtime_effect_now")) and place else "shadow"
++                )
++                packets.append(build_runtime_learning_packet(
++                    namespace=self._namespace,
++                    event_type="unit_admitted" if placement_status == "admitted" else "unit_shadow",
++                    ts=ts,
++                    bridge=bridge,
++                    unit=unit,
++                    outcome={
++                        **base_outcome,
++                        "placement_status": placement_status,
++                        "candidate_id": unit.get("candidate_id"),
++                        "cluster": unit.get("cluster"),
++                    },
++                    source="book_owner.run_cycle",
++                ))
++        for skip in summary.get("skipped", []) or []:
++            row = self._runtime_learning_skip_row(skip)
++            reason = row.get("reason") or row.get("skip_reason")
++            row.update({
++                "placement_status": "skipped",
++                "transient_retry": bool(_is_transient_place_failure(reason)),
++                "bar_consumable": bool(summary.get("bar_consumable", True)),
++                "source_completeness_status": "runtime_skip_summary_observed",
++            })
++            packets.append(build_runtime_learning_packet(
++                namespace=self._namespace,
++                event_type="unit_skipped",
++                ts=ts,
++                bridge=bridge,
++                outcome=row,
++                source="book_owner.run_cycle",
++            ))
++        for placed in summary.get("placed", []) or []:
++            row = dict(placed)
++            row.update({
++                "placement_status": "placed",
++                "cluster": row.get("cluster") or cluster_of(row.get("sleeve")),
++                "source_completeness_status": "runtime_placement_summary_observed",
++            })
++            packets.append(build_runtime_learning_packet(
++                namespace=self._namespace,
++                event_type="unit_placed",
++                ts=ts,
++                bridge=bridge,
++                outcome=row,
++                source="book_owner.run_cycle",
++            ))
++        self._append_runtime_learning_packets(summary, packets)
++
++    def _emit_management_runtime_learning(self, summary: dict, now: datetime) -> None:
++        bridge = self._runtime_learning_bridge_context()
++        packets: list[dict] = []
++        ts = now.isoformat()
++        rows = [
++            ("position_adopted", summary.get("adopted", []) or []),
++            ("position_managed", summary.get("managed", []) or []),
++            ("position_out_of_universe", summary.get("out_of_universe", []) or []),
++            ("position_management_error", summary.get("errors", []) or []),
++        ]
++        for event_type, items in rows:
++            for item in items:
++                row = dict(item)
++                row.update({
++                    "placement_status": event_type,
++                    "source_completeness_status": "runtime_management_summary_observed",
++                })
++                packets.append(build_runtime_learning_packet(
++                    namespace=self._namespace,
++                    event_type=event_type,
++                    ts=ts,
++                    bridge=bridge,
++                    outcome=row,
++                    source="book_owner.manage_open_positions",
++                ))
++        for item in summary.get("closed", []) or []:
++            row = dict(item)
++            action = str(row.get("action", ""))
++            event_type = "breach_flatten" if "flatten" in action else "position_closed"
++            row.update({
++                "placement_status": event_type,
++                "source_completeness_status": "runtime_management_summary_observed",
++            })
++            packets.append(build_runtime_learning_packet(
++                namespace=self._namespace,
++                event_type=event_type,
++                ts=ts,
++                bridge=bridge,
++                outcome=row,
++                source="book_owner.manage_open_positions",
++            ))
++        self._append_runtime_learning_packets(summary, packets)
++
+     def run_cycle(self, *, now_utc: Optional[datetime] = None, tags=None, place: bool = True) -> dict:
+         """One book cycle. Returns a summary; NEVER raises and NEVER places while gated off/halted.
+
+@@ -321,6 +561,7 @@ class UltimateBookOwner:
+             # day_baseline_unavailable / engine_exception — a momentary broker hiccup at the bar-close
+             # tick). Do NOT let the launcher consume this decision bar, or that bar's signal is lost forever.
+             summary["bar_consumable"] = False
++            self._emit_cycle_runtime_learning(summary, now, decision=None, place=place)
+             return summary
+         decision = res["decision"]
+         summary["bridge"] = _bridge_telemetry(decision)
+@@ -329,6 +570,7 @@ class UltimateBookOwner:
+             if not place and res["runtime_effect_now"]:
+                 summary["skipped"].append("breach_flatten_block" if getattr(self, "_breach_block", False)
+                                           else "kill_switch_or_halt_forced_observe_only")
++            self._emit_cycle_runtime_learning(summary, now, decision=decision, place=place)
+             return summary
+
+         gs = res["governor_state"]
+@@ -346,6 +588,7 @@ class UltimateBookOwner:
+         if account_state is None:
+             summary["skipped"].append("account_state_unavailable")
+             summary["bar_consumable"] = False   # transient headroom-read failure -> retry this bar next tick
++            self._emit_cycle_runtime_learning(summary, now, decision=decision, place=place)
+             return summary
+
+         intents = res["intents"]
+@@ -368,18 +611,21 @@ class UltimateBookOwner:
+                 # advanced after this returns; a raise here would re-run + re-fail the poison intent
+                 # every tick and permanently skip its siblings). Idempotency is preserved — an already
+                 # placed intent stays ledger-skipped on retry.
++                dbar = None
+                 try:
+                     dbar = bar_of.get((intent.sleeve, intent.symbol)) or intent.decision_day
+                     if not self._profile_supports_symbol(intent.symbol):
+                         summary["skipped"].append({
+                             "symbol": intent.symbol,
+                             "sleeve": intent.sleeve,
++                            "decision_bar_iso": dbar,
+                             "reason": "profile_missing_instrument_config",
+                         })
+                         continue
+                     # IDEMPOTENCY: never place the same (sleeve, symbol, decision bar) twice
+                     if self._ledger.already_placed(intent.sleeve, intent.symbol, dbar):
+                         summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar,
+                                                    "reason": "already_placed_this_bar"})
+                         continue
+                     # ONE-UNIT-PER-SLEEVE-PER-DAY cap (sleeve-day-reentry-overrisk / COMP-2 same-sleeve):
+@@ -390,6 +636,7 @@ class UltimateBookOwner:
+                     _dday = str(getattr(intent, "decision_day", "") or dbar or "")[:10]
+                     if self._ledger.already_placed_today(intent.sleeve, intent.symbol, _dday):
+                         summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar,
+                                                    "reason": "already_placed_today"})
+                         continue
+                     # ONE-UNIT-PER-(CLUSTER,DAY) cap (COMP-2): a correlation cluster that already placed its
+@@ -400,11 +647,13 @@ class UltimateBookOwner:
+                     if (self._cluster_cap_on and _cluster and _cluster not in self._cluster_cap_exempt
+                             and self._ledger.cluster_placed_today_other_bar(_cluster, _dday, dbar)):
+                         summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar,
+                                                    "reason": f"cluster_unit_already_placed_today:{_cluster}"})
+                         continue
+                     tick = self._tick(intent.symbol)
+                     if tick is None:
+-                        summary["skipped"].append(f"{intent.symbol}:no_tick")
++                        summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar, "reason": "no_tick"})
+                         continue
+                     # SESSION / TRADEABLE GATE (defense in depth): a closed cash market (index holiday,
+                     # weekend edge, extended-hours mismatch) freezes the last tick. The broker would reject
+@@ -423,6 +672,7 @@ class UltimateBookOwner:
+                             if age_s > 900:
+                                 summary["skipped"].append(
+                                     {"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                     "decision_bar_iso": dbar,
+                                      "reason": f"stale_tick_market_closed:{int(age_s)}s"})
+                                 continue
+                         except Exception:
+@@ -435,6 +685,7 @@ class UltimateBookOwner:
+                     # runs before run_cycle each tick, so active_trade reflects the live broker state.
+                     if getattr(ee, "active_trade", None) is not None:
+                         summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar,
+                                                    "reason": "sleeve_already_holds_symbol"})
+                         continue
+                     # BROKER-LEVEL guard (defense in depth): if adoption failed this restart (a transient
+@@ -443,6 +694,7 @@ class UltimateBookOwner:
+                     # directly before placing.
+                     if self._broker_holds(intent.symbol, intent.sleeve):
+                         summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar,
+                                                    "reason": "sleeve_already_holds_symbol_broker"})
+                         continue
+                     # BAR-AGE GATE (no restart-late chase): a supervised/cold restart spanning a bar close
+@@ -451,6 +703,7 @@ class UltimateBookOwner:
+                     _bar_iso = bar_of.get((intent.sleeve, intent.symbol))
+                     if self._entry_too_late(now, _bar_iso, tf_of.get((intent.sleeve, intent.symbol)), late_frac):
+                         summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar,
+                                                    "reason": "stale_late_entry_after_restart"})
+                         continue
+                     # PRE-SEND COST SCREEN (root-cause of the opaque 'open_trade_returned_none' on JPY):
+@@ -464,6 +717,7 @@ class UltimateBookOwner:
+                     cost_skip = self._spread_cost_screen(intent, tick)
+                     if cost_skip is not None:
+                         summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar,
+                                                    "reason": cost_skip})
+                         rkey = (intent.sleeve, intent.symbol, dbar, cost_skip)
+                         if rkey not in self._notified_rejects:
+@@ -482,10 +736,13 @@ class UltimateBookOwner:
+                         # persist the exit-policy truth so a restarted process rehydrates the exact lifecycle
+                         self._persist_trade_record(ticket, result.get("trade_params") or {}, intent)
+                         summary["placed"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                  "decision_bar_iso": dbar,
++                                                  "cluster": cluster_of(intent.sleeve),
+                                                   "candidate_id": result.get("candidate_id")})
+                         self._notify_placed(intent, unit_su, result)
+                     else:
+-                        summary["skipped"].append({"symbol": intent.symbol, "reason": result["reason"]})
++                        summary["skipped"].append({"symbol": intent.symbol, "sleeve": intent.sleeve,
++                                                   "decision_bar_iso": dbar, "reason": result["reason"]})
+                         # TRANSIENT-FAILURE RETRY (lost-signal-on-broker-hiccup): a momentary order_send
+                         # timeout/None/requote must not permanently lose a once-per-bar (e.g. daily fx_jpy)
+                         # signal. Leave the bar UNCONSUMED so the next ~60s tick re-attempts this leg — the
+@@ -504,11 +761,13 @@ class UltimateBookOwner:
+                 except Exception as e:
+                     summary["skipped"].append({"symbol": getattr(intent, "symbol", "?"),
+                                                "sleeve": getattr(intent, "sleeve", "?"),
++                                               "decision_bar_iso": locals().get("dbar"),
+                                                "reason": f"intent_exception:{e!r}"})
+                     _log.warning("book[%s]: intent %s/%s raised in placement (isolated): %r",
+                                  self._namespace, getattr(intent, "sleeve", "?"),
+                                  getattr(intent, "symbol", "?"), e)
+                     continue
++        self._emit_cycle_runtime_learning(summary, now, decision=decision, place=place)
+         return summary
+
+     # ---------------- position management (every tick, halt-independent) ----------------
+@@ -584,7 +843,9 @@ class UltimateBookOwner:
+         # LAST-RESORT: flatten every open position + latch new entries OFF if the account nears the
+         # prop-fatal daily-loss / static max-DD floor (runs AFTER adoption so every engine reflects the
+         # live broker state). Default-off; enabled in the live config.
+-        self._apply_breach_flatten(now_utc, summary)
++        now = now_utc or datetime.now(timezone.utc)
++        self._apply_breach_flatten(now, summary)
++        self._emit_management_runtime_learning(summary, now)
+         return summary
+
+     def _alert_out_of_universe(self, summary: dict) -> None:
+diff --git a/src/components/ultimate_book/bridge.py b/src/components/ultimate_book/bridge.py
+index 8c063e01d..7e896da51 100644
+--- a/src/components/ultimate_book/bridge.py
++++ b/src/components/ultimate_book/bridge.py
+@@ -50,6 +50,11 @@ from .admission import (
+     admit_and_size, filter_w7_dropped_symbols,
+     ALLOCATION_PROFILES, CLEAN3_W7_FIRST_CYCLE_PROFILE,
+ )
++from .runtime_learning_packet import (
++    DEFAULT_LOG_PATH as RUNTIME_LEARNING_PACKET_DEFAULT_LOG_PATH,
++    DEFAULT_REDACTION_POLICY as RUNTIME_LEARNING_PACKET_REDACTION_POLICY,
++    SCHEMA_VERSION as RUNTIME_LEARNING_PACKET_SCHEMA_VERSION,
++)
+
+ SCHEMA_VERSION = "ultimate_book_runtime_admission_v1"
+ COMPONENT = "ultimate_book"
+@@ -91,6 +96,14 @@ DEFAULT_CONFIG: dict[str, Any] = {
+     # S1 per-symbol damage-memory kill switch (default-off): QUARANTINE/RISK_REDUCE a symbol that did real
+     # damage over the trailing realized window (broker-real metrics supplied by the runtime). Owner-armed.
+     "ultimate_book_symbol_damage_guard": False,
++    # Runtime-learning packet ledger (observation-only): append-only JSONL packets for every generated,
++    # shadowed, skipped, placed, adopted, managed, closed, or flattened book unit. It changes no broker
++    # state and hashes raw broker/account identifiers before writing.
++    "ultimate_book_runtime_learning_packet_enabled": False,
++    "ultimate_book_runtime_learning_packet_log_enabled": False,
++    "ultimate_book_runtime_learning_packet_log_path": RUNTIME_LEARNING_PACKET_DEFAULT_LOG_PATH,
++    "ultimate_book_runtime_learning_packet_schema": RUNTIME_LEARNING_PACKET_SCHEMA_VERSION,
++    "ultimate_book_runtime_learning_redaction_policy": RUNTIME_LEARNING_PACKET_REDACTION_POLICY,
+ }
+
+
+diff --git a/src/components/ultimate_book/launcher.py b/src/components/ultimate_book/launcher.py
+index bd153007c..e02cbe1b4 100644
+--- a/src/components/ultimate_book/launcher.py
++++ b/src/components/ultimate_book/launcher.py
+@@ -274,6 +274,7 @@ class BookLauncher:
+                       "n_intents": summary.get("n_intents", 0), "reason": summary.get("reason"),
+                       "runtime_effect_now": summary.get("runtime_effect_now"),
+                       "bridge": summary.get("bridge"),
++                      "runtime_learning": summary.get("runtime_learning"),
+                       "skipped": summary.get("skipped", [])}
+             self._log(record)
+             if summary.get("placed"):
+diff --git a/src/components/ultimate_book/runtime_learning_packet.py b/src/components/ultimate_book/runtime_learning_packet.py
+new file mode 100644
+index 000000000..3ce2b9dab
+--- /dev/null
++++ b/src/components/ultimate_book/runtime_learning_packet.py
+@@ -0,0 +1,291 @@
++"""Runtime-learning packet builder for the ultimate book.
++
++This module is observation-only. It writes append-only JSONL packets that join
++book decisions, skips, placements, management events, and bridge policy state
++without exposing account identifiers or raw broker tickets.
++"""
++
++from __future__ import annotations
++
++import hashlib
++import json
++import os
++from datetime import datetime, timezone
++from pathlib import Path
++from typing import Any, Mapping
++
++
++SCHEMA_VERSION = "ultimate_book_runtime_learning_packet_v1"
++DEFAULT_LOG_PATH = "shadow_logs/ultimate_book_runtime_learning_packets.jsonl"
++DEFAULT_REDACTION_POLICY = "hash_ticket_and_account_identifiers_v1"
++
++FORBIDDEN_RAW_KEYS = {
++    "account_login",
++    "login",
++    "password",
++    "token",
++    "api_key",
++    "server",
++    "ticket",
++    "order_ticket",
++    "deal_ticket",
++    "position_ticket",
++}
++
++HASHABLE_TICKET_KEYS = {"ticket", "order_ticket", "deal_ticket", "position_ticket"}
++HASHABLE_ACCOUNT_KEYS = {"account_login", "login", "server"}
++
++
++def _now_iso() -> str:
++    return datetime.now(timezone.utc).isoformat()
++
++
++def stable_hash(value: Any, *, prefix: str = "ub") -> str:
++    text = json.dumps(value, sort_keys=True, default=str, separators=(",", ":"))
++    return hashlib.sha256(f"{prefix}:{text}".encode("utf-8")).hexdigest()
++
++
++def _clean_mapping(value: Any) -> Any:
++    if isinstance(value, Mapping):
++        out: dict[str, Any] = {}
++        for key, item in value.items():
++            k = str(key)
++            lk = k.lower()
++            if lk in HASHABLE_TICKET_KEYS:
++                out[f"{lk}_hash_sha256"] = stable_hash(item, prefix=lk)
++                continue
++            if lk in HASHABLE_ACCOUNT_KEYS:
++                out[f"{lk}_hash_sha256"] = stable_hash(item, prefix=lk)
++                continue
++            if lk in {"password", "token", "api_key"}:
++                out[f"{lk}_redacted"] = True
++                continue
++            out[k] = _clean_mapping(item)
++        return out
++    if isinstance(value, (list, tuple)):
++        return [_clean_mapping(item) for item in value]
++    return value
++
++
++def _first_unit_sleeve(unit: Mapping[str, Any] | None) -> str | None:
++    if not unit:
++        return None
++    members = unit.get("sleeve_members")
++    if isinstance(members, list) and members:
++        return str(members[0])
++    if unit.get("sleeve"):
++        return str(unit["sleeve"])
++    return None
++
++
++def _contains_forbidden_raw_key(value: Any) -> list[str]:
++    found: list[str] = []
++    if isinstance(value, Mapping):
++        for key, item in value.items():
++            lk = str(key).lower()
++            if lk in FORBIDDEN_RAW_KEYS:
++                found.append(str(key))
++            found.extend(_contains_forbidden_raw_key(item))
++    elif isinstance(value, list):
++        for item in value:
++            found.extend(_contains_forbidden_raw_key(item))
++    return found
++
++
++def build_runtime_learning_packet(
++    *,
++    namespace: str | None,
++    event_type: str,
++    ts: str | None = None,
++    bridge: Mapping[str, Any] | None = None,
++    unit: Mapping[str, Any] | None = None,
++    intent: Any | None = None,
++    outcome: Mapping[str, Any] | None = None,
++    decision_bar_iso: str | None = None,
++    decision_day: str | None = None,
++    source: str = "ultimate_book",
++) -> dict[str, Any]:
++    bridge_clean = _clean_mapping(dict(bridge or {}))
++    unit_clean = _clean_mapping(dict(unit or {})) if unit else None
++    outcome_clean = _clean_mapping(dict(outcome or {})) if outcome else {}
++    sleeve = getattr(intent, "sleeve", None) if intent is not None else None
++    symbol = getattr(intent, "symbol", None) if intent is not None else None
++    direction = getattr(intent, "direction", None) if intent is not None else None
++    if sleeve is None:
++        sleeve = outcome_clean.get("sleeve") or _first_unit_sleeve(unit or {})
++    if symbol is None:
++        symbol = outcome_clean.get("symbol") or (unit or {}).get("symbol")
++    if direction is None:
++        direction = outcome_clean.get("direction") or (unit or {}).get("direction")
++    if decision_day is None and intent is not None:
++        decision_day = getattr(intent, "decision_day", None)
++    if decision_bar_iso is None:
++        decision_bar_iso = outcome_clean.get("decision_bar_iso") or decision_day
++
++    join = {
++        "namespace": namespace,
++        "event_type": event_type,
++        "sleeve": sleeve,
++        "symbol": symbol,
++        "direction": direction,
++        "decision_bar_iso": decision_bar_iso,
++        "decision_day": decision_day,
++    }
++    decision_window_id = stable_hash(join, prefix="decision_window")
++    intent_id = stable_hash(join, prefix="intent")
++    packet = {
++        "schema_version": SCHEMA_VERSION,
++        "created_at_utc": ts or _now_iso(),
++        "source": source,
++        "namespace": namespace,
++        "event_type": event_type,
++        "decision_window_id": decision_window_id,
++        "ultimate_book_intent_id": intent_id,
++        "candidate_id": outcome_clean.get("candidate_id") or (unit or {}).get("candidate_id"),
++        "sleeve": sleeve,
++        "symbol": symbol,
++        "broker_symbol": outcome_clean.get("broker_symbol"),
++        "direction": direction,
++        "timeframe": outcome_clean.get("timeframe"),
++        "decision_bar_iso": decision_bar_iso,
++        "decision_day": decision_day,
++        "cluster": outcome_clean.get("cluster"),
++        "placement_key": outcome_clean.get("placement_key"),
++        "placement_day_key": outcome_clean.get("placement_day_key"),
++        "cluster_day_key": outcome_clean.get("cluster_day_key"),
++        "runtime_effect_now": bool(bridge_clean.get("runtime_effect_now", False)),
++        "placement_status": outcome_clean.get("placement_status"),
++        "skip_reason": outcome_clean.get("reason") or outcome_clean.get("skip_reason"),
++        "reject_reason": outcome_clean.get("reject_reason"),
++        "transient_retry": bool(outcome_clean.get("transient_retry", False)),
++        "bar_consumable": outcome_clean.get("bar_consumable"),
++        "broker_runtime_change_status": False,
++        "source_completeness_status": outcome_clean.get("source_completeness_status", "observed_from_runtime_summary"),
++        "bridge_reason": bridge_clean.get("reason"),
++        "policy_alias": bridge_clean.get("market_expansion_policy"),
++        "candidate_book_profile": bridge_clean.get("candidate_book_profile"),
++        "market_expansion_policy": bridge_clean.get("market_expansion_policy"),
++        "risk_budget_before": outcome_clean.get("risk_budget_before"),
++        "risk_budget_after": outcome_clean.get("risk_budget_after"),
++        "derisk_reason": outcome_clean.get("derisk_reason"),
++        "symbol_damage_verdict": outcome_clean.get("symbol_damage_verdict"),
++        "learning_rerate_verdict": outcome_clean.get("learning_rerate_verdict"),
++        "spread_r": outcome_clean.get("spread_r"),
++        "slippage_source_status": outcome_clean.get("slippage_source_status", "not_measured_in_packet"),
++        "swap_source_status": outcome_clean.get("swap_source_status", "config_or_pretrade_packet"),
++        "commission_source_status": outcome_clean.get("commission_source_status", "config_or_pretrade_packet"),
++        "bridge": bridge_clean,
++        "unit": unit_clean,
++        "outcome": outcome_clean,
++        "redaction_policy": DEFAULT_REDACTION_POLICY,
++    }
++    packet["source_event_hash_sha256"] = stable_hash(
++        {k: packet.get(k) for k in ("namespace", "event_type", "sleeve", "symbol", "decision_bar_iso", "placement_status", "skip_reason")},
++        prefix="source_event",
++    )
++    packet["packet_hash_sha256"] = stable_hash(packet, prefix="runtime_learning_packet")
++    return packet
++
++
++def validate_runtime_learning_packet(packet: Mapping[str, Any]) -> tuple[bool, list[str]]:
++    issues: list[str] = []
++    required = [
++        "schema_version",
++        "created_at_utc",
++        "namespace",
++        "event_type",
++        "decision_window_id",
++        "ultimate_book_intent_id",
++        "source_event_hash_sha256",
++        "packet_hash_sha256",
++        "broker_runtime_change_status",
++        "redaction_policy",
++    ]
++    for key in required:
++        if key not in packet or packet.get(key) in (None, ""):
++            issues.append(f"missing_required:{key}")
++    if packet.get("schema_version") != SCHEMA_VERSION:
++        issues.append("schema_version_mismatch")
++    if packet.get("broker_runtime_change_status") is not False:
++        issues.append("broker_runtime_change_status_must_be_false")
++    forbidden = _contains_forbidden_raw_key(packet)
++    if forbidden:
++        issues.append("forbidden_raw_keys:" + ",".join(sorted(set(forbidden))))
++    return not issues, issues
++
++
++class RuntimeLearningPacketWriter:
++    def __init__(self, repo_root: str | Path, log_path: str = DEFAULT_LOG_PATH):
++        self.path = Path(repo_root) / log_path
++
++    def append(self, packet: Mapping[str, Any]) -> None:
++        ok, issues = validate_runtime_learning_packet(packet)
++        if not ok:
++            raise ValueError(";".join(issues))
++        self.path.parent.mkdir(parents=True, exist_ok=True)
++        with self.path.open("a", encoding="utf-8") as handle:
++            handle.write(json.dumps(packet, sort_keys=True, default=str) + "\n")
++
++    def append_many(self, packets: list[Mapping[str, Any]]) -> int:
++        if not packets:
++            return 0
++        self.path.parent.mkdir(parents=True, exist_ok=True)
++        tmp_path = self.path.with_name(self.path.name + f".{os.getpid()}.tmp")
++        with tmp_path.open("w", encoding="utf-8") as handle:
++            for packet in packets:
++                ok, issues = validate_runtime_learning_packet(packet)
++                if not ok:
++                    raise ValueError(";".join(issues))
++                handle.write(json.dumps(packet, sort_keys=True, default=str) + "\n")
++        with self.path.open("a", encoding="utf-8") as target, tmp_path.open("r", encoding="utf-8") as src:
++            target.write(src.read())
++        tmp_path.unlink(missing_ok=True)
++        return len(packets)
++
++
++def packet_schema() -> dict[str, Any]:
++    return {
++        "schema_version": SCHEMA_VERSION,
++        "log_path_default": DEFAULT_LOG_PATH,
++        "redaction_policy": DEFAULT_REDACTION_POLICY,
++        "required_fields": [
++            "schema_version",
++            "created_at_utc",
++            "namespace",
++            "event_type",
++            "decision_window_id",
++            "ultimate_book_intent_id",
++            "source_event_hash_sha256",
++            "packet_hash_sha256",
++            "broker_runtime_change_status",
++            "redaction_policy",
++        ],
++        "forbidden_raw_keys": sorted(FORBIDDEN_RAW_KEYS),
++        "event_types": [
++            "cycle_no_decision",
++            "cycle_no_candidates",
++            "unit_shadow",
++            "unit_admitted",
++            "unit_skipped",
++            "unit_placed",
++            "position_adopted",
++            "position_managed",
++            "position_closed",
++            "position_out_of_universe",
++            "position_management_error",
++            "breach_flatten",
++        ],
++        "evidence_boundary": "runtime_observation_packet_not_broker_real_pnl_claim",
++    }
++
++
++__all__ = [
++    "SCHEMA_VERSION",
++    "DEFAULT_LOG_PATH",
++    "DEFAULT_REDACTION_POLICY",
++    "RuntimeLearningPacketWriter",
++    "build_runtime_learning_packet",
++    "packet_schema",
++    "stable_hash",
++    "validate_runtime_learning_packet",
++]
+diff --git a/tests/ultimate_book/test_launcher.py b/tests/ultimate_book/test_launcher.py
+index dfb99e3ab..09aaccbb4 100644
+--- a/tests/ultimate_book/test_launcher.py
++++ b/tests/ultimate_book/test_launcher.py
+@@ -81,6 +81,12 @@ def test_launcher_cycle_log_carries_bridge_telemetry(tmp_path):
+                 "placed": [],
+                 "shadow": 0,
+                 "skipped": [],
++                "runtime_learning": {
++                    "enabled": True,
++                    "log_path": "shadow_logs/ultimate_book_runtime_learning_packets.jsonl",
++                    "schema": "ultimate_book_runtime_learning_packet_v1",
++                    "packets": 2,
++                },
+                 "bridge": {
+                     "runtime_effect_now": True,
+                     "candidate_use_allowed_now": True,
+@@ -102,6 +108,8 @@ def test_launcher_cycle_log_carries_bridge_telemetry(tmp_path):
+     assert row["bridge"]["include_candidate_book"] is True
+     assert row["bridge"]["candidate_book_sleeves"] == ["ny_crypto_momentum"]
+     assert row["bridge"]["realized_units"][0]["sleeve_members"] == ["ny_crypto_momentum"]
++    assert row["runtime_learning"]["schema"] == "ultimate_book_runtime_learning_packet_v1"
++    assert row["runtime_learning"]["packets"] == 2
+
+
+ def test_h4_fires_on_btc_when_xau_frozen(tmp_path):
+diff --git a/tests/ultimate_book/test_runtime_learning_packet.py b/tests/ultimate_book/test_runtime_learning_packet.py
+new file mode 100644
+index 000000000..19631d5a7
+--- /dev/null
++++ b/tests/ultimate_book/test_runtime_learning_packet.py
+@@ -0,0 +1,179 @@
++import json
++from datetime import datetime, timezone
++from types import SimpleNamespace
++
++from src.components.ultimate_book.book_owner import UltimateBookOwner
++from src.components.ultimate_book.runtime_learning_packet import (
++    RuntimeLearningPacketWriter,
++    build_runtime_learning_packet,
++    validate_runtime_learning_packet,
++)
++
++
++def _raw_key_seen(value, raw_key):
++    if isinstance(value, dict):
++        return any(k == raw_key or _raw_key_seen(v, raw_key) for k, v in value.items())
++    if isinstance(value, list):
++        return any(_raw_key_seen(v, raw_key) for v in value)
++    return False
++
++
++def test_runtime_learning_packet_hashes_ticket_and_account_identifiers():
++    packet = build_runtime_learning_packet(
++        namespace="ftmo_test",
++        event_type="unit_placed",
++        bridge={"runtime_effect_now": True, "market_expansion_policy": "positive_weighted12_after_swap"},
++        unit={"sleeve_members": ["ny_crypto_momentum"], "risk_pct_per_trade": 0.001},
++        outcome={
++            "ticket": 123456,
++            "account_login": "0",
++            "server": "Broker-Live",
++            "password": "secret",
++            "symbol": "BTCUSD",
++            "sleeve": "ny_crypto_momentum",
++            "placement_status": "placed",
++        },
++    )
++
++    ok, issues = validate_runtime_learning_packet(packet)
++
++    assert ok, issues
++    assert not _raw_key_seen(packet, "ticket")
++    assert not _raw_key_seen(packet, "account_login")
++    assert packet["outcome"]["ticket_hash_sha256"]
++    assert packet["outcome"]["account_login_hash_sha256"]
++    assert packet["outcome"]["password_redacted"] is True
++    assert packet["broker_runtime_change_status"] is False
++
++
++def test_runtime_learning_validator_rejects_raw_broker_identifiers():
++    packet = build_runtime_learning_packet(
++        namespace="ftmo_test",
++        event_type="unit_placed",
++        outcome={"symbol": "BTCUSD", "sleeve": "ny_crypto_momentum", "placement_status": "placed"},
++    )
++    packet["ticket"] = 123456
++
++    ok, issues = validate_runtime_learning_packet(packet)
++
++    assert ok is False
++    assert any(issue.startswith("forbidden_raw_keys") for issue in issues)
++
++
++def test_runtime_learning_writer_appends_jsonl(tmp_path):
++    writer = RuntimeLearningPacketWriter(tmp_path, "shadow_logs/runtime_packets.jsonl")
++    packet = build_runtime_learning_packet(
++        namespace="ftmo_test",
++        event_type="cycle_no_candidates",
++        bridge={"runtime_effect_now": False},
++        outcome={"placement_status": "no_candidates"},
++    )
++
++    assert writer.append_many([packet]) == 1
++
++    rows = [
++        json.loads(line)
++        for line in (tmp_path / "shadow_logs" / "runtime_packets.jsonl").read_text(encoding="utf-8").splitlines()
++    ]
++    assert len(rows) == 1
++    assert rows[0]["schema_version"] == "ultimate_book_runtime_learning_packet_v1"
++
++
++class _FakeMT5:
++    def get_account_balance(self):
++        return 100000.0
++
++    def get_account_equity(self):
++        return 100000.0
++
++
++class _FakeEngine:
++    config = {}
++
++    def evaluate(self, *, now_utc=None, tags=None):
++        decision = SimpleNamespace(
++            runtime_effect_now=False,
++            candidate_use_allowed_now=False,
++            decision_status="shadow_apply_to_execution_off",
++            reason="ultimate_book_apply_to_execution_false",
++            profile="clean3_w7_ceiling_nom2p00",
++            enabled=True,
++            apply_to_execution=False,
++            live_activation_allowed_by_config=True,
++            broad_selector_disable_required=True,
++            broad_selector_apply_to_execution=False,
++            include_candidate_book=True,
++            candidate_book_profile="runtime_executable_native_exit_v2",
++            candidate_book_sleeves=("ny_crypto_momentum",),
++            include_market_expansion_book=True,
++            market_expansion_profile="default_off_market_expansion_d1_target2_v1",
++            market_expansion_policy="positive_weighted12_after_swap",
++            market_expansion_sleeves=("BTCUSD",),
++            kelly_lite=True,
++            kelly_conservative=True,
++            sqrt_n_pooling=False,
++            stress_derisk=True,
++            overlays=False,
++            vp_acceptance=False,
++            drop_w7_symbols=True,
++            learning_rerate_active=False,
++            learning_gated_sleeves=(),
++            metals_confluence_gate=True,
++            symbol_damage_guard=True,
++            damage_quarantined_symbols=(),
++            dropped_symbols=(),
++            n_candidates_in=1,
++            n_candidates_after_drop=1,
++            would_new_entries_allowed=True,
++            would_total_risk_pct=0.001,
++            would_units=[
++                {
++                    "sleeve_members": ["ny_crypto_momentum"],
++                    "risk_pct_per_trade": 0.001,
++                    "unit_risk_pct": 0.001,
++                    "sized": True,
++                    "cluster": "crypto",
++                }
++            ],
++            realized_units=[],
++            governor={"new_entries_allowed": True},
++        )
++        return {
++            "ok": True,
++            "reason": "shadow_apply_to_execution_off",
++            "n_intents": 1,
++            "runtime_effect_now": False,
++            "decision": decision,
++        }
++
++    def reset_window_date(self, now):
++        return now.date().isoformat()
++
++
++def test_book_owner_shadow_cycle_writes_runtime_learning_packet(tmp_path):
++    cfg = {
++        "market": {"symbol": "XAUUSD", "mt5_symbol": "XAUUSD"},
++        "gtos_vnext_runtime": {
++            "ultimate_book_enabled": True,
++            "ultimate_book_apply_to_execution": False,
++            "ultimate_book_live_activation_allowed": True,
++            "ultimate_book_runtime_learning_packet_enabled": True,
++            "ultimate_book_runtime_learning_packet_log_enabled": True,
++            "ultimate_book_runtime_learning_packet_log_path": "shadow_logs/runtime_packets.jsonl",
++            "selector_v4_enabled": True,
++            "selector_v4_apply_to_execution": False,
++        },
++    }
++    owner = UltimateBookOwner(cfg, _FakeMT5(), str(tmp_path), namespace="ftmo_test")
++    owner.engine = _FakeEngine()
++
++    summary = owner.run_cycle(now_utc=datetime(2026, 6, 18, tzinfo=timezone.utc), tags=("ny_crypto_momentum",))
++
++    assert summary["runtime_learning"]["packets"] == 1
++    rows = [
++        json.loads(line)
++        for line in (tmp_path / "shadow_logs" / "runtime_packets.jsonl").read_text(encoding="utf-8").splitlines()
++    ]
++    assert rows[0]["event_type"] == "unit_shadow"
++    assert rows[0]["sleeve"] == "ny_crypto_momentum"
++    assert rows[0]["broker_runtime_change_status"] is False

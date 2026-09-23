@@ -1,0 +1,106 @@
+=== K54 v3 Master Bundle Modeler — 2026-04-28T20:48:09.749135+00:00 ===
+
+[1/12] Loading primary 528-row v2 cohort + applying prune + adding K54 v3 features...
+  Pre-prune 1247 -> post-prune 1234
+  Added 6 K54 v3 features: ['kw__k10_round_aligned', 'kw__k10_round_dist_min_atr', 'kw__k7_osler_stopcluster_proxy', 'kw__k10_round50_above_below_asym', 'kw__k8_ob_age_power_law', 'kw__k9_regime_x_round_x_side']
+  Final feature space: 1240
+
+[2/12] Building K54 v1 baseline (canonical 17-feature, no `symbol`)...
+  V1 canonical: (528, 14), win-rate 0.580
+  V3 full: (528, 1240) (NaN rate 16.997%)
+
+[3/12] Computing Kyle-Obizhaeva W-unit weights for pooled training...
+  W-unit weights: min=0.500, max=2.000, mean=0.964
+
+[4/12] Extracting triple-barrier outcome labels (TP/SL/TIMEOUT)...
+  Triple-barrier dist: TP=237, SL=207, TIMEOUT=84
+
+[5/12] Building CPCV K=6, N=2...
+  CPCV paths: 15
+
+[6/12] Per-fold top-100 screening + 27-HP grid × 15 paths × 2 models (v3 + v1)...
+        + Kyle-Obizhaeva W-unit weights applied
+  Path 3/15 done; elapsed 10s
+  Path 6/15 done; elapsed 18s
+  Path 9/15 done; elapsed 26s
+  Path 12/15 done; elapsed 33s
+  Path 15/15 done; elapsed 40s
+
+  Selected HP (fixed across paths): idx=10, {'n_estimators': 200, 'max_depth': 3, 'learning_rate': 0.05}, OOS mean AUC = 0.5770
+
+[7/12] Re-running fixed-HP paired final pass + meta-label head...
+
+  CPCV-honest analysis:
+    diff_mean=+0.0579, naive SE=0.0117, honest SE=0.0371
+    Stouffer combined p=0.023988, CPCV-honest p=0.1185
+
+  Gate (a) check: mean AUC = 0.5770 vs floor 0.55 -> PASS
+  Gate (b) check: lift vs anchor 0.5286 = +0.0484 vs threshold 0.04
+
+[8/12] CSCV PBO computation (gate b)...
+  PBO = 0.2000 (gate threshold < 0.4) -> PASS
+
+[9/12] B=1000 null shuffle distribution...
+    null shuffle 200/1000
+    null shuffle 400/1000
+    null shuffle 600/1000
+    null shuffle 800/1000
+    null shuffle 1000/1000
+  Null mean=0.5003, p95=0.5179, p99=0.5246, max=0.5341
+  Observed v3 mean AUC=0.5770; null p_emp=0.0000, P(null < obs)=1.0000
+
+  DSR (gate b): SR_paired=1.2748, sigma_SR=0.3598, DSR-p=0.3210
+
+[10/12] Cross-instrument breakdown + NAS_US30 specialist (gate d)...
+  Per-group AUC vs floor 0.5:
+    GBPJPY: n=62, AUC_v3=0.4643, AUC_v1=0.4601, diff=+0.0042 [FAIL]
+    GBPUSD_USDJPY: n=138, AUC_v3=0.5270, AUC_v1=0.5279, diff=-0.0010 [PASS]
+    NAS_US30: n=113, AUC_v3=0.4984, AUC_v1=0.4292, diff=+0.0693 [FAIL]
+    XAU_XAG: n=215, AUC_v3=0.5212, AUC_v1=0.4790, diff=+0.0422 [PASS]
+
+[10b] Training NAS_US30 specialist (Architecture B)...
+  NAS_US30 cohort n = 113
+  NAS_US30 specialist AUC = 0.6014, global K54 v3 on same cohort = 0.4984, delta = +0.1030
+  Gate (d) specialist threshold: delta >= 0.05
+
+[11/12] Realized-R lift gate (e)...
+  realized_R lift = -0.1076R, 95% CI = [-0.1822, -0.0392], p = 0.9990
+  Gate (e) threshold: lift >= 0.05, p < 0.01
+
+[11b] Feature stability (gate f)...
+  Mean pairwise Jaccard (top-50): 0.1685 (threshold 0.6)
+  Features in top-50 across >=80% of paths: 2 (threshold 30)
+  Gate (f) FAIL
+
+[12/12] Cross-period validation (gates c.i + c.ii)...
+
+  Gate (c.i): train 2022-2023 (v1 schema) -> test 2024-2026 (v1 schema)
+    AUC on 2024-2026 from 2022-2023 train: 0.5767, lift=+0.0481, per-group positive=4/4
+
+  Gate (c.ii): within 2024-2026 train <2026-01-01 / test 2026-01-01+
+    AUC v3=0.5039, v1=0.5264, lift=-0.0225, per-group positive=1/4
+
+[12b] Conformal calibration (K-14, gate g enabler)...
+  90% conformal coverage on CPCV test = 0.8811 (target 0.90), Christoffersen LR_uc p = 0.0016
+  Gate (g) is DEFERRED to end-of-Q1 holdout open (2026-05-13+); CPCV proxy reported.
+
+[Final] Aggregating per-path top-100 -> top-100 by frequency, fitting final models...
+
+=== K54 v3 GATE VERDICTS ===
+  (a) CPCV mean AUC >= 0.55: 0.5770 -> PASS
+  (b) Lift >= 0.04, DSR-p < 0.01, PBO < 0.4, null_p < 0.01: FAIL
+      lift=+0.0484, dsr_p=0.3210, pbo=0.2000, null_p_emp=0.0000
+  (c.i) Cross-period 2022-2023→2024-2026: PASS
+  (c.ii) Cross-period <2026-01-01→2026-01-01+: FAIL
+  (d) Per-group floor + specialist delta: FAIL
+  (e) Realized-R lift >= 0.05, p<0.01: lift=-0.1076 -> FAIL
+  (f) Feature stability: 2 top-50 features ≥80% paths, mean Jaccard 0.1685 -> FAIL
+  (g) Calibration on holdout: DEFERRED (CPCV coverage proxy = 0.8811)
+
+  Gates passed (a,b,c,d,e,f) = 1/6 (g deferred)
+
+  *** FINAL VERDICT: FAIL ***
+
+
+=== K54 v3 DONE in 58s ===
+Outputs in C:\Users\MSI\Documents\ai-trading-agent\research\ml_program\models\k54_v3

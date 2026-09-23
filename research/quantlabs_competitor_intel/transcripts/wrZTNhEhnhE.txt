@@ -1,0 +1,467 @@
+# Build a Scalable AI Quant Trading Bot (Redis + Dynamic Formulas)
+URL: https://www.youtube.com/watch?v=wrZTNhEhnhE
+Video ID: wrZTNhEhnhE
+Duration: 1261s
+Fetched: 2026-04-18T13:22:45Z
+---
+
+Hello. Hello everybody. Brian here,
+quantabset.com.
+We are going to uh talk about some
+lengthy stuff here. Okay, so this is
+what's going on. Uh I've I've moved into
+uh all my message queuing, but going
+back to the client server with Reddus.
+I'm now using quantitative techniques.
+Uh, I've got a new HTML tool I'm going
+to show you that's pretty advanced for
+showing the real-time trading. Um, got
+an announcement. Uh, no more bookings in
+the next few days. Uh, I'm making myself
+less uh, accessible. Um, the other thing
+I want to show you, I'm going to show
+you some of the, uh, code. It's a live
+code uh, environment. And lastly, I'm
+going to talk about Grock 4 multi- aent,
+which seemed to be a complete failure.
+All right. So, let's start talking about
+the Reddus here. So, let me get over to
+our
+right there. I'm I'm hoping I'm
+recording right now. Let me just make
+sure. Yes, I'm recording. It's so bad
+what I'm using right now. Anyways, um
+let me show you the VS Code, the
+projects.
+So,
+um I have here a project. Um, I was
+originally going to call uh mult uh the
+Reddus. Let me let me first talk about
+Reddus.
+Uh, as I said my stream on Tuesday
+night, I had like up to 10 11
+self-contained bots competing against
+trying to connect into one available
+rhythmic connection into the rhythm
+servers. That was a big problem. So, I
+did away with that. went back to the
+client server using Reddus again because
+that's 100% reliable. Um and then having
+a gateway uh with the Reddus as well.
+Okay. So there's that. The other big
+thing was and you can see it in my blogs
+uh blog articles that you get at
+quantabsnet.com.
+Um there was a very interesting approach
+that that's come up with now where you
+can ask the AI
+to ask to ask it why all there no tri
+orders that are being triggered and
+it'll tell you why specifically that's
+what I've been doing a lot lately and a
+lot of it has to do with I've been and I
+said this again in my um stream on
+Tuesday night saying that I'm going to
+be I am using hard set targets numbers
+uh they don't work um because if you
+have a news event that comes up the
+heats up that can be a couple hours
+you're hours old. So if you have the
+already the price moving beyond that
+target and the bots's expecting that
+generally it's not going to trade. So
+what I ended up doing was I ended up uh
+changing that and just using quant uh
+formulas which was quite surprising for
+me. um as well. So, but I'll come back
+to that in a minute. So, I've built out
+this tool um called a log
+analyzer. So, I'm using a lot of the
+logs as they're um as they're
+um rolling out and uh I can load these
+logs as example. So, these are the
+latest logs that are generated. I can do
+this multiple times a day. So, here's
+what it basically tells you. So, there's
+nine bots running. Um, there's no
+there's some open trades, but no closed
+uh positions yet. We have here still uh
+these data connection problems gateway
+with the Reddit. So, I still got to
+resolve that. I think that's going to
+radically improve things. Um, so we have
+that. These are all the bots running as
+well. Um, we got profiles set up for
+each one, but you can see they're
+issuing these so-called data connection
+problems. Again, it could be rhythmic
+itself. It could be also uh a reddus
+connection. So, I I got to diagnose
+that. Um, we also have here with the
+trading two open trades. Nothing has
+closed up yet. Um, so these are copper
+trades. Um so they're obviously
+connecting with copper and um here's the
+market data as well. So the node data
+all of these are issuing that I can
+figure out what's going on. This is kind
+of interesting on the pricing action
+and you can see here how long it's been
+waiting to run hour and a half. But the
+interesting thing is it comes up with uh
+the general price
+since the launch uh of all the bots and
+you'll see all these dips but you'll see
+a general trend. When you get these
+deeper dips that means that there's more
+volatility in the price.
+So minus all that um there might be
+another one here I can show you. Yeah.
+So, this is another one, my wheat.
+But what I'm finding as I'm doing this,
+you can get this completely straight
+where there's no dips. Uh, and that's
+good because that tells you that there's
+less volatility in that pricing uh
+because of the draw downs. As a result,
+as long as that trend continues, that's
+good. Generally I do not see that those
+kind of dips are in um in gold
+uh somewhat forex and treasury.
+>> Okay. Um and it gets really crazy when
+you look at natural gas as well. Um
+originally from the day it looked good
+on the look at indices but they all
+failed. So
+>> it's hard for me to gauge gauge that. Um
+but I I could probably pull up another
+set of data if I want. So this will get
+ranked as well which is really good once
+it's completely working on the data
+connection. This will be very valuable
+information. Um so it's so detailed and
+you can see here what would be running
+if there's actual closed off positions
+as well. You'd see that. So you could
+see one where you have losses and
+another one another bar chart
+comparative
+on the uh winning and then you can
+clearly know if you want to trade for
+the day or not because this is all
+simulated and you can then get a
+breakdown on what is
+like what kind of bots are running. So
+we have two that are metals,
+one that's FX, another one that's
+agriculture or fixed income or energy
+related. This one's really good as well
+because this tells you on the data. Um,
+so it's fairly stable. If I was to run
+this overnight, which is really a waste
+of time because market the volume is
+just not there. It's all light, very
+light volume if it's volume at all. But
+if you run overnight, which I've done
+for the last couple of days, you'll see
+some blips of data coming in, but
+generally it's not uh um useful. So what
+I'm saying is you have to run it during
+Chicago market open. um purposely set up
+these bots early in the morning to see
+what would happen and that seems to be
+the best schedule for that. So, I'll
+stick with that for sure. Um so, these
+are kind of what's happening uh as well.
+Uh some of the downloads uh which is
+quite interesting as well. Let me see if
+I can load up. This software takes so
+long to load up. Um but uh let me just
+go into my download folder here. So what
+I want to show you is
+this is the plan I could use. So this
+was from
+last night I believe. So I'm getting the
+same report and I can turn it into a
+PDF. As you can see here uh we have a
+PDF option. Now again, all the stuff I'm
+showing you, I could turn into agents
+and do this on a scheduled basis
+and be able to analyze before and after
+the markets that are open Chicago time.
+So I could do that, but I can do that
+for sure 100% with a good model, be able
+to do that in an automated way. Okay.
+And actually have commentary
+uh
+created for me. Um, so
+the other interesting ones is I'm just
+pulling up some of the ones I uh so
+here's another analysis of this.
+So it's just basically that uh HTML
+dashboard I showed you. It's just
+basically a PDF version of that. Um the
+other thing
+that will be useful for people and and
+this is again part of the planning your
+day. Um we have a bot plan that we can
+use as well. Again I can I can load that
+up. Oh here we go. So this is an
+example. So this is a JSON file. So you
+can see here's these are the bots that
+are getting set up for the day. Okay. So
+I can launch them
+uh and run them. Okay. And uh they're
+ready to go. So if they work, they'll
+take trades. Um if the market's really
+bad, like the last two days uh because
+today I always got to make sure I uh
+mention March 19th today. Um there's
+just not much trading opportunity um
+through this because of uh of um
+the uh trading activity, what's going on
+in the markets.
+So, I don't know.
+There's all that going on. Okay. Um,
+also,
+uh, some very just really interesting
+things here that you can,
+uh, look at. Uh, let me just see. Uh,
+see, um,
+see this one here as well.
+Okay, it's my ebook. All right, so let's
+look at some of the PowerShell sessions
+running.
+So right now we have this one is the
+bots running and this one here is the
+actual rhythmic gateway. We'll call it
+the reddest connection as in the prior
+system design where it' be like a server
+and it be act as a gateway between all
+the running bots and all the all the
+messaging would go on using Reddus
+message cube pubsub will be piped it
+into this and then this same server
+would then interact with rhythmic as
+well. So it does away it gets rid of a
+lot of those data connection problems I
+mentioned uh when it comes to uh
+currency on on Tuesday night. So that's
+kind of been resolved but there's still
+some connectivity problems. So we'll
+we'll we'll those will get resolved very
+quickly with AI. Um also okay so let me
+go back to my list. So the other thing
+that's a big big big difference here is
+um I'm going to show you the code here
+now of the quant generated projects. So
+this one as an example is bit cop uh bot
+copper futures electrification trend.
+Okay. So if you look at these um
+particular uh bots themselves the coding
+these are generated flawlessly as you
+what I expect with uh the bot um from
+claude
+claude uh what's it called claude uh 4
+six. Okay. So, it gives you the detail,
+but what we want to look at is these are
+some of the hard-coded um numbers as
+well from the news. Um and in here, when
+you look at everything's more formula
+now, like trying to be quant, I could
+make it quant,
+>> but I want to do it in a way where it's
+a little more understandable. So, let's
+take a look at some of the examples
+here. So, in here, some of the
+techniques that are used is basically
+technical indicators. So, you're going
+to see uh EMA right here uh measuring
+let's say volatility. Obviously, that's
+it's using a lot a lot of ATR, average
+true range. Um it will go in and look at
+um RSI I've seen as well.
+Nothing really
+complicated here. Um this is again 100%
+generate by AI.
+So um
+you know it seems to be simple. So it
+measures the trend using again EMA
+and again uh there's that Z scoring as
+well that it's using that's a classic
+uh quant quantitative but you can see
+here it's also using that ATR ashue
+range.
+So uh it's more math in here, math
+formula, uh formulas, expressions and
+whatnot. So that's the coding there.
+Okay. Um the range of the lines can
+depend upon what model I'm using to
+generate these dynamically. Uh usually
+quads should be enough. Uh last one
+obviously is going to be um claude the
+latest claude purpose 4.6 for now. As
+you know, there's always new bots coming
+out. Um, you know, we just had releases
+of Miniax.7
+as an example in the last 24 hours. In
+that other one, I just tested the Grock
+4 multi- aent. Let me let me let me
+address that one as well. So, with the
+multi- aent, I have to say just
+generally when it comes to Grock,
+there's a lot of hype coming out of Elon
+Musk's team saying they're the most
+advanced, the most whatever. I find
+that's never true. It's just that hype
+and there's always um a disappointment
+when trying it out and it was new came
+out in the last almost week now um
+there's a lot of hype behind it but
+usually the reason why Grock falls back
+into irrelevancy
+because a lot of it doesn't work and and
+I and I've proven that to myself. So in
+my case, when I try to create a new
+project using the Gro multi- aent, a lot
+of the processes just hang hung. There's
+not time for that when I've got other
+models that work flawlessly. Could be
+Codeex and it could be a clot as well.
+Some of the Chinese ones I'm still
+having problems on. Um hoping to see the
+new Deep Seek 4 now. They're pushing it
+back to midappril. I just saw a news
+where it's saying maybe as late as uh
+June now. So I don't know what's going
+on there. Um will it be any good? I
+don't know. So we got to work with what
+we got today. So there's that. Uh
+yes. So I've shown you uh the groups.
+Let me let me let me let me talk about
+the website here quantabsnet.com.
+Uh as I said uh the pricing for the
+quant analytics is going to go up to $97
+because of the success I'm finding with
+the data I'm getting out there and the
+more importance more more importance of
+the criticism of AI uh I'm sorry the
+detail that I'm showing right now and
+how pretty good it is um the way it's
+working. So it's definitely going to go
+$97 a month. So, if you want that, jump
+on that right now for the trial and then
+you're secured. Also,
+more importantly is the bookings. I'm
+going to be getting rid of that. Um, as
+I said in the last week in my streams
+that I'm making myself less accessible.
+Um, and I'm doing that on purpose. Um,
+I'm finding I'm I'm becoming
+um I don't know what the word is. Uh
+that's sound sounding like an
+egoomaniac, but I'm reaching exactly the
+market I want to reach via LinkedIn. Um
+and because of that, I'm I'm reaching
+the exact market I want. That market
+that will be willing to pay for this
+once we get all this working and once we
+get the uh the the the a track record
+that's third party verified, we will pay
+a lot of money. Okay? So that's why I'm
+making myself less accessible. I want
+people to message me. Now, just putting
+that as a caveat. Nobody's going to
+listen to this because they don't watch
+this to this point. That's okay. But a
+lot of people reach me about where do I
+begin and that's where I go to my HFT
+code and point them to that product.
+It's a signal to me. If you're not
+willing to even go that down that route,
+I see no point in communicating with
+those type of people. Okay? So that's
+why I'm getting rid of the bookings and
+just testing people here now to see how
+motivated they are. I do get one or two
+highly motivated people a day. Um, which
+is good, but it's those motivated people
+that become high achievers in what they
+do in success for themselves because
+they see something, they like it, and
+they continue it. And I also have my
+regulars now on my YouTube streams as
+well, which I highly value. Um, so I'll
+continue doing that. So my point here is
+I'm gauging
+where to put my time in and targeting
+the exact kind of market I want. So, my
+whole point here is if you're watching
+this and you like what you're seeing,
+but you're sitting on the fence, I'm
+saying you either put up your shut up
+because if you're sitting on the
+sideline, you either make a make a
+choice on something to to get something
+to signal back to me that you're very
+serious about what you're doing. Um,
+specifically more doing this sort of
+thing. Um, because that signals back to
+me because another big thing is I've got
+a few groups here. um that I'm going to
+leverage more of. And you can see here I
+do get some views, okay? Right. 13. Not
+a lot, but it's those people I want to
+serve. Okay? Because those are my call
+them hardcore fans that have already
+gone to the level of joining my uh
+website, joining my group section, and
+reading. Those are the people I want to
+serve. So again, that's part of my
+process where I'll be making myself less
+available. I get like questions on
+Instagram, Facebook, X, even YouTube.
+I'm going to be doing away with not
+responding to like that. I just don't
+I'm just the these are what we call the
+tire kickers that are just going to
+not respect my time. Okay? And I know
+I'm sounding like I'm complaining.
+That's okay. I'm just being transparent
+with people. Um cuz if you don't hear
+from me, you'll know why. Okay? And it's
+not about because I'm special or
+anything because I have a specific
+target market. I'm going to target as I
+said once we get everything verified
+profitable consistently and sustainably
+I think that exact market will respond
+in a big way and pay uh the rates that
+um this type of service is is worth.
+So none of that more ranting. All right.
+So um we've talked about that. I've
+shown you the source code. talked about
+the Grock 9 Gro 4. I've talked about
+there's no more bookings. I've shown you
+the quant the Reddit stuff. So, I guess
+we're done. Okay. So, my point is if you
+really want to be serious, get at least
+the ebook here. Um, the
+learnablanabsnet.com.
+Uh, I would strongly urge you to get
+onto the groups because what I'm doing
+now is um the only way to know about
+what's available on this sort of stuff
+is is through my email and through my
+groups. And I'm purposely doing that by
+design because, as I said, I want to
+serve these people that are looking at
+this content. It might be a tiny number,
+but we're growing both on LinkedIn,
+we're growing both on Google search
+engine, um somewhat still kind of
+growing on all the other social media
+and that it's also including YouTube.
+So, we'll leave it at that. Thank you
+for watching. Have a good day. You know
+what to do. All righty. Bye-bye.

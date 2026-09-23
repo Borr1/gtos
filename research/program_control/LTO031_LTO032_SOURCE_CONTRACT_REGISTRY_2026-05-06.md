@@ -1,0 +1,56 @@
+# LTO031 / LTO032 Source Contract Registry - 2026-05-06
+
+**Schema:** `lto031_lto032_source_contract_registry_v1`
+**Generated:** `2026-05-06T00:26:49.047401+00:00`
+**Status:** `SOURCE_CONTRACT_REGISTRY_READY_RESEARCH_ONLY`
+**Promotion verdict:** `NO_PROMOTION_VERDICT`
+**Source contracts:** `11`
+
+## Purpose
+
+P0 source-contract registry for LTO-031/LTO-032. This artifact records source, legal/access, timestamp, cost, and feature-role boundaries before any ingest or replay work.
+
+It does not fetch public data, spend credits/cash, call AI/canaries, place orders, or change live behavior.
+
+## Counts
+
+- By LTO: `{'LTO-031': 7, 'LTO-032': 4}`
+- Source readiness: `{'BLOCKED_BIS_TABLE_SELECTION_REQUIRED': 1, 'BLOCKED_FORMULA_AND_SOURCE_CONTRACT_REQUIRED': 1, 'BLOCKED_FX_CONTRACT_MAPPING_REQUIRED': 1, 'BLOCKED_LEGAL_BENCHMARK_SOURCE_OR_PROXY_REQUIRED': 1, 'BLOCKED_LOCAL_OR_PROVIDER_COVERAGE_REQUIRED': 1, 'BLOCKED_PAID_OR_LICENSE_REQUIRED': 1, 'BLOCKED_SOURCE_DISCOVERY_REQUIRED': 1, 'PARTIAL_EXISTING_FREE_PUBLIC_REGISTRY_REQUIRED': 1, 'PARTIAL_PUBLIC_VOL_INDEX_SOURCE_READY_VIX1D_BLOCKED': 1, 'PLANNED_EXISTING_CREDITS_ONLY_ESTIMATE_FIRST': 1, 'READY_FORWARD_CONTEXT_ONLY_NOT_HISTORICAL_VALIDATION': 1}`
+- Validation-safe rows: `{'false': 11}`
+- Validation issues: `[]`
+
+## Registry
+
+| Source | LTO | Legal/access | Readiness | Cost policy | Allowed role | Validation safe |
+| --- | --- | --- | --- | --- | --- | --- |
+| fx_cot | LTO-031 | OFFICIAL_PUBLIC_EXPECTED_FX_CONTRACT_MAPPING_REQUIRED | BLOCKED_FX_CONTRACT_MAPPING_REQUIRED | ZERO_NEW_EXTERNAL_CASH_FREE_PUBLIC_ONLY | K55_FEATURE_AND_REGIME_CONTEXT_SHADOW_ONLY | false |
+| bis_macro | LTO-031 | OFFICIAL_PUBLIC_EXPECTED_TABLE_SELECTION_REQUIRED | BLOCKED_BIS_TABLE_SELECTION_REQUIRED | ZERO_NEW_EXTERNAL_CASH_FREE_PUBLIC_ONLY | REGIME_AND_MACRO_CONTEXT_SHADOW_ONLY | false |
+| fed_fred_research | LTO-031 | PARTIAL_PUBLIC_REGISTERED_VINTAGE_LIMITATION | PARTIAL_EXISTING_FREE_PUBLIC_REGISTRY_REQUIRED | ZERO_NEW_EXTERNAL_CASH_FREE_PUBLIC_ONLY | MACRO_CONTEXT_AND_K55_FEATURE_SHADOW_ONLY | false |
+| kmw_fx_fix | LTO-031 | LEGAL_BENCHMARK_SOURCE_OR_PROXY_REQUIRED | BLOCKED_LEGAL_BENCHMARK_SOURCE_OR_PROXY_REQUIRED | ZERO_NEW_EXTERNAL_CASH_UNTIL_SOURCE_CONTRACT_COMPLETE | SESSION_CONTEXT_SHADOW_ONLY | false |
+| hkm_intermediary_capital | LTO-031 | SOURCE_DISCOVERY_REQUIRED | BLOCKED_SOURCE_DISCOVERY_REQUIRED | ZERO_NEW_EXTERNAL_CASH_UNTIL_SOURCE_CONTRACT_COMPLETE | SLOW_REGIME_CONTEXT_SHADOW_ONLY | false |
+| pre_2024_tick_lob | LTO-031 | EXISTING_DATABENTO_CREDITS_ONLY_ESTIMATE_FIRST | PLANNED_EXISTING_CREDITS_ONLY_ESTIMATE_FIRST | EXISTING_DATABENTO_CREDITS_ONLY_MANIFEST_AND_ESTIMATE_BEFORE_FETCH | HISTORICAL_COUNTERFACTUAL_REPLAY_AND_K55_FEATURE_DESIGN | false |
+| pre_2022_ohlcv | LTO-031 | LOCAL_FIRST_PROVIDER_REQUIRED_IF_LOCAL_COVERAGE_FAILS | BLOCKED_LOCAL_OR_PROVIDER_COVERAGE_REQUIRED | LOCAL_FILES_FIRST_ZERO_NEW_CASH_PROVIDER_REQUIRES_SEPARATE_APPROVAL | REPLAY_INPUT_ONLY | false |
+| flashalpha_basic_gex_forward_proxy | LTO-032 | EXISTING_FORWARD_CONTEXT_ONLY | READY_FORWARD_CONTEXT_ONLY_NOT_HISTORICAL_VALIDATION | EXISTING_ACCESS_ONLY_FORWARD_CONTEXT_NO_HISTORICAL_BACKFILL | FORWARD_CONTEXT_ONLY | false |
+| vix_vix9d_gvz_vvix_vix1d | LTO-032 | PARTIAL_PUBLIC_SOURCE_REGISTERED_COMPONENT_BLOCKED | PARTIAL_PUBLIC_VOL_INDEX_SOURCE_READY_VIX1D_BLOCKED | ZERO_NEW_EXTERNAL_CASH_FREE_PUBLIC_ONLY | VOLATILITY_REGIME_CONTEXT_SHADOW_ONLY | false |
+| official_or_historical_aggregate_gex | LTO-032 | PAID_OR_LICENSE_REQUIRED_SEPARATE_OWNER_APPROVAL | BLOCKED_PAID_OR_LICENSE_REQUIRED | PAID_SOURCE_BLOCKED_SEPARATE_OWNER_APPROVAL_REQUIRED | SOURCE_EVALUATION_THEN_SHADOW_FEATURE_ONLY | false |
+| vrp_delta | LTO-032 | FREE_PROXY_POSSIBLE_FULL_OPTIONS_PAID_BLOCKED | BLOCKED_FORMULA_AND_SOURCE_CONTRACT_REQUIRED | PAID_SOURCE_BLOCKED_SEPARATE_OWNER_APPROVAL_REQUIRED | VOL_REGIME_CONTEXT_SHADOW_ONLY | false |
+
+## Blocking Rules
+
+- No source may be validation_safe while legal/access or source-readiness status is blocked or incomplete.
+- Every source must carry URL/vendor, legal/access status, cache schema, publication timestamp rule, cost policy, and allowed feature role.
+- FlashAlpha Basic is forward-context only and cannot be used for historical gamma/VRP validation.
+- Databento historical credits require request manifest, cost estimate, and caps before any fetch.
+- All features must join by decision_time_utc/asof_cutoff_utc and source publication/availability timestamp.
+
+## Safety Counters
+
+- AI calls: `0`
+- Canary calls: `0`
+- Order calls: `0`
+- Paid data calls: `0`
+- Paid fetch attempted: `False`
+
+## NO_PROMOTION_VERDICT
+
+Every row remains source-readiness or forward-context only. No row is validation-safe yet.

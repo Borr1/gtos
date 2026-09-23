@@ -1,0 +1,50 @@
+Metadata-Version: 2.4
+Name: gold-agent
+Version: 0.1.0
+Summary: XAUUSD Autonomous AI Trading Agent — Model A: London Open Liquidity Sweep
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+
+# Gold Traders Operating System
+
+GTOS is the live vNext/moonshot trading operating system for a 24-symbol redacted_account MT5 surface. The current production replacement is not the old XAUUSD-only or 7-symbol Model A system.
+
+Read first:
+
+1. `.context/LIVE_STATE.md` after regenerating it with `python scripts/generate_live_state.py`.
+2. `.context/00_core/current_vnext_system_map.md`.
+3. `.context/00_core/current_repo_reading_order.md`.
+4. `research/operations/vnext_live_activation_active_repair_companion_2026_05_28/ACTIVE_REPAIR_STATE.json`.
+
+## Current Production Truth
+
+- Active system: vNext/moonshot production replacement.
+- Live surface: 24 symbols: AUDJPY, AUDUSD, BTCUSD, CHFJPY, ETHUSD, EURGBP, EURJPY, EURUSD, GBPJPY, GBPUSD, GER40, JP225, NAS100, NZDUSD, SPX500, UK100, UKOIL_cash, US30_cash, USDCAD, USDCHF, USDJPY, USOIL_cash, XAGUSD, XAUUSD.
+- Current execution policy: `momentum_exhaustion` primary with `partial_be_runner` exception selection.
+- Static fixed `1.5R`, J46/J49, BE-only, old PrimaryAnalyzer/L2, April-live, and 7-symbol framing are historical or comparator-only unless a current vNext artifact explicitly says otherwise.
+- First unresolved live lifecycle proof: first real vNext order/fill/close/cost/deal reconciliation.
+
+## Repo Map
+
+- `src/`: live runtime code.
+- `config/`: configuration and profiles.
+- `tests/`: focused regression tests.
+- `.context/00_core/`: current context, doctrine, cleanup policy, and reading order.
+- `research/operations/vnext_live_activation_active_repair_companion_2026_05_28/`: current live activation evidence.
+- `research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_repair_hardening_2026_05_27/`: current vNext activation repair-hardening evidence.
+- `research/operations/vnext_repo_context_cleanup_deletion_2026_05_29/`: repo cleanup ledgers and manifests.
+- `research/operations/vnext_root_context_cleanup_closure_2026_05_31/`: root cleanup closure audit, root file ledger, runtime dirt policy, and verification artifacts.
+- `research/archive/root_legacy_artifacts_2026_05_31/`: archived stale root reports/scripts and retargeted legacy generator outputs.
+
+## Root Cleanup Boundary
+
+The repo root is reserved for active entrypoints, current docs, config, runner files, and local `.env*` files. April-era root reports, stale one-off scripts, zero-byte root logs, old comparison reports, and legacy generator outputs are archived or ignored under `research/archive/root_legacy_artifacts_2026_05_31/`; do not recreate them at the root.
+
+## Development
+
+```bash
+python scripts/generate_live_state.py
+pytest tests/ -q
+```
+
+Do not use old README/architecture text from history as current production guidance.

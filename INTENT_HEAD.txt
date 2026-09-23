@@ -1,0 +1,4 @@
+armed_commit=b8f56ea35e517985d746e56c8e7cc2d5d0ca99a8
+base_commit=a86c18f200358d2b67a4760419a9a55bbb66052a
+note=a86c18f20 plus supervisor-row only; persist-refusals parked
+files=run_book.py,frozen_price_intent.py,book_owner.py,live_flow.py,order_router.py

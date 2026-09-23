@@ -1,0 +1,40 @@
+# src/components/ultimate_book/book_engine.py
+# a/ = the running host, redacted_host87668c5d503b52925d10be7dfb66540 (sha256 187f35a4a0889c4c9ccb257408e1bc94bb6fdbff29c80e65c62b6ccc3bcb5a8c)
+# b/ = the activation carry, Session AC (sha256 b6a9ef7d98d20629260c3aaf8db9bbbba72dae36ec70ad5088c9b3482cd7b68a)
+# applies with `patch -p1 -F 0` and with `git apply -p1`, zero fuzz.
+--- a/src/components/ultimate_book/book_engine.py
++++ b/src/components/ultimate_book/book_engine.py
+@@ -80,14 +80,30 @@
+         #  - static_initial_balance: the broker max-DD floor is STATIC from the initial balance
+         #    (FTMO/FN 100k => fixed 90k floor); the wall is pinned to this reference (max_dd_reference_equity)
+         #    and BYPASSES the trailing high-water entirely — high_water is kept only as a >=equity invariant.
+-        #  - daily_reset_offset_hours: FTMO/FN server = UTC+3, so the daily-loss window resets at
+-        #    21:00 UTC; the start-of-day anchor keys on the server-local date (matches monitor_books).
++        #  - daily_reset_offset_hours: the STATIC fallback only. The reset window is resolved per
++        #    account at runtime; see reset_rule below and GovernorStateBuilder._effective_offset_h.
++        #  - reset_rule: THE ACCOUNT'S OWN daily-loss reset calendar, corrected 2026-07-26 (B56).
++        #    The two firms do not share a rule and the difference is not cosmetic:
++        #      redacted_account resets at 00:00 SERVER time (GMT+2/+3) -> no rule, the detected offset is it.
++        #      FTMO       resets at 00:00 CE(S)T, which is NOT its server clock. FTMO's MT5 server
++        #                 runs the US DST calendar while CE(S)T runs the EU one, so server midnight
++        #                 is 1 h early normally and 2 h early for ~4 weeks a year.
++        #    Sourced from the profile this account already ships -- the live FTMO profile
++        #    config/profiles/operator_profile.yaml:87 declares
++        #    `prop_safe_selector_daily_reset_timezone: Europe/Prague` and :104 records the firm's
++        #    rule verbatim (`daily_reset_time: 00:00 CE(S)T`). Both FTMO profiles are
++        #    decision-contract-bound (H1), so this READS the key rather than adding one; an account
++        #    whose profile is silent (redacted_account.yaml) keeps server midnight, which is its rule.
+         _gov_init_bal = self.config.get("governor_static_initial_balance", 100000.0)
+         _gov_reset_off = self.config.get("governor_daily_reset_offset_hours", 3.0)
++        _gov_reset_rule = (self.config.get("governor_daily_reset_rule")
++                           or self.config.get("prop_safe_selector_daily_reset_timezone")
++                           or None)
+         self._governor = GovernorStateBuilder(
+             repo_root, namespace=namespace,
+             static_initial_balance=_gov_init_bal, daily_reset_offset_hours=_gov_reset_off,
+-            offset_provider=self._live_broker_offset_hours)
++            offset_provider=self._live_broker_offset_hours,
++            reset_rule=_gov_reset_rule)
+         # leak-free RUNNING per-day conviction count store (recovers the validated full-day Kelly-lite
+         # convention without lookahead; engine-gated by ultimate_book_kelly_running_count, default OFF).
+         self._running_conviction = RunningConvictionLedger(repo_root, namespace=namespace)

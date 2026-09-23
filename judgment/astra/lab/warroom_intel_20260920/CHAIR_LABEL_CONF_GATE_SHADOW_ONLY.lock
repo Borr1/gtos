@@ -1,0 +1,48 @@
+{
+  "schema": "gtos.chair.label.conf_gate_bands.v1",
+  "ts_ict": "2026-09-20 08:49 ICT",
+  "login": 0,
+  "mode": "SHADOW_ONLY_NO_APPLY",
+  "gate_mining": "PAUSED",
+  "standby": "S14_land \u2192 S15_wire_prove",
+  "bands": [
+    {
+      "rank": 1,
+      "id": "CONF_GATE_STRICT",
+      "conf_floor": "HIGH",
+      "subclass": "fs_half_still_losing",
+      "sum_shadow_R": -8.71,
+      "note": "2nd-confirm / higher conf before full admit; size \u00d70.5 stays"
+    },
+    {
+      "rank": 2,
+      "id": "CONF_GATE_SESSION",
+      "conf_floor": "MED_HIGH",
+      "subclass": "session_cut_loss",
+      "sum_shadow_R": -2.32
+    },
+    {
+      "rank": 3,
+      "id": "CONF_GATE_EVENT",
+      "conf_floor": "HIGH_EVENT_STAMP",
+      "subclass": "event_gap",
+      "sum_shadow_R": -1.31,
+      "note": "stamped proximity only \u2014 no NEWS invent"
+    },
+    {
+      "rank": 4,
+      "id": "CONF_GATE_REVIEW",
+      "conf_floor": "KEEP_SURFACE",
+      "subclass": "full_size_loss",
+      "ticket": 291087142,
+      "note": "NOT hard-off"
+    }
+  ],
+  "honesty_291087142": "KEEP vss review-adjacent; G7 no-boost; NOT hard-off",
+  "g4_g6_overshrink": "NO",
+  "place": false,
+  "apply": false,
+  "host-mesh": false,
+  "news_invent": false,
+  "source": "redacted_account Chair LABEL 2026-09-20"
+}

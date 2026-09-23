@@ -1,0 +1,48 @@
+========================================================================
+BACKTEST REPORT
+========================================================================
+  Billing mode:             Max subscription
+
+── Overview ──────────────────────────────────────────────
+  Total sessions:           2
+  Sessions with errors:     0
+  Trades taken:             0
+  No-trade sessions:        2
+  Trade frequency:          0.0%
+
+── Trade Outcomes ────────────────────────────────────────
+  Wins:                     0
+  Losses:                   0
+  Breakeven:                0
+  Win rate:                 0.0%
+
+── R-Multiple Analysis ───────────────────────────────────
+  Total R:                  +0.00R
+  Avg winner:               0.00R
+  Avg loser:                0.00R
+  Expectancy:               0.00R per trade
+  Profit factor:            0.00
+
+── Risk Metrics ──────────────────────────────────────────
+  Max consecutive losses:   0
+  Max drawdown (R):         0.00R
+
+── Section 9.1 Targets ───────────────────────────────────
+  False positive rate:      0.0%  (target: <30%)
+  Debate false approval:    0.0%  (target: <20%)
+  Combined expectancy:      0.00R  (target: >0.5R)
+  False negative rate:      [requires manual review]
+  Debate false rejection:   [requires manual review]
+
+── Candle Decision Breakdown ─────────────────────────────
+  Total candles evaluated:  20
+  CANDIDATE:                0
+  NO_TRADE:                 19
+
+── API Usage ─────────────────────────────────────────────
+  Total LLM calls:          20
+  Estimated cost:           $0.00 (Max subscription)
+  Token tracking:           N/A (subscription mode)
+  Malformed retries:        0
+
+========================================================================

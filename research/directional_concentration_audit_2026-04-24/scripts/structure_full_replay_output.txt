@@ -1,0 +1,15 @@
+XAUUSD D1: n_closes=0  bullish=0 (0.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+XAUUSD H4: n_closes=251  bullish=251 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+XAUUSD H1: n_closes=1522  bullish=1522 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+US30_cash D1: n_closes=0  bullish=0 (0.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+US30_cash H4: n_closes=254  bullish=254 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+US30_cash H1: n_closes=1534  bullish=1534 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+USDJPY D1: n_closes=0  bullish=0 (0.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+USDJPY H4: n_closes=257  bullish=257 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+USDJPY H1: n_closes=1625  bullish=1625 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+GBPJPY D1: n_closes=0  bullish=0 (0.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+GBPJPY H4: n_closes=257  bullish=257 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+GBPJPY H1: n_closes=1625  bullish=1625 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+GBPUSD D1: n_closes=0  bullish=0 (0.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+GBPUSD H4: n_closes=257  bullish=257 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0
+GBPUSD H1: n_closes=1625  bullish=1625 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%), insufficient=0

@@ -1,0 +1,21 @@
+
+-- S_up: pure 200-bar uptrend + noise (n_candles=200 n_swings=44) --
+   label=bullish stats={'hh': 9, 'hl': 12, 'lh': 12, 'll': 9, 'recent_pairs': 3, 'nhighs': 22, 'nlows': 22}
+
+-- S_down: pure 200-bar downtrend + noise (n_candles=200 n_swings=45) --
+   label=bullish stats={'hh': 4, 'hl': 6, 'lh': 16, 'll': 17, 'recent_pairs': 3, 'nhighs': 21, 'nlows': 24}
+
+-- S_flat: pure random walk (n_candles=200 n_swings=46) --
+   label=bullish stats={'hh': 14, 'hl': 10, 'lh': 9, 'll': 11, 'recent_pairs': 3, 'nhighs': 24, 'nlows': 22}
+
+-- S_stick_1: 150 up + 50 down — reversal 25% of window (n_candles=200 n_swings=53) --
+   label=bullish stats={'hh': 18, 'hl': 20, 'lh': 7, 'll': 6, 'recent_pairs': 3, 'nhighs': 26, 'nlows': 27}
+
+-- S_stick_2: 100 up + 100 down — 50/50 split (n_candles=200 n_swings=47) --
+   label=bullish stats={'hh': 13, 'hl': 15, 'lh': 8, 'll': 9, 'recent_pairs': 3, 'nhighs': 22, 'nlows': 25}
+
+-- S_stick_3: 50 up + 150 down — 25/75 split (reversal dominant) (n_candles=200 n_swings=48) --
+   label=bullish stats={'hh': 8, 'hl': 10, 'lh': 15, 'll': 13, 'recent_pairs': 3, 'nhighs': 24, 'nlows': 24}
+
+-- S_stick_4: 180 up + 20 mild retrace — 10% of window (n_candles=200 n_swings=53) --
+   label=bullish stats={'hh': 15, 'hl': 19, 'lh': 10, 'll': 7, 'recent_pairs': 3, 'nhighs': 26, 'nlows': 27}

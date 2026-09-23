@@ -1,0 +1,15 @@
+# NATGAS Decomposition Follow-Up Prompt
+
+Run mandatory GTOS preflight: `python3 scripts/generate_live_state.py`, then read `.context/LIVE_STATE.md`, `.context/00_core/current_vnext_system_map.md`, `.context/00_core/current_repo_reading_order.md`, `.context/00_core/goal_session_research_discipline.md`, and `.context/00_core/research_operating_doctrine.md`. Treat those docs as active instructions, not background, and operationalize instruction-coverage in the completion audit. Do not rely on chat memory; reread this prompt and those active context files after compaction, resume, interruption, or uncertainty.
+
+Evidence class: read-only NATGAS decomposition, limit-entry/cost-revival research planning, default-off deployment handoff, verifier/test coverage, and route-local artifacts. Full same-evidence-class pursuit means every executable read, export, search, parser, repair, proxy, ablation, metric, audit, and review action inside this evidence class must be tried or proven inapplicable before declaring an external source requirement. Literal impossibility means exactly naming the exact forbidden surface, missing source, export field, parser, or different evidence class required.
+
+Builder posture: constructive and repair-first. Do not kill `asia_pdl_fade` because NATGAS_cash is weak; preserve the broad ex-NATGAS candidate and keep NATGAS as an explicit research-revival lane. No arbitrary top-N/top-3/top-5 cutoff is allowed; preserve all material rows in ledgers/manifests before ranking or excluding anything.
+
+Current proof: `asia_pdl_fade` is preserved as a broad ex-NATGAS deployable candidate. NATGAS_cash has 18 trades, no train sample, sealed damage, a live bridge spread sample, and a tick-spread floor above the current untradeable threshold. NATGAS is not in the deployable surface unless a future limit-entry/cost route proves new geometry.
+
+Required next work: if pursuing NATGAS revival, build a separate default-off route with `LIMIT_ENTRY_SPEC.md`, decision/touch/fill/no-fill replay rows, spread-at-decision/touch, missed-fill opportunity cost, market-vs-limit comparison, verifier result, completion audit, saturation audit, output manifest, focused tests, and owner/VPS action boundary. Do not re-add NATGAS to any deployable sleeve until that proof exists.
+
+Forbidden surfaces remain closed: no production-change deployment or live trading, no broker operation, no broker/account/order/history/deal/position mutation, no credential mutation/disclosure, no paid API/vendor calls without explicit approval, no prompt/config/risk/execution/safety/canary/selector live activation change, no orderflow/depth, no remote push without active owner approval, no live VPS restart/reload/process mutation, and no candidate-book live activation from this research route.
+
+Result materialization standard: artifacts must include source completeness, exact R or proxy R where fields permit it, cost/stress/drawdown numbers, implementation decision rows, branch decisions, verifier commands, focused tests, completion audit, and output manifest.

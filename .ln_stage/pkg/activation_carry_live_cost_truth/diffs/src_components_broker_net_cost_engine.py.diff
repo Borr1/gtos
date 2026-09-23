@@ -1,0 +1,267 @@
+--- a/src/components/broker_net_cost_engine.py (host before CN)
++++ b/src/components/broker_net_cost_engine.py (host after CN)
+@@ -9,14 +9,26 @@
+
+ import math
+ from datetime import datetime, timezone
+ from typing import Any
+
++from src.costs.model import commission_usd_per_lot_for_packet
+ from src.utils.broker_profile import broker_account_namespace, sanitize_namespace
+
+
+ PRETRADE_COST_PACKET_SCHEMA_VERSION = "gtos_v4_pretrade_broker_net_cost_packet_v1"
++BROKER_TRUE_COMMISSION_MODE = "broker_true_commission_default_v1"
++LEGACY_ZERO_COMMISSION_COMPARATOR_MODE = (
++    "legacy_status_only_zero_commission_comparator_v1"
++)
++COMMISSION_COST_MODEL_VERSION = "broker_true_commission_cash_to_r_v1"
++TOTAL_COST_COMPONENTS = (
++    "spread_r",
++    "expected_slippage_r",
++    "swap_cost_r",
++    "commission_r",
++)
+ DEFAULT_ALLOWED_COMMISSION_STATUSES = {
+     "SELECTED_CELL_RISK_LEDGER_VERIFIED_NO_EXECUTION_CRITICAL_COMMISSION_GAP",
+     "COMMISSION_INCLUDED_IN_SELECTED_CELL_RISK",
+ }
+ SPEC_FIELD_CANDIDATES = {
+@@ -496,10 +508,106 @@
+         "unsupported_fields": unsupported,
+         "favorable_swap_credit_applied": False,
+     }
+
+
++def _commission_cost_packet(
++    *,
++    mode: str,
++    profile: dict[str, Any],
++    broker_symbol: str,
++    entry_price: float | None,
++    sl_distance: float | None,
++    spec: dict[str, Any],
++) -> dict[str, Any]:
++    """Resolve round-turn broker commission and convert it into candidate R.
++
++    The default path deliberately has no config switch.  The only zero-commission behavior is
++    the explicitly named comparator mode used by offline A/B tooling.  A missing account,
++    instrument, notional price, stop, or cash-to-price conversion remains missing and therefore
++    fails the live packet closed; it is never coerced to zero.
++    """
++    if mode not in {BROKER_TRUE_COMMISSION_MODE, LEGACY_ZERO_COMMISSION_COMPARATOR_MODE}:
++        raise ValueError(f"unsupported commission_mode:{mode}")
++
++    provenance = (
++        "src.costs.model.commission_usd_per_lot_for_packet:"
++        "BROKER_TRUE_COSTS_V1.json + current symbol_spec trade_tick_value/trade_tick_size "
++        "+ candidate sl_distance"
++    )
++    if mode == LEGACY_ZERO_COMMISSION_COMPARATOR_MODE:
++        return {
++            "model_version": COMMISSION_COST_MODEL_VERSION,
++            "mode": mode,
++            "source_status": "explicit_comparator",
++            "cost_r": None,
++            "usd_per_lot_round_turn": None,
++            "usd_per_price_unit_per_lot": None,
++            "entry_price": entry_price,
++            "sl_distance": sl_distance,
++            "broker_symbol": broker_symbol,
++            "account_namespace": profile.get("broker_account_namespace"),
++            "server": profile.get("server"),
++            "artifact": "BROKER_TRUE_COSTS_V1.json",
++            "provenance": provenance,
++            "included_in_total_cost_r": False,
++            "missing_fields": [],
++            "comparator_only": True,
++            "comparator_note": (
++                "reproduces the pre-CN status-only zero-commission decision surface; "
++                "never selected by config or a live caller"
++            ),
++        }
++
++    fields = _mapping(spec.get("fields"))
++    tick_value = _as_float(fields.get("trade_tick_value"))
++    tick_size = _as_float(fields.get("trade_tick_size"))
++    usd_per_price_unit_per_lot = None
++    missing: list[str] = []
++    if sl_distance is None or sl_distance <= 0:
++        missing.append("sl_distance")
++    if tick_value is None or tick_value <= 0:
++        missing.append("trade_tick_value")
++    if tick_size is None or tick_size <= 0:
++        missing.append("trade_tick_size")
++    if tick_value is not None and tick_value > 0 and tick_size is not None and tick_size > 0:
++        usd_per_price_unit_per_lot = tick_value / tick_size
++
++    usd_per_lot = commission_usd_per_lot_for_packet(
++        broker_symbol,
++        server=profile.get("server"),
++        namespace=profile.get("broker_account_namespace"),
++        entry_price=entry_price,
++    )
++    if usd_per_lot is None:
++        missing.append("broker_true_commission_schedule_or_required_entry_price")
++
++    cost_r = None
++    if not missing and usd_per_price_unit_per_lot is not None:
++        cost_r = float(usd_per_lot) / (
++            float(sl_distance) * float(usd_per_price_unit_per_lot)
++        )
++    return {
++        "model_version": COMMISSION_COST_MODEL_VERSION,
++        "mode": mode,
++        "source_status": "captured" if cost_r is not None else "source_gap",
++        "cost_r": cost_r,
++        "usd_per_lot_round_turn": usd_per_lot,
++        "usd_per_price_unit_per_lot": usd_per_price_unit_per_lot,
++        "entry_price": entry_price,
++        "sl_distance": sl_distance,
++        "broker_symbol": broker_symbol,
++        "account_namespace": profile.get("broker_account_namespace"),
++        "server": profile.get("server"),
++        "artifact": "BROKER_TRUE_COSTS_V1.json",
++        "provenance": provenance,
++        "included_in_total_cost_r": cost_r is not None,
++        "missing_fields": sorted(set(missing)),
++        "comparator_only": False,
++    }
++
++
+ def build_pretrade_cost_packet(
+     *,
+     config: dict[str, Any] | None,
+     trade_params: Any,
+     tick: Any,
+@@ -509,10 +617,11 @@
+     stop_loss: float | None = None,
+     sl_distance: float | None = None,
+     risk_pct: float | None = None,
+     symbol_info: Any = None,
+     asof_utc: str | None = None,
++    commission_mode: str = BROKER_TRUE_COMMISSION_MODE,
+ ) -> dict[str, Any]:
+     cfg = _mapping(config)
+     runtime_cfg = _mapping(cfg.get("gtos_vnext_runtime"))
+     clean_symbol = str(
+         symbol
+@@ -578,10 +687,18 @@
+         spec=spec,
+         swap_value=swap_value,
+         entry_price=entry_price,
+         sl_distance=sl_distance,
+     )
++    commission_cost = _commission_cost_packet(
++        mode=commission_mode,
++        profile=profile,
++        broker_symbol=clean_broker_symbol,
++        entry_price=entry_price,
++        sl_distance=sl_distance,
++        spec=spec,
++    )
+
+     cost_sleeve = _mapping(
+         trade_value(trade_params, "gtos_vnext_source_event_details")
+     ).get("sleeve")
+     cost_sleeve = str(cost_sleeve) if cost_sleeve else None
+@@ -591,15 +708,21 @@
+         "selected_cell_pretrade_max_spread_r_by_sleeve",
+         0.10,
+         cost_sleeve,
+     )
+     total_cost_r = None
+-    if tick_cost["spread_r"] is not None:
++    commission_r = _as_float(commission_cost.get("cost_r"))
++    commission_term_ready = (
++        commission_mode == LEGACY_ZERO_COMMISSION_COMPARATOR_MODE
++        or commission_r is not None
++    )
++    if tick_cost["spread_r"] is not None and commission_term_ready:
+         total_cost_r = (
+             float(tick_cost["spread_r"])
+             + float(expected_slippage_r or 0.0)
+             + float(swap_cost.get("cost_r") or 0.0)
++            + float(commission_r or 0.0)
+         )
+     max_total_cost_r = _resolve_max_with_sleeve_override(
+         runtime_cfg,
+         "selected_cell_pretrade_max_total_cost_r",
+         "selected_cell_pretrade_max_total_cost_r_by_sleeve",
+@@ -608,11 +731,13 @@
+     )
+     trade_mode = _as_float(spec["fields"].get("trade_mode"))
+
+     packet = {
+         "schema_version": PRETRADE_COST_PACKET_SCHEMA_VERSION,
+-        "model_version": "vnext_selected_cell_pretrade_cost_model_v2",
++        "model_version": "vnext_selected_cell_pretrade_cost_model_v3",
++        "authority": "broker_calibrated_replay_cost",
++        "cost_authority": "broker_calibrated_replay_cost",
+         "status": "NOT_APPLICABLE" if not required else "CHECKED",
+         "asof_utc": asof_utc or utc_now_iso(),
+         "evidence_class": "pretrade_broker_profile_quote_symbol_spec_cost_packet",
+         "result_use_status": "pretrade_gate_input_not_broker_realized_outcome",
+         "symbol": clean_symbol,
+@@ -638,10 +763,18 @@
+         "commission_model_required": _as_bool(
+             runtime_cfg.get("selected_cell_commission_model_required"),
+             True,
+         ),
+         "allowed_commission_model_statuses": sorted(allowed_commission_statuses),
++        "commission_cost": commission_cost,
++        "commission_r": commission_r,
++        "commission_cost_model_required": (
++            required and commission_mode == BROKER_TRUE_COMMISSION_MODE
++        ),
++        "commission_cost_authority": "broker_true_costs_v1",
++        "commission_cost_provenance": commission_cost.get("provenance"),
++        "commission_mode": commission_mode,
+         "swap": {
+             "side_field": swap_field,
+             "value": _as_float(swap_value),
+             "source_status": "captured" if swap_value not in (None, "") else "source_gap",
+             "source_ref": swap_source.get("source_ref"),
+@@ -656,11 +789,18 @@
+         "total_cost_r": total_cost_r,
+         "total_cost_components": {
+             "spread_r": tick_cost["spread_r"],
+             "expected_slippage_r": expected_slippage_r,
+             "swap_cost_r": swap_cost.get("cost_r"),
++            "commission_r": commission_r,
+         },
++        "total_cost_components_expected": list(TOTAL_COST_COMPONENTS),
++        "cost_excludes": (
++            ["commission"]
++            if commission_mode == LEGACY_ZERO_COMMISSION_COMPARATOR_MODE
++            else []
++        ),
+         "max_total_cost_r": max_total_cost_r,
+         "broker_hours": {
+             "trade_mode": int(trade_mode) if trade_mode is not None else None,
+             "source_status": "captured" if trade_mode is not None else "source_gap",
+             "trade_mode_allows_deal": trade_mode == 4.0 if trade_mode is not None else None,
+@@ -743,10 +883,23 @@
+         if status not in allowed:
+             reasons.append(
+                 "missing_or_unapproved_selected_cell_commission_model_status:"
+                 f"{status or 'blank'}"
+             )
++    if packet.get("commission_cost_model_required"):
++        commission_cost = _mapping(packet.get("commission_cost"))
++        if (
++            commission_cost.get("source_status") != "captured"
++            or _as_float(commission_cost.get("cost_r")) is None
++        ):
++            detail = ",".join(
++                str(value) for value in (commission_cost.get("missing_fields") or [])
++            )
++            reasons.append(
++                "missing_broker_true_commission_cost_r_conversion"
++                + (f":{detail}" if detail else "")
++            )
+     if requirements.get("profile_namespace_required") and not _mapping(packet.get("profile")).get(
+         "broker_account_namespace"
+     ):
+         reasons.append("missing_broker_account_profile_namespace")
+     if requirements.get("symbol_spec_required"):

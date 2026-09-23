@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.astra.jev_corr_hold_v1",
+  "title": "jev_corr_hold_v1",
+  "description": "Jev correlation HOLD-draft sidecar for a cluster slate. Shadow log only. Flatten is forbidden: action_scope may be audit_only or block_sibling_prefills only. If a model ever returns flatten, treat the row as a broken schema and refuse. Never place, remint, flatten, or move SL. Calibration surface is Challenge 0 / $110k.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "mode",
+    "shadow_log_only",
+    "never_place",
+    "never_remint",
+    "never_flatten",
+    "never_move_sl",
+    "forbid_flatten",
+    "account_surface",
+    "state",
+    "answers",
+    "code_policy"
+  ],
+  "not": {
+    "anyOf": [
+      {
+        "properties": {
+          "answers": {
+            "properties": {
+              "action_scope": {
+                "properties": {"choice": {"const": "flatten"}}
+              }
+            }
+          }
+        },
+        "required": ["answers"]
+      },
+      {
+        "properties": {
+          "answers": {
+            "properties": {
+              "action_scope": {
+                "properties": {
+                  "probabilities": {"required": ["flatten"]}
+                }
+              }
+            }
+          }
+        },
+        "required": ["answers"]
+      }
+    ]
+  },
+  "properties": {
+    "schema": {"const": "jev_corr_hold_v1"},
+    "mode": {"const": "shadow_log_only"},
+    "shadow_log_only": {"const": true},
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_move_sl": {"const": true},
+    "forbid_flatten": {
+      "const": true,
+      "description": "Corr HOLD must never emit or consume flatten. Flatten is a broken schema."
+    },
+    "audit_id": {"type": "string", "minLength": 1},
+    "logged_at_utc": {"type": "string", "format": "date-time"},
+    "account_surface": {"$ref": "#/$defs/account_surface"},
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cluster"],
+      "properties": {
+        "cluster": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["cluster_id", "symbols", "direction"],
+          "properties": {
+            "cluster_id": {"type": "string", "minLength": 1},
+            "symbols": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            },
+            "direction": {"type": "string", "enum": ["long", "short"]},
+            "same_dir_count": {"type": "integer", "minimum": 1},
+            "window": {"type": "string"}
+          }
+        }
+      }
+    },
+    "typesafe_questions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Atomic TypeSafe questions. action_scope criteria omit flatten on purpose.",
+      "properties": {
+        "speak_hold": {"type": "object", "const": {"primitive": "noul"}},
+        "hold_strength": {
+          "type": "object",
+          "const": {
+            "primitive": "score",
+            "levels": {
+              "0": "Weak — n low or mixed directions",
+              "1": "Moderate — cluster forming",
+              "2": "Strong — multi-symbol same-dir cluster >=3"
+            }
+          }
+        },
+        "action_scope": {
+          "type": "object",
+          "const": {
+            "primitive": "choice",
+            "criteria": ["audit_only", "block_sibling_prefills"],
+            "forbidden_criteria": ["flatten"]
+          }
+        }
+      }
+    },
+    "answers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["speak_hold", "hold_strength", "action_scope"],
+      "properties": {
+        "speak_hold": {"$ref": "#/$defs/noul_answer"},
+        "hold_strength": {"$ref": "#/$defs/score_answer"},
+        "action_scope": {
+          "allOf": [
+            {"$ref": "#/$defs/choice_answer"},
+            {
+              "properties": {
+                "choice": {
+                  "type": "string",
+                  "enum": ["audit_only", "block_sibling_prefills"]
+                },
+                "probabilities": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "audit_only": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "block_sibling_prefills": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "code_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "speak_hold_noul_min",
+        "hold_strength_min",
+        "allowed_action_scope",
+        "forbidden_action_scope",
+        "on_flatten"
+      ],
+      "properties": {
+        "speak_hold_noul_min": {"const": 0.6},
+        "hold_strength_min": {"const": 1.5},
+        "allowed_action_scope": {
+          "const": ["audit_only", "block_sibling_prefills"]
+        },
+        "forbidden_action_scope": {"const": ["flatten"]},
+        "on_flatten": {"const": "broken_schema_refuse"},
+        "speak_hold_requires": {
+          "const": [
+            "speak_hold_noul_ge_0.6",
+            "hold_strength_ge_1.5",
+            "action_scope_in_allowed"
+          ]
+        }
+      }
+    },
+    "disposition": {
+      "type": "string",
+      "enum": [
+        "log_only",
+        "draft_hold_audit_only",
+        "draft_hold_block_sibling_prefills",
+        "broken_schema_refuse"
+      ],
+      "description": "HOLD is a draft for the chair. Flatten is never a legal disposition."
+    }
+  },
+  "$defs": {
+    "account_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["login", "pass_target", "role"],
+      "properties": {
+        "login": {"const": "0"},
+        "pass_target": {"const": "$110k"},
+        "magic": {"const": "0"},
+        "role": {"const": "challenge_calibration"},
+        "verification_login_quarantined": {"const": "0"}
+      }
+    },
+    "choice_answer": {
+      "type": "object",
+      "required": ["choice", "confidence", "probabilities"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "choice": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "noul_answer": {
+      "type": "object",
+      "required": ["noul"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "noul": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "score_answer": {
+      "type": "object",
+      "required": ["score", "confidence"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "score": {"type": "number", "minimum": 0, "maximum": 2},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "legend": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "jev_corr_hold_v1",
+      "mode": "shadow_log_only",
+      "shadow_log_only": true,
+      "never_place": true,
+      "never_remint": true,
+      "never_flatten": true,
+      "never_move_sl": true,
+      "forbid_flatten": true,
+      "account_surface": {
+        "login": "0",
+        "pass_target": "$110k",
+        "role": "challenge_calibration"
+      },
+      "state": {
+        "cluster": {
+          "cluster_id": "example-cluster-1",
+          "symbols": ["XAUUSD", "XAGUSD", "XPTUSD"],
+          "direction": "long",
+          "same_dir_count": 3
+        }
+      },
+      "answers": {
+        "speak_hold": {"type": null, "noul": 0.64},
+        "hold_strength": {
+          "type": null,
+          "score": 1.92,
+          "confidence": 0.88,
+          "probabilities": {"0": 0.03, "1": 0.01, "2": 0.96}
+        },
+        "action_scope": {
+          "type": null,
+          "choice": "audit_only",
+          "confidence": 1.0,
+          "probabilities": {
+            "audit_only": 1.0,
+            "block_sibling_prefills": 0.0
+          }
+        }
+      },
+      "code_policy": {
+        "speak_hold_noul_min": 0.6,
+        "hold_strength_min": 1.5,
+        "allowed_action_scope": ["audit_only", "block_sibling_prefills"],
+        "forbidden_action_scope": ["flatten"],
+        "on_flatten": "broken_schema_refuse",
+        "speak_hold_requires": [
+          "speak_hold_noul_ge_0.6",
+          "hold_strength_ge_1.5",
+          "action_scope_in_allowed"
+        ]
+      },
+      "disposition": "draft_hold_audit_only"
+    }
+  ]
+}

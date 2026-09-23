@@ -1,0 +1,30 @@
+name: f5-study-challenge-login
+
+on:
+  push:
+    paths:
+      - "scripts/f5_desk/**"
+      - "tests/f5_desk/**"
+      - ".github/workflows/f5-study-challenge-login.yml"
+  pull_request:
+    paths:
+      - "scripts/f5_desk/**"
+      - "tests/f5_desk/**"
+      - ".github/workflows/f5-study-challenge-login.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Challenge LIVE smoke
+        run: |
+          python scripts/f5_desk/f5_study.py --smoke --out /tmp/f5-study-smoke
+          python -c "import json; b=json.load(open('/tmp/f5-study-smoke/f5_study.json')); assert b['LIVE']==0, b"
+          python scripts/f5_desk/decide.py /tmp/f5-study-smoke /tmp/f5-study-smoke
+          python -c "import json; b=json.load(open('/tmp/f5-study-smoke/DECISIONS.json')); assert b['account']['login']==0 and b['status']=='OK', b"
+      - name: pytest study/decide pin
+        run: python -m pytest tests/f5_desk -q

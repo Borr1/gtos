@@ -1,0 +1,18 @@
+profile_name: denominator_capture_research
+profile_status: explicit_opt_in_denominator_forward_capture_profile
+generated_by: research/operations/final_moonshot_ultimate_system_denominator_to_deployment_execution_2026_06_20
+runtime:
+  profile_namespace: denominator_capture_research
+  broker_account_namespace: denominator_capture_research
+runtime_paths:
+  shadow_logs_root: shadow_logs/denominator_capture_research
+deployment:
+  phase: 1
+trading_enabled: false
+denominator_forward_capture_contract:
+  enabled: true
+  log_enabled: true
+  log_path: shadow_logs/denominator_capture_research/denominator_forward_capture.jsonl
+  requirement_families:
+    - pending_created_exact_decision_time
+    - m15_grid_order_lifecycle

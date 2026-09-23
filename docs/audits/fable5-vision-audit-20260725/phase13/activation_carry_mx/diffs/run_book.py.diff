@@ -1,0 +1,65 @@
+--- a/run_book.py  (HOST today)
++++ b/run_book.py  (after this carry)
+@@ -101,8 +101,27 @@
+     p.add_argument("--kill-flag", default=None,
+                    help="Per-instance operator kill-switch path (default pipeline_state/ULTIMATE_BOOK_KILL.flag). "
+                         "Set a distinct path per account so FTMO and redacted_account can be braked independently.")
+     p.add_argument("--once", action="store_true", help="Run a single tick and exit (wiring check)")
++    p.add_argument("--frontier-exits", default=None,
++                   help="Comma-separated sleeves to run on their WAVE-12 frontier exit contract "
++                        "instead of the committed one (Session AU, B1550). The one this host is "
++                        "carried for is mx_btcusd_d1_donchian_20_breakout -> target_5R: broker TP "
++                        "5R instead of the generator's 2R, which is the exit the estate's ONE "
++                        "standing admission is measured at (p 0.0011, admits at two of three cost "
++                        "bands on the ratified RECORDED population, and REJECTS at all four bands "
++                        "at the 2R the spec runs). sub_xvol_pullback -> target_4R is also wired and "
++                        "IS ARMED ON BOTH ACCOUNTS at 3R -- it REJECTS at all four bands at the "
++                        "ratified rule (Session AU section 1.3), so do not select it. Six further "
++                        "default-off time-stop cells are wired and none of them is armed. Empty by "
++                        "default. An empty string is REFUSED rather than read as 'all' (the --tags "
++                        "fail-open, B359), and an unknown sleeve name is REFUSED rather than "
++                        "dropped. FLIP AT A FLAT BOOK: a position adopted with no trade record is "
++                        "rehydrated from the sleeve identity, so a pre-flip position's broker TP "
++                        "would move. Set here rather than in agent_config.yaml or "
++                        "profiles/redacted_account.yaml because BOTH are hashed into a live activation "
++                        "token's config digest, and a byte moved there stops the armed book "
++                        "placing until the token is re-minted.")
+     args = p.parse_args()
+ 
+     configure_runtime_logging(logging.INFO)
+ 
+@@ -337,9 +356,33 @@
+     except Exception:
+         logging.getLogger(__name__).warning("notification $/R configure failed (non-fatal)", exc_info=True)
+ 
+     tags = tuple(t.strip() for t in args.tags.split(",")) if args.tags else None
+-    owner = UltimateBookOwner(merged, mt5, ".", namespace=args.namespace)
++    # Validated at LAUNCH, before any engine exists: an unparseable selection must stop the
++    # worker, not degrade to the committed contract at every tick in silence.
++    # `parse_frontier_exits` raises on an empty string and on an unknown sleeve name
++    # (Session AU, B1550). Exit 4 is this file's existing "refusing to start" code.
++    from src.components.ultimate_book.execution_packets import (
++        FRONTIER_EXIT_OVERRIDES, FrontierExitSelectionError, describe_frontier_contract,
++        parse_frontier_exits,
++    )
++    try:
++        frontier_exits = parse_frontier_exits(args.frontier_exits)
++    except FrontierExitSelectionError as exc:
++        logging.error("--frontier-exits refused: %s", exc)
++        return 4
++    owner = UltimateBookOwner(merged, mt5, ".", namespace=args.namespace,
++                              frontier_exits=frontier_exits)
++    for _s in frontier_exits:
++        # B1852: this banner used to render `float(_o["final_target_r"])`, which SIX of the eight
++        # wired sleeves do not carry -- so naming one of them killed the worker AFTER
++        # `parse_frontier_exits` had accepted it. `describe_frontier_contract` renders whichever
++        # contract keys the override actually has.
++        logging.warning("FRONTIER EXIT CONTRACT IS ON for %s: %s (%s). This changes WHERE or WHEN "
++                        "this book exits that sleeve; positions already open are managed from "
++                        "their own trade record, but one adopted WITHOUT a record is rehydrated at "
++                        "this contract.", _s, FRONTIER_EXIT_OVERRIDES[_s]["frontier_cell"],
++                        describe_frontier_contract(_s))
+     broker_symbol = build_broker_symbol_resolver(merged)
+     launcher = BookLauncher(owner, mt5, broker_symbol, repo_root=".", tags=tags,
+                             poll_seconds=args.poll_seconds, kill_flag=args.kill_flag)
+ 

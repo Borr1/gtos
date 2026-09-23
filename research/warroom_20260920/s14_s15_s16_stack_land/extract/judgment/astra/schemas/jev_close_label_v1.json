@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.astra.jev_close_label_v1",
+  "title": "jev_close_label_v1",
+  "description": "Jev close-label sidecar for a close webhook plus deals. Shadow log only. Accept exit_class when confidence is at least 0.8; otherwise chair LABEL from broker facts only. Never place, remint, flatten, or move SL. Calibration surface is Challenge 0 / $110k.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "mode",
+    "shadow_log_only",
+    "never_place",
+    "never_remint",
+    "never_flatten",
+    "never_move_sl",
+    "account_surface",
+    "state",
+    "answers",
+    "code_policy"
+  ],
+  "properties": {
+    "schema": {"const": "jev_close_label_v1"},
+    "mode": {"const": "shadow_log_only"},
+    "shadow_log_only": {"const": true},
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_move_sl": {"const": true},
+    "audit_id": {"type": "string", "minLength": 1},
+    "logged_at_utc": {"type": "string", "format": "date-time"},
+    "account_surface": {"$ref": "#/$defs/account_surface"},
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["close", "deals"],
+      "properties": {
+        "close": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["symbol", "side"],
+          "properties": {
+            "ticket": {"type": ["string", "integer"]},
+            "symbol": {"type": "string", "minLength": 1},
+            "side": {"type": "string", "enum": ["long", "short"]},
+            "exit_class_raw": {"type": "string"},
+            "close_reason_raw": {"type": "string"},
+            "hold_hours": {"type": "number", "minimum": 0},
+            "swap": {"type": "number"}
+          }
+        },
+        "deals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "deal_id": {"type": ["string", "integer"]},
+              "entry": {"type": "string"},
+              "price": {"type": "number"},
+              "profit": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    "typesafe_questions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Atomic TypeSafe questions issued together over the same close state.",
+      "properties": {
+        "exit_class": {
+          "type": "object",
+          "const": {
+            "primitive": "choice",
+            "criteria": ["tp", "orig_stop", "time_stop", "manual_other"]
+          }
+        },
+        "remint_toxic": {"type": "object", "const": {"primitive": "noul"}},
+        "prefill_hold_would_help": {
+          "type": "object",
+          "const": {"primitive": "noul"}
+        },
+        "lesson": {
+          "type": "object",
+          "const": {
+            "primitive": "score",
+            "levels": {
+              "0": "Noise — ignore for policy",
+              "1": "Useful single sample — study only",
+              "2": "Strong signal — consider sleeve pressure or HOLD timing repair"
+            }
+          }
+        }
+      }
+    },
+    "answers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exit_class"],
+      "properties": {
+        "exit_class": {
+          "allOf": [
+            {"$ref": "#/$defs/choice_answer"},
+            {
+              "properties": {
+                "choice": {
+                  "type": "string",
+                  "enum": ["tp", "orig_stop", "time_stop", "manual_other"]
+                }
+              }
+            }
+          ]
+        },
+        "remint_toxic": {"$ref": "#/$defs/noul_answer"},
+        "prefill_hold_would_help": {"$ref": "#/$defs/noul_answer"},
+        "lesson": {"$ref": "#/$defs/score_answer"}
+      }
+    },
+    "code_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exit_class_confidence_min",
+        "on_low_confidence",
+        "remint_authority"
+      ],
+      "properties": {
+        "exit_class_confidence_min": {
+          "const": 0.8,
+          "description": "v0 lab gate. Accept exit_class only at or above this confidence."
+        },
+        "on_low_confidence": {"const": "chair_label_from_broker_facts_only"},
+        "remint_authority": {
+          "const": "score_only_never_remint",
+          "description": "remint_toxic is a label/score. It must never trigger a remint."
+        }
+      }
+    },
+    "disposition": {
+      "type": "string",
+      "enum": ["log_only", "accept_exit_class", "chair_label_from_broker_facts"],
+      "description": "Code disposition after gates. Never remint or place."
+    }
+  },
+  "$defs": {
+    "account_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["login", "pass_target", "role"],
+      "properties": {
+        "login": {"const": "0"},
+        "pass_target": {"const": "$110k"},
+        "magic": {"const": "0"},
+        "role": {"const": "challenge_calibration"},
+        "verification_login_quarantined": {"const": "0"}
+      }
+    },
+    "choice_answer": {
+      "type": "object",
+      "required": ["choice", "confidence", "probabilities"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "choice": {"type": "string"},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "noul_answer": {
+      "type": "object",
+      "required": ["noul"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "noul": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "score_answer": {
+      "type": "object",
+      "required": ["score", "confidence"],
+      "properties": {
+        "type": {"type": ["string", "null"]},
+        "score": {"type": "number", "minimum": 0, "maximum": 2},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "probabilities": {
+          "type": "object",
+          "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "legend": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "schema": "jev_close_label_v1",
+      "mode": "shadow_log_only",
+      "shadow_log_only": true,
+      "never_place": true,
+      "never_remint": true,
+      "never_flatten": true,
+      "never_move_sl": true,
+      "account_surface": {
+        "login": "0",
+        "pass_target": "$110k",
+        "role": "challenge_calibration"
+      },
+      "state": {
+        "close": {
+          "ticket": "example-close-1",
+          "symbol": "XAUUSD",
+          "side": "long",
+          "close_reason_raw": "sl"
+        },
+        "deals": [{"deal_id": 1, "entry": "out", "profit": -1.0}]
+      },
+      "answers": {
+        "exit_class": {
+          "type": null,
+          "choice": "orig_stop",
+          "confidence": 1.0,
+          "probabilities": {
+            "tp": 0.0,
+            "orig_stop": 1.0,
+            "time_stop": 0.0,
+            "manual_other": 0.0
+          }
+        },
+        "remint_toxic": {"type": null, "noul": 0.63},
+        "prefill_hold_would_help": {"type": null, "noul": 0.45},
+        "lesson": {"type": null, "score": 1.68, "confidence": 0.51}
+      },
+      "code_policy": {
+        "exit_class_confidence_min": 0.8,
+        "on_low_confidence": "chair_label_from_broker_facts_only",
+        "remint_authority": "score_only_never_remint"
+      },
+      "disposition": "accept_exit_class"
+    }
+  ]
+}

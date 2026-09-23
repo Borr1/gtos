@@ -1,0 +1,53 @@
+# GTOS go-live — docker-compose TEMPLATE (alternative to systemd).
+#
+# IMPORTANT TRANSPORT NOTE: MetaTrader5 is a Windows terminal. This compose runs
+# the PYTHON runtime + monitoring in containers and reaches MT5 over the
+# nmetatrader5/siliconmetatrader5 BRIDGE (GTOS_BRIDGE_HOST:GTOS_BRIDGE_PORT) which
+# the owner runs on a Windows MT5 host (or a Windows VPS with the bridge exposed to
+# the container network). If MT5 + bridge run on the SAME Windows VPS, prefer the
+# systemd/native path or a Windows-native process manager — Linux containers cannot
+# host the MT5 terminal itself.
+#
+# DEFAULT-OFF: GTOS_LIVE_CONNECT_ALLOWED defaults false; the runtime self-checks
+# halt flags on boot. Bring up `monitor` first to validate ledgers without trading.
+
+services:
+  gtos-monitor:
+    build:
+      context: ../../../../..        # repo root
+      dockerfile: research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_vps_deploy/docker/Dockerfile
+    command: ["python3", "research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_vps_deploy/deploy/run_monitor_cycle.py", "--loop", "60"]
+    env_file:
+      - ../config/.env            # owner-created on VPS, gitignored
+    volumes:
+      - ../../../../../pipeline_state:/app/pipeline_state    # ledgers persist on host
+      - ../../../../../logs:/app/logs
+    restart: unless-stopped
+
+  gtos-live-a:
+    build:
+      context: ../../../../..
+      dockerfile: research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_vps_deploy/docker/Dockerfile
+    # DEFAULT-OFF: do not auto-start the trader. Owner runs `docker compose up gtos-live-a`
+    # only after Phase A flip + Phase C broker authority are cleared.
+    profiles: ["live"]            # excluded from default `up`; opt-in via --profile live
+    command: ["python3", "run_agent.py", "--mode", "live", "--profile", "ftmo", "--runtime-namespace", "ftmo_acct_a"]
+    env_file:
+      - ../config/.env
+      - ../config/.env.ftmo_acct_a
+    volumes:
+      - ../../../../../pipeline_state:/app/pipeline_state
+      - ../../../../../knowledge_base:/app/knowledge_base
+      - ../../../../../logs:/app/logs
+    extra_hosts:
+      - "mt5-bridge:${GTOS_BRIDGE_HOST}"     # Windows MT5 bridge host
+    restart: on-failure
+
+  gtos-live-b:
+    extends:
+      service: gtos-live-a
+    profiles: ["live"]
+    command: ["python3", "run_agent.py", "--mode", "live", "--profile", "ftmo", "--runtime-namespace", "ftmo_acct_b"]
+    env_file:
+      - ../config/.env
+      - ../config/.env.ftmo_acct_b

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.warroom_shadow.v1",
+  "title": "warroom_shadow_v1",
+  "description": "P0 SHADOW stubs on the Challenge fluid-gate admit sidecar. apply is always false. Never place. Challenge 0 only.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema",
+    "mode",
+    "apply",
+    "broker_effect",
+    "never_place",
+    "conf_gate_band_disposition",
+    "P0_KEEP_REVIEW_WIN_VS_FAMILY_LOSER",
+    "P0_CFD_MISS_FALSE_STRUCTURE",
+    "P0_CFD_SIZE_INTENT",
+    "P0_CFD_SLEEVE_FAMILY_KEEP_SIG"
+  ],
+  "properties": {
+    "schema": {"const": "gtos.judgment.warroom_shadow.v1"},
+    "mode": {"const": "shadow_log_only"},
+    "apply": {"const": false},
+    "broker_effect": {"const": false},
+    "never_place": {"const": true},
+    "never_order_send": {"const": true},
+    "news_protocol": {"const": "stamps_only_never_invent"},
+    "cost_kill_gate": {"const": false},
+    "numeric_conf_on_hist_labels": {"const": false},
+    "do_not_flip_apply": {"const": true},
+    "login": {"const": "0"},
+    "conf_gate_band_disposition": {
+      "type": ["string", "null"],
+      "enum": ["STRICT", "SESSION", "EVENT", "REVIEW", "KEEP", null]
+    },
+    "P0_KEEP_REVIEW_WIN_VS_FAMILY_LOSER": {
+      "type": "object",
+      "required": ["choice", "apply"],
+      "properties": {
+        "choice": {"enum": ["REVIEW_KEEP", "FAMILY_LOSER", "UNSURE"]},
+        "apply": {"const": false}
+      }
+    },
+    "P0_CFD_MISS_FALSE_STRUCTURE": {
+      "type": "object",
+      "required": ["choice", "apply"],
+      "properties": {
+        "choice": {"enum": ["STAND_DOWN", "KEEP_EXEMPT", "NOT_FS"]},
+        "apply": {"const": false}
+      }
+    },
+    "P0_CFD_SIZE_INTENT": {
+      "type": "object",
+      "required": ["choice", "apply"],
+      "properties": {
+        "choice": {"enum": ["STAND_DOWN", "HALF", "TRIM", "FULL", "KEEP_CAP"]},
+        "apply": {"const": false},
+        "never_apply_size": {"const": true}
+      }
+    },
+    "P0_CFD_SLEEVE_FAMILY_KEEP_SIG": {
+      "type": "object",
+      "required": ["noul", "apply", "name_allowlist_used"],
+      "properties": {
+        "noul": {"type": "number", "minimum": 0, "maximum": 1},
+        "apply": {"const": false},
+        "name_allowlist_used": {"const": false}
+      }
+    }
+  }
+}

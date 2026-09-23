@@ -1,0 +1,419 @@
+Welcome back to the deep dive. So today
+we're looking at a decision that um on
+paper makes almost no sense. We're
+tracking a developer building a
+highfrequency trading system and they
+looked at all the modern tech, you know,
+Rust Go, the latest C++ scene, and just
+said, "Nope, I'll take plain old C."
+>> It's like showing up to a Formula 1 race
+with a go-kart you built in your shed,
+>> right?
+>> But here's the crazy part. The go-kart
+is kind of winning. That is a bold claim
+because I mean when you think HFT
+highfrequency trading you're picturing
+Citadel Jane Street you're picturing
+what teams of PhDs custom hardware
+microwave tower
+>> and Linux kernel stripped down to the
+absolute bone and that is the
+institutional game for sure. But our
+source today is looking at the retail
+reality.
+>> If you're a solo dev working on a
+Windows machine trying to copy that
+institutional stack is just a trap. a
+trap. How
+>> you spend 90% of your time just fighting
+your environment and like 10% of your
+time actually building your strategy.
+>> Okay, so this isn't about chasing
+nanconds.
+>> No, not at all. It's about development
+velocity. The source actually calls it
+the great pivot. They started this whole
+thing in modern C++ with Visual Studio
+on Windows. And to quote them directly,
+it was a dependency nightmare.
+>> Unpack that for me because C++ is the
+industry standard for HFT, right? So
+what went wrong? Well, Windows went
+wrong, or more accurately, C++ on
+Windows. It's not like Linux where
+package management is pretty sorted out.
+On Windows, you fall into what people
+call DLL hell. You're just fighting with
+CMake files, linking errors,
+>> mismatched AI.
+>> Exactly. You're spending your Saturday
+night debugging some obscure linker
+error instead of, you know, writing a
+trading algo.
+>> Right. The cognitive load is just huge.
+>> It's massive. Especially for a oneperson
+team. Every hour you spend on that is an
+hour you're not analyzing the market. So
+they nuked the project,
+>> just scrapped,
+>> stripped it all the way down to C99. No
+classes, no templates, no complex
+overhead, just uh functions and strrus.
+>> That sounds a little risky. I mean, C
+does not hold your hand. You're managing
+your own memory. One bad pointer and the
+whole thing comes crashing down. It
+feels like taking the seat belts out of
+the car to save weight.
+>> And that's the trade-off. Yeah. But for
+a single developer, the code was
+readable again. It compiled in a flash.
+It was, to use their term, runnable.
+And this brings us to the weirdest part
+of this whole story, the role of AI.
+>> Okay?
+>> Because you'd think, right, if C is so
+dangerous, you'd want the smartest AI
+possible helping you.
+>> Of course, you fire up Claude 4.5 or
+GPT40, the top of the line.
+>> And that's exactly what failed.
+>> Wait, failed? How? I thought Claude 4.5
+was like the best coding assistant out
+there, right? Right.
+>> Python. Yeah, absolutely. For
+JavaScript, sure. M but the source found
+that for C++ war claude was well the
+word they used was a gas bag.
+>> A gas bag
+>> too verbose. They said a simple concept
+that should be 300 lines of code would
+just balloon into 1300 lines after
+Claude touched it.
+>> So it was overengineering everything.
+>> It was trying to be modern. Adding
+abstractions and classes and all these
+safety wrappers the developer never even
+asked for.
+>> And you in C or C++ white more code just
+means a bigger surface area for bugs.
+Plus, the context window would fill up
+way too fast.
+>> So, the quote unquote smartest model was
+actually a problem because it couldn't
+keep things simple. So, who won? Who was
+the best AI for the job?
+>> Gemini 3 Pro.
+>> Really? That's not the first name that
+comes to mind for coding.
+>> The source was super clear on this. For
+C and C++ specifically, Gemini 3 Pro
+wrote code that was about 1/5 the size
+of what Claude generated. It didn't try
+to be clever. It just wrote raw C code.
+Kept the logic tight. kept the files
+small.
+>> That is a fascinating takeaway for
+anyone listening who codes. We all tend
+to have our favorite model, but maybe we
+need to treat them more like specialized
+tools.
+>> Exactly. You don't hire a poet to write
+a technical manual. And to round out
+this whole new stack, the developer also
+switched to an IDE called anti-gravity.
+It's a Google fork of the windsurf or VS
+Code IDE.
+>> So the stack is simple language C
+concise AI Gemini and a specialized IDE.
+>> Yep.
+>> Okay. So the machine is built. Let's
+talk about the engine, the architecture,
+because they fell into a classic trap at
+first, right? The client per instrument
+model.
+>> Oh yeah. That's where you write a
+program to trade, say, Bitcoin. Then you
+copy and paste it and tweak it a bit to
+trade gold.
+>> Then you do it again for the S&P 500
+>> and 3 months later you have a dozen
+different code bases and a bug in one of
+them and you have no idea how to fix
+them all.
+>> It's a maintenance nightmare. It just
+doesn't scale. So the pivot was to
+client per strategy.
+>> Okay,
+>> think of the software like a mercenary.
+The software knows how to fight. Let's
+say it's an RSI mean reversion strategy.
+It doesn't care who it's fighting.
+>> So you just fire up the program from a
+command line and tell it use this
+strategy on this target.
+>> Exactly. Use RSI on gold. Yeah.
+>> And you can spin up five, 10 instances
+of that same program, all running in
+parallel, all reporting back to one
+central gateway server. It decouples the
+logic from the asset.
+>> And that gateway server, that's the
+lifeguard on duty.
+>> The lifeguard and the executioner. Its
+most important job is the kill switch.
+You have to remember this is running
+from a home office, maybe a small
+server. If your internet cuts out while
+you have 10 positions open
+>> and the market moves against you,
+>> you're done. You're bankrupt. So, the
+gateway server monitors the heartbeat of
+every single client. If one of them goes
+silent, maybe the program crashed, maybe
+the wifey blinked, the gateway
+automatically flattens all of its
+positions at the exchange.
+>> That's the difference between a bad day
+and a total catastrophe. Okay, so we've
+got this robust C-based system. It's
+fast to build. It's safe. Where do you
+point it? The source material had a
+pretty grim outlook on the markets.
+>> Grim is a good word for it. The
+developer is looking for profit in a
+world that feels really fragile and they
+are very very bearish on the poster
+child of retail trading crypto.
+>> That's surprising. You'd think an algo
+trader would love crypto. It's 247 tons
+of volatility. Why so skeptical?
+>> A few things on the technical side.
+Bitcoin is showing a death cross.
+But the bigger argument is structural
+that retail traders are getting frozen
+out. The real volume, the real action
+isn't happening on Binance anymore. It's
+on the CME and on Coinbase Prime.
+>> The institutions showed up.
+>> They showed up and when they do, all the
+easy money, all those little
+inefficiencies, they just disappear.
+The source argues that stable coins are
+sucking liquidity out of the system. And
+honestly, the riskreward just isn't
+there right now.
+>> Okay, so if digital gold is out, what
+about actual gold? The traditional safe
+haven
+>> also looking tricky. The thinking is
+that gold and silver might have already
+peaked. Silver is especially vulnerable
+because it's not just a precious metal,
+it's an industrial one,
+>> right? For solar panels, EVs,
+>> and if the global economy slows down,
+which the source thinks it will, demand
+for silver could fall off a cliff.
+>> So, where's the opportunity? You build
+this high-speed system, you need
+movement, you need volatility. If
+everything's just slowly dying, you
+can't trade that.
+>> You trade the chaos itself. The source
+is looking really hard at the VIX, the
+volatility index, and it currencies,
+specifically betting against the US
+dollar.
+>> Betting on what instead?
+>> The Mexican peso and the Swiss Frank.
+>> The peso. That feels a bit out of left
+field.
+>> Not if you follow the futures volume.
+>> But the real big picture here is this
+idea of macro risk. The source is
+watching the Japanese bond market like a
+hawk.
+>> [snorts]
+>> The idea is if that market unravels or
+if China starts exporting its deflation
+to Europe,
+>> that's the big shock.
+>> That's the shock. That's the event that
+sends the VIX spiking to 2030. And
+that's where the C system is built to
+thrive. While human traders are
+panicking, the system is just calmly
+executing its strategies on those
+volatility spikes.
+>> You're building a machine to profit from
+the storm. But that raises a big career
+question. I mean, if you're smart enough
+to build this and analyze the Japanese
+bond market, why do it from your garage?
+Why not just walk into Jane Street and
+take the what, $400,000 starting salary?
+>> The source pours a very, very cold
+bucket of water on that idea. The
+corporate gatekeepers, as they call
+them, are real.
+>> We're talking about the degree
+requirements.
+>> It's pedigree, plain and simple. You
+need a master's or PhD, preferably from
+an Ivy League school. And the
+competition is just it's mathematical.
+It's like 200 applicants for every
+single job.
+>> Wow.
+>> And if you didn't apply for next
+summer's internship back in November,
+you are already too late. The cycle is
+brutal.
+>> And I'm guessing remote work is
+completely off the table.
+>> Dead on arrival. In HFT, if you're not
+in the office, you are not working. It's
+a massive security issue. They need to
+know you aren't steering the code or
+front running the firm. It's a deeply
+paranoid industry. So for the person
+listening who's brilliant but maybe
+didn't go to Harvard, is that door just
+closed?
+>> The door to employment might be, but the
+door to profit isn't. And that's why the
+sorts pushes this garage hedge fund
+>> Stop trying to get a job based on your
+potential. Get a job based on your
+results.
+>> Show me the P&L.
+>> But it has to be verified. The source is
+really clear about this. A GitHub repo
+of back tests means nothing. Anyone can
+cheat a back test. You need thirdparty
+broker statements, FCM reports that show
+a real track record, a sharp ratio over
+two, solid win rate, manage draw downs.
+>> That's your ticket in.
+>> That's the ticket. And there was a great
+little hack for LinkedIn mentioned. If
+you want to get noticed by the big
+firms, stop posting text updates. Post
+infographics,
+>> visuals,
+>> yes, visuals of your system
+architecture, a diagram showing how your
+C code talks to the gateway. The HR
+person screening resumes won't get it.
+But the director of trading at Black
+Rockck scrolling through his phone at
+lunch, he will get it and he'll stop
+scrolling.
+>> That's brilliant. You're not marketing
+yourself, you're marketing your
+competence. But to get that track
+record, you need a broker. And that was
+the last piece of the puzzle, right? The
+brokerage war.
+>> Yeah. And if you're trying to do this
+with Interactive Brokers IB, you
+basically running a race with your
+shoelaces tied together.
+>> But ID is the standard for retail
+traders. Everyone uses them
+>> for investing. Sure. For high frequency
+stuff? No way. The API limits are way
+too low. Something like 50 requests a
+second. And the data routing is a
+problem. The source mentioned data
+having to bounce between like
+Switzerland and New Jersey.
+>> That latency is the kiss of death.
+>> It's everything. So the winner,
+according to the source, is Rhythmic.
+>> I haven't heard as much about them.
+>> They're built for this kind of volume.
+You get order book updates every half
+second. And this is crucial. Rhythmic
+users actually get priority at the CME
+exchange. Wait, how is that even legal?
+>> It's just business. Rhythmic generates
+so much volume and so much revenue for
+the exchanges that their data packets
+get put at the front of the line. If
+you're using a typical retail broker,
+you are literally last.
+>> So, Rhythmic is like the fastass at
+Disneyland.
+>> That's a perfect analogy. There's even a
+diamond API tier. If you have
+institutional level capital, but the
+lesson is if you use the same tools as
+everyone else, you're going to get the
+same results as everyone else. There is
+one final problem mentioned and that was
+geography. What if you're not in the US
+or Europe?
+>> Right? This is a huge hurdle especially
+for traders in say Africa. A lot of
+these top tier brokers just won't work
+with you. The source said for crypto
+Binance can be a workaround. But for the
+serious futures markets, you might
+actually have to move
+>> relocate where too
+>> to a trading friendly hub. Dubai and
+Singapore were the two mentioned. Dubai,
+for instance, has programs where you can
+get a visa and set up a company
+specifically for trading, which lets you
+bypass all those jurisdictional
+restrictions.
+>> It's amazing how this digital industry
+is still so physical. You need the right
+code, the right server, the right
+broker, and maybe even the right city.
+>> It all comes back to that first point we
+talked about, simplicity and robustness.
+Whether it's picking C over C++ out or
+literally moving to Dubai for a better
+broker, the whole game is about removing
+friction. the little guy doesn't have
+Citadel's resources, so you have to be
+smarter about where you spend your uh
+your complexity budget.
+>> I love that phrase, complexity budget.
+It really drives home the idea that high
+frequency isn't some kind of magic. It's
+a supply chain. It's the language, the
+AI, the broker, the strategy.
+>> It's about optimizing every single link
+in that chain.
+>> We've covered a ton of ground here from
+C compilers to Dubai visas. But I want
+to leave you with one final thought to
+think about.
+>> What's that? We spent this whole time
+talking about speed. But when you look
+at this developer's whole journey, the
+winning move was never actually about
+speed. It was about simplicity. They
+dropped complex C++ for simple C. They
+dropped the complex architecture for a
+simple one. They even dropped the
+complex AI for the simpler one.
+>> Results over complexity.
+>> Exactly. In a world where every company
+is trying to add more tech, more
+features, more everything, maybe the
+real edge, the real alpha comes from
+stripping things away until only the
+parts that actually make money are left.
+Maybe the tortoise doesn't beat the
+hair, but the tortoise at least finishes
+the race while the hair is stuck
+debugging a linker error.
+>> I think that's the lesson.
+>> Thanks for diving in with us. We'll see
+you next time.

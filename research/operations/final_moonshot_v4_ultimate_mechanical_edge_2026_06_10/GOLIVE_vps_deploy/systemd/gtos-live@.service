@@ -1,0 +1,37 @@
+# GTOS go-live — systemd unit TEMPLATE (Linux VPS). One instance per account:
+#   systemctl start gtos-live@ftmo_acct_a.service
+#   systemctl start gtos-live@ftmo_acct_b.service
+# The %i instance name maps to a per-account env file. DEFAULT-OFF: the unit is
+# NOT enabled and the runtime self-checks halt flags + GTOS_LIVE_CONNECT_ALLOWED
+# on boot, so even an accidental `start` while halted places no orders.
+#
+# Owner fills: WorkingDirectory, User, the per-account env files, ExecStart args.
+
+[Unit]
+Description=GTOS live trading runtime (account=%i)
+After=network-online.target time-sync.target
+Wants=network-online.target time-sync.target
+# Hard dependency on NTP being synced before the trader starts (broker time-sensitive).
+
+[Service]
+Type=simple
+User=<GTOS_VPS_USER>
+WorkingDirectory=<REPO_ROOT_ON_VPS>
+# Shared env then per-account env (creds + namespace + size profile per instance):
+EnvironmentFile=<REPO_ROOT_ON_VPS>/.env
+EnvironmentFile=<REPO_ROOT_ON_VPS>/.env.%i
+# Runtime entrypoint. --mode live is gated by halt flags + triple-gate internally.
+ExecStart=/usr/bin/python3 run_agent.py --mode live --profile ${GTOS_PROFILE} --runtime-namespace %i
+# Pre-start guard: refuse to start if the kill-switch / halt flag is engaged.
+ExecStartPre=/usr/bin/python3 research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_vps_deploy/monitoring/kill_switch.py state
+Restart=on-failure
+RestartSec=15
+# Crash-loop guard: stop retrying after repeated failures (do not hammer the broker).
+StartLimitIntervalSec=300
+StartLimitBurst=5
+# Graceful flatten window on stop (runtime closes/parks managed positions).
+TimeoutStopSec=120
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

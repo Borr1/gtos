@@ -1,0 +1,40 @@
+Session CM reconstructed-host package dry run, 2026-08-01.
+
+Source before-bytes: Session AZ's executed execution_packets.py payload,
+sha256 06a301bff0db7b2b902cf70384f033d46ee8ba2ba2b9b5215bf580281ebdeb10,
+38,376 bytes. The temporary launcher fixture carried the post-CE semantic state. No script in
+this receipt imported MetaTrader5, constructed a broker client, or contacted the VPS.
+
+$ python3 build_carry.py --check
+CM carry CHECKED: 06a301bff0db (38376 B) -> 927bed1f4ee2 (39934 B)
+
+$ python3 verify_carry.py --check preflight --repo-root <reconstructed-before-root>
+[  ok  ] src/components/ultimate_book/execution_packets.py: 06a301bff0db (== preflight 06a301bff0db)
+[  ok  ] per-book tags are exact and unchanged
+[  ok  ] only FTMO has a non-empty frontier selection: ['mx_btcusd_d1_donchian_20_breakout']
+[  ok  ] supervisor emits --frontier-exits only from its field
+[  ok  ] the already-armed spread floor remains present
+RESULT: PASS (0 problem(s))
+
+$ python3 verify_carry.py --check postflight --repo-root <reconstructed-after-root>
+[  ok  ] src/components/ultimate_book/execution_packets.py: 927bed1f4ee2 (== postflight 927bed1f4ee2)
+RESULT: PASS (0 problem(s))
+
+$ python3 verify_carry.py --check behaviour --repo-root <reconstructed-after-root>
+[  ok  ] combined FTMO selection parses exactly: ('mx_btcusd_d1_donchian_20_breakout', 'crypto')
+[  ok  ] launch banner names the width change: 'stop distance x1.5 with target scaled'
+[  ok  ] default crypto path remains native SL 2990 / TP 3040
+[  ok  ] selected crypto path is SL 2985 / TP 3060 (1.5R stop, target scaled at 4R)
+[  ok  ] geometry contract carries scaled risk_distance=15.0
+[  ok  ] risk percentage is unchanged at 0.5%; live sizing reduces lots
+[  ok  ] placement provenance records 'stop_1p5x_target_scale'
+[  ok  ] default placement carries no frontier provenance
+[  ok  ] carried module has no MT5 import and no order_send call
+RESULT: PASS (0 problem(s))
+
+$ python3 verify_carry.py --check launcher-post --repo-root <reconstructed-after-root>
+[  ok  ] per-book tags are exact and unchanged
+[  ok  ] only FTMO has a non-empty frontier selection: ['mx_btcusd_d1_donchian_20_breakout,crypto']
+[  ok  ] supervisor emits --frontier-exits only from its field
+[  ok  ] the already-armed spread floor remains present
+RESULT: PASS (0 problem(s))

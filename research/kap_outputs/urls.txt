@@ -1,0 +1,147 @@
+# KAP Scout Results — 2026-04-06 (Batch 2 — EXPANDING)
+# Found: 87 videos for processing (15 original + 72 new — incremental batches)
+# Search topics covered: gold order block backtest, XAUUSD liquidity sweep, ICT order block win rate, SMC backtesting statistics, win rate vs expectancy math, prop firm risk management, trading system validation, gold institutional order flow, ICT silver bullet, CRT/turtle soup, ORB breakout, volume profile/order flow, IFVG backtest, quant strategy development, multi-timeframe alignment, SMT divergence, session timing, DXY correlation, displacement, prop firm math, Monte Carlo/walk-forward
+
+https://www.youtube.com/watch?v=f18gazn0nYE | How to Identify Best Order Blocks to Trade? | Smart Risk | 2.4M views | ~2023 | Has dedicated "Backtesting Results" chapter — OB rules with statistical backing, market structure filters
+https://www.youtube.com/watch?v=OV88eZS7RDc | This Secret Order Block Works Every Time (Proven Results) | Lewis Kelly | 53K views | ~Oct 2025 | Claims 5 years of data, 800 trades backtested across 2 OB types — specific numbers
+https://www.youtube.com/watch?v=CvlOHCWr_4Q | BACKTESTING ORDER BLOCKS | GOLD | XAUUSD - Part 1 | Trade Forex with Paul | 29K views | ~2022 | 56-min deep dive backtesting OBs specifically on gold — directly relevant to our system
+https://www.youtube.com/watch?v=v4qwe618tuw | Copy This 5 Rule SMC Trading Strategy (Backtested Results) | Lewis Kelly | 334K views | ~Oct 2025 | 5 mechanical rules (bias, time/price, liquidation, reversal confirmation, OB/FVG entry) with backtested data
+https://www.youtube.com/watch?v=Lfa2pAZ4kUE | I Backtested CRT So You Don't Have To | Insane Results! | 9am CRT Model | The Soup Room | 188K views | ~2025 | CRT/PO3/Turtle Soup backtesting with actual trade results — session-based model
+https://www.youtube.com/watch?v=qBeNyAwsV-c | Live Backtesting My Favorite Trading Strategy | Liquidity Sweep + IFVG Trading Strategy (Part1) | Smart Risk | 95K views | ~Aug 2025 | Live backtest of liquidity sweep + inverse FVG combo — shows real-time decision process with data
+https://www.youtube.com/watch?v=NLBXgSmRBgU | How I Develop Trading Strategies | Permutation Tests and Trading Strategy Development with Python | neurotrader | 397K views | ~2025 | Quantitative strategy development with Python code on GitHub — permutation tests, Monte Carlo, statistical validation
+https://www.youtube.com/watch?v=g4KK2i-3GZU | Smart Money Concepts Trading Strategy – 100 Trade Backtest (Simple SMC Trading Strategy) | Eddy Pips Trading | 9.2K views | ~Nov 2025 | 100-trade backtest with analytics: RR simulator, deep-dive performance breakdown by day and session
+https://www.youtube.com/watch?v=PojSFDqjrLA | Backtesting XAUUSD Using SMC/ICT Concepts (Results Revealed) | Baileysforex | 4.4K views | ~Oct 2025 | Directly backtests SMC/ICT on XAUUSD with revealed results — gold-specific data
+https://www.youtube.com/watch?v=zrYqhYbZv3s | The Win-Rate Trap: Why an 80% Edge Is Often a Mathematical Death Spiral | Mind Over Markets | 847 views | ~Mar 2026 | Challenges high win-rate obsession with mathematical proof — expectancy vs win rate analysis
+https://www.youtube.com/watch?v=WWulQ4Mi0fM | Ex-Prop Firm Owner Tells You How to Pass an Evaluation (Data-based) | PipBack | 228K views | ~Aug 2025 | Ex-prop firm owner shares actual statistics on winning vs losing traders — insider data perspective
+https://www.youtube.com/watch?v=W722Ca8tS7g | The 4 backtesting techniques behind WINNING strategies | Unbiased Trading | 106K views | ~Dec 2025 | Systematic backtesting methodology: 4 techniques for validating strategies — walk-forward, out-of-sample
+https://www.youtube.com/watch?v=QE3KbtnCf1k | 75% Win Rate Mechanical Silver Bullet ICT Strategy (Get Funded In 1 Hour A Day!) | Garland Trader | 80K views | ~2024 | Mechanical ICT Silver Bullet with specific 75% win rate claim — kill zone timing with rules
+https://www.youtube.com/watch?v=YUUefUXeZwI | Master Liquidity Concepts (Mechanical Strategy) | Matt Donlevey - Photon Trading | 1.1M views | ~2025 | 13-chapter mechanical liquidity strategy: sweep zones, inducement, entry models, high/low resistance liquidity
+https://www.youtube.com/watch?v=pabVt6Aza_o | How to trade XAU/USD Gold with the Commitment of Traders Report COT (THOROUGH ANALYSIS) | BK Trading Academy | 9.4K views | ~2024 | Gold-specific COT report analysis — institutional positioning data for XAUUSD directional bias
+
+# === BATCH 2 — New videos (2026-04-06) ===
+
+# --- ICT Silver Bullet Backtests ---
+https://www.youtube.com/watch?v=o0v4KQxZbpU | ICT Silver Bullet Strategy - No Daily Bias | With Backtest! | TTrades | 817K views | ~2024 | 29min with backtesting chapter + analytics/stats — no daily bias needed
+https://www.youtube.com/watch?v=_EQFJ_TLV58 | Simple ICT Silver Bullet Strategy | 70% Win Rate | JadeCap | 220K views | ~2025 | Step-by-step with specific 70% WR claim
+https://www.youtube.com/watch?v=POyd5Quw0WY | The Ultimate ICT Silver Bullet Strategy: 33% ROI in 14 Days! [Backtesting] | Mulham Trading | 253K views | ~2024 | 1h25m deep dive — old vs new silver bullet, backtesting results chapter
+https://www.youtube.com/watch?v=Sjv9_tUdUkY | ICT Silver Bullet Strategy Backtested with a 90% Winrate - 30 min | IDFX Trading | 5K views | ~2025 | 30min backtest with analytics chapter — 90% WR claim to verify
+https://www.youtube.com/watch?v=8hD1tEZrJAQ | I coded JadeCap Silver Bullet Strategy - Quant Backtest over 10 years (Real Results) | Trader Zan | 328 views | ~2026 | QUANT coded backtest over 10 YEARS of data — most rigorous silver bullet test available
+https://www.youtube.com/watch?v=uCs4kBVWJLM | The Only ICT Silver Bullet Model Video You'll Need (84% Win Rate) | Blue Edge Forex | 87K views | ~2024 | 1h+ backtest of ~100 trades with results
+
+# --- CRT / Turtle Soup Backtests ---
+https://www.youtube.com/watch?v=rTNQxYVEo3s | I Backtested ICT's MOST PROFITABLE Strategy Ever (9 AM Kill Zone CRT) | The Soup Room | 19K views | ~2025 | Backtest of 9AM KZ CRT specifically
+https://www.youtube.com/watch?v=Y8JnZ4gToAE | ICT Turtle Soup Explained & Backtested (Real Data) | Trading Neighbor | 3.8K views | ~2026 | Turtle soup with real data backtest results
+https://www.youtube.com/watch?v=dqHddXL1TZs | Backtesting ICT's Turtle Soup Strategy with Gold Futures | unknown | views unknown | ~recent | GOLD FUTURES specific turtle soup backtest
+https://www.youtube.com/watch?v=oMBHRf_ZRa4 | Backtesting Turtle Soup Trading Model (Best ICT Strategy) | unknown | views unknown | ~recent | Turtle soup model backtest with data
+
+# --- ORB / Opening Range Breakout (Data-Driven) ---
+https://www.youtube.com/watch?v=ZF8uKPqAu8M | I Backtested the ORB Breakout + Pullback Strategy (5 Years of Data) | Trading Steady | 11K views | ~2025 | 5 years of data, code on GitHub — pullback variant
+https://www.youtube.com/watch?v=pbiaPEc8S-Q | I Backtested This ORB Strategy for 1 Year: 90% Win Rate Last 30 Days | QuantCrawler | 10K views | ~2026 | Coded backtest with specific results on MNQ
+https://www.youtube.com/watch?v=-6vzl-Myarw | ORB Strategy Backtest Results: 56% Win Rate, 81% in 30 Days | QuantCrawler | 3.9K views | ~2026 | Full year backtest with honest 56% WR — high value for realistic data
+https://www.youtube.com/watch?v=cUTsoU-15Tc | The Simplest Orderflow Trading Model | Fabervaale ENG/deepcharts | 163K views | ~2026 | ORB + IVB model with orderflow — professional scalper approach
+https://www.youtube.com/watch?v=jlShztsY3oA | 15-Min ORB Strategy: Why Most Traders Lose (And How to Fix It) | The Moving Average | 317K views | ~2025 | Has GOLD example, explains why ORB fails and how to fix
+
+# --- Quantitative / Systematic Strategy Development ---
+https://www.youtube.com/watch?v=rlSkRMmycWo | 8 Quant Trading Strategies (Backtests & Rules Included) | Quantified Strategies | 98K views | ~2024 | 8 strategies with full backtests and rules — Turn of Month, Russell Rebalancing, etc.
+https://www.youtube.com/watch?v=NojfYk31_xI | 7 Algo Trading Strategies (Backtests & Rules Included) | Quantified Strategies | 51K views | ~2024 | 7 more algo strategies with backtests
+https://www.youtube.com/watch?v=fIEwVmJJ06s | "Build Your Own Trading Strategy" — Ivy League Quant | DeltaTrend Trading | 90K views | ~2026 | Quant approach to building strategies from scratch
+https://www.youtube.com/watch?v=sYRCzSbvOpQ | I Backtested 21 Years of Market Data in 6 Seconds with ChatGPT | Trading Heroes | 263K views | ~2025 | AI-assisted backtesting methodology — fast strategy validation approach
+https://www.youtube.com/watch?v=EVBXMqLWn9w | Stress Testing the NQ ORB — Walk-Forward, Monte Carlo & Permutation Test | unknown | views unknown | ~recent | Walk-forward + Monte Carlo + permutation testing combined — gold standard validation
+
+# --- Volume Profile / Order Flow ---
+https://www.youtube.com/watch?v=Pz8f0wWW12M | The Only Orderflow Guide You'll Ever Need | Fabervaale ENG | 200K views | ~2026 | 41min comprehensive: market mechanics, delta, volume profile, auction theory — 14 chapters
+https://www.youtube.com/watch?v=V_YG-CE4p5U | Mastering VOLUME PROFILE Trading (Ultimate Guide) | Funded Brothers | 60K views | ~2026 | Gold-specific examples with manipulation model and big trades indicator
+https://www.youtube.com/watch?v=J7XAKuYK5O4 | Use THIS Volume Profile Strategy on Market Open (Step by Step) | Cammy Capital | 39K views | ~2025 | Volume profile at market open — session-specific VP approach
+
+# --- IFVG / Inversion Fair Value Gap ---
+https://www.youtube.com/watch?v=ZW-ywpb5BAQ | 94% Win Rate iFVG Backtesting Session (Best Futures Strategy) | DodgysDD | 92K views | ~2024 | 54min backtesting session — extensive IFVG data
+https://www.youtube.com/watch?v=uDJI2AbyyCs | Inversion Fair Value Gaps (IFVG) - ICT Concepts | TTrades | 383K views | ~2024 | Core IFVG mechanics with PDF and examples
+
+# --- Prop Firm Math / Risk Management ---
+https://www.youtube.com/watch?v=4R6yZ1BGakM | 100% Pass: My Foolproof Method To GUARANTEE Passing Prop Challenges | Waqar Asim | 66K views | ~2026 | Tracker tool, adapts to different win rates and risk tolerance
+https://www.youtube.com/watch?v=i-svI56jdsc | Scaling to 6-7 Figures in Trading: The Hidden Risk That Blows Accounts (Monte Carlo Explained) | unknown | views unknown | ~recent | Monte Carlo simulation for trading risk — prop firm scaling math
+
+# --- Multi-Timeframe / SMT / Confluence ---
+https://www.youtube.com/watch?v=FKTBkTz_TBE | Timeframe Alignment: How To Align Timeframes For Expansion | TTrades | 285K views | ~2025 | Key concept — when timeframes align, expansion follows
+https://www.youtube.com/watch?v=4TrIbK_meQg | SMT Divergence - ICT Concepts (Updated) | TTrades | 250K views | ~2024 | Correlated/inversely correlated SMT, forex vs indices, SMT within FVG
+
+# --- Power of 3 / AMD / Session Models ---
+https://www.youtube.com/watch?v=DyS79Eb92Ug | Trading LIVE with the BEST Scalper in the World (PERFECT Accuracy) | Words of Rizdom/Fabervaale | 1M views | ~2026 | 2h+ with chapters on statistical testing, order flow models, continuous improvement
+https://www.youtube.com/watch?v=N7SM8a7Dc9s | +$1,000,000 From One Simple Strategy | TJR | 844K views | ~2025 | Single strategy deep-dive with indicator and trade examples
+
+# --- Gold-Specific Strategies ---
+https://www.youtube.com/watch?v=Yey9Qq_Qegw | $200K Day Trading: My Simple XAUUSD Strategy (94% Win Rate) | Trades By Sci | 326K views | ~2025 | Gold-specific day trading strategy with high WR claim
+https://www.youtube.com/watch?v=ffqs_TdNOyo | How I trade London session 2026 | unknown | views unknown | ~2026 | London session gold strategy — current year approach
+
+# --- ICT Entry Models / Comprehensive ---
+https://www.youtube.com/watch?v=n8FqECMb-9o | This Systemized ICT Model Has Made Me $500K (Just Copy Me) | PB Blake | 232K views | ~2025 | Systemized mechanical ICT model
+https://www.youtube.com/watch?v=E3McKlAp3qk | The ONLY Day Trading Strategy I'll use ALL 2026 (Backtested 1000 Times) | Trade with Pat | 73K views | ~2026 | 1000 backtest, demand zones + FVG entry + session analysis
+https://www.youtube.com/watch?v=jq-fpkPv3-A | My Simple "9:30AM Candle" Scalping Strategy (Backtested 1000 Times) | Scarface Trades | 305K views | ~2026 | One candle strategy backtested 1000 times with results chapter
+https://www.youtube.com/watch?v=RZJRwyt6A90 | I Tested 1,000 Trading Strategies… This One Changed Everything | The Simplified Trader | 16K views | ~2025 | Meta-analysis of 1000 strategies — what actually matters
+
+# --- Backtesting Methodology / Validation ---
+https://www.youtube.com/watch?v=shBaQzNsLRA | Walk-Forward Analysis: Your Ultimate Guide! | unknown | views unknown | ~recent | Walk-forward analysis methodology — validation technique
+https://www.youtube.com/watch?v=_aGRboYs5xA | GPT: Trading Strategy in Python makes 805% (+ Monte Carlo simulation results) | unknown | views unknown | ~recent | AI-generated strategy with Monte Carlo validation
+
+# --- DXY / Gold Correlation ---
+https://www.youtube.com/watch?v=ADnslyKOwFE | STEAL This INSANE Simple 90% Win Rate Trading Strategy (1:20+ RR) | Chart Fanatics | 548K views | ~2025 | 48min TG Capital strategy with high RR
+https://www.youtube.com/watch?v=DAnXM7C16h0 | STEAL This EASY Liquidity TRAP Trading Strategy - $500K+ (PERFECT Sniper Entries) | Chart Fanatics | 779K views | ~2025 | 1h50m liquidity trap strategy — comprehensive
+
+# --- Session-Specific / Timing Edge ---
+https://www.youtube.com/watch?v=d9fn1DOxkXA | How to trade Turtle Soups (Liquidity Sweeps) | unknown | views unknown | ~recent | Turtle soup / liquidity sweep mechanical approach
+https://www.youtube.com/watch?v=Y0qANs6tdcY | This Day Trading Strategy has a 90% Win Rate (Not Clickbait) | unknown | views unknown | ~recent | High WR day trading claim — needs verification
+
+# --- 1000 FVG Trades Analysis ---
+https://www.youtube.com/watch?v=EOnoMsWyB8Y | Backtesting my "surgical" $1k/day trading system | unknown | views unknown | ~recent | Surgical precision trading system backtest
+
+# --- ICT Daily Bias / Displacement ---
+https://www.youtube.com/watch?v=v1VPqu_bkJs | How I Built 9 Trading Bots That Run While I Sleep | unknown | views unknown | ~recent | Automated trading bots — algo implementation
+
+# --- Scarface 1H Pattern ---
+https://www.youtube.com/watch?v=VnDWzRSuJxQ | The 15min ORB Strategy is a CHEATCODE for Scalping | Tyler Wilson | 111K views | ~2025 | 15min ORB for scalping with trade examples
+
+# --- Massive ORB Data ---
+https://www.youtube.com/watch?v=Wqzz0sklMMA | I Backtested 1,178,668 Opening Range Breakout Trades. Here's the Data. | TOS Indicators | 25K views | ~2026 | 1.17M TRADES analyzed — 5min vs 15min ORB, symbol breakdown, longs vs shorts
+
+# --- Wyckoff / Market Structure ---
+https://www.youtube.com/watch?v=bUk2essMH2A | All Wyckoff Trading Secrets in 73 Minutes (Complete Method) | unknown | views unknown | ~recent | Complete Wyckoff method — accumulation/distribution phases for systematic trading
+https://www.youtube.com/watch?v=Tt8LHGkuMtM | Keys to Wyckoff Success 2023 Strategy - Backtesting to Success for Beginners | unknown | views unknown | ~2023 | Wyckoff backtesting methodology for beginners
+https://www.youtube.com/watch?v=bj5xQA4JF0I | HOW TO BACKTEST ACCUMULATION | learning wyckoff made easy | SMA | unknown | views unknown | ~recent | Wyckoff accumulation backtesting approach
+
+# --- Swing Failure / Liquidity Grab ---
+https://www.youtube.com/watch?v=2qP6Nl6lLnY | Swing Failure Pattern (SFP) Trading Strategy | Master Liquidity Sweeps | unknown | views unknown | ~recent | SFP mechanics — how liquidity sweeps create entry opportunities
+https://www.youtube.com/watch?v=246mBTshMJw | How to Trade Sweeps. Swing Failure Pattern | unknown | views unknown | ~recent | Sweep trading with swing failure pattern
+
+# --- Gold-Specific 2025/2026 ---
+https://www.youtube.com/watch?v=kbacCLdZs7w | Ultimate GOLD Trading Strategy for 2026 (3 Simple Concepts) | unknown | views unknown | ~2026 | Current year gold strategy with 3 mechanical concepts
+https://www.youtube.com/watch?v=1hZMOSd34vQ | Best Gold Trading Strategy 2025 | Trade XAUUSD Step by Step | unknown | views unknown | ~2025 | Step-by-step gold strategy
+https://www.youtube.com/watch?v=W6Cd0yiOTtc | The Only GOLD Trading Strategy You Need In 2026! (Stupid Simple) | unknown | views unknown | ~2026 | Simplified gold strategy for current year
+
+# --- NY Session Python Backtest ---
+https://www.youtube.com/watch?v=cTJ0Qbz0eAI | New York Session Strategy Backtest in Python: Multi-Timeframe Breakout System | CodeTrading | 7K views | ~2026 | Python coded NY session breakout — multi-timeframe approach with strict rules
+https://www.youtube.com/watch?v=ddBPlz_v0Ys | 87.5% Win Rate Backtesting NQ With My Continuation Model (Full Explanations) | AG Trades | 25K views | ~2025 | Continuation model backtest with full explanations — 87.5% WR on NQ
+https://www.youtube.com/watch?v=bmHtU50_BwQ | Use This Simple Trading Strategy In 2025 (Full Backtesting Results) | unknown | views unknown | ~2025 | Full backtesting results for a simple strategy
+
+# --- OTE / Fibonacci Entry ---
+https://www.youtube.com/watch?v=cwQ7IISdl6k | ICT's OTE Strategy IS BETTER than the Silver Bullet Strategy | unknown | views unknown | ~recent | OTE vs Silver Bullet comparison — which has better edge
+https://www.youtube.com/watch?v=1YRs4Z1lMws | Optimal Trade Entry (OTE) - ICT Concepts | TTrades | views unknown | ~recent | Core OTE mechanics from TTrades
+
+# --- Initial Balance / Market Profile ---
+https://www.youtube.com/watch?v=4PEsb7O5xsA | Boost Your Gold Trading Wins with Initial Balance Strategy | unknown | views unknown | ~recent | Gold-specific initial balance strategy
+https://www.youtube.com/watch?v=LsKB8MFiLTE | How to Trade the Initial Balance with VWAP & Volume Profile | unknown | views unknown | ~recent | IB + VWAP + volume profile combined approach
+https://www.youtube.com/watch?v=BmtxLwvDE6U | Master the MARKET PROFILE in 30 Minutes | Fractal Flow | views unknown | ~recent | Market profile comprehensive guide — day types, value area
+
+# --- Order Flow / Institutional ---
+https://www.youtube.com/watch?v=6Ac38LzXj3A | Master ORDER FLOW TRADING in Less than ONE HOUR! | Fractal Flow | 700K views | ~2025 | 51min comprehensive: auction theory, microstructure, footprint strategies, cumulative delta
+https://www.youtube.com/watch?v=kNa_uf8lrzE | ICT vs ORDER FLOW in LIVE Trading Competition | unknown | views unknown | ~recent | Direct comparison ICT vs order flow — which performs better live
+https://www.youtube.com/watch?v=1Ecd_RTI9fU | Master INSTITUTIONAL SUPPLY & DEMAND in 45 Minutes! | Fractal Flow | views unknown | ~recent | Institutional S&D zones — how institutions position
+
+# --- Prop Firm Data / Risk Scaling ---
+https://www.youtube.com/watch?v=PyK_SksnDD8 | How I Scaled My Prop Firm Accounts to Make $50K/Month (Full Risk Management Breakdown) | AG Trades | 57K views | ~2025 | Full risk management breakdown for prop firm scaling
+https://www.youtube.com/watch?v=NZfUe30eUMs | The only RISK MANAGEMENT for Prop Firms video you need | Kimmel Trading | 203K views | ~2025 | Comprehensive prop firm risk management
+https://www.youtube.com/watch?v=43gLw830sws | Losing My 100k FTMO Funded Account | 3 Things I Wish I Knew | unknown | views unknown | ~recent | Lessons from losing a funded account — what NOT to do
+https://www.youtube.com/watch?v=sBfE9LvN_D0 | How to Use FTMO Account Statistics [2026 Full Guide] | unknown | views unknown | ~2026 | Using FTMO's built-in analytics to find edge leaks
+
+# --- Statistical Thinking / Edge ---
+https://www.youtube.com/watch?v=anlmeaWRaAg | How To Get An Edge In Forex Using Statistical Thinking Part 6 | Trade Like A Forex Titan | views unknown | ~recent | Statistical edge methodology for forex
+https://www.youtube.com/watch?v=EUuflDi0kWY | Why Trading Strategies Don't Work - How To Have An Edge | unknown | views unknown | ~recent | Why strategies fail and what actual edge looks like

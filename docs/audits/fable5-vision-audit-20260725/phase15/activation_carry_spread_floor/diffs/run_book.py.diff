@@ -1,0 +1,94 @@
+--- a/run_book.py
++++ b/run_book.py
+@@ -120,8 +120,36 @@
+                         "would move. Set here rather than in agent_config.yaml or "
+                         "profiles/redacted_account.yaml because BOTH are hashed into a live activation "
+                         "token's config digest, and a byte moved there stops the armed book "
+                         "placing until the token is re-minted.")
++    p.add_argument("--spread-geometry-floor", default=None,
++                   help="Comma-separated sleeves to run with the GENERATION-side "
++                        "spread-geometry floor on, optionally with a per-sleeve spread_r "
++                        "limit (`sub_mid_dn_revert` or `sub_mid_dn_revert:0.075`). Session AY, "
++                        "B1810. A sleeve named WITHOUT a limit inherits the limit the send "
++                        "gate will apply to it (`selected_cell_pretrade_max_spread_r`, with "
++                        "the per-sleeve override), so the two layers cannot drift apart and an "
++                        "owner config edit moves both at once. This book ALREADY refuses these "
++                        "trades at the send layer; the floor refuses them EARLIER, which is "
++                        "worth something for a reason that is about the OTHER sleeves: an "
++                        "intent that reaches the intent list has already been counted by "
++                        "`_running_conviction_override`, and `na = max(na, override)` is "
++                        "monotone upward, so a sleeve whose every leg the cost gate refuses "
++                        "still raises the day's Kelly-lite multiplier for every sleeve that "
++                        "does place -- measured on this host's own export at 16 contaminated "
++                        "account-days, 3 of which moved the multiplier, worst +25.227 %%. "
++                        "REPAIR at the ratified rule on `sub_mid_dn_revert` (+0.426 R/day at "
++                        "mid, 46.9 %% of its trades over the limit) and `sub_xvol_pullback` "
++                        "(+0.264, on 6 dropped trades of 85); NEUTRAL on `crypto` and "
++                        "`energy_agri`, which is why this is a per-sleeve map and not a "
++                        "boolean. FAIL-CLOSED: an opted-in sleeve whose quote cannot be read "
++                        "proposes nothing that tick, matching the authoritative gate's own "
++                        "`missing_current_quote_spread_or_sl_distance`. Empty by default. An "
++                        "empty string is REFUSED rather than read as 'all' (the --tags "
++                        "fail-open, B359) and an unknown sleeve name is REFUSED rather than "
++                        "dropped. Set here rather than in agent_config.yaml or "
++                        "profiles/redacted_account.yaml because BOTH are hashed into a live "
++                        "activation token's config digest.")
+     args = p.parse_args()
+ 
+     configure_runtime_logging(logging.INFO)
+ 
+@@ -358,10 +386,32 @@
+         frontier_exits = parse_frontier_exits(args.frontier_exits)
+     except FrontierExitSelectionError as exc:
+         logging.error("--frontier-exits refused: %s", exc)
+         return 4
++    # Same doctrine, same wave (Session AY, B1810): a floor the operator believes is running
++    # and is not is worse than no floor, so an unparseable or unknown selection stops the
++    # worker HERE rather than degrading silently at every tick.
++    from src.components.ultimate_book.spread_geometry import (
++        SpreadGeometryFloorError, parse_spread_geometry_floor,
++    )
++    # EVERY registered generator, not just `BUILT`. `BUILT` is the 11 core sleeves; the
++    # candidate book adds 9 and market expansion 12, and AY-1's largest measured repair
++    # (`asia_pdl_fade`, -0.902 -> +0.095 R/day at mid) is in CANDIDATE_BUILT. Validating
++    # against `BUILT` alone would refuse the flag's best use as a typo.
++    from src.components.ultimate_book.sleeves.registry import (
++        BUILT as _BUILT_SLEEVES, CANDIDATE_BUILT as _CAND_SLEEVES,
++        MARKET_EXPANSION_BUILT as _MX_SLEEVES,
++    )
++    _known_sleeves = set(_BUILT_SLEEVES) | set(_CAND_SLEEVES) | set(_MX_SLEEVES)
++    try:
++        spread_geometry_floor = parse_spread_geometry_floor(
++            args.spread_geometry_floor, known_sleeves=_known_sleeves)
++    except SpreadGeometryFloorError as exc:
++        logging.error("--spread-geometry-floor refused: %s", exc)
++        return 4
+     owner = UltimateBookOwner(merged, mt5, ".", namespace=args.namespace,
+-                              frontier_exits=frontier_exits)
++                              frontier_exits=frontier_exits,
++                              spread_geometry_floor=spread_geometry_floor)
+     for _s in frontier_exits:
+         # B1852: this banner used to render `float(_o["final_target_r"])`, which SIX of the eight
+         # wired sleeves do not carry -- so naming one of them killed the worker AFTER
+         # `parse_frontier_exits` had accepted it. `describe_frontier_contract` renders whichever
+@@ -370,8 +420,20 @@
+                         "this book exits that sleeve; positions already open are managed from "
+                         "their own trade record, but one adopted WITHOUT a record is rehydrated at "
+                         "this contract.", _s, FRONTIER_EXIT_OVERRIDES[_s]["frontier_cell"],
+                         describe_frontier_contract(_s))
++    if spread_geometry_floor:
++        _rt_cfg = merged.get("gtos_vnext_runtime", merged)
++        from src.components.ultimate_book.spread_geometry import resolve_floor_limit
++        for _s in sorted(spread_geometry_floor):
++            _lim = resolve_floor_limit(_rt_cfg, _s, spread_geometry_floor)
++            logging.warning("SPREAD-GEOMETRY FLOOR IS ON for %s at spread_r <= %.4f (%s). "
++                            "Intents whose live spread exceeds that fraction of their own stop "
++                            "are refused AT GENERATION, so they never enter the day's running "
++                            "conviction count. This changes WHICH TRADES this book proposes.",
++                            _s, _lim,
++                            "explicit" if spread_geometry_floor[_s] is not None
++                            else "inherited from the send gate's own limit")
+     broker_symbol = build_broker_symbol_resolver(merged)
+     launcher = BookLauncher(owner, mt5, broker_symbol, repo_root=".", tags=tags,
+                             poll_seconds=args.poll_seconds, kill_flag=args.kill_flag)
+ 

@@ -1,0 +1,493 @@
+"""Sleeve registry — the single source of "what generators to run, on which symbols, off which bars".
+
+Each entry: tag -> SleeveSpec(generator, timeframe, warmup_cluster, on_surface). The book engine
+iterates ACTIVE entries, fetches the per-symbol closed-bar series at the spec timeframe, calls the
+generator (which returns a sleeve-tagged TradeIntent or None on the latest closed bar), and batches
+the intents for admit_and_size.
+
+ALL 11 W7 sleeves are registered + route-parity-verified. The book's confidence weights live in
+admission.SLEEVE_REGISTRY/CLEAN3_REGISTRY — this registry only controls live GENERATION. The 11:
+metals_core, metals_softband, crypto, energy_agri, idxrev, metals_ob_micro, sub_xvol_pullback,
+sub_mid_dn_revert (H4); vp_euidx_pocgrav (H4 + M1 aux); fx_jpy, fx_jpy_ny (M15 session).
+"""
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Callable, Optional, Sequence
+
+from ..bar_provider import TF_D1, TF_H4, TF_M15, TF_M1
+from . import metals, crypto, index_jpy, energy_agri, metals_ob_micro, substrate, vp_euidx, fx_jpy
+from . import (
+    asia_pdl_fade,
+    asian_fade,
+    candidate_registry,
+    dsp_already_wide_down_bar_second_wave,
+    dsp_bleed_accept_fresh_20low_second_push,
+    dsp_cascade_last_two_not_yet_four,
+    dsp_climax_flush_to_96low_then_snap,
+    dsp_climax_onto_20high_then_fade_cashhole,
+    dsp_climax_onto_20high_then_fade_london,
+    dsp_close_on_20low_not_a_cascade_then_up,
+    dsp_expanding_two_bar_run_tokyo,
+    dsp_expanding_up_staircase,
+    dsp_first_cash_bar_spike_and_flush,
+    dsp_high_vol_doji_after_reclaimed_flush_fx,
+    dsp_huge_down_hold_then_spring,
+    dsp_isolated_spike_high,
+    dsp_london_bounce_fails_overnight_midpoint,
+    dsp_london_two_up_into_20high_reverses,
+    dsp_overnight_box_failed_floor_probe,
+    dsp_session_open_already_live,
+    dsp_small_bar_sit_on_20high_rejects,
+    dsp_two_open_bars_down_then_cascade,
+    dsp_walked_high_accepted_through,
+    dsp_weekend_gap_then_bleed_into_20low,
+    dsp_wide_down_then_micro_bounce_then_through,
+    dsp_isolated_flush_to_20low_snap,
+    dsp_climax_into_high_then_dump,
+    dsp_climax_2atr_onto_20high_then_fade,
+
+    # J2B_V2_LEFTOVER_PACK
+    dsp_high_vol_doji_after_reclaimed_flush,
+    dsp_two_bar_thrust_into_20high_continues,
+    dsp_climax_onto_20high_then_fade,
+    dsp_first_crack_failed_reclaim,
+    dsp_three_fresh_lower_lows,
+    dsp_descending_lows_accepted,
+    dsp_spring_close_on_20low_through_the_box,
+    dsp_volume_ramp_into_unrepaired_low,
+    dsp_small_bar_on_thrust_high,
+    dsp_wide_bar_takes_both_extremes_then_reverse,
+    dsp_three_bar_squeeze_into_high,
+    dsp_isolated_20h_spike_then_fade,
+    dsp_london_cascade_into_20low_springs,
+    dsp_rejection_wick_then_through,
+    dsp_shakeout_holds_run_lows,
+    dsp_cascade_two_down_bars_then_third,
+    dsp_take_of_low_already_falling_continues,
+    dsp_spring_first_print_of_range_low,
+    dsp_reclaim_then_giveback,
+    dsp_accepted_20low_then_second_flush,
+    xa_huge_20_extreme,
+    xa_isolated_opposite,
+    xa_prior_huge,
+    xa_climax_spring,
+    xa_wide_extreme,
+    xa_second_leg,
+    xa_huge_same_way,
+    xa_second_rth,
+    xa_wave_two_standing,
+    kz_london_crypto_low,
+    liq_asia_up_low_metal,
+    market_expansion_d1,
+    metal_session_reversion,
+    ny_crypto_momentum,
+    orb_crypto_london,
+    vol_compression,
+)
+from . import vss_fxcross_london_up_low
+from . import asian_fade_widen, ny_crypto_momentum_widen, orb_crypto_london_widen
+
+
+from . import sub_mid_dn_re_proxy_eurusd_short_m15_atr  # DIG_EDGE_B_RESEARCH_DRAFT_IMPORT
+from . import sub_mid_dn_re_proxy_nzdusd_short_m15_atr  # GROK_KEEP_ACTIVATE_20260920
+
+@dataclass(frozen=True)
+class SleeveSpec:
+    tag: str
+    generator: Callable[..., object]   # (symbol, bars, decision_day, *, bar_time, bar_times, aux_bars, aux_times) -> Optional[TradeIntent]
+    timeframe: int                     # DECISION timeframe (the bars the rule triggers on)
+    cluster: str                       # warmup key (bar_provider.WARMUP)
+    on_surface: tuple[str, ...]
+    aux_timeframe: Optional[int] = None   # optional SECONDARY feed (e.g. M1 for the vp volume profile)
+    aux_count: int = 0                    # how many aux bars to fetch (0 = none)
+    bar_count: int = 0                    # optional primary-bar warmup override (0 = engine default)
+
+
+# Built + route-parity-verified generators (the high-confidence mechanical core first).
+BUILT: dict[str, SleeveSpec] = {
+    "metals_core":     SleeveSpec("metals_core", metals.generate_metals_core, TF_H4, "metals", metals.ON_SURFACE),
+    "metals_softband": SleeveSpec("metals_softband", metals.generate_metals_softband, TF_H4, "metals", metals.ON_SURFACE),
+    "crypto":          SleeveSpec("crypto", crypto.generate, TF_H4, "crypto", crypto.ON_SURFACE),
+    "energy_agri":     SleeveSpec("energy_agri", energy_agri.generate, TF_H4, "energy", energy_agri.ON_SURFACE),
+    "idxrev":          SleeveSpec("idxrev", index_jpy.generate, TF_H4, "index", index_jpy.IDXREV_ON_SURFACE),
+    "metals_ob_micro": SleeveSpec("metals_ob_micro", metals_ob_micro.generate, TF_H4, "metals", metals_ob_micro.ON_SURFACE),
+    "sub_xvol_pullback": SleeveSpec("sub_xvol_pullback", substrate.generate_sub_xvol_pullback, TF_H4, "substrate", substrate.XVOL_ON_SURFACE),
+    "sub_mid_dn_revert": SleeveSpec("sub_mid_dn_revert", substrate.generate_sub_mid_dn_revert, TF_H4, "substrate", substrate.MIDDN_ON_SURFACE),
+    # vp decides on H4 but needs a SECONDARY M1 tick-volume feed for the prior-day volume profile.
+    "vp_euidx_pocgrav": SleeveSpec("vp_euidx_pocgrav", vp_euidx.generate, TF_H4, "volprofile",
+                                   vp_euidx.ON_SURFACE, aux_timeframe=TF_M1, aux_count=20000),
+    # M15 session-momentum (server-time session windows); one trade/symbol/day at the 4th session bar.
+    "fx_jpy":    SleeveSpec("fx_jpy",    fx_jpy.generate_fx_jpy,    TF_M15, "jpy", fx_jpy.ON_SURFACE),
+    "fx_jpy_ny": SleeveSpec("fx_jpy_ny", fx_jpy.generate_fx_jpy_ny, TF_M15, "jpy", fx_jpy.ON_SURFACE),
+}
+
+
+# Runtime-executable candidate-book v2. These are the positive-confidence candidates whose native exits clear
+# the V4 contract: fixed target, capless no-TP trailing, and targetless no-TP time-stop.
+CANDIDATE_BUILT: dict[str, SleeveSpec] = {
+    "sub_mid_dn_re_proxy_nzdusd_short_m15_atr": SleeveSpec(
+        "sub_mid_dn_re_proxy_nzdusd_short_m15_atr", sub_mid_dn_re_proxy_nzdusd_short_m15_atr.generate, TF_M15, "fx_reversion_research",
+        sub_mid_dn_re_proxy_nzdusd_short_m15_atr.ON_SURFACE, bar_count=220),
+
+    "vol_compression": SleeveSpec(
+        "vol_compression", vol_compression.generate, TF_D1, "crypto",
+        vol_compression.ON_SURFACE, bar_count=160),
+    "asian_fade": SleeveSpec(
+        "asian_fade", asian_fade.generate, TF_M15, "fx_reversion",
+        asian_fade.ON_SURFACE, bar_count=220),
+    "ny_crypto_momentum": SleeveSpec(
+        "ny_crypto_momentum", ny_crypto_momentum.generate, TF_M15, "crypto",
+        ny_crypto_momentum.ON_SURFACE, bar_count=520),
+    "metal_session_reversion": SleeveSpec(
+        "metal_session_reversion", metal_session_reversion.generate, TF_M15,
+        "metal_reversion", metal_session_reversion.ON_SURFACE, bar_count=220),
+    "asia_pdl_fade": SleeveSpec(
+        "asia_pdl_fade", asia_pdl_fade.generate, TF_M15, "liquidity_sweep",
+        asia_pdl_fade.ON_SURFACE, bar_count=220),
+    "orb_crypto_london": SleeveSpec(
+        "orb_crypto_london", orb_crypto_london.generate, TF_M15, "crypto",
+        orb_crypto_london.ON_SURFACE, bar_count=600),
+    "liq_asia_up_low_metal": SleeveSpec(
+        "liq_asia_up_low_metal", liq_asia_up_low_metal.generate, TF_M15,
+        "metal_liquidity_reversion", liq_asia_up_low_metal.ON_SURFACE, bar_count=3200),
+    "kz_london_crypto_low": SleeveSpec(
+        "kz_london_crypto_low", kz_london_crypto_low.generate, TF_M15,
+        "crypto", kz_london_crypto_low.ON_SURFACE, bar_count=560),
+    "vss_fxcross_london_up_low": SleeveSpec(
+        "vss_fxcross_london_up_low", vss_fxcross_london_up_low.generate, TF_M15,
+        "fxcross_vol_state_squeeze", vss_fxcross_london_up_low.ON_SURFACE,
+        aux_timeframe=TF_D1, aux_count=90, bar_count=600),
+}
+
+
+# F5 ceremony WIDEN tags. Parallel to CANDIDATE_BUILT so UNIFIED_BOOK_MC_RESULT
+# / CANDIDATE_CONFIDENCE pins stay byte-identical (test_candidate_book_consistency).
+WIDEN_BUILT: dict[str, SleeveSpec] = {
+    "asian_fade_widen": SleeveSpec(
+        "asian_fade_widen", asian_fade_widen.generate, TF_M15, "fx_reversion",
+        asian_fade_widen.ON_SURFACE, bar_count=220),
+    "ny_crypto_momentum_widen": SleeveSpec(
+        "ny_crypto_momentum_widen", ny_crypto_momentum_widen.generate, TF_M15, "crypto",
+        ny_crypto_momentum_widen.ON_SURFACE, bar_count=520),
+    "orb_crypto_london_widen": SleeveSpec(
+        "orb_crypto_london_widen", orb_crypto_london_widen.generate, TF_M15, "crypto",
+        orb_crypto_london_widen.ON_SURFACE, bar_count=600),
+}
+
+
+# Runtime-capable market-expansion D1 candidates. These are intentionally NOT appended to
+# CANDIDATE_BUILT because the candidate-book path is already armed and treats an empty allowlist as
+# "all candidates". Market expansion requires its own flag plus an explicit non-empty allowlist.
+MARKET_EXPANSION_BUILT: dict[str, SleeveSpec] = {
+    tag: SleeveSpec(
+        tag,
+        market_expansion_d1.generator_for(tag),
+        TF_D1,
+        candidate_registry.MARKET_EXPANSION_DEFAULT_OFF_CANDIDATES[tag].family,
+        (symbol,),
+        bar_count=market_expansion_d1.BAR_COUNT,
+    )
+    for tag, (symbol, _) in market_expansion_d1.TAG_TO_RULE.items()
+}
+
+# Smallest-correct-end-to-end live subset (de-risk the engine + V4 route on the two highest-conviction
+# uncorrelated sleeves first, then expand to the full BUILT set, then the harder sleeves).
+SMALLEST_SUBSET = ("metals_core", "crypto")
+
+# Cohort A. Fail-closed: not in BUILT, so --tags "" yields zero dsp_* names.
+DISPLACEMENT_BUILT: dict[str, SleeveSpec] = {
+    "asian_fade": SleeveSpec(
+        "asian_fade", asian_fade.generate, TF_M15, "fx_reversion",
+        asian_fade.ON_SURFACE, bar_count=220),
+
+    "sub_mid_dn_re_proxy_eurusd_short_m15_atr": SleeveSpec(
+        "sub_mid_dn_re_proxy_eurusd_short_m15_atr", sub_mid_dn_re_proxy_eurusd_short_m15_atr.generate, TF_M15, "fx_reversion_research",
+        sub_mid_dn_re_proxy_eurusd_short_m15_atr.ON_SURFACE, bar_count=220),
+
+    "dsp_climax_flush_to_96low_then_snap": SleeveSpec(
+        "dsp_climax_flush_to_96low_then_snap",
+        dsp_climax_flush_to_96low_then_snap.generate, TF_M15, "dsp_c_flush",
+        dsp_climax_flush_to_96low_then_snap.ON_SURFACE, bar_count=400),
+    "dsp_london_two_up_into_20high_reverses": SleeveSpec(
+        "dsp_london_two_up_into_20high_reverses",
+        dsp_london_two_up_into_20high_reverses.generate, TF_M15, "dsp_c_londonrev",
+        dsp_london_two_up_into_20high_reverses.ON_SURFACE, bar_count=400),
+    "dsp_expanding_up_staircase": SleeveSpec(
+        "dsp_expanding_up_staircase",
+        dsp_expanding_up_staircase.generate, TF_M15, "dsp_c_stair",
+        dsp_expanding_up_staircase.ON_SURFACE, bar_count=400),
+    "dsp_huge_down_hold_then_spring": SleeveSpec(
+        "dsp_huge_down_hold_then_spring",
+        dsp_huge_down_hold_then_spring.generate, TF_M15, "dsp_c_hugespring",
+        dsp_huge_down_hold_then_spring.ON_SURFACE, bar_count=400),
+    "dsp_already_wide_down_bar_second_wave": SleeveSpec(
+        "dsp_already_wide_down_bar_second_wave",
+        dsp_already_wide_down_bar_second_wave.generate, TF_M15, "dsp_c_wavedown",
+        dsp_already_wide_down_bar_second_wave.ON_SURFACE, bar_count=400),
+    "dsp_cascade_last_two_not_yet_four": SleeveSpec(
+        "dsp_cascade_last_two_not_yet_four",
+        dsp_cascade_last_two_not_yet_four.generate, TF_M15, "dsp_c_twonot4",
+        dsp_cascade_last_two_not_yet_four.ON_SURFACE, bar_count=400),
+    "dsp_close_on_20low_not_a_cascade_then_up": SleeveSpec(
+        "dsp_close_on_20low_not_a_cascade_then_up",
+        dsp_close_on_20low_not_a_cascade_then_up.generate, TF_M15, "dsp_c_close20low",
+        dsp_close_on_20low_not_a_cascade_then_up.ON_SURFACE, bar_count=400),
+    "dsp_wide_down_then_micro_bounce_then_through": SleeveSpec(
+        "dsp_wide_down_then_micro_bounce_then_through",
+        dsp_wide_down_then_micro_bounce_then_through.generate, TF_M15, "dsp_c_microbounce",
+        dsp_wide_down_then_micro_bounce_then_through.ON_SURFACE, bar_count=400),
+    "dsp_isolated_spike_high": SleeveSpec(
+        "dsp_isolated_spike_high",
+        dsp_isolated_spike_high.generate, TF_M15, "dsp_c_isospike",
+        dsp_isolated_spike_high.ON_SURFACE, bar_count=400),
+    "dsp_bleed_accept_fresh_20low_second_push": SleeveSpec(
+        "dsp_bleed_accept_fresh_20low_second_push",
+        dsp_bleed_accept_fresh_20low_second_push.generate, TF_M15, "dsp_c_bleed20low",
+        dsp_bleed_accept_fresh_20low_second_push.ON_SURFACE, bar_count=400),
+    "dsp_walked_high_accepted_through": SleeveSpec(
+        "dsp_walked_high_accepted_through",
+        dsp_walked_high_accepted_through.generate, TF_M15, "dsp_c_walkhigh",
+        dsp_walked_high_accepted_through.ON_SURFACE, bar_count=400),
+    "dsp_small_bar_sit_on_20high_rejects": SleeveSpec(
+        "dsp_small_bar_sit_on_20high_rejects",
+        dsp_small_bar_sit_on_20high_rejects.generate, TF_M15, "dsp_c_smallsit",
+        dsp_small_bar_sit_on_20high_rejects.ON_SURFACE, bar_count=400),
+    "dsp_session_open_already_live": SleeveSpec(
+        "dsp_session_open_already_live",
+        dsp_session_open_already_live.generate, TF_M15, "dsp_c42",
+        dsp_session_open_already_live.ON_SURFACE, bar_count=400),
+    "dsp_climax_onto_20high_then_fade_london": SleeveSpec(
+        "dsp_climax_onto_20high_then_fade_london",
+        dsp_climax_onto_20high_then_fade_london.generate, TF_M15, "dsp_c15",
+        dsp_climax_onto_20high_then_fade_london.ON_SURFACE, bar_count=400),
+    "dsp_climax_onto_20high_then_fade_cashhole": SleeveSpec(
+        "dsp_climax_onto_20high_then_fade_cashhole",
+        dsp_climax_onto_20high_then_fade_cashhole.generate, TF_M15, "dsp_c15",
+        dsp_climax_onto_20high_then_fade_cashhole.ON_SURFACE, bar_count=400),
+    "dsp_expanding_two_bar_run_tokyo": SleeveSpec(
+        "dsp_expanding_two_bar_run_tokyo",
+        dsp_expanding_two_bar_run_tokyo.generate, TF_M15, "dsp_c19",
+        dsp_expanding_two_bar_run_tokyo.ON_SURFACE, bar_count=400),
+    "dsp_high_vol_doji_after_reclaimed_flush_fx": SleeveSpec(
+        "dsp_high_vol_doji_after_reclaimed_flush_fx",
+        dsp_high_vol_doji_after_reclaimed_flush_fx.generate, TF_M15, "dsp_c26",
+        dsp_high_vol_doji_after_reclaimed_flush_fx.ON_SURFACE, bar_count=400),
+    "dsp_weekend_gap_then_bleed_into_20low": SleeveSpec(
+        "dsp_weekend_gap_then_bleed_into_20low",
+        dsp_weekend_gap_then_bleed_into_20low.generate, TF_M15, "dsp_c53",
+        dsp_weekend_gap_then_bleed_into_20low.ON_SURFACE, bar_count=400),
+    "dsp_overnight_box_failed_floor_probe": SleeveSpec(
+        "dsp_overnight_box_failed_floor_probe",
+        dsp_overnight_box_failed_floor_probe.generate, TF_M15, "dsp_c38",
+        dsp_overnight_box_failed_floor_probe.ON_SURFACE, bar_count=400),
+    "dsp_london_bounce_fails_overnight_midpoint": SleeveSpec(
+        "dsp_london_bounce_fails_overnight_midpoint",
+        dsp_london_bounce_fails_overnight_midpoint.generate, TF_M15, "dsp_c34",
+        dsp_london_bounce_fails_overnight_midpoint.ON_SURFACE, bar_count=400),
+    "dsp_first_cash_bar_spike_and_flush": SleeveSpec(
+        "dsp_first_cash_bar_spike_and_flush",
+        dsp_first_cash_bar_spike_and_flush.generate, TF_M15, "dsp_c23",
+        dsp_first_cash_bar_spike_and_flush.ON_SURFACE, bar_count=400),
+    "dsp_two_open_bars_down_then_cascade": SleeveSpec(
+        "dsp_two_open_bars_down_then_cascade",
+        dsp_two_open_bars_down_then_cascade.generate, TF_M15, "dsp_c02",
+        dsp_two_open_bars_down_then_cascade.ON_SURFACE, bar_count=400),
+    "dsp_isolated_flush_to_20low_snap": SleeveSpec(
+        "dsp_isolated_flush_to_20low_snap",
+        dsp_isolated_flush_to_20low_snap.generate, TF_M15, "dsp_c32",
+        dsp_isolated_flush_to_20low_snap.ON_SURFACE, bar_count=400),
+    "dsp_climax_into_high_then_dump": SleeveSpec(
+        "dsp_climax_into_high_then_dump",
+        dsp_climax_into_high_then_dump.generate, TF_M15, "dsp_c14",
+        dsp_climax_into_high_then_dump.ON_SURFACE, bar_count=400),
+    "dsp_climax_2atr_onto_20high_then_fade": SleeveSpec(
+        "dsp_climax_2atr_onto_20high_then_fade",
+        dsp_climax_2atr_onto_20high_then_fade.generate, TF_M15, "dsp_c10",
+        dsp_climax_2atr_onto_20high_then_fade.ON_SURFACE, bar_count=400),
+
+    # J2B_V2_LEFTOVER_PACK_SPECS
+    "dsp_high_vol_doji_after_reclaimed_flush": SleeveSpec(
+        "dsp_high_vol_doji_after_reclaimed_flush",
+        dsp_high_vol_doji_after_reclaimed_flush.generate, TF_M15, "dsp_j2b_high_vol_doji_af",
+        dsp_high_vol_doji_after_reclaimed_flush.ON_SURFACE, bar_count=400),
+    "dsp_two_bar_thrust_into_20high_continues": SleeveSpec(
+        "dsp_two_bar_thrust_into_20high_continues",
+        dsp_two_bar_thrust_into_20high_continues.generate, TF_M15, "dsp_j2b_two_bar_thrust_i",
+        dsp_two_bar_thrust_into_20high_continues.ON_SURFACE, bar_count=400),
+    "dsp_climax_onto_20high_then_fade": SleeveSpec(
+        "dsp_climax_onto_20high_then_fade",
+        dsp_climax_onto_20high_then_fade.generate, TF_M15, "dsp_j2b_climax_onto_20hi",
+        dsp_climax_onto_20high_then_fade.ON_SURFACE, bar_count=400),
+    "dsp_first_crack_failed_reclaim": SleeveSpec(
+        "dsp_first_crack_failed_reclaim",
+        dsp_first_crack_failed_reclaim.generate, TF_M15, "dsp_j2b_first_crack_fail",
+        dsp_first_crack_failed_reclaim.ON_SURFACE, bar_count=400),
+    "dsp_three_fresh_lower_lows": SleeveSpec(
+        "dsp_three_fresh_lower_lows",
+        dsp_three_fresh_lower_lows.generate, TF_M15, "dsp_j2b_three_fresh_lowe",
+        dsp_three_fresh_lower_lows.ON_SURFACE, bar_count=400),
+    "dsp_descending_lows_accepted": SleeveSpec(
+        "dsp_descending_lows_accepted",
+        dsp_descending_lows_accepted.generate, TF_M15, "dsp_j2b_descending_lows_",
+        dsp_descending_lows_accepted.ON_SURFACE, bar_count=400),
+    "dsp_spring_close_on_20low_through_the_box": SleeveSpec(
+        "dsp_spring_close_on_20low_through_the_box",
+        dsp_spring_close_on_20low_through_the_box.generate, TF_M15, "dsp_j2b_spring_close_on_",
+        dsp_spring_close_on_20low_through_the_box.ON_SURFACE, bar_count=400),
+    "dsp_volume_ramp_into_unrepaired_low": SleeveSpec(
+        "dsp_volume_ramp_into_unrepaired_low",
+        dsp_volume_ramp_into_unrepaired_low.generate, TF_M15, "dsp_j2b_volume_ramp_into",
+        dsp_volume_ramp_into_unrepaired_low.ON_SURFACE, bar_count=400),
+    "dsp_small_bar_on_thrust_high": SleeveSpec(
+        "dsp_small_bar_on_thrust_high",
+        dsp_small_bar_on_thrust_high.generate, TF_M15, "dsp_j2b_small_bar_on_thr",
+        dsp_small_bar_on_thrust_high.ON_SURFACE, bar_count=400),
+    "dsp_wide_bar_takes_both_extremes_then_reverse": SleeveSpec(
+        "dsp_wide_bar_takes_both_extremes_then_reverse",
+        dsp_wide_bar_takes_both_extremes_then_reverse.generate, TF_M15, "dsp_j2b_wide_bar_takes_b",
+        dsp_wide_bar_takes_both_extremes_then_reverse.ON_SURFACE, bar_count=400),
+    "dsp_three_bar_squeeze_into_high": SleeveSpec(
+        "dsp_three_bar_squeeze_into_high",
+        dsp_three_bar_squeeze_into_high.generate, TF_M15, "dsp_j2b_three_bar_squeez",
+        dsp_three_bar_squeeze_into_high.ON_SURFACE, bar_count=400),
+    "dsp_isolated_20h_spike_then_fade": SleeveSpec(
+        "dsp_isolated_20h_spike_then_fade",
+        dsp_isolated_20h_spike_then_fade.generate, TF_M15, "dsp_j2b_isolated_20h_spi",
+        dsp_isolated_20h_spike_then_fade.ON_SURFACE, bar_count=400),
+    "dsp_london_cascade_into_20low_springs": SleeveSpec(
+        "dsp_london_cascade_into_20low_springs",
+        dsp_london_cascade_into_20low_springs.generate, TF_M15, "dsp_j2b_london_cascade_i",
+        dsp_london_cascade_into_20low_springs.ON_SURFACE, bar_count=400),
+    "dsp_rejection_wick_then_through": SleeveSpec(
+        "dsp_rejection_wick_then_through",
+        dsp_rejection_wick_then_through.generate, TF_M15, "dsp_j2b_rejection_wick_t",
+        dsp_rejection_wick_then_through.ON_SURFACE, bar_count=400),
+    "dsp_shakeout_holds_run_lows": SleeveSpec(
+        "dsp_shakeout_holds_run_lows",
+        dsp_shakeout_holds_run_lows.generate, TF_M15, "dsp_j2b_shakeout_holds_r",
+        dsp_shakeout_holds_run_lows.ON_SURFACE, bar_count=400),
+    "dsp_cascade_two_down_bars_then_third": SleeveSpec(
+        "dsp_cascade_two_down_bars_then_third",
+        dsp_cascade_two_down_bars_then_third.generate, TF_M15, "dsp_j2b_cascade_two_down",
+        dsp_cascade_two_down_bars_then_third.ON_SURFACE, bar_count=400),
+    "dsp_take_of_low_already_falling_continues": SleeveSpec(
+        "dsp_take_of_low_already_falling_continues",
+        dsp_take_of_low_already_falling_continues.generate, TF_M15, "dsp_j2b_take_of_low_alre",
+        dsp_take_of_low_already_falling_continues.ON_SURFACE, bar_count=400),
+    "dsp_spring_first_print_of_range_low": SleeveSpec(
+        "dsp_spring_first_print_of_range_low",
+        dsp_spring_first_print_of_range_low.generate, TF_M15, "dsp_j2b_spring_first_pri",
+        dsp_spring_first_print_of_range_low.ON_SURFACE, bar_count=400),
+    "dsp_reclaim_then_giveback": SleeveSpec(
+        "dsp_reclaim_then_giveback",
+        dsp_reclaim_then_giveback.generate, TF_M15, "dsp_j2b_reclaim_then_giv",
+        dsp_reclaim_then_giveback.ON_SURFACE, bar_count=400),
+    "dsp_accepted_20low_then_second_flush": SleeveSpec(
+        "dsp_accepted_20low_then_second_flush",
+        dsp_accepted_20low_then_second_flush.generate, TF_M15, "dsp_j2b_accepted_20low_t",
+        dsp_accepted_20low_then_second_flush.ON_SURFACE, bar_count=400),
+    "xa_huge_20_extreme": SleeveSpec(
+        "xa_huge_20_extreme",
+        xa_huge_20_extreme.generate, TF_M15, "xa_c_huge20",
+        xa_huge_20_extreme.ON_SURFACE, bar_count=400),
+    "xa_isolated_opposite": SleeveSpec(
+        "xa_isolated_opposite",
+        xa_isolated_opposite.generate, TF_M15, "xa_c_isoopp",
+        xa_isolated_opposite.ON_SURFACE, bar_count=400),
+    "xa_prior_huge": SleeveSpec(
+        "xa_prior_huge",
+        xa_prior_huge.generate, TF_M15, "xa_c_priorhuge",
+        xa_prior_huge.ON_SURFACE, bar_count=400),
+    "xa_climax_spring": SleeveSpec(
+        "xa_climax_spring",
+        xa_climax_spring.generate, TF_M15, "xa_c_spring20",
+        xa_climax_spring.ON_SURFACE, bar_count=400),
+    "xa_wide_extreme": SleeveSpec(
+        "xa_wide_extreme",
+        xa_wide_extreme.generate, TF_M15, "xa_c_wideext",
+        xa_wide_extreme.ON_SURFACE, bar_count=400),
+    "xa_second_leg": SleeveSpec(
+        "xa_second_leg",
+        xa_second_leg.generate, TF_M15, "xa_c_leg2",
+        xa_second_leg.ON_SURFACE, bar_count=400),
+    "xa_huge_same_way": SleeveSpec(
+        "xa_huge_same_way",
+        xa_huge_same_way.generate, TF_M15, "xa_c_hugesame",
+        xa_huge_same_way.ON_SURFACE, bar_count=400),
+    "xa_second_rth": SleeveSpec(
+        "xa_second_rth",
+        xa_second_rth.generate, TF_M15, "xa_c_rth2",
+        xa_second_rth.ON_SURFACE, bar_count=400),
+    "xa_wave_two_standing": SleeveSpec(
+        "xa_wave_two_standing",
+        xa_wave_two_standing.generate, TF_M15, "xa_c_wavetwo",
+        xa_wave_two_standing.ON_SURFACE, bar_count=400),
+}
+
+
+
+# ===========================================================================================
+# DIG / CHAIR ENFORCE B — CHAIR_APPLY_20260920 — kept RESEARCH_DRAFT_BUILT + DISPLACEMENT_BUILT belt+suspenders
+# unless Chair explicitly opts in later. place=false · apply=false · no live_armed_set.
+# NEVER alias to sub_mid_dn_revert (H4 LONG CLEAN3).
+# ===========================================================================================
+RESEARCH_DRAFT_BUILT: dict[str, SleeveSpec] = {
+    "sub_mid_dn_re_proxy_nzdusd_short_m15_atr": SleeveSpec(
+        "sub_mid_dn_re_proxy_nzdusd_short_m15_atr", sub_mid_dn_re_proxy_nzdusd_short_m15_atr.generate, TF_M15, "fx_reversion_research",
+        sub_mid_dn_re_proxy_nzdusd_short_m15_atr.ON_SURFACE, bar_count=220),
+
+    "sub_mid_dn_re_proxy_eurusd_short_m15_atr": SleeveSpec(
+        "sub_mid_dn_re_proxy_eurusd_short_m15_atr",
+        sub_mid_dn_re_proxy_eurusd_short_m15_atr.generate,
+        TF_M15,
+        "fx_reversion_research",
+        sub_mid_dn_re_proxy_eurusd_short_m15_atr.ON_SURFACE,
+    ),
+}
+
+
+def active_specs(
+    tags: Optional[Sequence[str]] = None,
+    *,
+    include_candidate_book: bool = False,
+    candidate_book_sleeves: Optional[Sequence[str]] = None,
+    include_market_expansion_book: bool = False,
+    market_expansion_sleeves: Optional[Sequence[str]] = None,
+) -> list[SleeveSpec]:
+    """Return the SleeveSpecs to run. tags=None -> all default BUILT; candidates are explicit opt-in."""
+    built = dict(BUILT)
+    # GROK_KEEP_ACTIVATE merge RESEARCH_DRAFT_BUILT
+    if "RESEARCH_DRAFT_BUILT" in globals():
+        built.update(RESEARCH_DRAFT_BUILT)
+
+    # CHAIR_APPLY_20260920 belt+suspenders: displacement + research draft tags
+    if 'DISPLACEMENT_BUILT' in globals():
+        built.update(DISPLACEMENT_BUILT)
+    if 'RESEARCH_DRAFT_BUILT' in globals():
+        built.update(RESEARCH_DRAFT_BUILT)
+
+    if include_candidate_book:
+        allowed = {str(s) for s in (candidate_book_sleeves or ()) if str(s)}
+        built.update({
+            name: spec for name, spec in CANDIDATE_BUILT.items()
+            if not allowed or name in allowed
+        })
+        built.update({
+            name: spec for name, spec in WIDEN_BUILT.items()
+            if not allowed or name in allowed
+        })
+    if include_market_expansion_book:
+        allowed = {str(s) for s in (market_expansion_sleeves or ()) if str(s)}
+        if allowed:
+            built.update({
+                name: spec for name, spec in MARKET_EXPANSION_BUILT.items()
+                if name in allowed
+            })
+    # Displacement: fail-closed. tags=None (`--tags ""` fail-open) must yield zero dsp_* names.
+    if tags is not None:
+        dsp_hits = {t for t in tags if t in DISPLACEMENT_BUILT}
+        if dsp_hits:
+            built.update({name: DISPLACEMENT_BUILT[name] for name in dsp_hits})
+    if tags is None:
+        return list(built.values())
+    return [built[t] for t in tags if t in built]

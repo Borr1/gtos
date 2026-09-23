@@ -1,0 +1,131 @@
+=== K54 v4 Modeler — Q1.5 Hybrid 5 PRIMARY + 2 fallbacks — 2026-04-29T01:13:10.770691+00:00 ===
+
+[1/15] Loading primary 528-row v2 cohort + applying prune + adding K54 v3 features...
+  Pre-prune 1247 -> post-prune 1234
+  Added 6 K54 v3 features: ['kw__k10_round_aligned', 'kw__k10_round_dist_min_atr', 'kw__k7_osler_stopcluster_proxy', 'kw__k10_round50_above_below_asym', 'kw__k8_ob_age_power_law', 'kw__k9_regime_x_round_x_side']
+  Final feature space: 1240
+
+[2/15] Building K54 v1 canonical baseline (17 features, NO `symbol`)...
+  V1 canonical: (528, 14), win-rate 0.580
+  V3 full: (528, 1240)
+
+[3/15] Computing W-units + triple-barrier labels...
+  W-units: min=0.500, max=2.000, mean=0.964
+  TB-labels: TP=237, SL=207, TIMEOUT=84
+
+[4/15] Building CPCV K=6, N=2 (T = C(6,2) = 15 paths)...
+  Note: Q1.5 spec calls T=25 but C(6,4)=15. Using K=6/N=4 → T=15 literal.
+  See methodology block in report for T=25 vs T=15 disambiguation.
+  CPCV paths: 15
+    Fold 0: n=88 (2024-04-01 → 2025-12-18)
+    Fold 1: n=88 (2025-12-19 → 2026-01-22)
+    Fold 2: n=88 (2026-01-22 → 2026-02-13)
+    Fold 3: n=88 (2026-02-13 → 2026-03-10)
+    Fold 4: n=88 (2026-03-10 → 2026-03-31)
+    Fold 5: n=88 (2026-04-01 → 2026-04-24)
+
+[5/15] Training 4 architectures per path (master, ArchA, T7-NAS, v1-canonical) × 15 paths...
+        + paired-fixed-HP (single FIXED_HP={'n_estimators': 200, 'max_depth': 3, 'learning_rate': 0.05})
+  Path 1/15 done [elapsed 3.1s] AUC: m=0.5731, archA=0.5192, hyb5=0.5568, hyb4=0.5777, v1=0.4899
+  Path 3/15 done [elapsed 9.1s] AUC: m=0.4935, archA=0.4964, hyb5=0.4745, hyb4=0.4959, v1=0.5636
+  Path 6/15 done [elapsed 18.5s] AUC: m=0.6493, archA=0.6508, hyb5=0.6678, hyb4=0.6215, v1=0.4930
+  Path 9/15 done [elapsed 26.2s] AUC: m=0.5482, archA=0.5771, hyb5=0.5671, hyb4=0.5515, v1=0.5515
+  Path 12/15 done [elapsed 33.6s] AUC: m=0.5969, archA=0.6189, hyb5=0.5778, hyb4=0.6115, v1=0.5460
+  Path 15/15 done [elapsed 41.9s] AUC: m=0.5880, archA=0.5650, hyb5=0.5578, hyb4=0.5666, v1=0.5270
+  Per-path training complete in 41.9s
+
+[6/15] Computing per-path AUC arrays + paired evaluations...
+  Per-path means: master=0.5873, archA=0.5709, hyb5=0.5906, hyb4=0.5826, v1=0.5290
+  Canonical v1 anchor: 0.5286
+
+[7/15] Evaluating each architecture vs canonical v1 (paired, per-path)...
+
+[8/15] Per-instrument-group AUC floor + NAS specialist delta (gate d)...
+  Per-group AUC (master): [('XAU_XAG', {'n': 215, 'auc': 0.5619083680424082}), ('NAS_US30', {'n': 113, 'auc': 0.5815047021943575}), ('GBPJPY', {'n': 62, 'auc': 0.4621848739495798}), ('GBPUSD_USDJPY', {'n': 138, 'auc': 0.5633862433862434})]
+  T7 NAS specialist proxy AUC: 0.6056 vs master NAS: 0.5815, delta=+0.0241
+  NAS routing per-path delta (Hybrid 5 - master): -0.0052 (n_paths=15, p_one=0.5874)
+
+[9/15] Component ablation (gate h.a): master-bundle add over Arch A pure...
+  Master - ArchA per-path mean: +0.0164 (boot p_one=0.0222)
+
+[10/15] Cross-period gates (c.i train 2022-2023 / test 2024-2026; c.ii within 2024-2026)...
+  Gate (c.i) v1-schema cross-period: AUC=0.5759, lift=+0.0473, groups_positive=3/4, pass=True
+  Gate (c.ii) lift master=-0.0186 (groups+=1/4), hyb5=-0.0186 (groups+=1/4)
+
+[11/15] Realized-R top-K sweep (gate e) per architecture...
+  master: best_band=top_3pct, gate_e_pass=True
+  arch_a: best_band=top_3pct, gate_e_pass=True
+  hybrid_5: best_band=top_3pct, gate_e_pass=True
+  hybrid_4: best_band=top_3pct, gate_e_pass=True
+
+[12/15] Feature stability (gate f) — top-50 Jaccard across paths...
+  master: Jaccard=0.1649, stable=3, pass=False
+  arch_a: Jaccard=0.1785, stable=1, pass=False
+
+[13/15] Final per-architecture verdicts...
+  PRIMARY_Hybrid_5: 3/7 gates passed → FAIL
+  FALLBACK_1_Master: 3/7 gates passed → FAIL
+  FALLBACK_2_Hybrid_4: 3/7 gates passed → FAIL
+
+  Ship arch: None
+  Closest to PASS: PRIMARY_Hybrid_5 (3/7)
+
+[14/15] Saving artifacts...
+
+[15/15] Done. Total wallclock: 66.8s
+  Output dir: C:\Users\MSI\Documents\ai-trading-agent\research\ml_program\models\k54_v4
+{
+  "ship_arch": null,
+  "verdicts": {
+    "PRIMARY_Hybrid_5": {
+      "gate_a_pass": true,
+      "gate_b_pass": false,
+      "gate_c_i_pass": true,
+      "gate_c_ii_pass": false,
+      "gate_d_pass": false,
+      "gate_e_pass": true,
+      "gate_f_pass": false,
+      "gate_g": "DEFERRED",
+      "gate_h_pass": false,
+      "n_testable_gates": 7,
+      "n_passed": 3,
+      "verdict": "FAIL",
+      "groups_above_floor": 3,
+      "specialist_delta_per_path": -0.0052050670338545674
+    },
+    "FALLBACK_1_Master": {
+      "gate_a_pass": true,
+      "gate_b_pass": false,
+      "gate_c_i_pass": true,
+      "gate_c_ii_pass": false,
+      "gate_d_pass": false,
+      "gate_e_pass": true,
+      "gate_f_pass": false,
+      "gate_g": "DEFERRED",
+      "gate_h_pass": false,
+      "n_testable_gates": 7,
+      "n_passed": 3,
+      "verdict": "FAIL",
+      "groups_above_floor": 3,
+      "specialist_delta_per_path": null
+    },
+    "FALLBACK_2_Hybrid_4": {
+      "gate_a_pass": true,
+      "gate_b_pass": false,
+      "gate_c_i_pass": true,
+      "gate_c_ii_pass": false,
+      "gate_d_pass": false,
+      "gate_e_pass": true,
+      "gate_f_pass": false,
+      "gate_g": "DEFERRED",
+      "gate_h_pass": false,
+      "n_testable_gates": 7,
+      "n_passed": 3,
+      "verdict": "FAIL",
+      "groups_above_floor": 3,
+      "specialist_delta_per_path": -0.0052050670338545674
+    }
+  },
+  "closest_to_pass": "PRIMARY_Hybrid_5",
+  "T_paths": 15
+}

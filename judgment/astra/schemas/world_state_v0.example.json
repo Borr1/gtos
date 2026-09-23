@@ -1,0 +1,115 @@
+{
+  "schema": "gtos.judgment.world_state.v0",
+  "as_of_clock": "as_of_open_study",
+  "never_place": true,
+  "never_remint": true,
+  "never_flatten": true,
+  "never_invent_news_protocol": true,
+  "never_ingest_raw_x": true,
+  "clock": {
+    "as_of_utc": "2026-04-15T12:00:00Z",
+    "broker_epoch": null,
+    "rule": "new_york_plus_7",
+    "weekday": 2,
+    "weekday_name": "Wed",
+    "is_friday": false
+  },
+  "focus": {
+    "candidate_id": "lab:XAUUSD:20260415T120000Z:metals_core:short",
+    "symbol": "XAUUSD",
+    "side": "short",
+    "sleeve": "metals_core",
+    "family_class": "w7_metals",
+    "origin_organism": "historical_lab"
+  },
+  "usd": {
+    "stance": "unassembled",
+    "present": [],
+    "source": "unassembled",
+    "dxy": {
+      "series": null,
+      "source": "unassembled",
+      "reason": "dxy_csv_present_but_not_ice_dxy",
+      "file_present": true,
+      "usable_as_ice_dxy": false,
+      "proxy_used_instead": null
+    }
+  },
+  "rates": {
+    "path_named": "unassembled",
+    "named_yield": {
+      "series": null,
+      "last_close": null,
+      "trend": null,
+      "source": "unassembled",
+      "reason": "no_named_yield_tape_on_this_clone",
+      "sierra_zn": "control_only_absent"
+    },
+    "usd_proxy_only": false,
+    "assembled": false,
+    "source": "unassembled"
+  },
+  "risk": {
+    "stance": "unassembled",
+    "present": [],
+    "source": "unassembled"
+  },
+  "corr": {
+    "gold_vs_usd": {
+      "n": 0,
+      "corr_20d": null,
+      "corr_60d": null,
+      "relation": "unassembled",
+      "regime_broken": null,
+      "source": "unassembled",
+      "pair": null
+    },
+    "code_gold_sold_into_usd_strength": null
+  },
+  "liquidity": {
+    "spread_r_of_stop": null,
+    "vol_ratio": null,
+    "session_named": null,
+    "sierra_zn": "control_only_absent",
+    "sierra_cl": "control_only_absent",
+    "order_book": "unassembled",
+    "source": "unassembled"
+  },
+  "occupancy": {
+    "clusters": {},
+    "focus_cluster": "metals",
+    "focus_cluster_crowded": null,
+    "source": "unassembled"
+  },
+  "news": {
+    "spine_empty": true,
+    "events": [],
+    "high_in_f5_window": null,
+    "high_in_w7_window": null
+  },
+  "host_news": {
+    "host_news_inventory_status": null,
+    "host_news_source": "unassembled"
+  },
+  "narrative": {
+    "source": "unassembled",
+    "reason": "no_desk_brief_or_x_ingest_on_this_clone",
+    "raw_x_forbidden": true
+  },
+  "completeness": {
+    "clock": true,
+    "usd_proxy": false,
+    "named_yield": false,
+    "dxy": false,
+    "news_spine": false,
+    "occupancy": false,
+    "narrative": false,
+    "state_sufficient_for_desk": false,
+    "missing_fields": [
+      "usd.proxy",
+      "rates.named_yield",
+      "usd.dxy",
+      "news.events"
+    ]
+  }
+}

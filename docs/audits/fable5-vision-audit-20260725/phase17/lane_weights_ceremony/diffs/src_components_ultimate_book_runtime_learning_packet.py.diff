@@ -1,0 +1,78 @@
+--- host-before/src/components/ultimate_book/runtime_learning_packet.py
++++ session-co/src/components/ultimate_book/runtime_learning_packet.py
+@@ -139,6 +139,60 @@
+         return [_clean_mapping(item) for item in value]
+     return value
+
++
++def _lane_weight_packet_fields(
++    bridge: Mapping[str, Any],
++    *,
++    sleeve: Any,
++    unit: Mapping[str, Any] | None,
++    outcome: Mapping[str, Any],
++) -> dict[str, Any]:
++    """Project the day's applied sleeve weights and signed-source provenance.
++
++    The bridge retains the complete controller snapshot.  These top-level fields
++    make the applied value directly queryable without asking a telemetry reader to
++    understand every historical unit shape.  Multi-sleeve units carry one entry per
++    member; single-sleeve packets also expose ``lane_weight``.
++    """
++    block = bridge.get("lane_weights")
++    if not isinstance(block, Mapping):
++        return {}
++    raw_weights = block.get("weights")
++    weights = raw_weights if isinstance(raw_weights, Mapping) else {}
++    members: set[str] = set()
++    if sleeve not in (None, ""):
++        members.add(str(sleeve))
++    if isinstance(unit, Mapping):
++        for member in unit.get("sleeve_members") or []:
++            if member not in (None, ""):
++                members.add(str(member))
++    for member in outcome.get("admission_unit_members") or []:
++        if isinstance(member, Mapping):
++            name = member.get("sleeve")
++        else:
++            name = member
++        if name not in (None, ""):
++            members.add(str(name))
++    applied = {name: float(weights.get(name, 1.0)) for name in sorted(members)}
++    provenance = {
++        "contract_version": block.get("schema_version"),
++        "status": block.get("status"),
++        "reason": block.get("reason"),
++        "controller_decision_day": block.get("decision_day"),
++        "scope_sleeves": list(block.get("scope_sleeves") or []),
++        "declared_band": dict(block.get("declared_band") or {}),
++        "signature_verified": bool(block.get("signature_verified", False)),
++        "source_digest_sha256": block.get("source_digest_sha256"),
++        "evidence_digest_sha256": block.get("evidence_digest_sha256"),
++        "effective_decision_day": block.get("effective_decision_day"),
++        "expires_after_decision_day": block.get("expires_after_decision_day"),
++        "issued_at_utc": block.get("issued_at_utc"),
++    }
++    return {
++        "lane_weight": (float(weights.get(str(sleeve), 1.0)) if sleeve not in (None, "") else None),
++        "lane_weights_by_sleeve": applied,
++        "lane_weight_provenance": _clean_mapping(provenance),
++    }
+
+ def _hashable_ticket_key(lk: str) -> str | None:
+     if lk.endswith("_hash_sha256") or lk.endswith("_redacted"):
+@@ -430,6 +484,14 @@
+         "outcome": outcome_clean,
+         "redaction_policy": DEFAULT_REDACTION_POLICY,
+     }
++    packet.update(
++        _lane_weight_packet_fields(
++            bridge_clean,
++            sleeve=sleeve,
++            unit=unit_clean,
++            outcome=outcome_clean,
++        )
++    )
+     # Attached only when populated. An always-present block of nulls is indistinguishable from a
+     # block that was never filled, and 79 % of this stream is position_managed -- paying for an
+     # empty key on 78,687 packets a month buys nothing a reader could use.

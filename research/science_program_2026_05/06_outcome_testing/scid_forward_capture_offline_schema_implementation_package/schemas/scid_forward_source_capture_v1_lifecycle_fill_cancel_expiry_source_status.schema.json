@@ -1,0 +1,211 @@
+{
+  "$id": "https://gtos.local/research/scid_forward_capture/lifecycle_fill_cancel_expiry_source_status.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "lifecycle events must be append-only and timestamped when GTOS observes or changes intent state",
+  "properties": {
+    "candidate_input_row_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "decision_asof_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "downstream_g12_acceptance_rule": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "duplicate_proxy_denominator_key": {
+      "minLength": 16,
+      "type": "string"
+    },
+    "evidence_class": {
+      "const": "SCID_FORWARD_CAPTURE_OFFLINE_SCHEMA_IMPLEMENTATION_PACKAGE_ONLY"
+    },
+    "field_group": {
+      "const": "lifecycle_fill_cancel_expiry_source_status"
+    },
+    "field_status": {
+      "enum": [
+        "CAPTURED_SOURCE_SAFE",
+        "SOURCE_UNAVAILABLE_FAIL_CLOSED",
+        "PROSPECTIVE_CAPTURE_REQUIRED",
+        "FORBIDDEN_FAIL_CLOSED"
+      ]
+    },
+    "forbidden_value_policy_id": {
+      "const": "SCID_FORWARD_CAPTURE_FORBIDDEN_SURFACE_FAIL_CLOSED_V1"
+    },
+    "intent_state_after": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "intent_state_before": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "live_effect": {
+      "const": false
+    },
+    "missing_status_policy": {
+      "enum": [
+        "FAIL_CLOSED_MISSING_SOURCE_FIELD",
+        "PROSPECTIVE_CAPTURE_REQUIRED",
+        "FORBIDDEN_FAIL_CLOSED"
+      ]
+    },
+    "opens_ai_api": {
+      "const": false
+    },
+    "opens_broker_account_order_history_deal_position_evidence": {
+      "const": false
+    },
+    "opens_live_restart": {
+      "const": false
+    },
+    "opens_live_trading_behavior": {
+      "const": false
+    },
+    "opens_paid_or_vendor_access": {
+      "const": false
+    },
+    "opens_prompt_config_risk_safety_execution_canary_selector_edit": {
+      "const": false
+    },
+    "opens_raw_market_data_blob_commit": {
+      "const": false
+    },
+    "opens_result_scoring": {
+      "const": false
+    },
+    "opens_strategy_edge_claims": {
+      "const": false
+    },
+    "opens_validation": {
+      "const": false
+    },
+    "outcome_review_opened": {
+      "const": false
+    },
+    "pending_intent_id": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "promotion_verdict": {
+      "const": "NO_PROMOTION_VERDICT"
+    },
+    "redacted_order_bridge_hash_optional": {
+      "minLength": 1,
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "redaction_policy_id": {
+      "const": "SCID_FORWARD_CAPTURE_NO_BROKER_ACCOUNT_ORDER_DEAL_POSITION_IDS_V1"
+    },
+    "route_id": {
+      "const": "SCID_FORWARD_CAPTURE_OFFLINE_SCHEMA_IMPLEMENTATION_PACKAGE"
+    },
+    "schema_version": {
+      "const": "scid_forward_source_capture_v1"
+    },
+    "source_event_clock_basis": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_event_type_created_updated_expired_cancelled_replaced_no_order": {
+      "enum": [
+        "created",
+        "updated",
+        "expired",
+        "cancelled",
+        "replaced",
+        "no_order"
+      ],
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_event_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "source_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "source_hash_policy": {
+      "enum": [
+        "STRICT_SHA256_REQUIRED",
+        "HASH_DEFERRED_SOURCE_UNAVAILABLE_FAIL_CLOSED",
+        "SELF_REFERENTIAL_MANIFEST_HASH_NON_BLOCKING"
+      ]
+    },
+    "source_identifier": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "source_observed_asof_utc": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "validation_safe": {
+      "const": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "route_id",
+    "evidence_class",
+    "promotion_verdict",
+    "validation_safe",
+    "outcome_review_opened",
+    "live_effect",
+    "opens_validation",
+    "opens_result_scoring",
+    "opens_strategy_edge_claims",
+    "opens_broker_account_order_history_deal_position_evidence",
+    "opens_ai_api",
+    "opens_paid_or_vendor_access",
+    "opens_live_restart",
+    "opens_live_trading_behavior",
+    "opens_raw_market_data_blob_commit",
+    "opens_prompt_config_risk_safety_execution_canary_selector_edit",
+    "candidate_input_row_id",
+    "duplicate_proxy_denominator_key",
+    "field_group",
+    "decision_asof_utc",
+    "source_observed_asof_utc",
+    "source_identifier",
+    "source_hash",
+    "source_hash_policy",
+    "redaction_policy_id",
+    "forbidden_value_policy_id",
+    "missing_status_policy",
+    "field_status",
+    "downstream_g12_acceptance_rule",
+    "pending_intent_id",
+    "source_event_type_created_updated_expired_cancelled_replaced_no_order",
+    "source_event_utc",
+    "source_event_clock_basis",
+    "intent_state_before",
+    "intent_state_after",
+    "redacted_order_bridge_hash_optional"
+  ],
+  "title": "lifecycle_fill_cancel_expiry_source_status row schema",
+  "type": "object",
+  "x_scid_contract": {
+    "as_of_rule": "lifecycle events must be append-only and timestamped when GTOS observes or changes intent state",
+    "field_group": "lifecycle_fill_cancel_expiry_source_status",
+    "future_source_or_logger": "nonbroker_pending_intent_lifecycle_event_logger",
+    "historical_status": "NON_GENERATABLE_HISTORICAL_LIFECYCLE_SOURCE_TRUTH_CAPTURE_REQUIRED",
+    "no_leak_rule": "do not use broker account history, deal/position/order history, realized result, or later path labels",
+    "parser_requirement": "append-only JSONL parser with schema-version check, source-hash recomputation, duplicate-key preservation, and fail-closed missing-field behavior"
+  }
+}

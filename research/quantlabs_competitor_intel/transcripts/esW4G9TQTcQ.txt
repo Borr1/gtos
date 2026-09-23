@@ -1,0 +1,1042 @@
+# New Trading Algo Revealed: 82Hello, hello everybody. Brian here from
+quantabsnet.com.
+Today is the January 30th. Um going to
+talk about the current news state and
+what we can do about it and how we can
+respond. I'm going also show you a gooey
+interface to all the strategy stuff that
+I've got with the CL this set of clients
+and server uh working. So first off,
+let's check out the news here.
+um
+right here. So, you can see the markets
+are down. Uh they dipped quite deeply
+yesterday because of the Microsoft.
+Um I think we're on the precipice of
+something shaky right now. Fragile is
+what the AI is telling me. Um so, let me
+go over there. So, I've been posting
+more news related items here. So, we're
+focusing on currencies, uh future, well,
+it's all in the futures options space.
+futures options of currencies,
+commodities, crypto, namely Bitcoin,
+you'll see a uh Salena and along with
+the US market indices among whatever
+else can be traded at that time. So here
+is a new um it's kind of an early stages
+of an Electron application. So just so
+you know, apps like VS Code and a lot of
+other big apps um are written in in
+Electron. Um I think even Trading View
+itself might be um but nonetheless uh
+this is an interface that interfaces
+with my entire client server I've been
+talking about u with the main strategy
+handling all the rhythmic uh data and
+market orders going into rhythmic. We
+have here what I put out yesterday, a
+strategy of five um on the um euro
+>> volatility breakout, dynamic hedge,
+delta hedging volatility breakout for
+silver, Bitcoin, and then we also got
+crude oil in here. So, it's running and
+uh I'm going to run it for a couple
+hours and see where it goes. Also, um
+that's important to understand when you
+take in all of the news items I just
+showed you, uh in that group setting
+here,
+um we also have the capabilities to
+present now something with that in a
+JavaScript well really HTML environment.
+I'm going to show you that now. So, this
+is specifically for today. Okay. Um
+so, here it is. So what I've done was I
+I presented today's news or the most
+recent as it said over the last 24
+hours. So this goes through um a
+complete overview of the market in the
+futures and options space divided up in
+crypto derivatives um modes rates FX
+volatility plays and any cross asset
+that you could take advantage with uh
+arbitrage and whatnot. Now do remember
+um it's really important to remember I
+do have my course here on at
+quantabsnet.com
+just go into courses this this is
+primarily an advanced features and
+options course with sample source code
+that come with comes with it currently
+it's $97 um and I'm going to jack it up
+to 250 eventually as um building all
+this out but coming back to this
+dashboard I guess um for today. Okay, we
+can see here where we get market
+environment summary and it's
+specifically for today. So we'll see
+here mentions of Venezuela,
+this Armarda thing going on with Iran,
+with the navy, with the US and there's
+impacts on that and it can tell you
+specifically what to trade and how to
+trade it. So here with certain
+instruments namely a cross overview uh
+and this is for today. So I could
+generate this every day, every trading
+day. So the highest one that gives you
+the best um driver is Sana futures long
+was CVD confirmation. And again, this is
+all taken out of the news that I've
+shown over the last few days. And again,
+you can see here what's driving that. Uh
+the CVD turned positive, maintained
+bullish uh bias since uh December. We
+have here volume absorption at support
+and then we have a gamma squeeze
+potential. So all of that is not what
+you'll get in the retail space. All
+that's not going to get you from the
+typical social media I call them fat
+boys um on Tik Tok and whatever. And and
+I've just discovered some really seedy
+stuff going on with a variety of of
+dangerous so-called gurus. You you'll
+lose money. All they care about is just
+[snorts] feeding their line in their
+pockets. Anyways, continuing along. So,
+we have the execution framework. Then we
+have another one here based upon uh oil
+geospatial straddle or an option trade.
+We have here obviously the potential of
+a US Iran military escalation. So,
+that's built in today the last 24 hours
+of news cycle. Okay, we're premium
+return. So, there's a trade opportunity
+there. And then um we also have if if
+there is and as I said with the course
+that I mentioned when it comes to
+hedging
+uh here this gives you the specific ways
+to hedge and how to do it. Um so here in
+this case when it comes to hedging if
+the ama threat proves to be bluster and
+tensions simmer down oil could rapidly
+shed 10 to 15% of the war premium. Put
+leg of the straddle captures this
+alternative outcome. So right there on
+the upside you're covered on the
+downside you're covered with options and
+hedging. This is the like that's a big
+move projected uh based on AI. So just
+this is just on oil alone. Okay. Um so
+this is the classic way a lot of how the
+wealth is built in trading with both
+futures contracts and options because
+you get so much information. But there's
+but here you have these things that are
+driving
+uh the the the news and eventually the
+futures market over the next day, two
+days, three days of uh trading sessions.
+So here we set up um an at the money
+straddle on Brent crude and a put on the
+current strike. Now if you don't know
+what that means, that's what the course
+is for. you accept a premium loss which
+stays flat unlikely given news flow
+profit from a violent move in either
+direction. So here here's here's the
+takeaway. So no matter what happens on
+these type of trades in the oil market
+regardless of what the news is we can
+make money e either direction on the
+upside or the downside of that move.
+Consider rolling if implied volatility
+compresses without price movements and
+an alternative long straddle for lower
+cost but requiring larger move. Okay, so
+this is telling you potentially what
+will drive it on that trading
+opportunity again with futures and
+options for specifically for oil. And
+then here you can see here it lists
+expected return 35 35 to 80%
+This one is a short-term trade with a
+1.65
+sharp ratio. This is how a lot of the
+trading firms make their money now is
+they you can trade multiple ways.
+Obviously, you can trade by investing.
+You can also trade trade on short-term
+moves and what drives it. Here we have a
+win ratio potential of 68%.
+Uh this is the riskreward which is
+really high one to four and a half and
+the potential
+uh for Vega which is a big move uh is
+quite high. Okay, this is the sort of
+stuff you present to your boss if you're
+in a trading firm. So we have here a
+goal called backspeed.
+Okay, so here we have the drivers
+all-time high breakout and price
+discovery. we have here. Now, this is
+the thing that a lot of um unfortunately
+retail traders don't get. We'll just
+call it the plight way. They're not
+smart money, but the smart money will
+see this because this is what they're
+seeing. Stew and ktosis are rising
+simultaneously. A rare signal market is
+pricing in extreme events
+with a three sigma move.
+OTM puts expensive despite rising price
+prediction.
+uh smart money which which is talked
+about hedging long positions against
+violent corrections. So here's the
+expected return. It sounds like it's
+it's a 25%
+uh expected return with a with a very
+pretty strong sharp ratio 1.55
+max draw down. Okay, negative 35%. What
+was the other? So here uh we could have
+the max draw down on the crude oil.
+Okay. So the goal here that draw down
+considering is pretty it is high if you
+want to be aggressive in trading my I
+have my portfol my my way of trading and
+investing uh I keep multiple portfolios
+uh but my bulk of my cash is in the
+conservative and trading just usual
+equity and uh stock. So here the
+potential the convexity is very high and
+um this GVZ sensitivity
+um that's the volatility on gold uh is
+20% a day. So that's what's projected.
+So everyone's going on about the
+currency debasement trade. So here and
+again this could be the Fed or whoever
+manipulating this type of trade um and
+knowing about it enables you to profit
+from it. So here you have central bank
+buying and ETF windows signal
+institutional distrust of flat
+credibility. That's what's driving that.
+Okay. Um
+so execution uh framework one ATM call
+or sell one ATM call and buy two ATM
+calls.
+And we can see here the logic finances a
+trade using expensive ATM premium while
+maintaining unlimited upside. Again, the
+big benefit of options trading in the
+futures market, unlimited
+upside. Okay. If gold goes parabolic, if
+gold um winds up slowly or drops, the
+short car call covers the costs.
+So, you're kind of like
+neutralizing the risk here on the
+downside. ideal for high IV environments
+where uh buying naked calls is
+prohibitively
+expensive
+because with if you looked at my groups
+um and and my own analysis over the last
+week let's say um the buy and hold on
+gold alone out likely outpaces
+theatic trade um and as a result what's
+happening is something's going to happen
+to the gold over is
+so taking a look at Bitcoin post expiry
+momentum.
+So here we're getting a more
+conservative return 20 to 35% sharp
+ratio not as high as 1.45 45 max draw
+down at - 22% with a win ratio is I
+think that's higher than yeah so it's in
+line with gold shape 64% 1.9
+uh sortino ratio and with the sort
+that's including the um it's taken out
+the risk of volatility
+uh so here IV rank is in the lower 25
+percentile so here's a logic options
+expiry pinning wizley case
+uh implied uh implied volatility
+compression signals consolidation not
+crash. We also have here a leverage
+flush complete. So that's meaning all
+the people that are putting in projected
+speculated trades, we'll just call them
+the crypto bros, will get wiped out and
+always get wiped out. And and believe
+me, all the institutional smart money
+take advantage of that. That's why
+there's a lot of um institutions now
+getting involved in this type of trade
+to wipe out the the nots smart crypto
+bros because they're they're being
+liquidated each and every time on this
+type of trade.
+Um so we have the corporate synthetic
+put. Now this is also important to
+understand the synthetic is a
+combination of option trades. Um but
+this is really for bigger portfolios or
+bigger um bigger institutions. So here
+we're doing known layer or sorry known
+buyer corporate treasuries with uh now
+this is impressive and that's all based
+upon the news just in the last 24 hours.
+So we have 134 million allocated act as
+a floor discouraging aggressive
+shorting.
+This skews put call dynamic favorably
+for the long position. So the execution
+here says um expiry to pass. So the end
+of January, so that's today really least
+last trading day in January. Enter long
+Bitcoin future on confirmed breakout
+above the recent consolidation range. So
+we have here use risk index reset and
+and again this is this is important to
+understand is to neutralize or call out
+the bullish on the additional
+confirmation. So when [clears throat]
+you're neutralizing
+again, what you're doing there is you're
+minimizing or maybe even eliminating
+your downside risk with this combined
+trade.
+And then here we got target initial move
+of up 15 to 20% with trailing stops. Of
+course, consider bull call spreads to
+mitigate premium costs if the IV spikes.
+So again, the only way to trade this out
+is using the automation. Knowing this
+and knowing how advanced I am now with
+Rhythmic API for C orn net, I probably
+could whip this up pretty quick. My
+whole schedule is going to change over
+because of this these kind of
+opportunities that's being presented.
+So the last one here and you can see
+here the metric is on the amber amber
+risk level. Okay, now I'm new to this.
+Now again when I rerun this process I
+will get a totally different
+presentation but generally the
+information is going to be the same um
+using uh AI that I use. So here we're
+buying the uh ITM leads again I've got
+that detail my quantalics and I'm going
+to probably raise that monthly price as
+well because this when I go live trading
+on this sort of speculation and it works
+this will be very valuable. So expect it
+to be even higher. This is institutional
+level stuff again because that's why I I
+stress people to take this course. Okay.
+Um so here we have a delta near 1.0
+mimicking futures ownership with less
+capital. Now as I said institutions with
+enough capital which they do they can um
+manipulate the market and and fooling
+the uh not smart smart money the retail
+traders mom and pop traders. So knowing
+this protects your
+um your potential
+uh minimizing your downside. So long
+expiry expiration avoids theta decay
+over the multi-month thesis horizon
+alternative bul sessions on this to
+reduce large contract size capital
+requirements monitor in inventory levels
+and merger and acquisition new slope.
+So I'm showing you here
+it it doesn't it doesn't stop. So here's
+the symbols you get here. So we got
+Bitcoin futures, we've got HG options,
+we've got here GC futures and options
+and Brent crude WTI options. Okay. And
+then we have SLAN if you want to take
+that trade. So again um it's important
+to always understand this to understand
+these indicators. CBD divergence IV
+compression price decline rising skew
+suggests spot price weakness is a
+lagging indicator. Okay, let me stress
+that if you're in the spot market,
+you're going to get crushed. Okay,
+you're not trading. You're just guessing
+where the price goes based upon bunch of
+charts and a bunch of I don't know past
+even recent or long-term past or
+long-term past past data. No, no
+offense, but this is not how the smart
+money does it. This is how the smart
+money uh provides the liquidity in the
+right moments, and it's those moves that
+will drive up those prices. And at the
+same time when it comes on the other
+side on the exit.
+So the flush of overleveraged positions
+we know those gold bit Bitcoin maybe
+open interest to healthier levels
+priming markets for the next directional
+lag that could happen next week. So as I
+said I can run this every day likely to
+the upside across multiple asset
+classes. So check out um
+so here we we we even have some more uh
+Bitcoin crypto derivative strategies.
+Okay, I'm not going to go into this.
+Okay, but look you you you can gauge out
+of all the overview out of even on the
+crypto side which ones look better for
+you. You got here one with an ash sharp
+ratio a sortino which is pretty good
+really strong in fact and here I don't
+know I don't really measure the cal
+market but again it explains it bitcoin
+here's the moves again 1.45 45
+um and so on and so forth. So you can
+compare each one. We have a simple
+Bitcoin range, iron condor based upon
+pre-expiry. So there's three ways to
+trade crypto. You choose which one's
+right for you if this is what you want
+to do. Then we have commodities, right?
+Here we're basing upon pure news. So
+here we have a potential of a 30 to 5 to
+80% return. Sharp ratio is pretty strong
+at 1.65. riskreward is very good with a
+high potential on the um Vega exposure.
+So here again we just we just went
+through that. We have the gold call back
+spread. We went over that
+um execution framework again the copper
+leaps bull position. Now this is another
+one here which not talked about. Um, so
+you what I what I like about this from
+what I'm seeing is which one's going to
+give you the highest
+rate of return. Which one's going to
+give you potentially on a win ratio? So
+maybe this copper leap might be one that
+you may not think about. But again the
+time horizon on this one would be 6 to
+12 months based upon what's happening in
+the market in terms of the economy in
+terms of uh what happens when it comes
+to let's say with copper uh with China
+extracting natural resources out of
+Australia where will that go I don't
+know if you saw the headline news of
+China um or sorry Australian government
+wants to take back control of major port
+that China is using to ex extract and
+export all the minerals and resources
+coming out of Australia. So that can
+have an impact on this type of trade.
+Okay. But this right here at 70%. Very
+good uh sharp c uh ratio. But one thing
+that this course this is really talked
+about what I'm talking about now
+portfolio management and which will give
+you optimal return with minimal risk but
+highest reward. This one we'll talk
+about which nobody ever talks about on
+online is opportunity cost. Everyone
+says, "Have your money tied in in
+Bitcoin. Have your money tied up in
+gold." That's fine. But then what
+happens is you start to miss out on
+other opportunities. Something like this
+as an example. Or you put capital into
+this type of trade and then you lose out
+on the opportunity cost where you could
+get something where you could have a
+higher opportunity and a lower risk for
+uh the profit. So again, this is now go
+going into unknown territory that you
+pretty well outside of ETFs can trade in
+is in rates. Okay, so again this is
+important because when you look at
+actually I'll bring it up. When you look
+at uh Yahoo Finance with everything
+down, typic typically uh what the the
+the lazy money does is when you look at
+the volumes here, all they do really um
+based upon volume here, they just move
+their capital out of or or lower their
+positions on equity, the US market
+indices into fixed income. again
+treasury uh and uh this SOFR what I'm
+about to talk about here. So this is
+unknown territory for here. Let's let's
+Okay, so this is more conservative right
+here. 18% on fixed income's pretty good.
+Sharp ratio 1.4 is pretty good. But this
+is the thing because if you went through
+all of the um the all of the content
+that I just posted into that um into
+that group,
+namely uh
+into this uh right here in the groups
+that that's behind a payw wall.
+All of this um comes from news,
+but there's you could trade these
+depending upon your account size. Um
+that's the thing is that accounts
+matter, but but that whole trend if you
+read all of those from today, it's all
+about two things and it's very eye
+opening. Number one is volatility has
+increased. I've talked about that. Um,
+as I said, when we start to see
+volatility in US Treasury, game is over.
+Like we're we're in we're going to be in
+major panic mode. And and the other one
+that is in the offing is liquidity. And
+that's what led into the uh great
+financial crisis of 2008. This is a much
+bigger one because that's factoring in
+not factoring in national debt which is
+very high. So the Federal Reserve will
+just basically back then in 2008 the
+difference was they still had enough
+bullets
+um in the gun I guess in the bazooka to
+defend themselves with minimal risk. Now
+at 2026
+which is what uh 18 years later
+um we have a much higher risk here
+because Fed doesn't have what it has and
+the deficits are so high and the
+national debt is so high all you're
+really doing is just spediting the
+eventual boom loop of the US um which
+dries up all liquidity because now you
+have to serve all of the um all of the
+uh interest. One of the other
+interesting characteristics of what I've
+said in my stream and now it's verified
+in the news here is that things will
+like like it mentioned inflation 2.0. So
+with inflation 2.0 we we are expecting
+higher costs right now in energy. Um and
+then the other one will be food. So
+agriculture. So when you start to see
+those moves happen, the only way to to
+sort of circumvent that um is trading
+futures and options as it says here. So
+the volatility and lack of liquidity is
+going to be a big big deal moving
+forward and people will will lose large
+uh in that such as your poster
+retirement or depending upon your
+pensions and where they're parked which
+is usually in locked in um investment
+vehicles that they can't get out when
+this happens. So, like people that are
+in a pension, government pensions, be
+aware. Um, start asking your questions
+on on where those pensions go because
+you will have one of two things if
+you're going into retirement. Either
+it'll be majorly cut or eliminated
+haircut. So, that will obviously
+negatively uh go against people that are
+going in retirement like myself. So,
+being aware of this helps me out.
+So anyways, coming back to this, we have
+a win ratio of 82%. So that's very very
+high, but you're still getting a 12 to
+18% uh return. So when I come back to um
+the moves of what you see there on par
+bar bar chart, it's probably because
+you're seeing these these type of trades
+where you get a very high win ratio,
+potential 12, 18% return, and another
+unhidden trading opportunity that you
+never see. But again, you have to have a
+large account to really trade in the
+treasuries
+space. So here, um, it's asking us to
+take out these SOFR futures.
+Um, and this is where the where
+basically wealth is developed. I'm not
+going to go into the details here. So
+there's a no hurry. Uhhuh. Yeah, sure.
+When panic mode kicks in. But here's
+here's how you generate wealth. This is
+how it's all done on this trading
+opportunity. Basically, we're harvesting
+the theta decay and that means that's
+income coming into your pocket from this
+trade as the Fed holds steady. So, right
+there, you're able to generate income
+from that from this trading opportunity.
+And again, that's the combination of why
+you want to know trade uh options and
+futures. So, you close the positions
+before any scheduled Fed uh
+communication that might uh shift their
+guidance. So that that's that's a very
+wise
+uh hall that you pretty well not hear on
+the news networks. You will not hear
+that in media and you definitely won't
+hear it from the doomsters and the strap
+boys on social media and YouTube.
+All right. So here we've got uh the
+EuroUSD as well. Um this thing will
+trade it. Um
+uh let's see here. Uh right there. C C
+6E H6 that's the future opportunity for
+Euro
+that's a symbol okay so here we've got
+ECB passive creates a breakout set setup
+structural dollar support flow so what's
+this saying buy an ATM strat straddle
+Euro future 60 bet on violent move in
+either direction okay so again with the
+hedging and again if you take that
+course you bet on violent move in either
+direction. So if the ECB full finally
+respects responds to currency
+application
+uh your current applied volatility
+suppression makes options relatively
+cheap despite the current volatility.
+That's really good based upon that type
+of trade. You increase your sharp ratio
+pretty good. Here's your expected return
+at 25 to 50% with a pretty strong
+projected win ratio along with a long
+plus. So this is involving
+um I think it's just futures future and
+options. This is amazing what it can do.
+So here we're now getting involved with
+the the treasury cur curve flattener.
+Look at this. That is amazing. 68%
+sharp ratio of 1.2 to an expected return
+of 10 to 20%. And it's edged. That's why
+you got to take the course. I don't know
+how many times I got to say that.
+Um, but there's no um details on that
+how to do it. Uh, well, maybe there is.
+I'm just not reading it. Anyways, so we
+have another one for Forex. Now,
+everyone goes on about retail forex
+watching the charts and getting killed.
+Here you can still play what we call the
+currencies in the futures and options
+market, not Forex.
+Um but here we have an Australian risk
+reversal.
+Okay. So what's happening here? The
+Australian dollars uh okay so you have a
+good return of 18 to 35% sharp ratio 1.2
+win ratio of 64% and net zero
+meaning uh it's risk uh neutral.
+Um so here we we anticipate the
+Australian dollar
+outpacing the G10 currencies
+uh with the the central bank uh raising
+uh interest
+uh and then the rising Australian dollar
+relative to US four points making
+Australian futures cheaper in four
+months. [snorts]
+>> Now here we have the commodity. Now I've
+talked about this as well. So this is
+assuming
+if Australia dollar serves as a proxy
+for Chinese growth
+depending if the if the if the
+government of Australia is smart they'll
+allow this to trade if they care about
+their people and their economy. But you
+know how that goes. Major investments in
+China R&D signal emerging market
+sentiment improvement and supporting
+commodity currencies and including the
+Canadian dollar with oil double tailwind
+yield appeal and commodity strength. So
+here's the framework for the execution
+uh risk reversal in the Australian
+dollar future on 6A. Sell the OTM put to
+finance purchase of OTM call. Next, zero
+or small uh or small credit entry,
+profit from the Australian dollar
+strength, limited loss if the Australian
+dollar stays stable, and risk if the
+Australian dollar collapses.
+Um, so I could probably get more details
+on that to protect on the downside. So,
+these are current news events that's
+driving this. Another one I've talked
+about before is volatility.
+Okay. So, um we know about volatility.
+I've talked about it. Um so, we have
+here volatility trade on the GBZ,
+which is the gold volatility
+zone. Okay. So, here making 30 to 80%
+return sharp ratio 1.45.
+Again, these win ratios, you think that
+you're living in a dream. Knowing how to
+do this is is impressive. Okay, it's
+right there. coming out of AI.
+Okay. So, if you went into futures and
+options, you will minimize your risk by
+have virtually unlimited
+side on these various trades.
+Uh Vega exposure maximum.
+That's I'm just going to go on about
+this. So, we have long GBC futures on
+gold straddles alternative backspread
+structure. Again, this is a combination
+of these synthetic option trades that
+I've mentioned. Sell one ATM, buy an
+two. Now, this is again at the money and
+two uh out of the money to finance long
+volatile
+positions using expensive ATM uh premium
+position for acceleration either
+direction. Jeez. So, once again, you're
+covered on both sides. This is what the
+smart money does, but they don't talk
+about it again. Let me let me let me
+mention this too. This is how the the
+HFT shops work. This is how the H hedge
+funds work. Short-term trades. Um this
+is what they look for. Meaning that they
+go out and do low uh volume, sorry, low
+risk trades, but present themselves with
+unlimited uh market opportunity. This
+isn't a bad environment. And I mean this
+is like as I said when you look at um
+what the the the the markets right now
+just raw
+well let me show it to you just looking
+at this on these moves and here we're
+projecting unlimited profit and
+minimizing our risk because of options
+and futures
+coming back to this. So here we have a
+NASDAQ volatile uh volatile hedge. I've
+talked about the volatility especially
+for the stock market. So this one's now
+just the market came out with ASML out
+of Netherlands.
+Um chip giant about to hit a ceiling.
+That's a that's a headline from a news
+item. If the uh semiconductor capex
+slows AI driven NQ so that's that's uh
+NQ futures the symbol for NASDAQ uh
+faces structural headwind. So again it's
+saying that uh there might be volatile
+and structural headwind concerns. VXN
+may be underpricing tech spec correction
+risk. Then we have what could be the
+impact
+of uh tech valuations most sensitive
+uh higher for longer rates which is very
+possible. Fed's hawkish stance creating
+long ongoing headwind for growth VXN
+calls
+provide convex hedge against correction.
+So again here's the play. This is your
+playbook for the options market. I would
+not recommend this without understanding
+the principles of options trading. Again
+from that course OTM calls VXN. So this
+is now another symbol NASDAQ 100
+volatility index or VIX futures and
+remember what I said about VIX futures
+is going to is going to spike. Let's see
+where it's at now. So right now um the
+let's see here. Okay. So which which
+one's the only one moving right now?
+It's the VIX. So it's volatile when
+everything's down. Nobody's talking
+about it. But here the VIX is up at
+1.42%.
+So again, you're using that and here,
+look at this now. Now I just do a
+refresh. It's now at over 2.1%.
+Intraday. I mean, yes, you can make
+money in a bad market. What's what I'm
+saying? So you buy OTM. Okay, where
+where was I at? Um, position. Okay, so
+or futures, right? You can buy fixed
+futures. Position your sizing as
+portfolio hedge, not a directional bet.
+profit from the techled correction while
+allowing uh continued equity exposure.
+So what's going on right now which we
+had all week was the uh stock uh calls
+namely Microsoft that's dragging the
+whole thing down. That's what why the
+markets are down because of Microsoft.
+So here we have index versus the stock
+single stock dispersion.
+Okay. So Caterpillar win, Altria loses
+on competition,
+tech face, tech rate uh headwind. Okay.
+Individual stock moving more than the uh
+index itself itself. So there is a
+dispersion happening. And here's what's
+happening that most retail traders will
+not see or even know what it is is the
+um index uh implied volatility remains
+suppressed.
+That is your future outlook call on
+NASDAQ. So here we have industrials
+outperforming on earnings, financials
+and tobacco lag. Uh ro rotation creates
+high single stock volatility. Okay, but
+you can take advantage of that with
+futures and options again uh within a
+rangebound index environment. So even if
+it's if it goes flat and it's
+rangebound, you can still make money
+that this is pretty incredible to know
+this. So here's how to do it. you sell
+your uh volatility do a S&P straddle buy
+your single stock volatility. So we're
+getting straddle straddle on high beta
+names like CAT MO and ASML which we
+already talked about profit when and
+again this is very specific to today. So
+ASML came out in the last 24 hours. So
+if I known that I could have trade I
+could have set up this trade a day
+before profits when individual stocks
+move
+uh than the uh move more than the index.
+That's your alpha betting on the
+dispersion over correlation.
+Pretty smart. And again you have the
+different types of trades. And again,
+you can trade around specifically in the
+NASDAQ futures
+because of the volatility that it brings
+on top of um the VIX as well. It's
+incredible. So, here we have crossed
+asset trades.
+So, what are we talking about here? So
+we have a a hawkish Fed growth stress
+signals
+uh simultaneous rally in oil, gold,
+copper classic cost push inflation
+signature. We've talked about that
+inflation 2.0.
+So here we have the Russell 2000 exposed
+to domestic economy and logistics. This
+is an important one that I know um but
+most people don't like or don't hear
+about. So we always want to focus n we
+don't care about the current. We don't
+care about the past. What we care about
+is the future. This is the classic one
+on the economy. Trucking bond distresses
+signal goods aren't moving. Meaning the
+economy moving into the into the quarter
+next year long term everything's not
+moving. which means you have now a
+contracting economy. Who cares what they
+when you hear about all of this mumbo
+jumbo garbage on how they're trying to
+redefine GDP or what a recession is like
+what happened in the last 5 years. It's
+a joke. What we care about is data like
+this. Okay, goods aren't moving. The
+economy is contracting leading to
+recession indicator.
+Okay. So, that's important to know where
+you don't need to listen to the news.
+You don't need to listen to stupid
+politicians because those politicians
+are basically brainwashing you into
+thinking something else when the reality
+is something different.
+So, this is the RTY which is a Russell
+shorts head growth disappointment.
+So again here you can roll it out not
+just for this quarter but out into
+quarter two for this year. Okay this is
+a long-term trade. This is very
+interesting. So what are we going to do?
+We short 10-year notes the ZN for sticky
+inflation rate. Again to do these type
+of trades you have to have a larger
+account. These these these contracts to
+take them out with a margin requirement
+are into the thousands. Well, that just
+so you know, long goal future as a
+stagflation outperformer,
+long put on the Russell 2000 for growth
+disappointment hedge. I can tell you
+right there, you're covered in both
+ends, the downside and the upside with
+upside of as long as gold forms, you've
+got quite possibly unlimited potential
+there. And then again, portfolio
+construction balances commodity long
+with equity short.
+And this is not I mean this is a pretty
+good rate 25 to 45% return but here you
+go maximum draw down negative 18
+a decent s a sharp
+uh correlation low to negative and to be
+honest that's what you want if things
+get really bad you want to be in
+uncorrelated trades you don't want to be
+in Bitcoin that's correlated in
+something you don't want to be in gold
+what's correlated to something you want
+to be and uncorrelated
+trades, meaning low to negative. So if
+things got really bad, this could be a
+really good trade. That's all I'm
+saying.
+So here 35 30 to 55% return, 1.4%
+return. You got to like these win ratios
+of 68%.
+Volatility is high. So there's some risk
+here. Um so here we're going to long
+gold
+copper futures long silver
+use options to con to con uh for
+convexity.
+Okay, again using these back spreads
+leaps fine risk structure only no naked
+shorts in tail risk environment because
+you'll get killed. Okay, so here which I
+can kind of confirm but again the media
+lies to you as usual that China may
+rebound. Okay. So here with the latest
+trade with uh UK with the UK agreement.
+So if Astroenica the large uh British
+pharmaceutical puts $15 billion into
+China for R&D. Okay. And that's that's
+defined now. You can trade off that.
+That just happened yesterday. Massive
+multinational investment signals global
+companies not decoupling from China as
+aggressively is feared. potential bottom
+in Chinese sentiment. And this is why
+you'd get President Taco crying like a
+big baby, whining like a baby, because
+he knows this is true. And yet he'll lie
+or whatever to prevent this type of
+investment from happening. And again,
+when it comes back to China, as I
+mentioned earlier with the copper trade,
+again, we have a pickup in industrial
+demand in China. R&D manufacturing ramp
+up. copper demand follows and then the
+Australian dollar also serves as Chinese
+proxy uh as well. So again this is what
+we call an emerging market sentiment.
+Again you will not hear about this in
+the news. Okay, I guarantee you that. So
+here's what we're doing. A long copper
+future for in China industrial proxy
+which looks like it could happen based
+upon well win ratio is not that high but
+it's higher than most outlook that
+you'll get with other
+trading ideas. So here we long
+Australian uh uh futures Australian
+dollar futures China correlated currency
+consider well I I think you could still
+get access to the HSI through other
+exchanges. You can definitely trade that
+through rhythmic. Okay. Now, I would
+never have considered this because I I'm
+supposed to only focus on the CME and
+CME exchanges, but the hang might be an
+interesting one to watch. So, here we're
+going to we're going to call I don't
+know where you get them, but you can
+definitely get them in rhythmic.
+Consider an H or hangen future for
+direct Chinese equity exposure and use
+the call options for it to find risk.
+unreal. And that's just like today of
+all of these trades, but obviously the
+ones you want to focus on are the um the
+highlighted ones, but I've already gone
+over some of the other ones
+that in bad really bad market
+conditions, there's some I just
+presented also uncorrelated and fairly
+low risk. So again, the next process is
+to take those ideas and do this. We've
+got the trading server already set up on
+the technical that's C C and we've got
+now all of these opportunities currently
+from the last 3 4 days. And now we got a
+whole slew of new ones right here that
+we can probably develop automated
+strategies for
+um that we can develop in the detail and
+go into the quantitative if I wanted um
+as I shown well for those that are new
+here and if you had access to this
+okay to this private group all of the
+available and I can run in very detail
+high frequency trading quantit ative
+level type of strategies that they they
+they come from. But the drivers of
+what's going to drive potential profit
+just like what the institutions do
+probably every day especially from a not
+just from a trading desk with a
+portfolio managers who let me remind you
+gets paid in the millions and then
+there's the lead portfolio managers is
+going to be much higher. They have all
+these options just for today based upon
+news from the last 24 hours. So, as I
+said, here's what you do.
+Okay, so um quantabset.com.
+Let me just pull it up here. You first
+step is to subscribe
+right here. Okay. So, just do the learn
+and here if you're on the technical
+front, you get access to this C++ HFT
+ebook.
+Then, um next option I I'd really
+recommend is to try this out for 7-day
+free trial. This also will give you a
+snapshot introduction onto that what
+will be a very expensive futures and
+trading course based upon what I'm
+seeing with way AI's rolling out um all
+that what's mentioned there. On top of
+that, I'm probably going to get rid of
+this service to talk to me oneonone. Um
+I'm just kind of like focusing more on
+uh more on the trading firms, but I'll
+leave it at that. Um, this is a powerful
+insight. I'll make this uh presentation
+and you can see it's an HTML file. So, I
+was going to do um the Python
+streamllet. That's that's hard to
+distribute because most people don't
+know how to set it up, but everybody
+knows how to open an HTML file locally
+on their browser and it's
+self-contained, too. So, they can they
+can go through this at their leisure. So
+you can imagine the kind of things that
+I could put out each and every day with
+an HTML file. Now we'll leave it at
+that. Uh thank you for watching.

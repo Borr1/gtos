@@ -1,0 +1,37 @@
+at-market rows with a resolved placebo: 135713
+
+=== THE DECISIVE TABLE: REAL vs a RANDOM INSTANT on the same symbol, day, side and risk distance ===
+MOMENT = real - placebo(random instant, same side).  DIRECTION = real - coin(same instant, random side).
+dec       n   toll_R    d_bps      REAL   PLACEBO    MOMENT   p<=0      COIN  DIRECTION   p<=0 plc_toll
+D1    13572   0.0217    37.35  +0.01302  +0.03230  -0.01928 0.9273  +0.00891   +0.00410 0.3570   0.0313
+D2    13570   0.0491    19.97  -0.00431  +0.01292  -0.01722 0.9190  +0.00762   -0.01193 0.8620   0.0647
+D3    13572   0.0766    14.96  -0.00764  -0.00267  -0.00497 0.6720  +0.00457   -0.01221 0.8930   0.0958
+D4    13571   0.1079    11.70  +0.00791  -0.01099  +0.01889 0.0690  +0.01113   -0.00322 0.6410   0.1304
+D5    13571   0.1439     9.16  +0.00853  -0.01422  +0.02276 0.0395  +0.00599   +0.00254 0.3952   0.1707
+D6    13572   0.1907     7.05  +0.01899  -0.02730  +0.04629 0.0010  +0.01875   +0.00024 0.5015   0.2222
+D7    13571   0.2584     5.34  +0.01144  -0.05142  +0.06286 0.0000  +0.01529   -0.00385 0.6350   0.2962
+D8    13570   0.3656     3.95  +0.02724  -0.04300  +0.07024 0.0000  +0.01386   +0.01338 0.1390   0.4078
+D9    13572   0.5511     2.89  +0.04803  -0.02826  +0.07628 0.0000  +0.03172   +0.01630 0.1207   0.5971
+D10   13572   1.3634     2.26  +0.11659  -0.01906  +0.13565 0.0000  +0.04350   +0.07310 0.0000   1.0019
+ALL  135713   0.3129     9.93  +0.02398  -0.01517  +0.03915 0.0000  +0.01614   +0.00784 0.0447   0.3018
+  MOMENT CI95 [+0.02908,+0.04893]   DIRECTION CI95 [-0.00109,+0.01711]
+
+=== the cheapest-toll decile, month by month ===
+window         n      REAL   PLACEBO    MOMENT  DIRECTION
+2025-10     1607  +0.02558  +0.04899  -0.02341   +0.01893
+2025-11     1474  +0.02344  +0.02805  -0.00461   +0.02074
+2025-12     1071  -0.02977  +0.00526  -0.03503   -0.05202
+2026-01     1522  +0.00205  +0.04398  -0.04194   -0.00623
+2026-02     1819  +0.04867  +0.02089  +0.02779   +0.04655
+2026-03     3029  +0.01277  +0.03511  -0.02234   -0.00412
+2026-04     1655  +0.02817  +0.03008  -0.00191   +0.02063
+2026-05     1395  -0.03160  +0.03694  -0.06853   -0.03330
+
+=== the cheapest-toll decile, by family ===
+cross_asset_lead_lag               n   728 REAL  +0.03487 PLACEBO  +0.04089 MOMENT  -0.00602 DIRECTION  +0.00635
+displacement_continuation          n  5919 REAL  +0.02125 PLACEBO  +0.06633 MOMENT  -0.04508 DIRECTION  +0.01055
+liquidity_sweep_reclaim            n  2485 REAL  +0.00090 PLACEBO  -0.07958 MOMENT  +0.08048 DIRECTION  -0.01155
+regime_transition_break            n  1021 REAL  +0.03459 PLACEBO  +0.04637 MOMENT  -0.01178 DIRECTION  +0.02720
+session_open_range_break           n  1673 REAL  -0.03269 PLACEBO  +0.07263 MOMENT  -0.10532 DIRECTION  -0.02673
+structural_distance_extreme        n    58 REAL  -0.12192 PLACEBO  -0.19626 MOMENT  +0.07434 DIRECTION  -0.09136
+volatility_compression_expansion   n  1688 REAL  +0.02944 PLACEBO  +0.03332 MOMENT  -0.00387 DIRECTION  +0.02343

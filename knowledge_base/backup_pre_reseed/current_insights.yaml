@@ -1,0 +1,28 @@
+# Knowledge Base — Current Insights
+# Auto-generated from computed rolling stats and failure patterns.
+# Every number is derived from source data — nothing hardcoded.
+
+summary:
+  total_trades: 60
+  win_rate: 0.6167
+  expectancy: 0.4449
+  total_r: 26.6967
+  profit_factor: 2.4952
+  max_consecutive_losses: 5
+
+last_10: "LOSS -1.0R, WIN +1.5R, WIN +1.5R, WIN +1.5R, WIN +0.1R, LOSS -1.0R, LOSS -1.0R, WIN +0.3R, LOSS -0.2R, WIN +1.5R"
+
+by_instrument:
+  GBPUSD: {n: 42, win_rate: 0.619, expectancy: 0.4202, total_r: 17.65}
+  XAUUSD: {n: 18, win_rate: 0.6111, expectancy: 0.5026, total_r: 9.0467}
+
+by_kill_zone:
+  london: {n: 30, win_rate: 0.5667, expectancy: 0.4448}
+  ny: {n: 30, win_rate: 0.6667, expectancy: 0.4451}
+
+cautions:
+  - "Narrow Asian range (<28% ADR) correlates with poor win rate"
+  - "GBPUSD trades misaligned with XAUUSD D1 direction have 25% WR"
+  - "AI accepting setups without valid H1 OB or with sub-threshold M15 displacement"
+
+data_source: "backtest_seed — 18 gold (Phase 1) + 42 GBPUSD (corrected)"

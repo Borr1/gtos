@@ -1,0 +1,8 @@
+# sot: no Git LFS. Do not add filter=lfs rules.
+*.json text eol=lf
+*.jsonl text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf

@@ -1,0 +1,15 @@
+candle_time: '2025-01-20T07:00:00Z'
+data_quality_ok: true
+date: '2025-01-20'
+decision: NO_TRADE
+reason: No H1 pullback to POI - price has not retraced to valid discount zone entry
+  levels
+reasoning:
+  daily_bias: null
+  full_explanation: 'Session produced 0 candidates. Primary reasons: No H1 pullback
+    to valid POI detected, No H1 pullback to POI - price has not retraced to valid
+    discount zone entry levels, No valid H1 pullback to POI - required setup component
+    missing'
+  h4_alignment: null
+  stopped_at_step: null
+record_id: nt_2025-01-20_0700

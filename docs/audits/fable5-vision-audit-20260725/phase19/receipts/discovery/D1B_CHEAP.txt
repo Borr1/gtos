@@ -1,0 +1,52 @@
+f2 COST-CAP SWEEP reproduced on this lane's at-market population (net R/trade, t2.0):
+   cap       n  share     gross     toll       net   f2 published
+  0.50  113251  0.834  +0.01653  0.16177  -0.14524   -0.15400
+  0.30   95152  0.701  +0.01662  0.11871  -0.10209   -0.11448
+  0.20   77803  0.573  +0.02213  0.09048  -0.06835   -0.08657
+  0.15   64064  0.472  +0.02573  0.07267  -0.04693   -0.07099
+  0.10   45266  0.333  +0.03886  0.05139  -0.01253   -0.05213
+  0.07   31986  0.236  +0.06195  0.03759  +0.02436   -0.03726
+  0.05   21949  0.162  +0.09608  0.02737  +0.06871   -0.02714
+  0.03   11935  0.088  +0.19446  0.01672  +0.17774   -0.00349
+  0.02    7005  0.052  +0.30736  0.01087  +0.29648   -0.02074
+  0.01    2737  0.020  +0.81182  0.00393  +0.80789   -0.00914
+  none  135803  1.000  +0.02402  0.30825  -0.28424   -0.29226
+
+=== THE CHEAPEST TOLL DECILE (toll_R <= 0.03331) n=13581 ===
+ gross +0.17209 toll 0.01853 net +0.15356 median d 35.88 bps
+ exit mix: {'no_fill': 0, 'stop': 3641, 'target': 2145, 'path_end': 7795}
+ by window:
+   2025-10 n  1631 gross +0.20383 net +0.18523 dirval +0.15782
+   2025-11 n  1536 gross +0.25272 net +0.23456 dirval +0.19604
+   2025-12 n  1108 gross +0.20378 net +0.18534 dirval +0.13279
+   2026-01 n  1544 gross +0.19018 net +0.17113 dirval +0.14195
+   2026-02 n  1758 gross +0.15664 net +0.13749 dirval +0.13263
+   2026-03 n  2942 gross +0.09349 net +0.07517 dirval +0.05900
+   2026-04 n  1668 gross +0.20039 net +0.18192 dirval +0.15395
+   2026-05 n  1394 gross +0.15245 net +0.13435 dirval +0.11185
+ by instrument (n>=100):
+   GBPJPY       n   100 gross +0.87511 net +0.86163 d   38.38 toll 0.0135
+   UKOIL_cash   n   200 gross +0.83109 net +0.81903 d  257.97 toll 0.0121
+   USOIL_cash   n   168 gross +0.67223 net +0.65693 d  308.16 toll 0.0153
+   XAGUSD       n   204 gross +0.55047 net +0.53343 d  342.28 toll 0.0170
+   BTCUSD       n   114 gross +0.52765 net +0.50765 d  220.72 toll 0.0200
+   USDJPY       n   287 gross +0.43501 net +0.41611 d   31.53 toll 0.0189
+   AUDUSD       n   149 gross +0.31512 net +0.29516 d   47.10 toll 0.0200
+   GBPUSD       n   301 gross +0.25855 net +0.23736 d   26.24 toll 0.0212
+   UK100        n   946 gross +0.23630 net +0.21599 d   29.77 toll 0.0203
+   EURUSD       n   234 gross +0.17172 net +0.15007 d   25.36 toll 0.0216
+   SPX500       n   892 gross +0.12159 net +0.10044 d   39.22 toll 0.0211
+   JP225        n  1127 gross +0.11936 net +0.09785 d   64.87 toll 0.0215
+   GER40        n  2174 gross +0.07695 net +0.05935 d   29.25 toll 0.0176
+   US30_cash    n  2342 gross +0.06302 net +0.04546 d   23.50 toll 0.0176
+   NAS100       n  2380 gross +0.05805 net +0.04028 d   31.19 toll 0.0178
+   XAUUSD       n  1391 gross +0.04529 net +0.02446 d   59.46 toll 0.0208
+   positive on 16/16 instruments
+ by family:
+   cross_asset_lead_lag               n   897 gross +0.60953 net +0.59276
+   displacement_continuation          n  5678 gross +0.09184 net +0.07240
+   liquidity_sweep_reclaim            n  2562 gross +0.24735 net +0.22845
+   regime_transition_break            n   952 gross +0.04402 net +0.02653
+   session_open_range_break           n  1603 gross +0.02315 net +0.00450
+   structural_distance_extreme        n   293 gross +1.69117 net +1.68674
+   volatility_compression_expansion   n  1596 gross +0.03807 net +0.01928

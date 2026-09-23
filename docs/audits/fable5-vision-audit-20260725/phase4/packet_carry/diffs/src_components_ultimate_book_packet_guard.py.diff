@@ -1,0 +1,311 @@
+--- a/src/components/ultimate_book/packet_guard.py (host-local)
++++ b/src/components/ultimate_book/packet_guard.py (carry)
+@@ -0,0 +1,308 @@
++"""Emit-time validation disposition for runtime learning packets.
++
++The constraint this module exists to satisfy has two halves that pull against each other, and
++resolving the tension *is* the engineering:
++
++    **Validation must fail closed.** A malformed packet must never enter the evidence stream
++    dressed as a valid one.
++
++    **Validation must not be able to stop a live book.** The VPS is a funded, connected host
++    running two books. A validator that can raise into the decision path is worse than no
++    validator at all.
++
++The naive resolutions both fail. Raising on invalid satisfies the first and violates the second.
++Silently dropping invalid satisfies the second and recreates the **false-green class** this wave
++has already been burned by four separate times -- an artifact built from a success log, with no
++way to record what failed, reading as complete coverage when it was nothing of the kind.
++
++The resolution is a **three-way disposition** in which refusal is itself durable evidence:
++
++1. ``accepted``   -- packet validates, written to the main log.
++2. ``quarantined`` -- packet fails validation. It is written verbatim to a quarantine sidecar
++   together with its issue list, **and** a minimal ``packet_rejected`` marker is written into the
++   **main** log. The marker is the load-bearing part: a consumer reading only the main log still
++   sees the hole. Nothing is silently dropped, and nothing invalid is silently accepted.
++3. ``unrecorded`` -- even the quarantine write failed (disk full, permissions). Counted in the
++   returned report and surfaced by the silence alarm. Still never raised.
++
++The marker is built from a fixed template with no caller-supplied mapping keys, so it cannot
++itself fail validation for the reason the original packet did. If marker construction fails
++anyway, the fallback is a hand-built row appended to quarantine -- and if that fails too, the
++count is all that survives, which is the honest floor.
++
++This wrapper is **additive**. ``RuntimeLearningPacketWriter`` keeps its existing raise-on-invalid
++contract for tests and offline tooling; the live book uses this.
++"""
++
++from __future__ import annotations
++
++import json
++import os
++from dataclasses import dataclass, field
++from datetime import datetime, timezone
++from pathlib import Path
++from typing import Any, Mapping
++
++from .runtime_learning_packet import (
++    PACKET_REJECTED_EVENT_TYPE,
++    RuntimeLearningPacketWriter,
++    build_packet_rejected_marker,
++    validate_runtime_learning_packet,
++)
++
++QUARANTINE_SUFFIX = ".quarantine.jsonl"
++
++
++@dataclass
++class PacketWriteReport:
++    """What actually happened to a batch. Every count is derived, none is assumed."""
++
++    submitted: int = 0
++    accepted: int = 0
++    quarantined: int = 0
++    unrecorded: int = 0
++    markers_written: int = 0
++    issues: list[dict[str, Any]] = field(default_factory=list)
++    write_error: str | None = None
++
++    @property
++    def healthy(self) -> bool:
++        return self.quarantined == 0 and self.unrecorded == 0 and self.write_error is None
++
++    def as_dict(self) -> dict[str, Any]:
++        return {
++            "submitted": self.submitted,
++            "accepted": self.accepted,
++            "quarantined": self.quarantined,
++            "unrecorded": self.unrecorded,
++            "markers_written": self.markers_written,
++            "healthy": self.healthy,
++            "write_error": self.write_error,
++            # Bounded: the whole point is a signal, not a second log.
++            "issues": self.issues[-10:],
++        }
++
++
++class GuardedPacketWriter:
++    """A ``RuntimeLearningPacketWriter`` that refuses invalid packets without ever raising.
++
++    ``append_many`` returns a :class:`PacketWriteReport` and raises nothing. That is the entire
++    contract, and it is enforced by ``test_guard_never_raises_on_any_input``.
++    """
++
++    def __init__(
++        self,
++        writer: RuntimeLearningPacketWriter,
++        *,
++        quarantine_path: str | Path | None = None,
++    ):
++        self._writer = writer
++        # Construction must not raise either -- "never raises" is not a property of `append_many`
++        # alone. A writer that exposes no usable `.path` (a stub, a stand-in, a duck-typed sink)
++        # degrades to marker-only: refusals still leave a `packet_rejected` row in the main log and
++        # are counted as `unrecorded`, so the refusal is visible even with no sidecar to hold the
++        # body. Silently having no quarantine and *not* saying so is the failure mode to avoid.
++        self._quarantine: Path | None
++        try:
++            if quarantine_path is not None:
++                self._quarantine = Path(quarantine_path)
++            else:
++                base = Path(getattr(writer, "path"))
++                self._quarantine = base.with_name(base.name + QUARANTINE_SUFFIX)
++        except Exception:  # noqa: BLE001 - a `path` property may raise anything at all
++            self._quarantine = None
++
++    @property
++    def quarantine_path(self) -> Path | None:
++        return self._quarantine
++
++    # -- quarantine ---------------------------------------------------------------
++    def _write_quarantine(self, row: Mapping[str, Any]) -> bool:
++        """Append one row to the quarantine sidecar. Returns success; never raises."""
++        if self._quarantine is None:
++            return False
++        try:
++            self._quarantine.parent.mkdir(parents=True, exist_ok=True)
++            with self._quarantine.open("a", encoding="utf-8") as handle:
++                handle.write(json.dumps(row, sort_keys=True, default=str) + "\n")
++                handle.flush()
++                os.fsync(handle.fileno())
++            return True
++        except Exception:  # noqa: BLE001 - the guard is the last line; it absorbs everything
++            return False
++
++    # -- the disposition ----------------------------------------------------------
++    def append_many(self, packets: list[Mapping[str, Any]]) -> PacketWriteReport:
++        # Materialise defensively. `len()` on a generator raises TypeError, and a list subclass can
++        # raise from __len__ or __iter__ -- both would escape before the first try below and break
++        # the one contract this class has.
++        #
++        # NOTE ON BaseException: the handlers below catch `Exception`, not `BaseException`, so
++        # KeyboardInterrupt and SystemExit still propagate. That is deliberate. Swallowing a
++        # shutdown signal inside a live book's write path would be a worse failure than the one
++        # this guard prevents. "Never raises" means never raises *for a packet-shaped reason*.
++        try:
++            packets = list(packets) if packets is not None else []
++        except Exception:  # noqa: BLE001
++            return PacketWriteReport(submitted=0, write_error="packets_not_iterable")
++        report = PacketWriteReport(submitted=len(packets))
++        if not packets:
++            return report
++
++        valid: list[Mapping[str, Any]] = []
++        markers: list[Mapping[str, Any]] = []
++
++        for index, packet in enumerate(packets):
++            try:
++                ok, issues = validate_runtime_learning_packet(packet)
++            except Exception as exc:  # noqa: BLE001 - a validator crash is itself a rejection
++                ok, issues = False, [f"validator_raised:{type(exc).__name__}"]
++            if ok:
++                valid.append(packet)
++                continue
++
++            report.quarantined += 1
++            detail = {
++                "index": index,
++                "event_type": _safe_str(_safe_get(packet, "event_type")),
++                "packet_hash_sha256": _safe_str(_safe_get(packet, "packet_hash_sha256")),
++                "issues": list(issues),
++            }
++            report.issues.append(detail)
++            stored = self._write_quarantine(
++                {
++                    "quarantined_at_utc": datetime.now(timezone.utc).isoformat(),
++                    "issues": list(issues),
++                    "packet": packet,
++                }
++            )
++            if not stored:
++                report.unrecorded += 1
++            # The marker goes to the MAIN log regardless of whether quarantine succeeded --
++            # it is what makes the gap visible to a reader of that log alone.
++            marker = self._build_marker(packet, issues, quarantine_written=stored)
++            if marker is not None:
++                markers.append(marker)
++
++        report.accepted = self._append_valid(valid, report)
++        report.markers_written = self._append_valid(markers, report, count_as_accepted=False)
++        return report
++
++    def append(self, packet: Mapping[str, Any]) -> PacketWriteReport:
++        return self.append_many([packet])
++
++    # -- helpers ------------------------------------------------------------------
++    def _append_valid(
++        self,
++        rows: list[Mapping[str, Any]],
++        report: PacketWriteReport,
++        *,
++        count_as_accepted: bool = True,
++    ) -> int:
++        """Write already-validated rows. Degrades row-by-row; never raises."""
++        if not rows:
++            return 0
++        try:
++            return _as_count(self._writer.append_many(list(rows)))
++        except Exception as exc:  # noqa: BLE001
++            # repr() itself can raise on a hostile exception class.
++            try:
++                report.write_error = repr(exc)
++            except Exception:  # noqa: BLE001
++                report.write_error = f"unreprable:{type(exc).__name__}"
++        # Row-by-row fallback. The batch path deduplicates by packet hash, so the fallback must
++        # too -- otherwise a transient batch failure silently doubles every packet in the cycle.
++        written = 0
++        seen: set[str] = set()
++        for row in rows:
++            row_hash = _safe_str(_safe_get(row, "packet_hash_sha256"))
++            if row_hash and row_hash in seen:
++                continue
++            try:
++                written += _as_count(self._writer.append(row))
++                if row_hash:
++                    seen.add(row_hash)
++            except Exception:  # noqa: BLE001
++                if count_as_accepted:
++                    report.unrecorded += 1
++                    self._write_quarantine(
++                        {
++                            "quarantined_at_utc": datetime.now(timezone.utc).isoformat(),
++                            "issues": ["main_log_append_failed"],
++                            "packet": row,
++                        }
++                    )
++        return written
++
++    def _build_marker(
++        self,
++        packet: Mapping[str, Any],
++        issues: list[str],
++        *,
++        quarantine_written: bool,
++    ) -> Mapping[str, Any] | None:
++        try:
++            marker = build_packet_rejected_marker(
++                namespace=_safe_str(_safe_get(packet, "namespace")),
++                rejected_event_type=_safe_str(_safe_get(packet, "event_type")),
++                rejected_packet_hash=_safe_str(_safe_get(packet, "packet_hash_sha256")),
++                issues=[str(i) for i in issues],
++                quarantined=quarantine_written,
++            )
++        except Exception:  # noqa: BLE001
++            marker = None
++        if marker is None:
++            return None
++        try:
++            ok, marker_issues = validate_runtime_learning_packet(marker)
++        except Exception as exc:  # noqa: BLE001 - safe today only because the template is fixed
++            ok, marker_issues = False, [f"marker_validator_raised:{type(exc).__name__}"]
++        if ok:
++            return marker
++        # A marker that cannot validate is a defect in this module, not in the caller's packet.
++        # Record it where it cannot be mistaken for evidence and move on.
++        self._write_quarantine(
++            {
++                "quarantined_at_utc": datetime.now(timezone.utc).isoformat(),
++                "issues": ["rejection_marker_invalid"] + list(marker_issues),
++                "packet": marker,
++            }
++        )
++        return None
++
++
++def _as_count(value: Any) -> int:
++    """A writer that returns None on success still wrote a row. Count it as one."""
++    if isinstance(value, bool):
++        return int(value)
++    if isinstance(value, int):
++        return value
++    return 1
++
++
++def _safe_get(packet: Any, key: str) -> Any:
++    try:
++        if isinstance(packet, Mapping):
++            return packet.get(key)
++    except Exception:  # noqa: BLE001
++        return None
++    return None
++
++
++def _safe_str(value: Any) -> str | None:
++    # Identity check, not `in (None, "")` -- see packet_economics._parse_utc. This one matters
++    # more: it is called at packet_guard.py:155-156 on the REJECTION path, outside any try.
++    if value is None or (isinstance(value, str) and not value):
++        return None
++    try:
++        return str(value)
++    except Exception:  # noqa: BLE001
++        return None
++
++
++__all__ = [
++    "GuardedPacketWriter",
++    "PacketWriteReport",
++    "PACKET_REJECTED_EVENT_TYPE",
++    "QUARANTINE_SUFFIX",
++]

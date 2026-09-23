@@ -1,0 +1,32 @@
+{
+  "schema": "gtos.fleet_registry.v0",
+  "source_login": 0,
+  "ftmo_challenge_default": "VETO",
+  "mirror_fanout": {
+    "targets": ["observer_sh", "observer_redacted_account", "observer_redacted_account"]
+  },
+  "observers": [
+    {
+      "id": "friend_alex",
+      "display_name": "Alex",
+      "channel": "mt5_demo",
+      "account_kind": "free_trial",
+      "demo_login": 0,
+      "server": "FTMO-Demo",
+      "terminal_path": "C:\\MT5\\FTMO_Trial\\terminal64.exe",
+      "password_env": "GTOS_FLEET_DEMO_PASSWORD_FRIEND_ALEX",
+      "status": "active",
+      "place_enabled": true
+    },
+    {
+      "id": "friend_notes",
+      "display_name": "Notes only",
+      "channel": "telegram",
+      "account_kind": "telegram",
+      "demo_login": 0,
+      "status": "active",
+      "place_enabled": false
+    }
+  ],
+  "notes": "Example only. Replace demo_login 0. Passwords stay in env, never in this file."
+}

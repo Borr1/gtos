@@ -1,0 +1,425 @@
+# How to Build an AI Algorithmic Trading Bot in 2026 (Python & Codex)
+URL: https://www.youtube.com/watch?v=uTvrqUWmvco
+Video ID: uTvrqUWmvco
+Duration: 1055s
+Fetched: 2026-04-18T13:23:04Z
+---
+
+com. Uh, sorry, quantabsnet.com.
+Anyways, I'm doing a quick uh live
+stream. I'll be doing one at 7 PM uh
+Eastern Standard Time tonight, next uh 3
+hours. I will not be taking any
+questions, but I just want to show you
+the latest updates and what I've these
+trading bots with Python and Rhythmic.
+So, here is what I've got on the screen.
+All right. So, uh let me just show you
+the proper terminal here. So, this
+[snorts] right here is running eightbots
+live uh with rhythmic data. [snorts]
+Okay. Uh I've slowed it down to handle
+um the uh yeah here. Yeah. So, this is
+the report. It's Thank you for the link.
+Um so, this is the general uh report.
+Let me just shrink this down for you.
+Okay. So, hopefully you'll see this. So,
+[snorts] here's the stats. Um, it's
+right now, I think, one stop. Hello,
+Erin. Uh, we're one stop away from uh
+going live. I'm using market data from
+[snorts] Rhythmic. Uh, I think we're
+about one step away. So, hopefully in
+hour and 24 hours I'll be able to use
+real market data, real trading. But this
+is this what I'm about to show you is
+hello CNN. Um we're not doing any
+questions, a quick stream with this new
+phone and whatnot, but thanks for
+joining in. So this is the latest. So we
+got March 10th. Uh all the news from
+earlier today. So this is how sensitive
+we can get these banged out. Right?
+There's your strategies. Uh we've got
+GCL,
+ZB, ZenN, NG, HQ, and silver. Okay. So
+right there you can see what are the
+best performing bots as it stands right
+now. This is running it against live
+trading [clears throat] data. Well I
+should say simulated paper trading. You
+can see here what are the most popular
+uh most uh profitable strategies are. We
+have the GC. You can see the name there.
+It is real rate phase. And then we also
+have number two at um ES stagflation
+curves. So you might have heard about
+those reports earlier today. So these
+bots are sensitive to that type of data.
+Everyone else is not really making any
+money. We can also see here by the win
+rate, which is pretty good at um 100
+bucks a pop over the last uh couple
+hours. Um this one's the most
+profitable, the S the S the silver one.
+Um, but way I would look at it from a
+portfolio manager, I would only work
+with um the top two that are performing
+for everything else. It's just those are
+kind of like dogs uh competing against
+where they're not generating profit. So,
+you generally want to go with either the
+GC and or the um the ES. So, that's what
+we have here. Um and here's the
+individual rankings. You can see here
+the GCES again real rate fade ES
+stagflation curve. Um there's a style
+mean reverting mean reverting for those
+two two fills and nine fills. Uh one has
+uh uh ES has a 100% win ratio and uh
+there we have some uh fills as well and
+so forth. So these are all simulated
+data using paper trading. But this is
+why I don't think you really need any
+more back testing because you could test
+like this. Run it [snorts] for an hour.
+Run it for 2 hours. You know almost
+instantly which ones will be the most
+profitable. Okay. [snorts] And here's
+all the individual reports. So I just
+want to show you this. Um which is kind
+of exciting. Well, I didn't think we get
+this many people on. Okay. Anyways, so
+[snorts] uh as I said, I'm just testing
+out this new phone here. Google Pixel uh
+10 XL Pro Pro XL quite [snorts] good.
+I'm gonna stream with it tonight 7 PM.
+Uh we can do all the questions then and
+there. Um [snorts] just testing
+everything and uh I just want to show
+you what's been developed. [snorts] This
+is 100% working with um yeah, it's all
+uh AI from today's reports. Uh JDI, as I
+said, welcome everybody. So this is the
+best I've seen. Uh again, this is one of
+the random po uh streams that I was
+mentioning on Friday, Saturday. [snorts]
+Um I'm going to do a couple more. Um
+they seem to work good. I But I'm gonna
+schedule tonight and at 7 p.m. [snorts]
+Um and we could talk about this further,
+but I just want to show you this that
+this is very exciting. So right now
+where I'm at with Rhythmic, um as I
+said, I can't really talk about Rhythmic
+and the tech behind it and then the
+coding sharing it, just their terms of
+service.
+>> [snorts]
+>> Um, but where it stands right now, I'm
+hoping hoping to get this running with
+live real live market data in the
+rhythmic uh production servers out of
+Chicago, which means I can start trading
+real money. I've been trying to trade
+for the last three weeks for about
+three, four different strategies and
+they're just not triggering orders here.
+I'm hoping with the Python I'll be able
+to trigger orders finally with real
+market data and real trading. Um, and
+you can see the types of strategies that
+are doing well. And this is again from
+today's news. I'm going to do another
+batch uh maybe later tonight.
+Downloading all the data feeds, news
+feeds, going through the same process.
+Right now, uh, just so you know, I have
+to keep what I have running so that
+rhythmic can see it and assign all this
+technical um, stuff on me. I will tell
+you the uh, security. I can talk
+definitely talk about security with
+Rhythmic. The security on Rhythmic is no
+joke. Um, with Rhythmic, um, it's not
+like where you have Interactive Brokers
+and just have a login into, let's say,
+TWWS and that's it. Rhythmic is totally
+different. With Rhythmic, you have a
+customized certification that or C
+certificate that you have to run within
+your app or your bots and that's for C++
+and Python. Also with with um Python, uh
+I think I did mention this on the last
+stream is they use ProBuff. So you have
+to go in compile all this Protobuff
+stuff which is now customized for your
+account. Okay. So if I was to give you
+all my environment to you, it won't run.
+And if you were to change it to your
+account, it will not run. So
+everything's locked down via the uh
+certification and the um [snorts] and
+and this protobuff stuff. And that's for
+for Python. Plus, I will test it for
+sure, but from what I'm seeing, it can
+run in Linux, which is great. Also, um,
+just from an AI provider point of view,
+I go on about Miniax. I've tried GLM
+from ZAI and another Chinese, uh, AI.
+The [snorts] way my current setup is, it
+craps out. It breaks. I don't know why.
+It just breaks. I've then started to
+experiment again with the latest Claude
+and now the latest Codeex from OpenAI.
+The Claude is super super expensive, but
+the Codeex 5.3 is really good. it's
+probably on par if you're going to just
+stick with Python and uh JavaScript.
+Okay, if that's the case, Codeex can
+work really good. And the really good
+thing is it's almost in line with the
+Chinese cheap AI that I'm going to keep
+testing. But right now, I'm having some
+decent success with with codecs. Blow me
+away. So, I think Claude is going to
+have to answer to these high costs that
+they charge uh in their code generation.
+[snorts] Anyways, I'll take one question
+from Aaron and uh actually I don't I
+don't mind staying online. So for Aaron,
+how are you working with all this data?
+Is it batched or are you storing it for
+back testing? [snorts] All this data I
+have I should talk about this. I can
+stream data or I can do snapshots of
+market historical market data. The
+streaming because I'm right now testing
+with six bots. I can go as high as 20.
+They will kill your system. they will
+conflict with each other because of the
+streaming. So, you're forced to only use
+snapshot data historical, but it's all
+same day. Just depends upon your
+frequency. I could do uh I could do uh
+uh tick, I could stream it if it's one
+or two bots um for a live trading
+environment. [snorts] Uh so, right now
+I'm just doing in the test mode just
+doing uh snapshot data. Um, but once I
+go live, because there's only one or
+two, I'll probably stream it and I can
+easily code the uh AI co-generate
+[snorts]
+that for the production environments,
+but using the same trading bot logic, if
+that makes sense. So, for Gardex, are
+you paying as you go or do you have a
+monthly account for GDI? Um, with with
+the codeex or anything I use, I'm going
+through the equivalent of an open
+router. Um, but as I said before, you
+want to always whatever you use, you
+want to make sure you have a cap, a hard
+cap. So when you stream or use AI that
+there's a limit and you cannot access
+and run the AI anymore because if you
+don't, you will easily, if you're doing
+it with quad, you can easily run into
+the thousands per month. Okay, that's
+[snorts] something I would probably put
+down as a critical
+requirement running all these AIS,
+especially if it's imperilization or
+running it with agents. You will get
+killed otherwise if you're doing it like
+that.
+So, codeex for now looks like it's going
+to be the one until this new uh Deep
+Seek 4 comes out. So, I'll try it out.
+[snorts] Uh we'll leave it at that. Are
+you using level two data? Um yeah, I it
+depends what you define as level two.
+I'm use I can use bid and ask and I'm
+also using open high low closed data.
+[snorts] Um so level two can go all the
+way down to level 9 if I choose to go
+with uh options. Right now I'm just
+sticking with uh futures for the
+simplicity sake because once you start
+uh starting with options right now it
+only complicates the trading logic is
+what you don't want. You want to go step
+by step and as primitive as easy as
+possible. Um, great videos and content
+on uh, so glad I joined Lifetime.
+Awesome. You've seen the prices since
+you joined. It's very expensive. Um, one
+thing I'll say about that is once this
+is all done and I'm in test mode,
+everything's running beautifully. Once I
+get this running with real live market
+data, I'll gladly generate a pro
+institutional level report for all this
+because um I just post on LinkedIn and
+it goes out to all the multi-t trillion
+asset managers which means they can
+support what I charge as a fee for this
+quantity programming which is pretty
+it's much as a car I'll say that or a
+good portion of a car fee.
+But anyways, everything's working really
+good. It took some time. Uh, and as I
+said, the best AI model I've come across
+for now for coding, it's fast, which is
+codeex, I think 5.3. [snorts] I'm having
+difficulties with Miniax now because
+it's so slow and for whatever reason it
+breaks. With Quen 3, the problem with
+Quen 3, it still generates some errors,
+which is not great, but [snorts] then it
+can also break as well. I've tried them
+all. GLM is not so bad. Um but uh I
+think Deep Seek will hopefully kind of
+become the the premier model out there
+as usually [snorts] it is once a major
+release comes out. Are you back testing
+showing any worthwhile crypto
+strategies? Okay, let me let me talk
+about crypto. Um I probably may do a
+post on may not. I don't know. The AI
+did reveal this morning that altcoins
+are dead. Okay, there's no volume in
+altcoins anymore. When you go online
+YouTube right now, everyone talks about
+liquidity, liquidity, liquidity, and
+it's going to dry up. [snorts] I think
+it will, but there's still be enough
+liquidity in certain asset classes with
+the ones I've shown you just now. With
+the altcoins, institutions are no longer
+um [snorts] uh trading or even doing
+research on altcoins because there's
+just no liquidity, no volume anymore.
+So, what's left is Bitcoin and Ethereum.
+If Bitcoin and Ethereum does not get its
+volume up consistently and get back into
+a momentum base, I think crypto as a
+whole may be at risk. And people go,
+well, it's because of this, because of
+this. The reason crypto, namely Bitcoin,
+Ethereum is at risk now is because of
+stable coins. The demand for stable
+coins is um pretty pretty pretty
+popular. And I'm seeing a few
+interesting strategies with stable
+coins. Okay, but that's outside of
+futures because you can't trade stable
+coins in the futures market. So, you
+have to be with a couple of large uh
+crypto exchanges uh by bit, derabit, uh
+Binance, which most Westerners can't
+access
+um because you can't trade perpetual. I
+mean, I can't trade perpetual and can I
+know that that's perpetual futures. So
+that's where I think the future of
+crypto is going to go as well as what
+I'm seeing with the AI and what I'm
+seeing with the reports cuz none of the
+AI is is is now generating any Bitcoin
+Ethereum uh bots. It may down the road
+if if the news gets better and there's
+momentum coming back into the crypto
+market. I'll gladly uh try it out uh
+because it's a fairly easy switch. You
+guys got any more questions? Uh it's
+interesting. A lot of spaces are losing
+demand. private quacky crypto commercial
+real estate. Yeah, I was kind of
+concerned with myself being in Canada
+with the Black Rockck which just
+happened last Friday with the private um
+credit. Um I'm I have excellent
+excellent portfolio managers. So we had
+reports that some of the Canadian um
+call them funds or whatever real estate
+wise were crashing and getting closed
+out and people were losing money a lot.
+Um, but I I'm fortunate none of my um
+portfolio managers are running anything
+risky at all. They're highly registered
+firms and nothing real estate, no
+private equity, no private, nothing.
+It's mainstream equity mostly. Uh, so
+I'm I'm good there. Legit stuff. So, I'm
+not too worried about that, at least for
+myself. You probably want to find a
+portfolio manager that's like that.
+If you guys got any questions, if not, I
+hope to see you at 7 PM tonight in two
+Yeah, two and a half hours. Almost to
+that. Anything else? Uh hopefully I've
+added everything you need just to show
+you that this is working really perfect.
+And hopefully you like the quality of
+the stream now too with this new phone.
+Uh it looks pretty good. Um so I've
+shown you the reports. They're good. I
+can run those not quite uh real time,
+but I can just run a Python uh script
+and it'll generate my HTML for me. And
+for anybody out there, I know who you
+are. The [snorts] reason I use
+JavaScript versus Typescript because I
+like to distribute HTML files because
+it's very easy to distribute for people.
+They just open up with a browser with
+the embedded JavaScript as well.
+[snorts] And uh the cool thing is that's
+all he needs is the HTML file because
+it's all self-contained. Whereas if you
+use TypeScript, I'm not sure, but they
+may have dependencies out there. Uh
+looks like there's no more questions.
+How long are they managing my portfolio?
+I would say year and a half. That's my
+big portfolio. My I don't mess with uh
+portfolio. Everything else I do on my
+own. Uh if you're interested, I do have
+a small Interactive Brokers account. It
+was up last week 22%.
+it got killed in the last few days. Um,
+uh, where I lost I think almost 10% was
+only two positions. Um, O is a symbol
+name which is a Cisco a gold royalty in
+Quebec and the other one was Philip
+Morris and those two got killed. So, I I
+put them uh I I exited both uh positions
+and I'm probably going to move into I'm
+gonna do a comparison just either sit in
+Canadian dollar because that's a US uh
+sorry oil related currency or if
+uh the US dollar continues to pro I may
+just sit in US dollar for that little
+portfolio because when was it 2023 2022
+when everything went to crap that whole
+account that I had. I just sat in uh US
+dollar for the whole year and I got
+about 17% return for the whole year just
+doing nothing with that account. So, uh
+we may enter into those kind of um
+regimes as well cuz gold and silver's
+not doing all that great either. So, I
+guess we'll leave it at that. But, as I
+said, I'll see you guys at 7 p.m. Sim
+everything just different time, same
+stream and everything. So, I'll see you
+then. Thanks for uh uh watching for now.
+I appreciate it. Thanks for joining. Um,
+and I'll see you in less than three
+hours. Over and out. Have a good day.
+Anything else that comes out, I'll let
+you know on that stream as well. Have a
+good set of three hours. Over and out.
+Bye.

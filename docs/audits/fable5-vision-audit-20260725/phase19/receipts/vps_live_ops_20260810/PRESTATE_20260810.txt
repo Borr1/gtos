@@ -1,0 +1,176 @@
+=== GTOS VPS LIVE OPS — PRESTATE — Session LR (2026-08-10) ===
+Captured natively on the live host, before any mutation this session.
+
+=== 0. CLOCK / IDENTITY ===
+host_utc        : 2026-08-10T12:53:53Z  (probe span 12:53Z - 13:00Z)
+live tree       : C:\Users\MSI\Documents\ai-trading-agent   (the ONLY tree that runs the books)
+other tree      : C:\GTOS  (present; must NOT be edited — no CLAUDE.md there)
+
+=== 1. HOST GIT ===
+branch      : vps/ultimate-conditioned-expansion-minimal-2026-06-18
+HEAD        : b4567fbd39e0ecfc2964e96c7e7bba465a72c158
+log (top 5) :
+  b4567fbd3 Session LQ: end-to-end proof — both restarted books completed the 09:00Z H4 cycle
+  86dcd558f Session LQ: the redacted_account silence explained; timeout_no_fill labelling fix landed live
+  c989b1198 Session LO: repair F1 — redacted_account activation token re-minted to the real namespace
+  f43e5cd2b Session LN: CM crypto frontier + CN broker-true commission ARMED on the host; CO lapsed
+  f66da7664 Owner manual SL/TP moves are first-class: broker-truth reconciliation, never-worsen guard
+
+=== 2. LIVE WORKER ARGV (the authority on what is armed) ===
+FTMO   shim pid 5412 / child pid 10196, created 2026-08-06T08:39:18
+  run_book.py --terminal-path C:\MT5\FTMO\terminal64.exe
+    --namespace operator_profile --profile operator_profile
+    --kill-flag pipeline_state/ULTIMATE_BOOK_KILL_ftmo.flag
+    --tags crypto,energy_agri,sub_xvol_pullback,sub_mid_dn_revert
+    --frontier-exits crypto
+    --spread-geometry-floor sub_mid_dn_revert,sub_xvol_pullback --poll-seconds 60
+
+FN     shim pid 1172 / child pid 3956, created 2026-08-06T08:39:22
+  run_book.py --terminal-path C:\MT5\redacted_account\terminal64.exe
+    --namespace redacted_account_live_bee34003 --profile redacted_account
+    --kill-flag pipeline_state/ULTIMATE_BOOK_KILL_fn.flag
+    --tags crypto,energy_agri,sub_xvol_pullback,sub_mid_dn_revert
+    --spread-geometry-floor sub_mid_dn_revert,sub_xvol_pullback --poll-seconds 60
+
+DEVIATION FROM SESSION BRIEF: the brief expected NO --frontier-exits on either
+worker. FTMO carries --frontier-exits crypto. This is NOT drift: it is Session
+LN's CM ceremony, committed f43e5cd2b (2026-08-06) and post-restart verified
+there. redacted_account carries no frontier, as LN intended. See section 8.
+
+Tags and armed set are IDENTICAL to LN's 2026-08-06 prestate. Nothing this
+session changed them.
+
+=== 3. THE THREE AUTHORITY GATES (config/agent_config.yaml) ===
+  L1161: ultimate_book_apply_to_execution: true
+  L1162: ultimate_book_live_activation_allowed: true
+  L1163: ultimate_book_live_broker_authority: true
+  (L1160: ultimate_book_enabled: true — master gate, also on)
+All true. Untouched this session.
+
+=== 4. TOKEN-BOUND CONFIG BYTES (must not move) ===
+  a2d5c67575d7087fc4f2da443750aecb99e35437cee86edbe1d7c9bbcbf66c2c  266147  config/agent_config.yaml
+  ae9312e6c5c8e6b05f8e5eb5f9490166c44a1a3279b4eff5df10c3da2921e2b8   58294  config/profiles/operator_profile.yaml
+  cf82c49a08a1f88c9ea4181076e9ac2f0d580f1c6e4b7ce1b8aeeba18d99d632   33562  config/profiles/redacted_account.yaml
+All three byte-identical to Session LN's 2026-08-06 prestate. No config edit
+has occurred between LN and now, and none is performed this session.
+
+Derived live config digests (as the runtime computes them):
+  FTMO (agent_config + operator_profile.yaml) : ffe16657feaf6ea9c25cb25fb7cfdc38930a8d15fe0f17f5cba58e10f8f9ece8
+  FN   (agent_config + redacted_account.yaml)            : e184a81d3b1be81aceabe8e11784a4864c5e1fc299e7cd4e9c029e0a868c4f3b
+Both match the values the brief predicted (ffe16657feaf / e184a81d3b1b).
+
+=== 5. ACTIVATION TOKENS — BEFORE ===
+token dir : host-local\.gtos\activation  (machine state, outside the repo)
+signing_key_present : true
+
+FTMO  310fcf06...7111
+  namespace   : operator_profile
+  issued_utc  : 2026-07-31T17:23:49Z   issued_by borhen
+  expires_utc : 2026-08-14T17:23:49Z
+  binds config: true (ffe16657feaf...)
+  verify      : valid=true reason=activation_token_valid
+
+FN    bee34003...6951
+  namespace   : redacted_account_live_bee34003     <-- ALREADY CORRECT
+  issued_utc  : 2026-08-06T01:28:37Z   issued_by borhen
+  expires_utc : 2026-08-14T17:23:51Z
+  binds config: true (e184a81d3b1b...)
+  note        : "Session LO F1 repair: bind to the namespace run_book.py declares
+                 (redacted_account_live_bee34003); prior token bound the profile name
+                 and refused every entry"
+  verify      : valid=true reason=activation_token_valid
+                (verified with --namespace redacted_account_live_bee34003, i.e. exactly
+                 what run_book.py declares via set_activation_context)
+
+Byte copies retained beside this receipt as BEFORE_ftmo.token.json /
+BEFORE_redacted_account.token.json.
+
+=== 6. F1 (redacted_account namespace mismatch) — ALREADY REPAIRED BEFORE THIS SESSION ===
+Authoritative source: host-local\.gtos\activation\activation_audit.jsonl
+(270 rows; this is the token layer's own decision log, not a console mirror).
+
+  2026-07-29 :   4 activation_token_absent (pre-arming)
+               + 5 risk-reducing decisions ALLOWED (closes/cancel/stop-tighten)
+  2026-08-04 : 231 activation_token_namespace_mismatch, namespace
+               redacted_account_live_bee34003, allowed=false,
+               detail "redacted_account_live_bee34003 != redacted_account"
+               window 13:00:42Z -> 14:59:08Z
+               example request_summary: {symbol UKOUSD, type 1 (SELL),
+                                         volume 0.52, action 1}
+               -> this is the 08-04 energy trade the brief refers to. Confirmed.
+             +   1 activation_token_valid for FTMO (FTMO was never affected)
+  2026-08-06 :   5 activation_token_valid, namespace redacted_account_live_bee34003,
+                   allowed=TRUE   <-- positive proof the repaired token is
+                                      accepted under the book's real namespace
+               +   4 activation_token_valid for operator_profile
+               + deliberate negative controls from Session LO/LQ's verifier:
+                   4x namespace "redacted_account_not_the_namespace"      REFUSED
+                   3x namespace "operator_profile_not_the_..." REFUSED
+                   2x namespace "redacted_account"                        REFUSED
+                   2x namespace "not_a_real_namespace"              REFUSED
+                   9x namespace unsatisfied (null)                  REFUSED
+  after 2026-08-06T08:40:52Z : NO further rows of any kind.
+
+Conclusion: zero namespace-mismatch refusals exist after 2026-08-06T01:28Z.
+The last audit write is 08-06T08:40Z, so no exposure-increasing broker request
+has been ATTEMPTED since then — the absence of refusals is therefore consistent
+with the repair, but the live-fire proof is the 5 allowed=true rows, not silence.
+
+Caveat recorded for honesty: the brief states FN was refused "since 07-31".
+The audit log shows the bad token was minted 07-31T17:23Z but only materialised
+as refusals on 08-04, because that is when the book first tried to open exposure.
+
+=== 7. BOOK / BROKER HEALTH (probed 2026-08-10T13:00:22Z) ===
+monitor daemon  : pipeline_state/monitor_books/heartbeat.json
+                  cycle 427, status completed, ts 12:54:48Z
+                  down=[] hung=[] blind=[] alert_count=0 monitoring_degraded=false
+book heartbeats : FTMO pid 10196 healthy=true ts 12:59:11Z
+                  FN   pid 3956  healthy=true ts 12:58:39Z
+supervisor      : pipeline_state/supervisor_heartbeat.json pid 5484 ts 12:56:27Z
+
+Read-only MT5 probe (same initialize/shutdown pattern the monitor already runs
+every 300 s; no order call of any kind):
+  FTMO       login ...5516  server FTMO-Server3
+             terminal.connected=true  terminal.trade_allowed=true
+             account.trade_allowed=true  trade_expert=true
+             margin_mode=2 (HEDGING)  equity 108,342.47 USD  balance 108,342.47
+             OPEN POSITIONS: 0
+  redacted_account login ...5471  server "redacted_account-Server 2"
+             terminal.connected=true  terminal.trade_allowed=true
+             account.trade_allowed=true  trade_expert=true
+             margin_mode=2 (HEDGING)  equity 96,229.28 USD  balance 96,229.28
+             OPEN POSITIONS: 0
+
+BOTH ACCOUNTS ARE FLAT. No adoption risk attaches to any restart today.
+Last launcher cycle row: 2026-08-10T09:00:33Z (both namespaces present) — the
+books are cycling normally on the H4 boundary.
+
+=== 8. CN / CM / CO — STATE ON ARRIVAL ===
+The brief tasked this session with EXECUTING CN and DEFERRING CM. Both were in
+fact already executed by Session LN on 2026-08-06, commit f43e5cd2b, and
+post-restart verified there. Verified on disk today:
+
+CN destinations (all 7 present, matching LN's declared after-state):
+  95dd8eb5b2b195a7    8801  src/costs/coverage.py                      (new)
+  b630b52f1a1f1e5a   39029  src/costs/model.py                         (new)
+  b7ee8c0b4daeb306    1702  src/costs/__init__.py                      (new)
+  edda5f1902136ae0   30983  src/components/ultimate_book/packet_economics.py
+  69efc33e27e23eee  232936  src/components/ultimate_book/book_owner.py  <-- LN's
+        declared CN after-hash 69efc33e27e2, built on the HOST base b7a82dc3d241,
+        NOT the shipped CO-based payload that would have crashed both books.
+  82f61b57a41310ef   37830  src/components/broker_net_cost_engine.py
+  927bed1f4ee2775a   39934  src/components/ultimate_book/execution_packets.py
+  research/operations/broker_truth_layer_2026_07_27/BROKER_TRUE_COSTS_V1.json (new)
+
+CM: scripts/run_book_supervisor.ps1 L140 now carries frontier="crypto" for the
+FTMO book only (sha bd676cf952015c47 19513 B). mx_btcysd is absent from every
+tag list, frontier field and live command line, exactly as LN recorded.
+
+CO: lapsed, as the brief states. No CO destination file was modified.
+
+NOTHING in CN/CM was re-applied this session. Re-running LN's rebuild script
+against already-rebuilt bytes would fail its own before-byte checks by design.
+
+=== 9. WHAT THIS SESSION WILL CHANGE ===
+Only the two activation token files in host-local\.gtos\activation.
+No repo file, no config byte, no gate, no tag, no argv, no restart, no order.

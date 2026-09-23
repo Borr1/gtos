@@ -1,0 +1,11 @@
+### CE-2 identity proof — OFF is byte-identical to the session's base commit
+
+  base : 2 intents, 2 meta rows
+  head : 2 intents, 2 meta rows
+  intents    identical: True
+  meta       identical: True
+  telemetry  identical: True
+  skips      identical: True
+
+base ref  : e19a2bb49
+RESULT    : PASS

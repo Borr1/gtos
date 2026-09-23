@@ -1,0 +1,31 @@
+{
+  "schema": "gtos.fleet_feedback.v0",
+  "verbs": {"LABEL": true, "place": false},
+  "timing_enum": [
+    "too_early",
+    "too_late",
+    "ok_timing",
+    "wrong_session",
+    "wrong_symbol_bias",
+    "stop_too_tight",
+    "stop_too_wide",
+    "should_have_flat",
+    "should_have_held",
+    "unclear"
+  ],
+  "maps_to_close_loop_miss_type": {
+    "too_early": "bad_timing",
+    "too_late": "bad_timing",
+    "wrong_session": "bad_timing",
+    "wrong_symbol_bias": "corr_drag",
+    "stop_too_tight": "stop_geometry",
+    "stop_too_wide": "stop_geometry",
+    "should_have_flat": "false_structure",
+    "should_have_held": "ok_loss",
+    "ok_timing": "ok_win",
+    "unclear": "unknown"
+  },
+  "required": ["ts_utc", "observer_id", "ticket", "timing", "source_login"],
+  "optional": ["symbol", "note", "confidence", "fleet_event_id"],
+  "source_login": 0
+}

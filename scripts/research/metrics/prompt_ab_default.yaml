@@ -1,0 +1,170 @@
+# L56 Prompt A/B Harness — Default Pre-Registered Metrics
+#
+# CRITICAL — PRE-REGISTRATION CONTRACT:
+#   This file MUST be authored, frozen, and committed BEFORE the harness is
+#   run on any prompt-A/prompt-B pair you intend to draw an inference from.
+#   Editing this file after seeing the harness output for that pair is
+#   POST-HOC HYPOTHESIS FORMATION, which is banned by CLAUDE.md "Prohibited
+#   Behaviors" #5. Authors who need a different metric mix for a different
+#   pair must commit a NEW yaml under a new name BEFORE running, e.g.
+#   `prompt_ab_v4_vs_v3.yaml`, and reference its commit SHA in the run log.
+#
+# Schema (one entry per metric):
+#   name:                       short identifier used in JSON keys / report
+#   definition:                 human-readable description
+#   type:                       label_difference | rate | mean | winrate | agreement
+#   test:                       statistical test applied
+#                               (sign | mcnemar | paired_t | wilcoxon |
+#                                fisher_exact | wilson_compare)
+#   min_sample:                 N (paired observations) below which the
+#                               result is reported with `underpowered: true`
+#                               and NO p-value is emitted.
+#   significance_threshold:     base alpha for this metric in isolation
+#   bonferroni_corrected:       if true, harness applies family-wise
+#                               correction across the metrics set, dividing
+#                               alpha by the number of metrics that have this
+#                               flag set to true. Mark `false` ONLY for
+#                               purely descriptive metrics (rate_a,
+#                               winrate_a, etc.) so the Bonferroni
+#                               denominator only counts inferential tests.
+#   requires_realized_r:        if true, metric is computed only when
+#                               `--realized-r-join` is provided AND each
+#                               fixture has a matched trade record.
+#   higher_is_better:            harness uses this in decision_diff.md
+#                               sign-direction labelling. Optional.
+#
+# Test semantics (harness implementation in prompt_ab_harness.py):
+#   sign            — paired sign test on directional disagreement counts.
+#                     H0: P(A says CAND, B says no) = P(B says CAND, A says no).
+#   mcnemar         — McNemar's chi-square (continuity-corrected) on the 2x2
+#                     paired CANDIDATE / NO_TRADE confusion table. H0: equal
+#                     marginal CANDIDATE rates.
+#   paired_t        — paired t-test on (R_a - R_b) per fixture where both
+#                     fixtures have realized R.
+#   wilcoxon        — Wilcoxon signed-rank on the same paired R deltas.
+#                     Used as a non-parametric backup; harness reports BOTH
+#                     paired_t and wilcoxon when configured.
+#   fisher_exact    — Fisher's exact on a 2x2 table. Used for directional
+#                     agreement when both prompts emit CANDIDATE.
+#   wilson_compare  — descriptive only: Wilson 95% CIs for both rates;
+#                     no p-value emitted; flagged inferential=false.
+
+metrics_set_id: prompt_ab_default_v1
+description: >
+  Default pre-registered metric pack for prompt A/B harness (L56). Five
+  metrics: 2 descriptive (rate_a, winrate_a — duplicated for B), 4
+  inferential. Bonferroni correction applies to inferential metrics only
+  (denominator = 4): cr_rate_compare, decision_label_diff,
+  realized_r_paired_t, directional_agreement.
+
+metrics:
+  - name: decision_label_diff
+    definition: >
+      Count of fixtures where prompt-A emits CANDIDATE while prompt-B emits
+      NO_TRADE, vs. the reverse. Tests whether the two prompts have
+      symmetric or asymmetric flip behavior.
+    type: label_difference
+    test: sign
+    min_sample: 10
+    significance_threshold: 0.05
+    bonferroni_corrected: true
+    higher_is_better: null
+
+  - name: cr_rate_compare
+    definition: >
+      Paired comparison of CANDIDATE rate between prompt-A and prompt-B
+      across the same fixture set. McNemar test on the 2x2 paired
+      CAND/NO_TRADE confusion matrix.
+    type: rate
+    test: mcnemar
+    min_sample: 20
+    significance_threshold: 0.05
+    bonferroni_corrected: true
+    higher_is_better: null
+
+  - name: cr_rate_a
+    definition: Descriptive CANDIDATE rate for prompt-A.
+    type: rate
+    test: wilson_compare
+    min_sample: 1
+    significance_threshold: 0.05
+    bonferroni_corrected: false
+    higher_is_better: null
+
+  - name: cr_rate_b
+    definition: Descriptive CANDIDATE rate for prompt-B.
+    type: rate
+    test: wilson_compare
+    min_sample: 1
+    significance_threshold: 0.05
+    bonferroni_corrected: false
+    higher_is_better: null
+
+  - name: realized_r_paired_t
+    definition: >
+      Paired t-test on (realized_R_a - realized_R_b) per fixture, where
+      BOTH prompt outputs have a matched realized R from the historical
+      trade record. Memory note: walk-level decisions are NOT predictive
+      of realized R (see feedback_walk_level_evidence_not_predictive.md);
+      this metric is the ONLY metric in the pack that maps decisions to
+      realized outcomes, so it is the headline number for any inferential
+      claim about "prompt-X is better than prompt-Y".
+    type: mean
+    test: paired_t
+    min_sample: 20
+    significance_threshold: 0.05
+    bonferroni_corrected: true
+    requires_realized_r: true
+    higher_is_better: a
+
+  - name: realized_r_wilcoxon
+    definition: >
+      Non-parametric Wilcoxon signed-rank backup for realized_r_paired_t.
+      Reported alongside the paired t to detect cases where t-test is
+      driven by outliers (fat-tail gold; ξ=0.35 per memory
+      project_distributional_findings.md).
+    type: mean
+    test: wilcoxon
+    min_sample: 20
+    significance_threshold: 0.05
+    bonferroni_corrected: false
+    requires_realized_r: true
+    higher_is_better: a
+
+  - name: realized_r_winrate_a
+    definition: >
+      Descriptive WR for prompt-A's CANDIDATE decisions only, joined to
+      realized R. Wilson interval reported.
+    type: winrate
+    test: wilson_compare
+    min_sample: 1
+    significance_threshold: 0.05
+    bonferroni_corrected: false
+    requires_realized_r: true
+    higher_is_better: a
+
+  - name: realized_r_winrate_b
+    definition: >
+      Descriptive WR for prompt-B's CANDIDATE decisions only, joined to
+      realized R. Wilson interval reported.
+    type: winrate
+    test: wilson_compare
+    min_sample: 1
+    significance_threshold: 0.05
+    bonferroni_corrected: false
+    requires_realized_r: true
+    higher_is_better: b
+
+  - name: directional_agreement
+    definition: >
+      Among fixtures where BOTH prompts emit CANDIDATE, do they agree on
+      the side (LONG/SHORT)? Fisher exact on the 2x2 (A_long vs A_short) x
+      (B_long vs B_short). Note: Fisher is conservative on small N; the
+      harness reports the descriptive agreement-rate alongside the p so
+      reviewers can interpret the test.
+    type: agreement
+    test: fisher_exact
+    min_sample: 10
+    significance_threshold: 0.05
+    bonferroni_corrected: true
+    higher_is_better: null

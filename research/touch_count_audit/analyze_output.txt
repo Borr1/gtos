@@ -1,0 +1,124 @@
+================================================================================
+PART 1: A1 backtest (v1 production-driver, post-V3 prompt, 12 slices)
+================================================================================
+
+A1 logger rows: 1142
+A1 filled CANDs: 75
+
+A1 filled — direction-aware touch (Track A semantics, opposing-OB):
+  touch=       1: n= 32, wins=13, WR= 40.6% [25.5,57.7], Exp=+0.016R [-0.375,+0.484], totR=+0.50
+  touch=       2: n= 25, wins=13, WR= 52.0% [33.5,70.0], Exp=+0.300R [-0.200,+0.800], totR=+7.50
+  touch=     >=3: n= 14, wins= 6, WR= 42.9% [21.4,67.4], Exp=+0.073R [-0.464,+0.786], totR=+1.02
+  touch= missing: n=  4, wins= 2, WR= 50.0% [15.0,85.0], Exp=+0.250R [-1.000,+1.500], totR=+1.00
+
+Threshold counterfactual on A1 filled set (gate semantics: reject if touch >= X):
+   X  n_pass  n_rej  pass WR%  pass ExpR  rej WR%   rej ExpR  pass totR   rej totR
+   1       4     71      50.0     +0.250     45.1     +0.127      +1.00      +9.02
+   2      36     39      41.7     +0.042     48.7     +0.218      +1.50      +8.52
+   3      61     14      45.9     +0.148     42.9     +0.073      +9.00      +1.02
+   4      69      6      47.8     +0.196     16.7     -0.583     +13.52      -3.50
+   5      75      0      45.3     +0.134      0.0     +0.000     +10.02      +0.00
+ 999      75      0      45.3     +0.134      0.0     +0.000     +10.02      +0.00
+
+A1 per-symbol stratification:
+
+  USDJPY (n_filled=19):
+    touch=       1: n=10, WR= 40.0% [16.8,68.7], Exp=+0.000R
+    touch=       2: n= 4, WR= 50.0% [15.0,85.0], Exp=+0.250R
+    touch=     >=3: n= 4, WR= 25.0% [ 4.6,69.9], Exp=-0.375R
+    touch= missing: n= 1, WR=100.0% [20.7,100.0], Exp=+1.500R
+
+  XAUUSD (n_filled=56):
+    touch=       1: n=22, WR= 40.9% [23.3,61.3], Exp=+0.023R
+    touch=       2: n=21, WR= 52.4% [32.4,71.7], Exp=+0.310R
+    touch=     >=3: n=10, WR= 50.0% [23.7,76.3], Exp=+0.252R
+    touch= missing: n= 3, WR= 33.3% [ 6.1,79.2], Exp=-0.167R
+
+A1 by direction:
+  LONG: n=70, WR=44.3%, Exp=+0.107R
+  SHORT: n=5, WR=60.0%, Exp=+0.500R
+
+================================================================================
+PART 2: A2 v2-active backtest (v2 production-driver, post-V3 prompt)
+================================================================================
+
+A2 CANDs: 37
+A2 filled: 30
+  Fleet WR: 53.3%, Exp: +0.333R, total R: +10.00
+
+A2 filled by touch_count (parsed from raw_response — AI-cited):
+  touch=       1: n=10, WR= 50.0% [23.7,76.3], Exp=+0.250R, totR=+2.50
+  touch=       2: n= 8, WR= 75.0% [40.9,92.9], Exp=+0.875R, totR=+7.00
+  touch=     >=3: n= 9, WR= 44.4% [18.9,73.3], Exp=+0.111R, totR=+1.00
+  touch=unparsed: n= 3, WR= 33.3% [ 6.1,79.2], Exp=-0.167R, totR=-0.50
+
+A2 threshold counterfactual (parseable touches only):
+  Parseable: 27 / 30
+
+   X  n_pass  n_rej  pass WR%  pass ExpR  pass totR
+   1       0     27       0.0     +0.000      +0.00
+   2      10     17      50.0     +0.250      +2.50
+   3      18      9      61.1     +0.528      +9.50
+   4      24      3      58.3     +0.458     +11.00
+   5      26      1      57.7     +0.442     +11.50
+ 999      27      0      55.6     +0.389     +10.50
+
+A2 per-symbol stratification:
+
+  USDJPY (n=19):
+    touch=       1: n= 5, WR= 60.0% [23.1,88.2], Exp=+0.500R
+    touch=       2: n= 3, WR=100.0% [43.8,100.0], Exp=+1.500R
+    touch=     >=3: n= 9, WR= 44.4% [18.9,73.3], Exp=+0.111R
+    touch=unparsed: n= 2, WR= 50.0% [ 9.5,90.5], Exp=+0.250R
+
+  XAUUSD (n=11):
+    touch=       1: n= 5, WR= 40.0% [11.8,76.9], Exp=+0.000R
+    touch=       2: n= 5, WR= 60.0% [23.1,88.2], Exp=+0.500R
+    touch=unparsed: n= 1, WR=  0.0% [ 0.0,79.3], Exp=-1.000R
+
+================================================================================
+PART 3: Production candidate_features_log.jsonl shadow data
+================================================================================
+
+Production logger rows: 126
+Decisions: Counter({'NO_TRADE': 112, 'CANDIDATE': 14})
+
+Production CANDIDATEs in log: 14
+By symbol: Counter({'GBPUSD': 4, 'GBPJPY': 4, 'USDJPY': 3, 'XAUUSD': 2, 'US30_cash': 1})
+
+Production CANDs distribution of MAX(mso_h1_ob_touch_counts):
+  max touch=1: n=2 (14.3%)
+  max touch=3: n=5 (35.7%)
+  max touch=4: n=1 (7.1%)
+  (no H1 OBs in MSO: 6 = 42.9%)
+
+Fraction of CANDs with ANY unmitigated H1 OB at touch>=2: 6/14 = 42.9%
+
+Production CANDs by symbol × max touch:
+  GBPJPY: total=4, max-touch>=2 = 1 (25.0%)
+    3: 1
+    no_ob: 3
+  GBPUSD: total=4, max-touch>=2 = 4 (100.0%)
+    3: 4
+  US30_cash: total=1, max-touch>=2 = 1 (100.0%)
+    4: 1
+  USDJPY: total=3, max-touch>=2 = 0 (0.0%)
+    no_ob: 3
+  XAUUSD: total=2, max-touch>=2 = 0 (0.0%)
+    1: 2
+
+
+================================================================================
+SUMMARY (gate currently rejects touches >= 2)
+================================================================================
+
+A1 (75 filled):
+  WITHOUT gate (current data): n=75, totR=+10.02
+  WITH gate ACTIVE (rej touches>=2): n_passed=36, totR=+1.50
+  Delta from gate = -8.52R (LOST = +8.52R because gate would have removed them)
+
+A2 (parseable filled, n=27):
+  Total realized totR = +10.00R (over all 30)
+  Parseable WITHOUT gate: n=27, totR=+10.50
+  WITH gate ACTIVE: n_passed=10, totR=+2.50
+  Delta from gate = -8.00R (LOST = +8.00R)

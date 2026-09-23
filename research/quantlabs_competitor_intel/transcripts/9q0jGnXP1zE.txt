@@ -1,0 +1,1456 @@
+# TradingView Pine script debugging and backtesting strategies
+URL: https://www.youtube.com/watch?v=9q0jGnXP1zE
+Video ID: 9q0jGnXP1zE
+Duration: 4140s
+Fetched: 2026-04-18T13:25:03Z
+---
+
+There we go. Okay. So, we got video
+audio recording plus we are now live.
+Not yet. Let me just pull up the
+[snorts] stream software. All righty.
+So, we are going to go live in couple
+seconds here. The wrong title. Now, I
+got the right title to get maximum
+crowd.
+All right. So, here we are. Yay. We are
+live. All right. So,
+yeah. Yeah. Yeah. Yeah. All right. So
+you're looking at Bitcoin. It's my first
+vid educational video
+on Trading View. So we're going to talk
+about back testing and the like.
+So we're looking at Bitcoin. So at the
+bottom here, you can see we have a Pine
+editor, strategy tester, and a trading
+panel.
+So, what I'm going to load up here is a
+um a different
+uh strategy. So, [snorts] let me first
+show you the pine locks.
+>> So, with the pine logs, these are a new
+feature that um Training D just put in
+installed.
+Uh and basically, if you're a coder, you
+want to know how to debug uh in logs. uh
+back in my day in the late 80s early 90s
+we didn't have idees we didn't have
+fancy debuggers all we had was just
+outputting to a file or to the console
+so it's similar here but it's just going
+to be put into a log so the first thing
+here is this is from the blog post that
+training g put up last week uh hello
+Pepe and um this um is straight this
+example I'm going to show you is
+straight from Trading View uh itself. So
+I'm going to keep it really simple. Um
+so in here this is the demonstration of
+the code. So you can see here we got log
+error log info. You can also log
+warnings as well. And uh in here on the
+right when you run the script
+uh here you can see pine logs. So I'll
+load up this new interface. So the first
+thing to do to run it, you add this
+script to the chart and then boom,
+there's all the activity for um the
+logging. So you can see here we have bar
+index here. We can just specify we only
+want to see um
+Oh no.
+So yeah, so you can see here if I change
+the time frame. So we're on a daily. If
+I go on a I don't know
+a one minute let's say
+you can see here this will update a lot
+quicker.
+So um generally let me just see here if
+this loads up. No it doesn't. But in
+here under here you can load up your um
+different levels of debugging you want
+as I said for warnings info
+errors that sort of thing. So that's
+pretty handy to have within Trading
+View. um when you're coding up uh
+trading view uh scripts or pint scripts.
+So just something I want to show you.
+All right. So as I said, this is my
+first time doing an educational video, a
+formal one on Trading View. So I'm going
+to move over into back testing. This is
+one of the strengths of uh Trading View.
+Uh fairly straightforward no matter what
+your level is. So I'm going to put this
+back to I don't know two hours. that I
+like. Um, let me get rid of this as well
+and we'll load in a new script here.
+[snorts]
+Okay. So, um, first things first is, uh,
+I'm going to load up another script
+here. So in here um
+I'm going to load up uh there was a
+script called greedy something greedy.
+And just so you know from a pine script
+perspective there is strategies
+indicators.
+It's no different with any other um uh
+language. Usually a strategy is the one
+that's going to run your code. So in
+here I'm going to load up the source
+code. So let's go into the pineer.
+Here's the source code for the greed
+greedy
+[snorts] uh
+here.
+Didn't load up properly.
+Okay. So, let me try to do that again.
+Okay. So, here's the greedy strategy.
+[snorts] Uh
+no. Okay.
+Let me just see here. I don't know why
+it's not taking
+Oh, I know what I'll do.
+I'll get rid of that new indicator. Now,
+we'll load in our grease strategy. There
+we go. So, here's the source code for um
+the greedy strategy. We don't need to go
+through that in detail. Um as I said,
+what you need to do is you need to add
+to the chart to execute it to get it
+ready. This is the interesting part here
+is the strategy tester. This is the back
+testing process.
+within um trading view and uh this is
+how it goes. So this is a new thing
+they've added called deep back testing.
+So um
+basically you you generate a report. So
+in this case, we're going back
+um
+the period of August 16th and we'll go
+up to today uh the 3rd of September or
+sorry the 5th of September and we
+generate a report
+and remember we're using Bitcoin. Okay,
+so here's the the performance summary.
+So usually you want to get a profit
+factor of at least one. Higher the
+better. You want to obviously have a
+lower max draw down. Um, let just get
+rid of this. Hopefully this
+No. Okay, doesn't matter. Anyway, so
+we've got uh our draw down. You don't
+want to usually industry standards no
+more than 15% draw down. Average trade
+is the size of the position and the
+number of bars for the position to
+close. So in this case, two bars. We set
+it here at 2 hours.
+So, um, in here we can also look at the
+general performance. So, here we've got
+our net profit, gross profit, all the
+other metrics that you would typically
+get in a strategy. Um, pretty pretty
+strong stuff if you want my opinion. And
+um, then if you want to take a look at
+the list of trades as if this is
+simulated. So there have been trades
+today
+uh on the 4th or sorry yesterday.
+Remember this is Bitcoin we're dealing
+with right here. And uh this is 247. So
+here we can go um yesterday's trading
+again more trading. Here we have profit
+of um a loss here or sorry um profit
+sorry a loss a cumulative profit in
+total and the draw down if there is any.
+So
+in there you can take a look at the
+overall parameters for this time period.
+So if you go under properties you can
+set your initial capital of million
+dollars. Have a base uh currency of
+whatever you want. My case obviously
+it's going to be US dollar that's what
+it defaults at. You can have your um
+order size changed around and all the
+other fancy schmancy stuff.
+So um terms of style I think this is
+just the charting
+and visibility and all that. So that's
+how you you um set parameters in a in a
+in a back test as well as the parameters
+for the strategy as well. So um as you
+could tell this is not a really great
+performing strategy. Uh this is an open-
+source strategy as well strategy. Um,
+when does it work is probably the
+question. Uh, well, what you can do is
+if you go under strategy tester,
+let me just pull this back up here. Um,
+so
+let me change the periods here. Uh, I'm
+going to put it to the beginning of
+August. Generate report. Now, this is
+using this back testing feature. So if I
+go back under overview, what we want is
+we want to get this profit factor
+boosted. What we can quickly find out is
+if this strategy will work for Bitcoin
+as it is over this period of time. Now
+if I let's say
+put it to an hour will improve.
+Let's see.
+So yeah. Okay. So it does improve on the
+profit factor with the profitability
+percentage at uh 39.8%.
+Now you can see here we have a number of
+trades. This is over um a fiveweek
+period. So uh this I'm not sure like
+like you have to be careful on these
+reports because they're not going to be
+accurate. It's just more of a guide. So
+here we're within the the draw down
+because it's been pretty well flat as
+you can see. um average trade 287 and
+again two two twohour
+uh hold on these open positions. So if I
+keep narrowing down to let's say a five
+minute time period can we improve the
+strategy?
+Um you can see here this this is when
+the strategy will work okay for greedy
+strategy. So if you boost or lower to
+five minute period, you'll get a profit
+factor 1.5
+net profitable. So winning positions of
+45%.
+But here's the problem is that you're
+trading 1,300 trades over that time
+period. So the question becomes, if you
+factor in the commission, will you still
+be profiting? Right? That's that's the
+overall question. So again, we can see
+the overall net position we would have
+made. It started at 1 million. So we
+would be up only 79% over that time
+period, which is okay considering it's
+flat. But the amount of positions you
+take on, that's quite a lot. Um, so
+you're probably going to lose
+uh when you factor in all your
+commissions because there's so many
+positions. So, this is just some of the
+ways to
+to to see if a a strategy is profitable
+um and what kind of strategy will work
+under what market conditions because
+right here it's completely flat, right?
+So, um this strategy in my mind is not a
+very profitable strategy. Whereas, let's
+say something that's rallying right now,
+I could go to oil because that's
+rallying been rallying for the last
+little while.
+Uh let's just put in uh a CFD from OANDA
+here or FXM.
+Let's just do this TVC.
+So um I'll do
+a one hour time frame for this strategy.
+So you can see it's consistently rallied
+all since uh July. So that we could see
+if this strategy is more of a momentum
+or trend following type of strategy that
+will work. So again, we're using the
+greedy strategy. I'm going to go now
+farther back to
+I don't know. So it started to take off
+here, June 23rd. So I'll do that on June
+23rd here. So that's the time frame
+between June 23rd to today. Generate the
+report. Let's see what we got here. So
+really hasn't really changed much that
+strategy. I don't know if it's along
+here is a problem or might be better
+here to start the the test here starting
+on August 23rd. So, let me do that.
+So, uh August 23rd generate report.
+Let's see what what the profit factor
+is. Surprisingly, it's not as high as
+you think it should be. Everything.
+Well, here's an average trade of losing
+money. So, if I go under um performance,
+yeah, it's it's actually losing money
+here for the net profit. Remember, this
+is starting at uh uh $1 million. Okay.
+So, what you want to do is you got you
+you got to kind of play with it. So,
+we're on one hour. So, let's say how
+many posi how many positions did that
+trade? 184
+over uh two weeks. And again, you got to
+factor in your your commission. you got
+to factor in um the the pro the overall
+profit of each trade and so on so forth.
+So if I go let's say if I do a daily
+time frame let's see what will happen
+here. So over the same time period I
+generate that report. So now we got 13
+positions and it's not as profitable,
+right? It's only 26. Remember, we want
+it at least at one the profit factor. So
+only 30% win ratio and it's actually
+losing more money. So what happens if I
+go the prior test was for
+one hour. So let's say if I go back to a
+five minute time frame,
+generate a port. Let's see what happens
+here. So you can see here now we're
+getting more profit,
+>> right? at 1.5
+45% win ratio total uh closed positions
+that again we're going to have the same
+problem over a thousand positions
+average trade very little profit
+not but it holds the position longer
+over seven bars so it'll be seven bars
+times five minute so 35 minute time hold
+on average performance here um net
+profit 36. So remember, we're starting
+at $1 million is our starting capital.
+So, uh, it didn't really make any money
+considering considering um, we could
+have ba basically made should be making
+money, but it's just the wrong type of
+strategy. So, let me load in a new
+strategy here and just try something.
+So, um,
+let me go back to Pine Editor and load
+something else up.
+So, I'll go into a built-in script,
+which are all the available ones uh
+sortwise. And uh let me see if I can
+find now. We're on oil, so we know it's
+momentum. Let's see if we could find a
+momentum strategy right here. So, we'll
+try this. I don't know this strategy,
+but here's the source code.
+And then we'll go back to our strategy
+tester.
+Um,
+let me just toggle this back.
+So, I'm going to just change the day
+here
+for August 24th. Generate a new report.
+Let's see what the profit factor is for
+the overview.
+So, much better. Much much better. So,
+this is this is this is this is what you
+need to know about when it comes to
+setting up online strategies. You want
+to have the right strategy for the right
+market conditions over the right set of
+uh days when this is going into the
+momentum. So again, we figured the
+momentum would start on the 24th to
+today. So it's over the last two weeks.
+Um really nice profit factor, but let's
+see the performance here. Um still not a
+lot of cash, but the profit factor looks
+good. I could probably um boost the
+number of positions or the orders. So if
+I go under overview here, click on this
+wheel thing.
+Um and then just take my order size and
+boost it. Um
+yeah, let me let me let me do I don't
+know 10. That might boost it a little
+bit. So again, that that's that's that's
+important now on your account size. So
+the so the bigger your account size the
+bigger your positions per trade 45%
+profitable profit factor 1.5
+max draw down's looking tolerable
+average trade not very much money
+surprisingly at.33
+um so all the same thing but let's see
+if the performance so yeah it it did go
+up a little bit $357 on a million dollar
+starting capital now Again, if I go back
+into here and boost the order size
+again. So, if I have a $100 a million
+dollar account, initial capital, if I
+boost that order size to 100, this
+should boost our profitability,
+right? So, depending upon your account
+size, your risk that you're willing to
+take on matters.
+So you can see here it did go up um
+times 10
+at uh.36.
+So is that good considering against the
+usual markets?
+That's okay. Okay. So these these are
+open source strategies. Um so some will
+be good, some may not be great. I think
+a lot of them will not be great,
+especially if you're in a uh in a uh
+market condition where everything is
+pretty well rangebound. But I'm just
+showing you oil because there's a
+momentum to the market. Let me go
+further back to this started. This rally
+started late June 23rd I believe. Let's
+see how much our profit factor will will
+go up here. So again it's not gone up
+much. Uh same profit factor
+percent profitable is okay but you can
+see their average trade is three bucks.
+So, you know, depends on your risk and
+as long as the market conditions stay
+the same, you should be able to boost
+your profit. But these are all the
+factors you you got to factor in uh to
+get maximum profit. So, those are the
+different type of conditions and
+controls you have over each strategy
+that you want to test. Um, so that's
+just generally uh the high level of
+doing this, but but you can see the back
+testing is pretty good. Now, when it
+comes to actually live trading, you can
+hook them up to any of these brokers
+among the other supported brokers and
+exchanges with um Trading View. So, you
+could do Awanda Interactive Brokers for
+crypto, you could do Binance, OKX, you
+could do uh Bitstamp. Depends where you
+live and what what what exchange you can
+go with when it comes to the world of
+crypto. All right. So once you start
+going live, uh you can have this running
+24/7 on the on the uh Trading View
+servers and you just check in every so
+often just to see if it's still
+profitable or the market conditions
+change and you have a fully automated
+trading system on certain uh certain
+assets that that are in in play. So I'm
+going to go back to um Bitcoin here.
+And what I'm going to do is I'm going to
+load up now a
+mean reverting strategy because
+everything's kind of gone rainbound. So
+I'm going to try to load in a an
+appropriate strategy for the current
+market condition of Bitcoin. So I'm
+going to put in a mean reverting
+strategy.
+Okay. I'll have my own uh scripts
+available.
+Let's see here if there is any mean
+reverting strategy. Doesn't look like
+there's anything
+mean. Okay. Uh let me just see. So we we
+saw a trend. If any you guys want to see
+a strategy, just let me know that you
+and I could back test it against
+something.
+I don't know. Let me try this super
+trend strategy if this does anything.
+Um, so again, I'm just pulling these out
+of my butt as you can tell. So we have
+this one strategy going to add it to the
+chart.
+Okay. Um, so these these are the things
+you want to look for is long and short
+entries.
+Uh, there's quite a few of those. So
+there a very sensitive strategy. So let
+me go back to twohour time frame for
+Bitcoin. So we're trying to cover
+this condition.
+But we have these strategies here that
+look good if if the um
+if uh Bitcoin breaks out. So you can see
+here this is when they break out. This
+is this is that kind of strategy. So let
+me uh run that.
+So we have this strategy all loaded up.
+Um update on chart strategy tester
+generate the report. Now again this is
+going as far back as June 23rd. Okay, so
+we have a profit factor of 1.0,
+30% win ratio, $188.
+Uh, it's not as good as gold, but it's
+not as good as anything. Like, you want
+to see stuff that does really well,
+right? Um but but the thing is is that
+you're able to back test quite inst like
+just instantly and be able to load up
+any of the instruments that you want in
+this case Bitcoin against any of the
+brokers that are supported by Trading
+View. There's no third party software
+you got to plug in. There's no I mean
+this I' I've never seen anything as good
+as this. And then once you find
+something, all you got to do is go to
+the trading panel and hook up connect
+your into your uh trading uh account and
+either the supported broker exchange as
+I said activate it and you're off and
+running. And that's the beauty of
+Trading View as I said.
+So this is what we want to find is these
+profit factors. Um the highest profit
+factor I've ever seen is six, but that's
+when Bitcoin just on a huge runup. Uh so
+that's that's something you you do want
+to look for if if it exists. Um let's
+let's try uh a uh a forex pair. So I can
+tell you that USD Canadian
+is rallying right now. So let me pull up
+in this case. So you can see here
+there's this nice sudden runup rally. So
+this started July 20 23rd. So let me
+start the period
+then. So if you know that something's
+underway in terms of of starting a
+rally, you can back test it. Um
+so in this case
+we're running every two hours. 30% win
+ratio profit factor of 0.5 is not very
+strong. So there's two ways you can go
+about it. You can either change the time
+frame. Let's do a week
+generate report.
+Um 10 trades, 10% profitable. Not very
+strong at all. Um you can see here the
+losses as well. So it's not very very
+good. Now if I go to a five minute,
+let's see if that makes a difference.
+And again, this is for a fast rallying
+pair USD Canadian. So here 32% win ratio
+a little. It's much better than what it
+was before. Still taking losses. So if
+you look at the performance
+net profit,
+it's losing. So again, we're pretty well
+in a nutshell working with the wrong
+strategy or something's wrong with the
+strategy. I can't say what's wrong, but
+let me change the strategy and see. And
+we're going to keep this USD against the
+Canadian dollar. So let me pull up
+another strategy. We'll go back to the
+greedy strategy. See if that did
+anything different.
+So, pull that up.
+Um, update on chart.
+Okay. So,
+okay. I'm not sure if it took there. Let
+me go back to a daily chart.
+Uh, update on chart.
+add to chart. Oh, okay. There we go. So,
+we'll generate a report.
+So, it doesn't look like there's any
+trades at all. Nothing got triggered on
+this strategy for the greedy strategy.
+And that's on daily time frame. Let's
+change it to hourly. So, you can see
+there's this nice trend there. Let's
+generate that report.
+Yeah, something happening here. I don't
+know why.
+Um
+but uh this is all experimenting with
+with these type of strategies. I will
+tell you
+um the different strategies I mean
+customcoded probably are a lot more
+effective.
+Um there is one strategy I could take a
+look at. It's related around don don
+donian.
+Let's see if I can find as an example.
+let's see here. So, I'm going to load up
+another strategy here. So, as you can
+tell, I'm just kind of screwing around,
+but I just want to show you how quickly
+you can play around with these
+strategies
+and um kind of
+experiment,
+change your parameters in terms of your
+time frame, your period that you're
+watching,
+that sort of thing. So, this one does
+not have any orders in it. So, that's
+not a strategy. This is more of an
+indicator.
+let's see. Let me just pull up a simple
+one.
+Uh, like an RSI strategy. See if that
+might or or better yet, let's do a an
+SMA cross.
+Those are pretty reliable.
+Is there a C? Anything cross? Okay. So,
+there's a moving average cross. Okay,
+this is a very simple
+that's not strategy.
+let's see if we have any cross
+strategies.
+Now, these are all indicators. Um, let
+me just see if we have a SMA strategy.
+No.
+uh, let's see if we have any.
+Let me see if I can do an RSI strategy.
+Okay, here's an RSI strategy.
+Oh, that one. Okay. So, that's already
+loaded. Add to the chart.
+Okay. So, we're now going to load up our
+new our next uh report here. Now, this
+this is using RSI. Okay. This might be a
+more straightforward strategy.
+So, here this is what we want to see.
+This is exactly 10. They always say
+simpler is better. And you can see
+exactly using just a simple RSI. 70% win
+ratio 1.84. 84.
+Uh, the return is not that great per
+position. 02, but how's the overall
+performance? Yeah, it's not very strong.
+Um, but let me go down to a daily time
+frame. Maybe that might improve.
+Um, no, it doesn't even improve at all.
+Let me go to um a 4our time frame.
+Okay. So, again, nothing's really
+changed.
+You see, it's kind of
+make some cash here, take some losses
+here. So, it's really hard to find these
+strategies and these market conditions.
+But, um, the way to make money here from
+what I'm seeing, let's do a five minute.
+So, from January, from July 23rd to
+today, Right.
+Let's see here. So again, okay, so 60.5
+win ratio, 83 profit factor, still
+losing money.
+So again, it's a whole mixed bag of
+results here. Um, that's why I'm working
+on my strategies. Uh, one of them I
+can't really show yet because it's not
+complete, but um, there might be
+something similar. Let me just try to
+load something up here.
+Um it's it's it's related around bunny
+and donian. Uh if you look that up
+um built in let's see if we could find
+anything bunny.
+No
+and as I said there's no bonian. Bonian
+seems to be what a lot of the
+a lot of the um functional traders use
+institutional.
+So I'll give you a concept of how this
+works. Uh
+so add to chart. So this is an indicator
+update on chart.
+Okay, let me get rid of this.
+Okay, so what you're looking at here
+just the kind of strategies I'm working
+on. And this is similar to a um a a uh
+let me do a one month chart here. So
+what we're going to design which is very
+effective that'll make good cash. This
+is similar to a Ballinger. So this is
+the average move in red. Okay. As the
+center point between the the upper band
+here and the lower band on the donian.
+And how it works is when this
+uh lower band touches the actual price,
+that's considered an entry here, here,
+um here. So when you see the lower band
+touching the current price, that's when
+you take a position. But the thing is is
+it's going to load up automatically on
+position. So it's not like going to do a
+open and then a close and open and then
+a close. It doesn't do that. What it
+will do is it will accumulate entries.
+Okay, as the price moves up and as long
+as the price continues to move up and
+the donian
+uh touches the current price, it'll keep
+loading up those positions. So the exit
+will be when you see
+the upper band
+uh touches the current price, that's
+when you exit. So you could have a
+situation
+like uh here.
+Okay, that would be an entry and because
+the price now is touching the upper
+band, that would be an entry and then an
+exit. But there's sometimes an instance,
+let me pull up a better like on a on a
+slower time frame
+with a solid trend. Let's see here. Do a
+monthly.
+So right here um let me see if I could
+find an example.
+So right here you have an entry right
+here's an exit another exit and these
+exits. But you will find uh on average
+like right here
+uh we have an entry
+and then somewhere along here there'll
+be a uh an exit. So this is one of the
+better strategies I found. Um, and it's
+not really
+uh it it's a very universal strategy.
+Doesn't work on all time frames and all
+instruments or asset classes, but
+there's the right time and the
+uh wrong time to load up a uh these
+strategies. So, another strategy I can
+show you is one of mine is the um
+uh let's see.
+So, as you can see here, the bunny
+experiment.
+That's what I'm working on. We have uh
+swing strategies I can Hey, let me show
+you. Let me Yeah, let me show you. Maybe
+there's a good swing strategy we can
+load up
+here by going here.
+Okay, so we have a swing strategy. I
+like I like these this provider, Lux
+Algo. They're probably the best in the
+business on Trading View.
+So,
+let's see what's happening here.
+Okay, so we want that one.
+>> Okay, I'll pull up the source code. So,
+now it's in our editor.
+So [clears throat] you can see it's read
+only
+uh which is fine. So add it to the
+Let me get rid of the other um indicator
+here. So you can see here
+we have different patterns here. I'm not
+sure if this will do orders.
+Let's see here. I don't think there's
+orders in here.
+Yeah. So there's no orders. So there's
+no data, but still you could see that
+it's it's it's it recognizes different
+patterns here.
+So that's pretty sophisticated. Let me
+load up another strategy here.
+another swing here.
+Okay, let's pull try this swing strategy
+Uh get rid of that last one from Lux
+Algo. Okay, so this one is a new
+strategy from whoever it is. This is all
+the comments.
+Okay,
+let me pull up the other strategy.
+Okay, there we go. Clean. It's all
+clean. Yay. All right, so we want SW the
+swing strategy.
+Cool.
+Okay. So, we do have source code with
+strategy. That's where it does the
+order. So, we should see some orders
+There we go. So, 48% win. Profit factor
+is not too bad. Uh let's look at the so
+you can see here it's not great because
+it's not making money or losing money.
+But again, that's on a 30 minute. If I
+want to slow down the trades, go down to
+a daily,
+generate another. You can see is this is
+all this is what I call false positives.
+There's an entry.
+Um, actually, I might be wrong here. Let
+me just run it.
+Four positions, eight positions, 62%
+profit factor. Looking good there
+actually. Uh, profit. I'm not sure why
+it's not updating the profit
+uh the performance here.
+Um but those are pretty good strate uh
+pretty good pretty good metrics alone on
+this 62% win 1.6.
+[snorts and clears throat] So yeah, I
+guess this each position is not making
+enough money. That's probably why the um
+performance summary is not clocking in
+there. But um let me go to maybe a
+weekly to slow it down.
+Generate another report.
+One strategy. I'll have to go farther
+back. Let me go back one month
+two months. Let's just see what happens
+if there's any data. Two positions. Same
+thing.
+It's hard to say. Um the markets are
+very challenged.
+Hello Casey. Uh hi there. Uh, if you
+guys got any questions, just let me
+know. I know I rambled on. I I I meant
+to let people know. If you guys got any
+comments, let me know. I mean, that's
+the whole point of these these these
+live seminar or live webinars on um
+Trading View. If you guys got questions,
+let me know. Just type them up. But what
+I want to show you is the debugger,
+which I just showed you here. Um,
+that's new. Uh, also the highlight
+really is the back testing. Um, what I
+will tell you, I've not seen any
+facility. I mean, I motorway is pretty
+good there. Um, it's similar. Um, but
+this is a little more detailed and and
+there's less con the connectivity and
+everything in Trading View is much
+better. Um, the big one if you're on
+Interactive Brokers, there's no need for
+TWWs, the trader workstation, because
+it's all encapsulated within Trading
+View itself.
+Plus, you don't have to pay extra for
+the data. Even if you did, you'd pay
+like $3 versus like in my case for you
+want to do stocks like uh like uh
+basically what's it called? Uh DX fee to
+45 a month. So, you don't have those
+extra costs. Let me try one example
+here. Let me pull up a better stock
+here. Maybe just try something with
+Apple.
+Um maybe we can get some better data so
+you can see there. Yeah, this might be a
+little better.
+do a year to date. [snorts]
+So that's a nice steady straight uh
+nice steady trade there. So generate the
+report
+62% profit factor. Okay. So there
+there's our profit factor right there.
+41 cents per trade, which is not very
+good.
+But that's again over the last uh year
+to date. But if I go back, let's say I
+go back five years, let's see how this
+goes, right? So I'm going to go back to,
+I don't know, we'll go back to 2020.
+uh let's say the beginning of the year
+or pretty close.
+Okay, so generate the report. So this is
+a long-term strategy buy and hold for
+Apple. So it only took four trades,
+profit factor three, did make a lot of
+money. And again, is this accurate or
+not? I don't know.
+But remember, you're starting with a
+million dollars, right? So, it's not the
+best strategy to work for this swing
+strategy, right? Whereas, if I changed
+it, same parameters, this I'll load up
+that greedy one and see if that makes a
+difference.
+Greedy strategy
+Add to chart.
+Okay. So, there's a lot more activity
+here on a five-year doing a weekly view.
+Okay. Let's So, that's starting back
+February 1st, 2020. Let's generate a
+report. See if this is a better
+Um $33.
+Not very much money.
+>> Um and then the overview,
+79 trades, 58%. It's okay.
+average number of bars per trade. It's
+not making a lot here, but are you a
+breakout trader? Yeah, I am. Um Casey,
+uh [clears throat] let me think I can
+show you an example of a recent uh
+um like I'm always about breakout. So,
+I'm just trying to think of one. Let me
+pull up uh one that's been performing.
+Okay.
+Uh uh
+zero. No, I know. Cisco was one.
+Let me pull up Cisco here. That's been
+performing pretty good lately. So,
+that's what we're looking for as
+breakouts. So, Cisco might be a good
+one. Um let me do a monthly. So, you can
+see here it's been performing pretty
+good. just been over the last so there
+since September 23rd it's come off
+oh sorry the 5th but generally it's been
+performing real nice
+um so
+uh just in the last few days or so yeah
+so that's uh since the 5th so today but
+overall it's been trending pretty good
+it's not the best breakout um stock out
+there but if I generate report on that.
+Let's see how that's been doing. 42%.
+But if I go back just one month, let's
+see how that's been doing.
+so I'll put in I don't know August 1st.
+When did that start? Yeah. So the break
+I'll put in August
+1st.
+Okay. So that's August 1st 30 minute.
+Let me do a daily here.
+And this is using the greedy strategy
+again that's available open source. See
+all the all the different positions
+there. This is what I don't like. So we
+got 11 positions. Wow. Profit factor
+1.6. That's strong percent 81%
+profitable, right? See the performance
+$137. Now I don't know if this is
+accurate or not but I do think uh
+overall I go with definitely the
+overview just using these two factors
+the max draw down is not too bad
+two bars and that's um how many so it
+only took on 11 positions
+um let me see the trade so did trade
+and the profits very small per per trade
+43 cents.
+You can see here if you started trading
+it
+yeah so it started taking losses here.
+So this is not as I said this is not a
+top stock to break it out. Um but
+generally Cisco's been pretty
+consistent.
+Now, let me pull up. If you want to
+boost the profit, let me do a one hour.
+If you got any questions, uh, Casey
+Lewis, let me know.
+So, in this case,
+yeah, see what happens when we go to
+hourly 42% win ratio and we lower our
+profit factor. Whereas opposed if we
+just went with daily,
+we would have better results just by
+clicking stuff like this. So we know
+exactly
+um the better parameter time par uh time
+frame to run this on. So profit factor
+1.6. It's okay.
+Um let me try a 4 hour.
+Okay. So generate the report.
+See how just that difference between
+daily
+and uh daily and 4 hour makes it it the
+profit potential is cut in half
+>> quite literally. So if I go to weekly
+just see if that makes a change.
+Same time frame no data. So there's no
+trades on the weekly.
+Now sometimes if you go down to a five
+minute
+this might make a huge difference. So
+it's 111 trades but again it's not as
+profitable. Profit factor goes up but
+you're you're dealing with the total
+closed trades 111 and the average profit
+per trade is only a penny. So it's not
+not very profitable for that time frame.
+So this is the conundrum you got to go
+through and and if you keep going
+through this you'll you will find a
+winner. Um so we've done oil, we've done
+a stock high performing stock. Um I'm
+just trying to remember of any of the
+other high performing stocks that would
+be a main brand. I mean another one
+that's been kind of performing is Xerox.
+Um, you can see here did fairly well
+this period September 1st
+August 23rd. So there's your breakouts
+right there. Let's just see how that's
+resulted in. Um, and that's five minute
+time frame. Let's see how that did.
+So overview.
+Yeah. So 38%. So Cisco is a better stock
+to go with on this running this greedy
+strategy. um just got better higher per
+higher percentage of winners per trade
+and uh profit factor was 1.8 with Cisco.
+So that just doing this kind of analysis
+is important to be able to determine
+what is the better stocks to go with.
+Um can you look at PSD? Yeah, sure. PSTG
+pure storage. Yeah, storage companies
+are good for this time frame. I see what
+you're saying. You want you want to
+probably measure these breakouts here.
+Let me do that. Let [snorts] me know
+what uh time frame you want. Um
+playing uh overview.
+Yeah. So, it's not as not as high. Good
+profit factor though. Oh, very good
+actually.
+But again, it's only 5 cents per trade.
+Now, I'm on a five minute. Let me go to
+a one hour.
+See if that improves it.
+um 69 31%. So the profit factor goes
+down. So yeah, you want to go down to
+like a five minute maybe the daily might
+be a little better. It's hard to say.
+So you see all these false positives I
+call them percent
+winning percentage is only 25 but the
+profit factor is really good. One factor
+you got to factor in is it low
+volatility. So, this period might have
+been really good, but it's because it's
+now gone rangebound right here. The
+profit's not as good. So, I'll take a
+look at the D. This is daily. Yeah, this
+is daily. Uh, Casey Lewis, that's that's
+daily. So, if you could capture this
+runup, then yeah, that's your breakout.
+Now, the question is, will it break out
+again? It looks like it is,
+but for whatever reason, that's a very
+low uh percentage. Now sometimes
+if you go to I don't know let's say a 5
+minute see if that goes up
+96 trades profit factor 1.8
+average. Let me see the performance. Now
+remember we're starting out at $1
+million. That's only four bucks we're
+making.
+Okay. One thing I will tell you the big
+advantage with uh Trading View is the
+second 5-second time frame goes sub one
+minute that that's huge. Now just as a
+comparison you got um how many positions
+here? You got 96. So I'll just show you
+uh let's say a 10-second time frame just
+for leaps and giggles.
+36% 1.1500
+trades. Yeah, it didn't change anything.
+So you say daily chart entry at 41 with
+a stop loss of 21 with a price target 71
+with a 2:1 win ratio. Yeah.
+Unfortunately uh with this process you
+cannot calculate the win loss ratio
+because it said you you're working the
+data you're working with is what I'm
+showing you here the profit factor
+percent wins right here. Um but if you
+go under performance here let me just
+see what we got here. If we have
+um max draw down sharp ratio is very low
+obviously you want that to be preferably
+at two
+public commission I guess you
+pre-program that in your settings
+um losing trade winning trade
+yeah I don't know it looks okay um
+let me pull up my latest report I could
+probably show you some breakout
+potential
+here. Just give me a second here. I'm
+going to pull up my spreadsheet here.
+So, I'll show you what's going on in the
+market overall.
+>> Um,
+so part of my reports that I have
+is these are the sectors. So, this is
+still going to show you for August the
+spreadsheet. August was a very
+challenging month. Okay. So these are
+all of the sectors that were available
+to trade. Okay. So you can see here out
+of 64
+only barely 14 were profitable out of
+64. Oh let me just sort these of course
+um sorts
+returns that's for the month too
+percentwise.
+So you can see here this is what you
+want to focus on are these that's what
+you want to focus on are the metal metal
+commodity agriculture was better but you
+can see just barely there's very little
+profit here but if you knew what sector
+to focus on you'd be focusing on the
+metal that's where the profit was for
+the month okay so let me see if I could
+show you some metal
+uh some metal performers here.
+Okay. So, these were generated just not
+too long ago, like today.
+Um, the number one factor you want to
+also take in
+is volatility is a factor. Very
+important because if you're if you're if
+you're working with stocks that are very
+volatile, they're not going to be very
+profitable because of the whipsaws that
+come into it.
+So, here we are.
+Okay. So these are our con our potential
+profitable
+stocks. Okay. So I I generate these
+every day.
+All right. So let me give you an
+example. So as I said I've shown you
+Cisco looked pretty good. Um so we have
+this one called Perian. So if I load
+that up and that that's a low volatile
+stock.
+So, Perian
+resources.
+Um, so that's from today
+10 second. But if I show you the daily,
+nice, really nice run up there. Okay.
+uh, if I pull up the strategy tester,
+run the same report with the previous
+stocks like Cisco, that PTSG
+overview. Let's see how much that's
+improved.
+Okay, so in there you can see 53 57% but
+look at the profit factor.
+3
+six. That's the highest I've shown you
+of any stock, Forex pair, anything.
+Um, am I a fundamental trader? Uh, I'll
+answer that in a question. But what I
+want to show you is the profit factor
+right here. 12 cents per trade. So it's
+a lot higher than any of the other the
+other stocks.
+Okay. Um, and again,
+we're dealing with profit factors, so
+it's only up well, it's the highest we
+we I've shown you tonight at buck 66.
+Now, the question for again Casey Lewis
+was, am I a fundamental trader? Um I
+would be but see I'm using automation so
+you only have so much data you can work
+with to call yourself a fundamental a
+fundamental uh trader. Now the things
+that I look for in trading and I've
+shown this before number one is
+volatility. So if you're looking for
+profitable trades in stock you want low
+low volatility. If you're dealing with
+very high volatile stocks, you're going
+to probably lose money. In my case, I
+filter out a lot. So, I I I could have I
+scanned over a thousand stocks today and
+it generated me only
+25 stocks to choose from. So, out of 25
+stocks
+out of thousands and then filtering it
+down to the so-called top performers out
+of the thousand only 25 were selected.
+So when it comes to the fundamental
+component,
+what I'm looking for are leading
+indicators. So this is from this number
+here, recommendations. These are leading
+indicators for recommendation on uh what
+institutional in uh institutional
+advisors are recommending on these
+stocks. So it's six not very strong in
+this tough market. Six is okay. But here
+is the key. As a fundamental trader,
+leading indicators only, you have here
+the strong buys and buys. But the key
+here is you don't see any, let me
+repeat, any sells or strong sell
+recommendations. None exists. So that's
+why it's so low for these stocks from 20
+only 25 from over a thousand, right? So
+these are really good stocks. So to time
+yourself, if I'm a breakout trader, how
+do how do I know I'm on a breakout?
+Well, I've talked about that before.
+This is a technical indicator called a
+rune and a rune down, a rune up. For the
+breakout, this is measured between 0 to
+100. So if it's at 100, it will break
+out. But what you also want to factor
+in, you don't want to have an AON down.
+So you want to only focus that have high
+level of buys and strong buys with no
+sell or strong sell recommendations
+combined with an Aroon up of 100 and an
+Aroon down of zero. So if I was to show
+you this stock here of Hawin um as an
+example that's the top one.
+Um so that's HWKN
+and I can as I said I can generate these
+every day. So this is a combination my
+breakout and my fundamental.
+So right here you can see it's just
+running out. Now most people wouldn't
+find that stock at all, but this these
+systems that I've got these strips I've
+generated are able to do that using the
+factors out of thousands of stocks and
+getting the timing right. So basically
+what this stock looks like, let me pull
+up the strategy here and just run it.
+So these are just examples again. So if
+I run the gener generate report
+um let's say well let's run it from the
+1 of August. So generate the report to
+today. So you can see here winning
+factor 70 very strong again 3.6 profit
+factor
+average trade 43 cents which is high
+much higher than what I've shown before
+two bars held.
+um performance
+429. Okay, it's not great, but that's
+the best I've seen so far from tonight,
+including Bitcoin and oil. [snorts] So,
+uh that's your best performer right
+there,
+right? And you can see it in the chart.
+Let me pull up another chart here. Clean
+one. So, HW WKN
+and then you'll get your standard stuff.
+This is what you want to see that that
+breakout. Okay?
+And most people wouldn't find that at
+all as I said. So, right here, you could
+see that breakout. So, if I do
+um five day and I'll get rid of those
+uh indicator here.
+So, this is the top of the top right now
+as far as I can tell. and it's super
+volatile. But again, looking at that
+chart or the the spreadsheet
+of this one, the ranking low, it's a
+very low low volatile stock
+and it's considering
+um pull up a fiveday.
+Looks like we're on the tail end of that
+breakout.
+Yeah, you can see it it's
+it's dropping back. But if I compare
+that to something like
+let me pull up your other stock here
+that you wanted
+um the PSD cheap PSTG
+just as a comparison. You'll see the
+difference. PSTG this is the one you
+recommended
+pure storage.
+So you can see here what's happened is
+you're not you're kind of getting an
+earlier trend,
+but we're on the tail end of that. But
+this one's looking better on the
+breakout because it's the the the
+from today's market uh on the decline as
+it was. It it's held its own pretty
+good, but then you still have these dips
+which you're not getting in this stock.
+So that's why this stock is not picked
+because of that volatility,
+right? So again, this is a 30 minute.
+Let me pull up a daily.
+[clears throat]
+You can see this one easily outperforms
+the Hawkins
+and that's kind of going into its next
+early early uh early breakout. But the
+problem here is
+um when you compare the draw downs, this
+is what's important. when you have a
+draw down, Hawkins is holding it pretty
+good with strong support between these
+periods here, whereas this one's kind of
+pulled back a lot and then it comes back
+and then it goes rangebound and it goes
+in a breakout again. So, comparatively,
+yeah, you want the lower volatile
+stocks, which I'm which I'm pulling up
+from this spreadsheet. I mean, I I'm
+able to pull up all all kinds of other
+stocks,
+but um comparatively,
+uh these ones on this list will always
+most likely outperform the last month or
+two. Um if you got any other stocks, let
+me know. But, uh yeah, that's that's the
+dilemma. Um but this one this one, the
+Hawkins,
+uh doesn't doesn't whipsaw
+negatively as hard as this one does. is
+P
+um what's it called? PS
+PSTG.
+So that's that's the difference and and
+and what it's the volatility that that
+matters. Um you want to avoid those kind
+of stocks. Whereas another example here,
+if I get rid of this one and you compare
+it to let's say
+um a simple if you want to build wealth,
+uh this is this is the best one for as a
+defense play. Everything if all
+everything goes bad,
+uh USD Japanese yen,
+right? You can see how it doesn't
+perform, but it doesn't whipsaw either.
+So if I took a
+um let me think. Well, we'll do a year
+to date. So, the USD Japanese yen did
+not have any very little whipsaws. So,
+it's a very strong stable uh currency.
+So, when things go bad, this is what you
+pile into is the USD Japanese yen.
+Whereas here, you know, you're getting a
+a 60% win ratio or return over 12%. 12%
+is pretty good. So 12% year-to date,
+USD, Japanese yen, that's pretty good.
+But here again with this stock here at
+59%. So whereas if I pull in uh Nvidia
+as an example, you'll see that
+volatility
+matters.
+So here you get 239 60%.
+Um yeah, actually it's not a bad looking
+stock actually.
+Um, but that's a year-to-ate daily.
+Um, but you can see here I had a bit of
+a decline there, but this this just goes
+up. I mean, I can't compare Nvidia,
+right? But or, uh, Tesla is another good
+example. TSLA.
+So yeah, you can see that steady decline
+there, but yet you're still getting
+performance out of the Hawin. So things
+like that matter. And then this would be
+considered a volatile stock, Tesla. Um,
+one that's not volatile, there's
+actually two I can show you just from a
+buy and hold perspective.
+another good one is uh, Alphabet or
+Google.
+see this one's easily outperforming
+[clears throat] actually almost double
+Google, right? And that's a magnificent
+seven stock, right? That's a year to
+date,
+right? So, you're going to get some
+interesting stocks that look good, but
+uh, Hawin
+has done well. Now, the question is,
+will Hawkins still retain its profit as
+Google's starting to move up? So if if
+you want to just do as a comparison,
+obviously trade here, right, you'd be up
+30 60% right there. Meanwhile, Google is
+only gone flat now, starting to move. Or
+another one that's low volatile
+is Amazon.
+Um you can see that Amazon's done very
+well, right? Does has no
+draw outs. whatsoever. It's a good
+stock,
+right? Um, same with probably Apple as
+well. I could I could do this forever,
+right? Um, but depends upon your
+portfolio and your your account size. I
+like stocks under 100 bucks, right?
+But, uh,
+uh, Nvidia was performing really well
+last year or TSMC is another great one.
+Um, I don't know if you guys know TSMC,
+but all the all the uh chip
+manufacturers go to uh TSMC
+to manufacture their chips.
+so no, nobody really knows about this
+stock, but this one generally, even in a
+really bad market, this can generally do
+pretty good.
+So, TSMC says it's here.
+Let me get rid of the Google.
+I don't know why TSMC is not showing up.
+Uh, yeah. So, there you go. Your 255%
+return,
+right?
+So if I go to another chart just to get
+the price,
+this is why the US will defend Taiwan.
+Just so you know, if they lose the
+facilities from TSMC, a good chunk of
+the US economy is going to get shut
+down. But you can see there $61 from $40
+to $61 since May. So it's almost gone up
+50%.
+Um, but it's under 100 bucks, right? So
+look at that rally there from August
+23rd to to now, right? So if you factor
+in over five year chart and you look at
+the time period in 2022,
+it's it's rallied pretty good, you know.
+here January priced at uh
+37. Well, it's actually gone rangebound,
+but there are periods where it just
+rallied pretty good if you knew about
+that. You guys got any other questions
+at all? Well, I just want to show you
+the comparison of different assets, but
+more specifically
+uh is to use the um the right strategy
+for the right time for the right
+stock or instrument that moves. As I
+shown you, the greedy the greedy one
+seems to run really nicely on winners
+that are breaking out call it and at the
+same time are uh
+our stock. So it doesn't really perform
+well against Bitcoin oil and the like
+uh any other questions at all? But I
+just want to show you that how important
+and how easy it is with the trading
+view. Uh they call it strategy tester,
+but it's back testing really pulling up
+the right strategy. You just got to know
+what what stock or what instrument you
+want at that time, what's breaking out.
+So, we make it easy because as I shown
+you of some of the winners uh the last
+month or so, what are moving and when
+you can break it out using those Aroon
+up and Aune down indicators.
+You guys got any other questions at all?
+I'll do a go once three times and we'll
+shut it all down.
+Go in once.
+Uh, going twice,
+going three times. So, if if you're
+watching, just go over to my YouTube.
+It's all in my signature
+um or Telegram
+uh as well,
+and you'll see all that fun stuff in the
+in the profile. Other than that, thanks
+for watching and uh we shall talk to you
+later.

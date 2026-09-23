@@ -1,0 +1,6 @@
+# KAP Scout Results — 2026-04-06 (Batch 2 — EXPANDING)
+# Found: 87 videos for processing (15 original + 72 new — incremental batches)
+# Search topics covered: gold order block backtest, XAUUSD liquidity sweep, ICT order block win rate, SMC backtesting statistics, win rate vs expectancy math, prop firm risk management, trading system validation, gold institutional order flow, ICT silver bullet, CRT/turtle soup, ORB breakout, volume profile/order flow, IFVG backtest, quant strategy development, multi-timeframe alignment, SMT divergence, session timing, DXY correlation, displacement, prop firm math, Monte Carlo/walk-forward
+
+https://www.youtube.com/watch?v=f18gazn0nYE | How to Identify Best Order Blocks to Trade? | Smart Risk | 2.4M views | ~2023 | Has dedicated "Backtesting Results" chapter — OB rules with statistical backing, market structure filters
+https://www.youtube.com/watch?v=OV88eZS7RDc | This Secret Order Block Works Every Time (Proven Results) | Lewis Kelly | 53K views | ~Oct 2025 | Claims 5 years of data, 800 trades backtested across 2 OB types — specific numbers

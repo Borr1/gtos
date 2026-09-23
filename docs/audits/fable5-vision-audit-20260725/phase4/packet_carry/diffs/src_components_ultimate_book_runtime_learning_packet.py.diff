@@ -1,0 +1,159 @@
+--- a/src/components/ultimate_book/runtime_learning_packet.py (host-local)
++++ b/src/components/ultimate_book/runtime_learning_packet.py (carry)
+@@ -26,6 +26,21 @@
+ SCHEMA_VERSION = "ultimate_book_runtime_learning_packet_v1"
+ DEFAULT_LOG_PATH = "shadow_logs/ultimate_book_runtime_learning_packets.jsonl"
+ DEFAULT_REDACTION_POLICY = "hash_ticket_and_account_identifiers_v1"
++
++# The optional `economics` block (holding time, realized vs modelled cost, raw governor state)
++# is versioned SEPARATELY from the packet schema, and deliberately so.
++#
++# 99,112 live packets exist and they are the only live evidence this programme has. Bumping
++# SCHEMA_VERSION would make every one of them fail `schema_version_mismatch` on read, which
++# destroys the evidence to record an addition. So the packet schema stays at v1 -- the packet
++# shape genuinely has not changed, it has only grown an optional key -- and the block carries
++# its own contract version. A reader keys on the presence of `economics` and on
++# `economics.contract_version`, never on SCHEMA_VERSION, to know what it is holding.
++PACKET_ECONOMICS_KEY = "economics"
++
++# Emitted into the MAIN log when a packet is refused at emit time. See packet_guard: the marker
++# is what makes a refusal visible to a reader of the main log alone, instead of a silent hole.
++PACKET_REJECTED_EVENT_TYPE = "packet_rejected"
+ RECENT_APPEND_DEDUPE_BYTES = 4 * 1024 * 1024
+ LEGACY_EXIT_ORDER_MISSING_FIELD_CUTOFF_UTC = datetime(2026, 6, 25, 17, 10, tzinfo=timezone.utc)
+ NONTERMINAL_BROKER_REALIZED_PNL_CUTOFF_UTC = datetime(2026, 6, 29, 16, 50, tzinfo=timezone.utc)
+@@ -43,6 +58,7 @@
+     "position_out_of_universe",
+     "position_management_error",
+     "breach_flatten",
++    PACKET_REJECTED_EVENT_TYPE,
+ }
+ 
+ FORBIDDEN_RAW_KEYS = {
+@@ -209,6 +225,7 @@
+     unit: Mapping[str, Any] | None = None,
+     intent: Any | None = None,
+     outcome: Mapping[str, Any] | None = None,
++    economics: Mapping[str, Any] | None = None,
+     decision_bar_iso: str | None = None,
+     decision_day: str | None = None,
+     source: str = "ultimate_book",
+@@ -413,6 +430,11 @@
+         "outcome": outcome_clean,
+         "redaction_policy": DEFAULT_REDACTION_POLICY,
+     }
++    # Attached only when populated. An always-present block of nulls is indistinguishable from a
++    # block that was never filled, and 79 % of this stream is position_managed -- paying for an
++    # empty key on 78,687 packets a month buys nothing a reader could use.
++    if economics:
++        packet[PACKET_ECONOMICS_KEY] = _clean_mapping(dict(economics))
+     packet["source_event_hash_sha256"] = stable_hash(
+         {
+             k: packet.get(k)
+@@ -431,6 +453,53 @@
+     )
+     packet["packet_hash_sha256"] = stable_hash(packet, prefix="runtime_learning_packet")
+     return packet
++
++
++REJECTION_MARKER_NAMESPACE_FALLBACK = "unattributed_namespace"
++
++
++def build_packet_rejected_marker(
++    *,
++    namespace: str | None,
++    rejected_event_type: str | None,
++    rejected_packet_hash: str | None,
++    issues: list[str],
++    quarantined: bool,
++    ts: str | None = None,
++) -> dict[str, Any]:
++    """A minimal, always-valid packet recording that another packet was refused.
++
++    This is the load-bearing half of the emit-time validator. Dropping a malformed packet and
++    logging the fact somewhere else recreates the false-green class: the evidence stream reads
++    as complete because the only record of the hole lives outside it. The marker puts the hole
++    *in* the stream, so a consumer reading the log alone still sees it.
++
++    Built from a fixed template. The only caller-supplied values are plain strings placed in
++    value position -- never as mapping keys -- so the marker cannot inherit the forbidden-key
++    or hash-drift failure that rejected the original packet.
++    """
++    return build_runtime_learning_packet(
++        namespace=str(namespace) if namespace else REJECTION_MARKER_NAMESPACE_FALLBACK,
++        event_type=PACKET_REJECTED_EVENT_TYPE,
++        ts=ts,
++        outcome={
++            "placement_status": PACKET_REJECTED_EVENT_TYPE,
++            "reason": "emit_time_schema_validation_refused",
++            "rejected_event_type": str(rejected_event_type) if rejected_event_type else None,
++            "rejected_packet_hash_sha256": (
++                str(rejected_packet_hash) if rejected_packet_hash else None
++            ),
++            "rejection_issues": [str(i) for i in issues],
++            "rejection_issue_count": len(issues),
++            "quarantined": bool(quarantined),
++            "source_completeness_status": (
++                "packet_quarantined_full_body_in_sidecar"
++                if quarantined
++                else "packet_refused_body_not_recorded"
++            ),
++        },
++        source="ultimate_book.packet_guard",
++    )
+ 
+ 
+ def validate_runtime_learning_packet(packet: Mapping[str, Any]) -> tuple[bool, list[str]]:
+@@ -522,6 +591,24 @@
+         ):
+             if not _packet_created_before_legacy_exit_order_cutoff(packet):
+                 issues.append("missing_reconciled_exit_order_hash_or_missing_field")
++    # The economics block is optional and additive: absent is always valid, which is what keeps
++    # every pre-existing packet readable. Present-but-malformed is not, because a block that
++    # cannot be trusted is worse than one that is not there.
++    if PACKET_ECONOMICS_KEY in packet:
++        economics = packet.get(PACKET_ECONOMICS_KEY)
++        if not isinstance(economics, Mapping):
++            issues.append("economics_block_not_a_mapping")
++        elif not economics.get("contract_version"):
++            issues.append("economics_block_missing_contract_version")
++        else:
++            holding = economics.get("holding")
++            if isinstance(holding, Mapping):
++                # A holding time without a provenance label is the exact thing this block exists
++                # to prevent: a number a later reader cannot tell measured from modelled.
++                if holding.get("holding_seconds") is not None and not holding.get(
++                    "holding_provenance"
++                ):
++                    issues.append("economics_holding_seconds_without_provenance")
+     forbidden = _contains_forbidden_raw_key(packet)
+     if forbidden:
+         issues.append("forbidden_raw_keys:" + ",".join(sorted(set(forbidden))))
+@@ -764,6 +851,16 @@
+         },
+         "forbidden_raw_keys": sorted(FORBIDDEN_RAW_KEYS),
+         "event_types": sorted(EVENT_TYPES),
++        "optional_fields": [
++            PACKET_ECONOMICS_KEY,
++        ],
++        "optional_economics_block": {
++            "key": PACKET_ECONOMICS_KEY,
++            "versioned_by": "economics.contract_version, NOT schema_version",
++            "sub_blocks": ["holding", "cost", "governor", "features"],
++            "provenance_labels": ["measured", "transferred", "modelled", "unavailable"],
++            "absent_is_valid": True,
++        },
+         "evidence_boundary": "runtime_observation_packet_not_broker_real_pnl_claim",
+     }
+ 
+@@ -772,7 +869,10 @@
+     "SCHEMA_VERSION",
+     "DEFAULT_LOG_PATH",
+     "DEFAULT_REDACTION_POLICY",
++    "PACKET_ECONOMICS_KEY",
++    "PACKET_REJECTED_EVENT_TYPE",
+     "RuntimeLearningPacketWriter",
++    "build_packet_rejected_marker",
+     "build_runtime_learning_packet",
+     "packet_schema",
+     "is_legacy_nonterminal_broker_realized_pnl_packet",

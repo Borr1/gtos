@@ -1,0 +1,51 @@
+--- a/src/components/ultimate_book/book_owner.py  (HOST today)
++++ b/src/components/ultimate_book/book_owner.py  (after this carry)
+@@ -139,10 +139,23 @@
+ 
+ 
+ class UltimateBookOwner:
+     def __init__(self, base_config: dict, mt5, repo_root: str, namespace: str = "operator_profile",
+-                 engine_factory: Optional[Callable[[str], Any]] = None):
++                 engine_factory: Optional[Callable[[str], Any]] = None,
++                 frontier_exits: tuple = ()):
++        # `frontier_exits` is a SET OF SLEEVE NAMES reached from `run_book.py --frontier-exits`
++        # (Session AU, B1550; carried by Session AZ, B1850). It is not a boolean because the two
++        # target-override sleeves are in opposite live states -- `mx_btcusd` is not in either
++        # account's `--tags` today, while `sub_xvol_pullback` IS armed at 3R on both accounts --
++        # so one switch would force a ceremony to change armed money in order to make the
++        # admission's own contract runnable. It reaches the PLACEMENT path (the router) and the
++        # ADOPT-rehydration path, and nothing else. It is an explicit constructor argument and
++        # NOT a config key: `config/agent_config.yaml` and `config/profiles/redacted_account.yaml` are
++        # both hashed into a live activation token's config digest, so a key in either would
++        # stop the armed book placing until the token was re-minted. Default () ==
++        # byte-identical to what this host runs today.
+         self.base_config = base_config or {}
++        self._frontier_exits = tuple(frontier_exits or ())
+         self._mt5 = mt5
+         self._repo_root = repo_root
+         self._namespace = namespace
+         rt = (self.base_config.get("gtos_vnext_runtime", self.base_config))
+@@ -150,9 +163,10 @@
+         # NOT the gtos_vnext_runtime subtree -> build it from base_config and inject into the engine.
+         self._broker_symbol = build_broker_symbol_resolver(self.base_config)
+         self.engine = UltimateBookLiveEngine(rt, mt5, repo_root, namespace=namespace,
+                                              broker_symbol=self._broker_symbol)
+-        self.router = UltimateBookOrderRouter(self.base_config, namespace=namespace)
++        self.router = UltimateBookOrderRouter(self.base_config, namespace=namespace,
++                                              frontier_exits=self._frontier_exits)
+         self._engine_factory = engine_factory or _default_engine_factory(self.base_config, mt5)
+         # Per-(symbol, sleeve) execution engines. A symbol can be held by several sleeves at once
+         # (XAUUSD: metals_core + metals_softband + metals_ob_micro; GBPJPY/USDJPY: fx_jpy + fx_jpy_ny;
+         # GER40/UK100: idxrev + vp_euidx). Each ExecutionEngine is single-position, so keying by symbol
+@@ -2618,9 +2632,10 @@
+             ticket = getattr(getattr(ee, "active_trade", None), "ticket", None)
+             rec = self._load_trade_record(ticket) if ticket is not None else None
+             if rec is None and sleeve:
+                 from .execution_packets import native_policy_instrumentation
+-                rec = {"instrumentation": native_policy_instrumentation(sleeve),
++                rec = {"instrumentation": native_policy_instrumentation(
++                           sleeve, frontier_exits=self._frontier_exits),
+                        "execution": {"ticket": ticket}, "sleeve": sleeve, "symbol": symbol,
+                        "reconstructed_from_sleeve_identity": True}
+                 _log.warning("book[%s]: ticket %s adopted with NO trade record -> rehydrated the '%s' "
+                              "NATIVE exit policy from the W7 comment (time-stop/scale-out restored, not "

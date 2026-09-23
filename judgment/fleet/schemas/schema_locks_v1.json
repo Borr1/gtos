@@ -1,0 +1,50 @@
+{
+  "schema": "gtos.close_loop.v1",
+  "approved_by": "redacted_account",
+  "approved_at_ict": "2026-09-18 11:04 ICT",
+  "login_only": 0,
+  "quarantine_logins": [0],
+  "unit_r_usd": 150,
+  "verbs": {
+    "LABEL": true,
+    "place": false,
+    "remint": false
+  },
+  "exit_class_enum": [
+    "orig_stop",
+    "orig_tp",
+    "broker_tp",
+    "time_stop",
+    "limit_expired",
+    "moved_stop",
+    "chair_close",
+    "breach_flatten",
+    "weekend",
+    "unknown"
+  ],
+  "exit_class_aliases": {
+    "broker_tp": "orig_tp preferred when exit≈orig_tp latch"
+  },
+  "entry_state_keys": [
+    "session_ict",
+    "regime_tag",
+    "structure_tag",
+    "corr_cluster",
+    "event_proximity",
+    "spread_vs_r_at_fill",
+    "book_heat",
+    "peers_snapshot",
+    "ca_labels_at_fill"
+  ],
+  "miss_type_enum": [
+    "false_structure",
+    "bad_timing",
+    "corr_drag",
+    "event_gap",
+    "stop_geometry",
+    "ok_loss",
+    "ok_win"
+  ],
+  "geometry_rule": "chair_orig latch; never rewrite",
+  "notes": "Fleet promote appends LABEL rows only. Do not invent NEWS_PROTOCOL. Hydrate deals when MT5 up."
+}

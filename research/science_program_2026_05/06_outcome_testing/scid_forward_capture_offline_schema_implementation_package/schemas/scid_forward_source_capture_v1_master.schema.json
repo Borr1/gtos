@@ -1,0 +1,71 @@
+{
+  "$id": "https://gtos.local/research/scid_forward_capture/scid_forward_source_capture_v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "oneOf": [
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_intended_side_direction.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_intended_entry_reference.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_intended_stop_reference.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_intended_target_reference.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_poi_type_bounds_source.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_framework_setup_family.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_lifecycle_fill_cancel_expiry_source_status.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_lower_timeframe_asof_path_availability.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_future_orderflow_depth_proxy_requirements.schema.json"
+    },
+    {
+      "$ref": "research/science_program_2026_05/06_outcome_testing/scid_forward_capture_offline_schema_implementation_package/schemas/scid_forward_source_capture_v1_baseline_control_fields.schema.json"
+    }
+  ],
+  "title": "SCID forward source capture v1 master schema ledger",
+  "x_evidence_class": "SCID_FORWARD_CAPTURE_OFFLINE_SCHEMA_IMPLEMENTATION_PACKAGE_ONLY",
+  "x_required_capture_groups": [
+    "baseline_control_fields",
+    "framework_setup_family",
+    "future_orderflow_depth_proxy_requirements",
+    "intended_entry_reference",
+    "intended_side_direction",
+    "intended_stop_reference",
+    "intended_target_reference",
+    "lifecycle_fill_cancel_expiry_source_status",
+    "lower_timeframe_asof_path_availability",
+    "poi_type_bounds_source"
+  ],
+  "x_safe_flags": {
+    "changes_live_trading_behavior": false,
+    "credentials_touched": false,
+    "live_effect": false,
+    "opens_ai_api": false,
+    "opens_broker_account_order_history_deal_position_evidence": false,
+    "opens_live_restart": false,
+    "opens_live_trading_behavior": false,
+    "opens_paid_or_vendor_access": false,
+    "opens_prompt_config_risk_safety_execution_canary_selector_edit": false,
+    "opens_raw_market_data_blob_commit": false,
+    "opens_registry_edit": false,
+    "opens_remote_push": false,
+    "opens_result_scoring": false,
+    "opens_strategy_edge_claims": false,
+    "opens_validation": false,
+    "outcome_review_opened": false,
+    "promotion_verdict": "NO_PROMOTION_VERDICT",
+    "validation_safe": false
+  },
+  "x_schema_count": 10
+}

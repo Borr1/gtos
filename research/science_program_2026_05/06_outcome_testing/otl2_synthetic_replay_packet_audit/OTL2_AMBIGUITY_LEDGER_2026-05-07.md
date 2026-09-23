@@ -1,0 +1,28 @@
+# OTL2 Ambiguity Ledger - 2026-05-07
+
+**Promotion verdict:** `NO_PROMOTION_VERDICT`  
+**Validation safe:** `false`  
+**Outcome review opened:** `false`
+
+| ID | Ambiguity | Resolution status | Evidence | Next exact question |
+|---|---|---|---|---|
+| `OTL2-AMB-001` | Are ordered path source rows available without opening outcomes? | `BLOCKED` | The replay scripts default to `data/external/validation/calendar_macro_bundle_v1/.../path_scaling_v2_structural_levels/`, but that directory is absent in this worktree. | Should the missing structural-level event logs be restored, or should OTL2 build new non-result input packets from local OHLCV? |
+| `OTL2-AMB-002` | Is same-bar ambiguity defined? | `PARTIAL_CONTROL_BLOCKED_AT_PACKET_LEVEL` | `run_raw_ohlc_path_scaling_v2_levels.py` declares same-bar stress treatments; V3 code returns bounded optimistic/pessimistic values for same-row fill/stop/target. | Which OTL2 packet field stores the same-bar policy and the ordered lower-timeframe evidence per row? |
+| `OTL2-AMB-003` | Is `setup_id` unique enough for sample floors? | `BLOCKED` | Manifest has textual duplicate policies, but OTL2 required fields include `duplicate_group_id`; no concrete packet row is present. | What deterministic `duplicate_group_id` builder maps setup, active lifecycle, matched controls, and child leg rows? |
+| `OTL2-AMB-004` | Which timestamp is the decision-as-of timestamp? | `BLOCKED` | Code and docs use `setup_decision_close_utc`, `decision_time_utc`, and `decision_timestamp_utc`; OTL2 requires `decision_asof_utc`. | What schema normalizes all decision timestamp aliases, and what test proves no feature timestamp exceeds it? |
+| `OTL2-AMB-005` | Are `path_start_utc` and `path_end_utc` reconstructable? | `BLOCKED` | Prefill code has first/last prefill closes; V3 code has fill/exit clocks; neither provides an OTL2 ordered path packet with source id, start, and end. | What path packet stores source id, timeframe, source hash, start, end, and lower-timeframe fallback state? |
+| `OTL2-AMB-006` | Can entry/SL/TP or level packets be reconstructed? | `BLOCKED` | V3 reads mechanical entry/SL from V2 rows; G10 prefill code records entry/initial SL/TP but reports original POI bounds unavailable. | What deterministic packet points to entry, SL, TP, POI type/bounds, and structural level source without reading outcome result rows? |
+| `OTL2-AMB-007` | Is cost model frozen? | `BLOCKED` | V2 summary has a cost model; V3 has `cost_key`; source contracts mention conservative costs. None is a packet-level `cost_model_version`. | Which cost model id/version is frozen per packet, and where are spread/slippage assumptions stored? |
+| `OTL2-AMB-008` | Are duplicate hypothesis families resolved? | `PARTIAL_GLOBAL_CONTROL` | OTG0 lists duplicate families for G8 and G9; the 16 OTL2 packets do not include those exact duplicate hypothesis IDs, but G4/G6 and G6 comparator packets still need matched denominator policy. | Should G4G6 cascade/generic and G6 OB/generic rows share parent-child duplicate groups for effective-N? |
+| `OTL2-AMB-009` | Are source hashes available? | `BLOCKED` | Source contracts list cache paths/pages, but packet rows require `source_hash`; G10 missing-field audit records source hash missing on current path/prefill rows. | What file-level and row-level hashes are included in the OTL2 packet input schema? |
+| `OTL2-AMB-010` | Are no-leak fields executable whitelists? | `BLOCKED` | Manifest lists no-leak fields, mostly as names, but no packet-level whitelist test exists for OTL2. | Which code test rejects rows with post-decision labels in feature fields before any outcome read? |
+| `OTL2-AMB-011` | Are synthetic and broker labels separated? | `GOVERNANCE_CONTROL_PRESENT_PACKET_FIELDS_MISSING` | OTG0 and G12 label reviews require separation; V3 code writes `actual_broker_r: None` and a label policy. | What packet-level field makes `broker_actual_r_absent_from_primary_metric=true` machine-checkable for all 16 packets? |
+| `OTL2-AMB-012` | Can sample floors and effective-N be evaluated? | `BLOCKED` | No primary countable OTL2 packets exist; G12 duplicate review shows raw path-like rows can be heavily duplicated. | What dedupe audit file reports raw n, primary countable n, duplicate exclusions, and effective-N per packet? |
+| `OTL2-AMB-013` | Is stale context resolved? | `RESOLVED_FOR_THIS_AUDIT` | `.context/LIVE_STATE.md` reported stale research-current-state, so this audit used direct OTG0/G0/G12/source/code artifacts. | Update research current state after committing OTL2 artifacts. |
+| `OTL2-AMB-014` | Is same-dataset contamination controlled? | `BLOCKED_FOR_VALIDATION_LANGUAGE` | V3 code and reports identify same-dataset discovery; OTG0 requires future results to stay quarantined discovery-only. | Which frozen packet builder proves the feature/variant definition was frozen before outcome rows were read? |
+| `OTL2-AMB-015` | Are G7 macro source timestamps usable? | `BLOCKED` | FRED/DXY source contracts are not validation-safe; FRED cache not created for G7; ICE DXY local data is explicitly not accepted. | Which OTL3 source/as-of dossier proves rate/DXY values were available before `decision_asof_utc`? |
+| `OTL2-AMB-016` | Are G5 attention/crowding proxies usable? | `BLOCKED` | Google Trends source contract has no extractor/cache/no-lookahead tests; literature refs remain source-reference blockers. | What legal cached crowding-proxy extractor and query protocol hash will feed G5 packets? |
+
+## No Outcome Opening
+
+No OTL2 replay result file was created. No result quarantine directory was created. All ambiguous items are blockers or control observations only.

@@ -1,0 +1,84 @@
+
+-- XAUUSD — D1 direction by day (April 2026) --
+  2026-04-01: O=4673.760 H=4792.650 L=4661.210 C=4762.370 dir=bull body_frac=+0.67 3day_trend=bull
+  2026-04-02: O=4759.270 H=4800.260 L=4553.930 C=4670.600 dir=bear body_frac=-0.36 3day_trend=bull
+  2026-04-06: O=4636.150 H=4706.410 L=4600.630 C=4650.110 dir=bull body_frac=+0.13 3day_trend=bear
+  2026-04-07: O=4661.650 H=4718.520 L=4607.460 C=4711.980 dir=bull body_frac=+0.45 3day_trend=bear
+  2026-04-08: O=4744.360 H=4857.220 L=4699.470 C=4719.860 dir=bear body_frac=-0.16 3day_trend=bull
+  2026-04-09: O=4727.300 H=4800.960 L=4698.760 C=4764.860 dir=bull body_frac=+0.37 3day_trend=bull
+  2026-04-10: O=4771.920 H=4794.900 L=4730.360 C=4750.340 dir=bear body_frac=-0.33 3day_trend=bull
+  2026-04-13: O=4669.240 H=4749.900 L=4644.160 C=4738.910 dir=bull body_frac=+0.66 3day_trend=bull
+  2026-04-14: O=4745.910 H=4846.050 L=4745.130 C=4840.950 dir=bull body_frac=+0.94 3day_trend=bull
+  2026-04-15: O=4848.600 H=4871.230 L=4786.190 C=4789.010 dir=bear body_frac=-0.70 3day_trend=bull
+  2026-04-16: O=4796.480 H=4838.120 L=4772.620 C=4789.860 dir=bear body_frac=-0.10 3day_trend=bull
+  2026-04-17: O=4793.980 H=4891.050 L=4767.540 C=4832.740 dir=bull body_frac=+0.31 3day_trend=bear
+  Summary: {'bull': 7, 'bear': 5}  (bull_pct=58%)
+  Net April move (open Apr-first -> close Apr-last): +3.40%
+
+-- US30_cash — D1 direction by day (April 2026) --
+  2026-04-01: O=46294.380 H=46843.110 L=46274.380 C=46601.980 dir=bull body_frac=+0.54 3day_trend=bull
+  2026-04-02: O=46584.580 H=46752.400 L=45842.710 C=46519.880 dir=bear body_frac=-0.07 3day_trend=bull
+  2026-04-03: O=46488.880 H=46572.910 L=46353.910 C=46392.910 dir=bear body_frac=-0.44 3day_trend=bull
+  2026-04-06: O=46219.280 H=46818.780 L=46137.780 C=46766.280 dir=bull body_frac=+0.80 3day_trend=bull
+  2026-04-07: O=46786.780 H=46812.510 L=46197.700 C=46654.780 dir=bear body_frac=-0.21 3day_trend=bull
+  2026-04-08: O=46965.280 H=48040.100 L=46619.950 C=47861.380 dir=bull body_frac=+0.63 3day_trend=bull
+  2026-04-09: O=47902.680 H=48326.000 L=47672.310 C=48183.680 dir=bull body_frac=+0.43 3day_trend=bull
+  2026-04-10: O=48174.880 H=48285.800 L=47851.750 C=47956.680 dir=bear body_frac=-0.50 3day_trend=bull
+  2026-04-13: O=47429.780 H=48228.880 L=47326.280 C=48218.380 dir=bull body_frac=+0.87 3day_trend=bull
+  2026-04-14: O=48218.480 H=48596.900 L=48134.210 C=48561.480 dir=bull body_frac=+0.74 3day_trend=bull
+  2026-04-15: O=48535.580 H=48701.500 L=48275.000 C=48480.780 dir=bear body_frac=-0.13 3day_trend=bull
+  2026-04-16: O=48504.880 H=48672.000 L=48331.050 C=48617.880 dir=bull body_frac=+0.33 3day_trend=bull
+  2026-04-17: O=48625.580 H=49723.300 L=48623.680 C=49441.980 dir=bull body_frac=+0.74 3day_trend=bull
+  Summary: {'bull': 8, 'bear': 5}  (bull_pct=62%)
+  Net April move (open Apr-first -> close Apr-last): +6.80%
+
+-- USDJPY — D1 direction by day (April 2026) --
+  2026-04-01: O=158.757 H=159.009 L=158.270 C=158.778 dir=bull body_frac=+0.03 3day_trend=bear
+  2026-04-02: O=158.790 H=159.743 L=158.541 C=159.557 dir=bull body_frac=+0.64 3day_trend=bear
+  2026-04-03: O=159.577 H=159.793 L=159.425 C=159.569 dir=bear body_frac=-0.02 3day_trend=bull
+  2026-04-06: O=159.566 H=159.828 L=159.304 C=159.683 dir=bull body_frac=+0.22 3day_trend=bull
+  2026-04-07: O=159.665 H=160.029 L=159.467 C=159.666 dir=bull body_frac=+0.00 3day_trend=bull
+  2026-04-08: O=159.617 H=159.729 L=157.885 C=158.565 dir=bear body_frac=-0.57 3day_trend=bear
+  2026-04-09: O=158.540 H=159.295 L=158.448 C=159.007 dir=bull body_frac=+0.55 3day_trend=bear
+  2026-04-10: O=158.945 H=159.372 L=158.854 C=159.280 dir=bull body_frac=+0.65 3day_trend=bear
+  2026-04-13: O=159.508 H=159.857 L=159.288 C=159.438 dir=bear body_frac=-0.12 3day_trend=bull
+  2026-04-14: O=159.373 H=159.423 L=158.601 C=158.805 dir=bear body_frac=-0.69 3day_trend=bear
+  2026-04-15: O=158.751 H=159.152 L=158.644 C=158.956 dir=bull body_frac=+0.40 3day_trend=bear
+  2026-04-16: O=158.980 H=159.302 L=158.260 C=159.162 dir=bull body_frac=+0.17 3day_trend=bear
+  2026-04-17: O=159.140 H=159.528 L=157.587 C=158.610 dir=bear body_frac=-0.27 3day_trend=bear
+  Summary: {'bull': 8, 'bear': 5}  (bull_pct=62%)
+  Net April move (open Apr-first -> close Apr-last): -0.09%
+
+-- GBPJPY — D1 direction by day (April 2026) --
+  2026-04-01: O=209.868 H=211.433 L=209.673 C=211.175 dir=bull body_frac=+0.74 3day_trend=bear
+  2026-04-02: O=211.186 H=211.263 L=210.332 C=210.978 dir=bear body_frac=-0.22 3day_trend=bull
+  2026-04-03: O=210.885 H=211.306 L=210.285 C=210.421 dir=bear body_frac=-0.45 3day_trend=bull
+  2026-04-06: O=210.446 H=211.534 L=210.274 C=211.332 dir=bull body_frac=+0.70 3day_trend=bull
+  2026-04-07: O=211.287 H=212.287 L=211.176 C=212.277 dir=bull body_frac=+0.89 3day_trend=bull
+  2026-04-08: O=212.027 H=213.146 L=211.934 C=212.403 dir=bull body_frac=+0.31 3day_trend=bull
+  2026-04-09: O=212.363 H=213.843 L=212.290 C=213.606 dir=bull body_frac=+0.80 3day_trend=bull
+  2026-04-10: O=213.449 H=214.576 L=213.430 C=214.513 dir=bull body_frac=+0.93 3day_trend=bull
+  2026-04-13: O=213.902 H=215.351 L=213.649 C=215.341 dir=bull body_frac=+0.85 3day_trend=bull
+  2026-04-14: O=215.157 H=215.782 L=214.902 C=215.450 dir=bull body_frac=+0.33 3day_trend=bull
+  2026-04-15: O=215.389 H=215.899 L=215.187 C=215.596 dir=bull body_frac=+0.29 3day_trend=bull
+  2026-04-16: O=215.570 H=215.716 L=215.109 C=215.285 dir=bear body_frac=-0.47 3day_trend=bear
+  2026-04-17: O=215.231 H=215.685 L=213.995 C=214.362 dir=bear body_frac=-0.51 3day_trend=bear
+  Summary: {'bull': 9, 'bear': 4}  (bull_pct=69%)
+  Net April move (open Apr-first -> close Apr-last): +2.14%
+
+-- GBPUSD — D1 direction by day (April 2026) --
+  2026-04-01: O=1.322 H=1.335 L=1.322 C=1.330 dir=bull body_frac=+0.63 3day_trend=bull
+  2026-04-02: O=1.330 H=1.332 L=1.318 C=1.323 dir=bear body_frac=-0.56 3day_trend=bull
+  2026-04-03: O=1.322 H=1.324 L=1.319 C=1.319 dir=bear body_frac=-0.50 3day_trend=bear
+  2026-04-06: O=1.319 H=1.327 L=1.318 C=1.323 dir=bull body_frac=+0.53 3day_trend=bear
+  2026-04-07: O=1.323 H=1.330 L=1.321 C=1.330 dir=bull body_frac=+0.70 3day_trend=bull
+  2026-04-08: O=1.328 H=1.348 L=1.328 C=1.340 dir=bull body_frac=+0.55 3day_trend=bull
+  2026-04-09: O=1.340 H=1.346 L=1.338 C=1.343 dir=bull body_frac=+0.49 3day_trend=bull
+  2026-04-10: O=1.343 H=1.348 L=1.341 C=1.347 dir=bull body_frac=+0.53 3day_trend=bull
+  2026-04-13: O=1.339 H=1.351 L=1.338 C=1.351 dir=bull body_frac=+0.92 3day_trend=bull
+  2026-04-14: O=1.350 H=1.359 L=1.349 C=1.357 dir=bull body_frac=+0.69 3day_trend=bull
+  2026-04-15: O=1.357 H=1.358 L=1.354 C=1.356 dir=bear body_frac=-0.15 3day_trend=bull
+  2026-04-16: O=1.356 H=1.359 L=1.352 C=1.353 dir=bear body_frac=-0.44 3day_trend=bull
+  2026-04-17: O=1.352 H=1.360 L=1.350 C=1.352 dir=bear body_frac=-0.07 3day_trend=bear
+  Summary: {'bull': 8, 'bear': 5}  (bull_pct=62%)
+  Net April move (open Apr-first -> close Apr-last): +2.20%

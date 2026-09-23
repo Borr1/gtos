@@ -1,0 +1,109 @@
+# LIRA A/B 12-Slice Backtest — Synthesis (TEMPLATE)
+
+**Status:** TEMPLATE pre-fill — generated before all slices completed.
+The final SYNTHESIS.md will REPLACE this template once analyze.py runs.
+
+## Executive summary
+
+**Verdict:** [LIRA-GO / LIRA-STAY / LIRA-HALT]
+
+**Headline:** [LIRA observed Exp R, parse rate, SHORT-WR replication status]
+
+## 3-way comparison: V2 (F3) vs V3 (A2) vs LIRA
+
+| Metric | V2 F3 | V3 A2 | LIRA |
+|---|---:|---:|---:|
+| Detector | v2 | v2 | v2 |
+| Prompt | V3 production | V3 production | LIRA decision-first |
+| Fleet raw CAND | 588 | 37 | TBD |
+| Fleet filled | 32 | 30 | TBD |
+| Fleet WR | 56.2% | 53.3% | TBD |
+| Fleet Exp R | +0.407R | +0.333R | TBD |
+| Fleet Total R | +13.0R | +10.0R | TBD |
+| Fleet MaxDD | n/a | 3.0R | TBD |
+| Parse rate | n/a (100%) | n/a | TBD |
+
+## Per-slice details: SHORT-SL replication
+
+DP4 extension found LIRA placed XAUUSD SHORT SLs correctly while V3
+misplaced 2/3 (one wrong-side, one tight-sweep). Question: does this
+hold at 12-slice scale?
+
+| Slice | XAUUSD SHORT count | LIRA SHORT WR | A2 SHORT WR | F3 SHORT WR |
+|---|---:|---:|---:|---:|
+| xauusd_s1 | 0 / 0 / 0 | n/a | n/a | n/a |
+| xauusd_s2 | TBD | TBD | n/a | n/a |
+| ... | TBD | TBD | TBD | TBD |
+| **TOTAL** | TBD | TBD | 100% (2/2) | 100% (2/2) |
+
+## Parse error rate at scale
+
+LIRA canary observed 0/60 parse errors. At 12-slice scale (~700-900
+API calls) the question is whether the schema_adapter remained robust.
+
+**Smoke-test finding pre-launch:** discovered LIRA emits double-block
+JSON ~5-15% of the time when it self-corrects mid-response. Production
+strip_json_fences yields malformed concat → 40% parse error rate.
+Schema adapter patched (commit 4892008) to fall back to last-valid
+JSON block. Verified 0% parse errors on smoke-test post-fix.
+
+**This run's observed parse rate:** TBD%
+
+## XAUUSD SHORT share replication
+
+F3 saw 22.8% SHORT share with v2 detector. A2 saw 30.8%. The detector
+is identical across all three runs (v2), so the SHORT share difference
+between F3 and A2 is purely the consequence of v2's structural
+classification on different MSO snapshots — they should match at
+fleet-level if v2 is deterministic.
+
+LIRA observed share: TBD% — should match A2 to within rounding (same
+detector, same data, same prescreen).
+
+## Cost actual vs budget
+
+- Budget: $80 hard cap
+- Expected: $72 ($6/slice × 12)
+- A2 reference: $37.59 / $40 budget
+- F3 reference: $37.50 / unspecified budget
+- LIRA observed: $TBD
+
+LIRA prompt is shorter than V3 by [~X%] — token-cost savings expected.
+
+## Recommendation
+
+**If LIRA-GO:**
+1. Schedule cold-review pass on `prompt_lira.py` before any cutover
+2. Update `src/prompts/primary_analyzer_prompt.py` to call LIRA system prompt
+3. Update production `_parse_response` to use the LIRA schema_adapter pattern
+4. Run 60-fixture canary again as PASS-gate
+5. Roll-restart fleet during weekend window post-Monday challenge
+6. Monitor first 5 trades — same SPRT discipline as detector_version cutover
+
+**If LIRA-STAY:**
+1. Document why DP4-extension (+0.486R) didn't replicate at 12-slice scale
+2. Investigate methodological differences between mini-backtest + full slice
+3. Keep V3 as production prompt
+4. Re-investigate or shelve LIRA architecture per CEO direction
+
+**If LIRA-HALT:**
+1. CEO + council review the partial signal
+2. Consider extended observation in shadow mode (LIRA emits + log + don't
+   route trades) for 2-4 weeks before any cutover decision
+3. Document the ambiguous evidence for future re-evaluation
+
+## Files
+
+- `PREREGISTRATION.md` — frozen criteria + script SHA256
+- `launch_slices.sh` — 12-slice parallel launcher
+- `run_lira_slice.py` — single-slice runner
+- `analyze.py` — verdict-producing analyzer (LF-normalized hash logged)
+- `slices/{slice}/all_results.json` — per-slice raw output
+- `slices/{slice}/run.log` — per-slice execution log
+- `ANALYSIS.md` — analyze.py-generated 3-way comparison
+- `analysis_output.json` — machine-readable analysis output
+- `SYNTHESIS.md` — this file (final form)
+
+## Git log
+
+- TBD: filled at synthesis time

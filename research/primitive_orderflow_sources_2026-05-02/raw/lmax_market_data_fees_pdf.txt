@@ -1,0 +1,36 @@
+PDF: research\primitive_orderflow_sources_2026-05-02\raw\lmax_market_data_fees_pdf.pdf
+pages: 1
+
+--- PAGE 1 ---
+ 
+Firm market data, unique in the FX industry 
+LMAX Global market data
+› Streaming, real-time, full order book market data 
+› No ‘last look’ limit order liquidity 
+› Available to all clients, regardless of size or activity levels
+Monthly market data fees
+CHARGES EFFECTIVE FROM: 01 MAY 2026
+     Connection fee  per venue
+      Standard fee          $300
+      Enhanced FIX fee          see enhanced solutions
+Clients can access enhanced connectivity solutions with 10Gig and 25Gig ports, to further beneﬁt from the ultra-low latency LMAX connectivity.  
+For further information please contact redacted@example.com.
+     Monthly pricing matrix  all charges are commission deductible
+     Levels      1 up/sec      10 up/sec      50 up/sec      100 up/sec      1,000 up/sec
+      TOB      FREE      $4,000      $4,500      $5,500      $8,500
+      2-5 levels      $2,000      $5,000      $6,000      $8,000      $12,000
+      5+ (10) levels      $3,500      $6,000      $7,500      $10,000      $15,000
+      Third-party access
+      Available via market data vendors or white label setup
+       Ancillary costs
+       Weekend FX and/or crypto CFDs       $1,000 per month
+       White label (GUI) – set up       $5,000
+       White label (GUI) – ongoing       $2,500 (minimum monthly commission applicable)
+Trade >$5M per month on any asset class to waive this fee (pay connection fee only)
+For further information please contact redacted@example.com.
+ 
+LMAX Global sales: +44 20 3192 2666  | redacted@example.com  | www.LMAX.com
+The information in this brochure is for Professional and Institutional clients only. It is not directed at residents from jurisdictions where FX and/or CFD trading is restricted or 
+prohibited by local laws or regulations. FX and CFDs are leveraged products that can result in losses exceeding your deposit. L MAX Global is a trading name of LMAX Broker 
+Limited, LMAX Broker Europe Limited, LMAX New Zealand Limited and LMAX Broker Mauritius Limited. LMAX Global is part of the LMAX Group, whose registered address is 
+Yellow Building, 1A Nicholas Road, London W11 4AN.

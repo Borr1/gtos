@@ -1,0 +1,36 @@
+GTOS go-live Phase A patch 0002 — DISABLE the broad scheduler_v4 best-trade allocator.
+
+WHY: GO_LIVE_SEQUENCE.md Phase A.1 — "Disable the broad losing selector ... (and the
+scheduler equivalent)". The scheduler_v4 best-trade allocator is the broad-surface
+companion to selector_v4; go-live is a STANDALONE REPLACEMENT by the clean_3 book
+through the new sizing surface, not the broad allocator. Disabling its triple-gate
+removes the broad allocation path from execution. The deploy module
+(ultimate_book_live_package.size_correlated_units) carries its own correlated-risk-unit
+allocation + 4% gross cap, so the broad allocator is redundant once the book is wired.
+
+STATUS: STAGED — DO NOT auto-apply. Apply by hand AFTER 0001:
+    git apply research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/GOLIVE_vps_deploy/patches/0002-disable-broad-scheduler-v4.patch
+Reversible: `git apply -R` the same file. Re-run scheduler/runtime tests after applying.
+
+NOTE: the portfolio_ceiling_pct (4.0) and cluster_ceiling_pct (1.5) tuning keys are left
+in place (inert once gated off) to keep the diff minimal and auditable.
+
+--- a/config/agent_config.yaml
++++ b/config/agent_config.yaml
+@@ -910,9 +910,13 @@
+   scheduler_v3_enabled: false
+   scheduler_v3_apply_to_execution: false
+   scheduler_v3_default_off_package_path: "research/operations/vnext_absolute_moonshot_scheduler_v3_2026_06_01/SCHEDULER_V3_DEFAULT_OFF_PACKAGE.json"
+-  scheduler_v4_best_trade_allocator_enabled: true
+-  scheduler_v4_best_trade_allocator_apply_to_execution: true
+-  scheduler_v4_best_trade_allocator_live_activation_allowed: true
++  # GO-LIVE Phase A (2026-06-15): the broad best-trade allocator is the companion
++  # to the proven-losing broad selector_v4. Disabled as a STANDALONE REPLACEMENT by
++  # the clean_3 ultimate_book deploy (which carries its own correlated-risk-unit
++  # allocation + 4% gross cap). Triple-gate OFF; tuning keys left inert below.
++  scheduler_v4_best_trade_allocator_enabled: false
++  scheduler_v4_best_trade_allocator_apply_to_execution: false
++  scheduler_v4_best_trade_allocator_live_activation_allowed: false
+   scheduler_v4_best_trade_allocator_route_manifest_path: "research/operations/wave3_scheduler_v4_best_trade_allocator_2026_06_04/WAVE3_OUTPUT_MANIFEST.json"
+   scheduler_v4_best_trade_allocator_portfolio_ceiling_pct: 4.0
+   scheduler_v4_best_trade_allocator_correlation_cluster_ceiling_pct: 1.5

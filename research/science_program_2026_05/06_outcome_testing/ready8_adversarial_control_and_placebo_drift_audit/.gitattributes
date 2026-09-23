@@ -1,0 +1,2 @@
+# sot: no Git LFS. Do not add filter=lfs rules.
+*.py text eol=lf

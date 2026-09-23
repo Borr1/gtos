@@ -1,0 +1,64 @@
+# GO-LIVE PHASE A — ultimate_book_* config block (STAGED, DEFAULT-OFF; owner appends + reviews).
+#
+# Append these keys under the SAME mapping that carries selector_v4_* / scheduler_v4_* (the
+# `gtos_vnext_runtime:` strategy block in config/agent_config.yaml). They are the triple-gated config
+# the runtime bridge reads to wire ultimate_book_live_package.py as the REPLACEMENT deploy book.
+#
+# TRIPLE-GATE (the repo invariant): nothing executes unless ALL THREE are true:
+#   ultimate_book_enabled AND ultimate_book_apply_to_execution AND ultimate_book_live_activation_allowed
+# ALL DEFAULT FALSE here. Even all-true does NOT bypass GTOS_HARD_PRODUCTION_HALT.flag (physical halt)
+# or the Phase C broker/runtime authority blockers. Flip these only on explicit owner go.
+#
+# Owner sizing dial (PORTFOLIO_BUILD_W7_FINAL.md §6): 1.25% first cycle -> 1.50% after the first
+# account clears -> 2.00% hard ceiling, two accounts balanced, Kelly-lite conviction sizing.
+
+  # --- ultimate_book deploy book (Wave-7 final; standalone replacement of the broad selector) ---
+  ultimate_book_enabled: false                      # GATE 1: master on/off
+  ultimate_book_apply_to_execution: false           # GATE 2: may influence execution
+  ultimate_book_live_activation_allowed: false      # GATE 3: live-order authority
+  ultimate_book_package_module: "research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/ultimate_book_live_package.py"
+  ultimate_book_schema_version: "ultimate_book_live_package_v3"
+
+  # Deploy book selection (default-off additive sleeves; the W7 final book is the 11-sleeve clean_3).
+  ultimate_book_include_clean3: true                # W7 final book = clean_3 (11 sleeves)
+  ultimate_book_include_clean4: false               # clean_4 session-leadlag sleeve: opt-in later
+  ultimate_book_overlays: false                     # confluence size-up selectors: opt-in
+  ultimate_book_vp_acceptance: false                # W6 exit-honest noise-cut: opt-in
+  ultimate_book_drop_w7_symbols: true               # tick-true: filter HEATOIL_c/NATGAS_cash intents
+
+  # Sizing dial (owner-chosen). Profiles live in ultimate_book_live_package.ALLOCATION_PROFILES.
+  # FIRST CYCLE: 1.25% nominal + half-Kelly (breach-free even under 1.5x stress).
+  ultimate_book_profile: "clean3_w7_measured_nom1p25"
+  ultimate_book_kelly_lite: true                    # KB7 day-level conviction tilt (handset bins)
+  ultimate_book_kelly_conservative: true            # first cycle = half-Kelly (breach-free)
+  ultimate_book_stress_derisk: false               # reactive ladder+coloss: turn ON at the 1.50% step
+  ultimate_book_sqrt_n_pooling: false              # KB7 sqrt-N refresh: opt-in (free +6-7pp stress lift)
+  # STEP-UP after first account clears (owner flips to these):
+  #   ultimate_book_profile: "clean3_w7_growth_nom1p50"   # 1.50% nominal, handset Kelly
+  #   ultimate_book_kelly_conservative: false
+  #   ultimate_book_stress_derisk: true                    # reactive overlay default-on at 1.50%
+  # HARD CEILING (do not exceed): "clean3_w7_ceiling_nom2p00" (2.00% nominal).
+
+  # Two-account balanced (diversification is WITHIN each account; both trade the full book).
+  ultimate_book_account_A_enabled: false
+  ultimate_book_account_B_enabled: false
+  ultimate_book_two_account_balanced: true
+
+  # Fail-closed governor (ultimate_book_live_package.GovernorLimits defaults; surfaced for ops).
+  # !! CONFIG-DRIFT NOTE: the three *_pct keys below are DOCUMENTATION ONLY — they are NOT read into
+  #    GovernorLimits at runtime (the limits come from the hardcoded frozen DEFAULT_LIMITS dataclass; no
+  #    src/ path constructs GovernorLimits from config). Editing them here does NOTHING. To change governor
+  #    behavior you must edit admission.py DEFAULT_LIMITS or use the env gate below.
+  ultimate_book_soft_daily_stop_pct: 0.03           # (inert/doc) block NEW entries at -3% intraday (hard -5%)
+  ultimate_book_derisk_start_dd_pct: 0.07           # (inert/doc) shrink size from -7% toward the -10% wall
+  ultimate_book_gross_open_risk_cap_pct: 0.04       # (inert/doc) same-day deployed worst-case stop cap
+  ultimate_book_operator_circuit_breaker: false     # outer kill switch (true => flatten new entries) [LIVE: this one IS read]
+  # DD-DEFENSE SHAPE (research c59/c61 upgrade): "band" (default == current live) vs "smooth" (de-risk
+  # proportionally from dd=0; holds total-DD-fail ~0 at a higher base -> faster AND safer passes). Because
+  # GovernorLimits is NOT config-wired, smooth is activated by an ENVIRONMENT VARIABLE set before the
+  # run_book.py process starts (DEFAULT_LIMITS binds at import):  export GTOS_UB_DERISK_MODE=smooth
+  # Rollback: unset GTOS_UB_DERISK_MODE (or =band) + restart. See RESEARCH_MERGE_ACTIVATION_GUIDE_2026_06_15.md.
+
+  # Per-symbol tick spread floor source (replaces the per-class cost map; the module carries the table).
+  ultimate_book_tick_spread_floor_source: "ultimate_book_live_package.TICK_SPREAD_FLOOR_R"
+  ultimate_book_tick_spread_floor_untradeable_r: 0.20

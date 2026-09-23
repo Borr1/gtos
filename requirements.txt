@@ -1,0 +1,40 @@
+# Core — AI & data
+anthropic>=0.87.0
+pydantic>=2.12.5
+numpy>=2.4.4
+pandas>=3.0.1
+pyyaml>=6.0.3
+
+# Vector DB & embeddings
+lancedb>=0.30.2
+sentence-transformers>=5.3.0
+
+# Visualization
+plotly>=6.6.0
+kaleido>=1.2.0
+
+# Dashboard
+fastapi>=0.135.2
+uvicorn>=0.42.0
+psutil>=7.2.2
+
+# Utilities
+python-dotenv>=1.2.2
+databento>=0.77.0
+
+# Testing
+pytest>=9.0.2
+pytest-asyncio>=1.3.0
+pytest-timeout>=2.4.0
+
+# Research-only ML deps (K50/K51 attribution + SHAP)
+# These are optional at import time — research_infra modules degrade
+# gracefully when absent (permutation-importance fallback). Installed
+# here so K51 SHAP path + LightGBM regressor are reproducible from a
+# fresh pip install.
+shap>=0.42
+lightgbm>=4.0
+scikit-learn>=1.3
+
+# MetaTrader5 — Windows only, install separately:
+#   pip install MetaTrader5

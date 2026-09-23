@@ -1,0 +1,69 @@
+Push and detached-tar status — 2026-08-10 data-export session
+=============================================================
+
+PUSH: SUCCEEDED.
+
+  git push origin vps/ultimate-conditioned-expansion-minimal-2026-06-18
+  -> redacted_host..f1c3b5a27   exit 0
+
+SIDE EFFECT THE OWNER MUST KNOW ABOUT
+-------------------------------------
+The remote branch head was redacted_host, so this push published 19 commits, not
+one. Sessions LM, LN, LO, LQ, LR and the CM rollback had all committed
+host-only, and Session LR explicitly recorded that publishing its receipts was
+"an outward-facing action and is left to the owner". The brief for this session
+authorised the push ("If git push origin works from the host, push the branch"),
+so it was executed — but that authorisation carried the whole backlog with it.
+
+Published commit range:
+
+  f1c3b5a27  Data exports for the Mac's W7 recost + CS breaker (this session)
+  4d28676f8  CM rollback: FTMO crypto frontier-exit contract DISARMED
+  534dcf6aa  Session LR: post-re-mint proof
+  e9aa9fc49  Session LR: both activation tokens re-minted to 2026-09-09
+  b4567fbd3  Session LQ: both restarted books completed the 09:00Z H4 cycle
+  86dcd558f  Session LQ: redacted_account silence explained; timeout_no_fill fix
+  c989b1198  Session LO: repair F1 — FN activation token re-minted
+  f43e5cd2b  Session LN: CM crypto frontier + CN broker-true commission ARMED
+  f66da7664  Owner manual SL/TP moves are first-class
+  38e935065  Session LM: mt5_preflight.py retirement carried to the live host
+  2fa77722d  Disable mx_btcusd_d1_donchian_20_breakout on FTMO
+  267cccc94  Spread-geometry floor ARMED on both books
+  d6c9c4b19  mx_btcusd @ target_5R ACTIVATED on FTMO
+  7017c6745  Pull fx_jpy from both live books
+  f855250cd  Expand both live books to FIVE sleeves
+  eb7c28516  Arm redacted_account on the three-sleeve set
+  118071eaa  Arming state + composed carry
+  4f2c851e6  Stage 3 (partial): inert half of the packet-emitter carry
+  719e7b5f5  Stage 0.1: activation-token gate at the RealMT5.order_send choke point
+
+EXPOSURE CHECK — run before reporting, all clear
+------------------------------------------------
+  repo visibility            : PRIVATE  (gh repo view -> isPrivate=true)
+  activation signing key     : NEVER tracked in any commit on any branch
+                               (git log --all -- '**/signing.key' -> empty)
+  token receipt signatures   : all four REDACTED in the published blobs —
+                               verified by reading them back out of f1c3b5a27:
+                                 AFTER_ftmo         <REDACTED ...>
+                                 AFTER_redacted_account   <REDACTED ...>
+                                 BEFORE_ftmo        <REDACTED ...>
+                                 BEFORE_redacted_account  <REDACTED ...>
+  account identifiers        : sha256-hashed / redacted in every export manifest
+                               (the exporter's own account_identity_payload)
+
+What IS now on the private remote that was host-only before: live arming
+history, sleeve changes, broker order/deal tickets and external_ids, and the
+operational receipts of sessions LM through LR.
+
+DETACHED TAR (belt-and-braces; the push succeeded, so this was not required
+as a fallback — created anyway so the Mac can take it over SMB without a pull)
+---------------------------------------------------------------------------
+  PATH   : host-local\gtos-exports-20260810.tar.gz
+  BYTES  : 664264
+  SHA256 : dbbd4a6820106588bc785f3afabed4f7d0675f915b19c750b8f960445230992c
+  ENTRIES: 41
+
+  Contents:
+    data/mt5_research_exports/bridge_ftmo_deep_h4_w7recost_20260810/
+    data/mt5_research_exports/slippage_capture_20260810/
+    docs/audits/fable5-vision-audit-20260725/phase19/receipts/vps_data_exports_20260810/

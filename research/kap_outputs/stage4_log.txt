@@ -1,0 +1,25 @@
+============================================================
+ALL AGENTS COMPLETE — PIPELINE SUMMARY
+============================================================
+
+**Report:** `research/kap_outputs/BATCH_REPORT.md`
+**Test scripts:** `research/kap_outputs/tests/`
+
+### Priority Findings Summary
+
+**5 FALSE BELIEFS CONFIRMED** (our competitive edge):
+1. Sweep-before-OB is ANTI-PREDICTIVE (5 videos promote it, 71.6% vs 63.4%)
+2. M1 refinement is a TRAP (-0.414R/trade, 3 videos promote it)
+3. Day-of-week filtering is NOISE (p=0.768, 3 videos promote it)
+4. OB body size is NULL (p=0.97)
+5. COT is useless for gold (r=0.048, p=0.495)
+
+**3 TESTS EXECUTED:**
+- **RR optimizer:** REJECTED — variable TP (+0.475R) crushes all fixed targets (best fixed: 1R at -0.021R)
+- **BE simulation:** SURPRISING — BE-at-1R improves by +0.060R/trade. Needs WF-1 validation.
+- **NWOG alignment:** REJECTED — 53.2% reaction rate (p=0.267), coin flip on gold
+
+**Top actions:**
+1. Document false beliefs in knowledge base
+2. Track OB age for WF-2 freshness testing (highest untested finding)
+3. Monitor BE opportunity data during WF-1

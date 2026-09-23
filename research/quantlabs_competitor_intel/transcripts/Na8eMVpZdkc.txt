@@ -1,0 +1,1446 @@
+# I Built 12 AI Trading Bots for CME Options on Futures with Claude Code & Python
+URL: https://www.youtube.com/watch?v=Na8eMVpZdkc
+Video ID: Na8eMVpZdkc
+Duration:  Full Architectures
+Fetched: 2026-04-18T13:22:21Z
+---
+
+Good day, good day everybody. Brian here
+from uh
+quad labs.net.com.
+It's been a while since I put up uh
+a full long-form video.
+I've been working on these option chains
+for
+10 days. Heavy debugging, blah blah
+blah. I'm going to show you
+what I've gone through.
+Everything's pretty well
+changed quite a bit.
+Um so let me show you what we got.
+All right.
+Okay. So what you're looking at
+is a few things I want to first
+introduce you to.
+So this is the report I've shown before,
+still using.
+Um we've got
+kind of 10 bots on the go.
+Um we have a bunch of uh option bots,
+future bots.
+Um all dynamically created.
+And um
+just depends upon market conditions. So
+if you looked at
+market conditions for today,
+um we know that the markets are very
+volatile right now. Everything's flat.
+Um you can see here, nothing's really
+moving over 1%
+at all.
+Okay? That's including Bitcoin might be
+a mover, I don't know.
+But let me just show you
+what's been going on in the options.
+We've got now an options
+tab. I've shown this before.
+Uh the way I program now and code is
+very different.
+And I prefer it this way, thank you very
+much.
+Okay, so right now we've got 10 bots.
+I'll show you which ones are running.
+They're a combination of options, some
+are options and futures.
+Whatever the market conditions say,
+whatever the news comes out,
+uh those types of bots get created.
+So right now, there's only one trade
+happening and it's not completed. It's
+ES.
+This is what I want to show you. This is
+a very important chart.
+You can see here in red, my volume alone
+since 9:30 when the markets open,
+you can see here that the ES, which is
+basically the S&P 500, dominates
+both the options and future space, okay?
+By volume.
+Then you get into uh this one here in
+blue, which is 6E, which is
+uh which is uh euro.
+Okay? And then you you might get some
+other like Bitcoin here. Uh gold might
+be in there as well.
+So the more the volume,
+higher probability there's going to be
+trades. But everything's flat as I said.
+Here's the types of things that are uh
+getting traded right now. Long
+long uh others um
+we have here energy options, we have
+crypto options, we've got equity index
+options, then we get into FX
+metals options
+uh
+interest rate SOFR financial
+options
+and volatility. Okay, so all of right
+now basically a lot of the volume
+uh is driven by options market. And a
+lot of the opportunities
+to make money
+in the markets is
+via
+the options market, okay?
+So
+there's that, okay? So that's generally
+what I want to tell you and and a lot of
+it's driven by this volume, which is the
+ES S&P 500.
+Okay, so let's jump into this right
+here. I want to show you how
+uh I interface with um
+Claude code cuz now I'm using mostly
+Claude code now.
+Um to be truthful, I don't think I would
+be
+as advanced as I am as fast as I am
+without using Claude.
+I have said that Claude is expensive,
+but
+price
+time comes at a price as well.
+If you're trying to save money,
+you're there's that trade-off between
+time that you spend to get a solution
+completed
+or you're willing to spend the money to
+cut down that time to get the solution.
+I've chosen the
+spending the money. I've doubled my AI
+monthly budget now. That's how serious
+I've gotten.
+And most of it's driven by
+uh Claude related models. So let me show
+you Claude code, okay? I've not really
+played a lot with
+Claude desktop. I think there's lots of
+opportunity there.
+One of the things when you come in here,
+these are the only available models you
+have.
+All 100% Claude. This one I currently
+run because it's one generation behind
+all the others of Sonnet
+and Opus. So this is the cheapest. So
+it's in line with maybe a Claude deck
+uh model. It's fine. It's not it's not a
+overly pricey,
+but generally
+um
+it's uh let me just check here. Yes,
+okay.
+yes, we're able to use only these
+Anthropic Claude models.
+This one is pretty pricey for Sonnet.
+It's SAS, but this one Opus that
+everybody's using 4.6
+is the most expensive, okay? And you can
+eat into your budget quite easily.
+And that's all I really use Claude code
+for, okay?
+Then I go This is I'm doing all of this
+in in um
+in uh
+in PowerShell.
+It doesn't matter if it's Linux or
+Linux or Windows right now.
+Um just due to
+the way AI's working, I think
+personally, you're probably better off
+to be on Windows.
+All this privacy nonsense, let's face
+it. You're going to cross the border
+on a kiosk where they have your eye your
+iris.
+That right there, you can't escape that
+type of privacy to be truthful.
+All right, so coming back to the
+interface. Okay, let me show you some
+iterations now. I'll show you the
+project I've been working on just so you
+know that this will never get released
+since it's the futures options,
+everything I've I've built out. And I'm
+just showing you
+this as
+uh an overview. So this is how I'm now
+uh working with
+um coding. I don't hand code anymore. I
+think personally, hand coding things
+dead, okay? So if you're still hand
+coding, that's up to you.
+Um but as time passes,
+when we do hand coding as a human,
+that is dying. And it's probably already
+theoretically dead. If you want to
+code like that, it's up to you. I'm not
+going to tell you what to do, obviously.
+But if you want to get a solution done
+faster, this is how I do it. So in my
+case, that's part of my debugging, I'm
+watching these
+set of logs here.
+Okay? So we have a root folder.
+And then we have all of the different
+folders that get created when I run a
+a master Python script that will go out
+capture news. I'll talk about that
+later on.
+But I want to show you how I'm able to
+interface now with coding and Claude.
+Cuz here you can see I'm using only
+Claude code,
+but the key is I don't see the point of
+Claude code with the CLI I just showed
+you.
+Um some people may do that. I just way
+more efficient using the
+uh Claude code extension for VS code
+editor, okay? That's how I do it. And
+it's like 100 times more
+uh more proficient.
+All right. So here you can see I got
+four logs under this folder here.
+Uh
+are the trading bots collecting data
+properly since the fix with no issue.
+So basically what's been going on
+from both futures, it's always worked
+it's very stable, no problem. Since
+about 10 days ago, I added in the
+component of the most complicated
+uh trading
+asset class and I'm only talking about
+options on futures, not options on
+stocks, okay?
+Difference, but I'll show you the
+difference in the output
+on
+direction and I kind of hinted at it in
+my last live stream.
+Okay? So what we've got here is we've
+got simple interaction
+on these logs right here. LOG LOG all
+for each bot that gets dynamically
+dynamically generated, not hand coded.
+Dynamically generated. Again, I'll talk
+about that in a minute. So
+I can now just chat with Claude
+depending upon the models I showed you.
+Um and then just ask are
+like it'll scan the logs
+making sure there's no messages of
+things like no data connection, blah
+blah blah in the logs. And it will do a
+comparative timestamp since this query
+was started. So I don't have to go out
+and delete all my logs and start over
+again. This thing is intelligent enough
+to know from this point
+uh and look at those
+log activity since that
+time time frame.
+It's that advanced. So it will go out
+and do its thing and it will read all of
+the log files you can see here.
+It will then make an assessment looking
+at things like warning no skip uh
+is the heartbeat working with the
+rhythmic server. I'll show you that
+again. So it's going to do all that
+stuff looking for certain keywords,
+okay? Then it comes up with a summary.
+Um and that says yes, the bots are
+collecting data properly with no issue.
+And also will say
+um neat things, okay?
+Uh that I've not seeing with other
+VILMs like from Open AI and whatever
+else. Okay. So, here's going to tell me
+the price of, let's say, Bitcoin. Okay?
+Uh and this is again, I keep saying,
+this is from real market data. Okay?
+This is not simulated. This is real
+market data
+from within the CME and the CME only
+options and futures via Rithmic. Okay?
+So,
+quick. Here it's telling me it's
+updating every
+uh 30 to the the 60 seconds. It says
+it's still connected to my
+path, which is using Redis.
+Uh then it also talks about this other
+bot here.
+Uh it's generating 250
+plus ticks per minute
+on ES futures contract. Filtering
+invalid market data.
+Continuously receiving and processing
+throughout the run. And then it's also
+doing a total assessment
+the the entire, call it, system.
+Okay, so there's 10 bots running. This
+is a tick count increasing over time.
+Active markets data processing. Redis
+gateway connection stable. No gaps or
+data loss. Okay?
+Um and then again, the the system is
+stable and working as designed. And
+obviously the AI designs it and
+implements everything.
+Um and it gets very interesting with the
+same prior question, I get a different
+result. So, here's telling me what to
+know about the data and the logs. So, so
+this was the same uh same prompt few
+hours prior. And this is what it came up
+with saying, the fix is working. Here's
+the the status across all the bots.
+So, the data the Bitcoin Ethereum's
+working. Check out the number of ticks
+here. This is really important to know.
+Um sorry, 140 154 tick. The ES is
+working.
+Okay?
+The gold price is working. Look at the
+number of ticks it's collecting. Okay?
+Uh Brent
+Brent crude 80 8,700. Okay? Even for the
+ES, it's collecting 12,000.
+Okay? And then And then you can see here
+on things like SOFR curve steepener, no
+data. Likely no trades on this contract
+right now. And same with the VIX as
+well.
+Okay? And it And it And it's specific on
+the future forward contract for VIX.
+Likely thin volume on CBOE VIX futures.
+So, it's intelligent enough to say, this
+is really not a problem because there's
+just low volume on this contract. So,
+it's it's intelligent enough to tell me
+that. Which is really critical. It's
+like talking to an expert trading desk,
+an expert quant coder, or an expert
+whatever, but I'm using the AI and it's
+telling me
+what the potential problem is, even
+though it's working. Okay?
+And then here it's got some other uh
+items as well. So, here it's telling me
+eight out of 10 bots are receiving live
+market data.
+No data for these because these are on
+other exchanges, not CME.
+Thinly traded contracts. Okay? So, the
+SOFR or the VIX where it may simply be
+no tick activity right now. Which is
+true, right? I've shown you that in that
+chart.
+Uh that's a
+legitimate market behavior, not a
+connection issue. So, again, the AI is
+telling me and giving me the
+intelligence, I don't need to worry
+about these particular bots because as I
+said, the volume is low.
+So, here it's telling me
+uh it's it's put in a simulated uh
+position as well as as an order, but
+closed off yet. Um so, it's giving me an
+assessment of what's happening with the
+logs, which is assessment of all these
+dynamically generated bots.
+So, one thing I forgot to mention here,
+this is the amount of activity we're
+dealing with.
+123 124,000
+events.
+And this was launched
+uh 3 hours ago. So, this is the amount
+of activity you're dealing with across
+10 bots across futures and options in
+the CME markets.
+Okay? So, that is why it took me 10 days
+because we have now
+uh we have over 10 bots, 12 bots
+sometimes competing
+through a gateway
+from the architecture
+uh point of view
+of uh
+competing for that one connection
+that Rithmic allows. So, what happens is
+you get concurrency problems between not
+just the options
+uh bots, but they're still trading at
+the same time with the futures. With the
+futures, it was easy cuz the volume of
+the the requests to
+Rithmic was much lower and much more
+reasonable.
+Once you add in the options, now it's
+competing against
+the uh that one connection. So, there's
+all kinds of problems you don't know.
+originally how it was set up was that it
+captures the futures market snapshot of
+whatever the bot wants. And then also
+has to go in
+and um
+basically
+download
+the entire option chain that
+it's been requested. So, it's a lot of
+data.
+And you have 10 12 other bots competing
+for that time and connection into
+the market data provider, Rithmic.
+So, we have multi-concurrency. And
+that's why it took 10 days to figure all
+this out.
+On top of
+when I went into Claude uh with the VS
+code here, you can see it's originally
+named
+agents option chain Claude. So, I went
+in all in with reviewing Claude to
+collect the news data and have Claude
+also generate the uh bots.
+So, I'm sure you've heard the news that
+Claude just suddenly cut off
+all the third-party harnesses
+no longer use Claude models.
+Uh well, lo and behold, you don't even
+know what a harness is. So, for a good
+couple of hours, it was not collecting
+the data. And remember, there's no error
+message here.
+Not connecting into the Claude models
+because of that news event. So, I had to
+go back to
+using
+Flow decks
+to uh create
+uh dynamic trading bots both for options
+and futures. So, that was another big
+event. So, all this stuff took place.
+Lots of complexities. So, we're now at a
+stable point. So, how it basically works
+is
+the bot
+will go out, collect the news, and then
+it will have to whatever when it creates
+a
+uh an an instrument,
+it will capture First, it has to figure
+out, this is how complicated options
+are. First, it has to do what the AI
+calls um
+an AI
+options chain discovery. So, if you have
+a forward contract, let's say, ES
+for uh May or June,
+uh you also want to know, what are the
+associated closest
+option chains available for that futures
+contract. And there could be 10, 20 all
+related around volume, all related
+around strike price, and all the other
+analysis that goes on. So, it has to go
+out and find
+uh the most appropriate option chain out
+of those 10, let's say. It's going to
+have to analyze which one gives you the
+optimal strike price and the like for
+everything else that goes with that
+option chain.
+So, when I was trying to download it
+live for every request coming from the
+trading bots,
+uh it's more data, more connectivity
+issues, blah blah blah blah. So, what
+ended up happening, the AI suggested one
+of two to implement as is. And this is
+using this
+3.6, the most advanced model out there
+on the planet as we speak here on April
+9th.
+Then,
+it gave me a couple of options. Either
+not do options at all, or the only way
+to get around it is by uh going back to
+my
+futures broker to clear things. Okay, I
+need a second
+uh Rithmic
+uh data feed. So, just one data feed for
+futures and an exclusive for options.
+But you still I think you'd still be
+having network and connectivity problems
+with an exclusive
+uh data feed just for options. Like
+you're still going to have concurrent
+concurrency problems.
+So, what ended up happening is Now, this
+is where you've got to be very very very
+very very smart. Okay? AI is not going
+to help you here. You have to have,
+hopefully, enough experience from an
+proper architecting standpoint, cuz you
+have all these problems. You understand
+what the problems are from a technical
+point of view. And then I just thought,
+okay, this is the challenge this thing's
+facing. I have this option or that
+option. I said, just go out, capture one
+option chain, and I know that these uh
+dynamically created trading bots are
+only going to last for
+maybe a day.
+Just go out and grab the one option
+chain and use that for all the option
+chain information analysis. That's what
+I did.
+So, that's how
+works, okay?
+Um not ideal, but technically, unless
+I'm spending a lot more money, which I'm
+really not prepared to do,
+um this was the best option I can come
+up with. Like the the the middle ground,
+okay?
+So, there's that. The other thing I want
+to show you here is back to this
+dashboard here.
+You'll see here we've got some
+um runtime errors, these things right
+here, okay?
+this is just a typical
+very complicated problem that I think a
+lot of vibe traders will have.
+Um the
+Opus is very good at debugging and
+finding bugs. If you still don't
+understand certain
+logic errors, so what I just showed you
+here
+is a typical runtime logic error. These
+are very very difficult to diagnose.
+So, but this is JavaScript. So,
+thankfully,
+uh with JavaScript, it's fairly easy to
+bug.
+Um but I want to show you the results of
+this. Okay?
+So, um
+we've gone through a couple of examples
+of the prompting. And again, I'm not
+doing any hand coding here. This is a
+hint on what I'm doing on how to debug
+things. On top of that, you have to know
+some of the architectural
+uh concepts to to kind of really
+take advantage of I remember I've been
+coding
+since I've been 14, and I'm
+technically been doing it for over 40
+years of my life.
+Yes, I'm an old fossil. But here,
+what I'm talking about with what I'm Let
+me just trying to look for the prompt.
+Right here. So, I asked the AI to fix
+the analysis, this error
+in
+uh this HTML file, okay?
+That's all I did. I asked it to do that.
+And look at
+it has to read everything.
+And then it it figures out that in the
+HTML,
+it looks at what's creating the data
+source.
+So, it goes into the Python that creates
+the data source.
+And look what it ends up doing.
+Very powerful, this this Opus.
+So, it figured out
+that this argument is created by other
+Python scripts to get to this point.
+So, it figured out it's this one Python
+script, option chain static.
+Wrap file load operation and try
+exception validation for globe pattern.
+Gracefully
+problematic. It This is very optimal
+fixing on the code level.
+Option chain integration, added
+exception load news context, so missing
+or inaccessible news fall back in
+neutral sentiment. And that's all
+generated by one
+error, one logic error
+in JavaScript, and it's so advanced and
+cuz uh I'm using
+Vlog code with the via four
+for VS code, it can scan the entire
+project,
+uh all the every single file here, both
+in these individual
+uh beta files and the root folder as
+So, it's be it's it's so intelligent, it
+can reverse engineer
+everything and figure out that that
+error is coming from Python scripts, not
+from the HTML file.
+And it corrects everything in the Python
+files.
+So, what the root cause was Windows path
+handling in the global pattern when
+searching timestamp, blah blah blah,
+file error, gracefully preventing worker
+error.
+Okay? So, you may think it's a valid um
+a valid error.
+But this is where
+you got to have probably the most
+advanced LLM out there, which again is
+Anthropic Claude. On top of for
+debugging, you like these files, total
+size of this
+project probably about a gig, okay?
+Um I'm going to show you why. And and
+I've kind of shown this before, but it's
+much much much more
+sophisticated now. You can see how
+everything just
+grows and grows and grows into this big
+monster.
+On top of it's running
+8, 9 hours a day. I could run it 24
+hours. Uh eventually with CME, they're
+going to have 24-hour trading.
+Um and I could have it running all day,
+all night if I want.
+So, these things grow, okay? And it's I
+could have it self-adapt as well.
+Uh so,
+just to give you an idea how
+sophisticated this is has become since
+I've added It was already
+sophisticated as it was with just the
+futures only,
+but now I've added in the option chain
+stuff. You can see it's probably
+complexity is probably magnified by
+times five at least, maybe times 10, I
+can't say
+because of the data that's
+being pushed through this entire system.
+So, there's that. Okay, so
+if you're still here, thank you for
+watching.
+So, here um we have basically
+the um root folder, okay? Right here.
+And this is this has been in development
+for a couple of months now, but it's
+grown and grown and grown. And and I
+will not release it. And I know there's
+people on YouTube that follow me that
+will try to replicate this. That's why
+I'm trying to give high-level
+um high-level
+analysis from an architecture
+standpoint.
+But
+it does get complicated. So, um
+what I'm going to show you here is my
+groups on the quant analytics. Now, this
+this will go up and double again within
+probably a few weeks because of the
+stuff I'm putting out there.
+So, in here, what I do is I provide um
+let's see, four right now four
+EDFs, okay? For each news gathering,
+download, creating all of the different
+bots. I could run this all day, all
+night for each
+set, okay?
+But it takes about an hour to run this
+whole process now,
+because it's so complicated since I've
+added in the options portion.
+All right, so let's take a look at one
+typical
+folder here with dynamic bots and all
+that.
+So, in here, you can see there's an
+associated log file.
+Let me just close this up right here.
+So, you can see here
+it's it's it's it's in detail, like like
+immensely.
+So, we have a heartbeat.
+We have uh
+that heartbeat is connected into
+uh this Rithmic
+uh gateway
+uh right here. And that's the the
+equivalent of a server, we'll call it,
+where it's the interface to Rithmic
+servers using the API, on top of talking
+to all of the bots. These dynamically
+traded bots.
+Okay. So, there's that.
+Okay, there's there's about 10 to 12
+each one that's generated. So, this is a
+typical log. Um
+also
+let's just try this one from the coding.
+So, this is now dynamically created by
+AI. Everything's AI.
+Everything's AI. But this is so good
+that I have an AI Python script
+um that will generate dynamic bots based
+around news.
+So, this is a typical
+um bot. This one's created by Codex 5.3.
+Now, if I was you still using
+Claude's on it, which I no longer do
+because that news event it the the code
+the code would be a lot more
+sophisticated and a lot more um
+a lot more uh
+both double the size, okay? And the
+complexity of the actual models and
+uh s-
+uh models and algos and all the analysis
+to run this particular bot, which is
+really
+strategy
+designed for a news event.
+Um let's just see how many lines this
+is.
+So, this one's 800. But I I I've seen
+them where
+where uh
+uh Sonnet will generate up to 1,600
+lines, so double this, okay? So,
+each of these bots are dynamically
+created based upon news. So, we have a
+bit bot, Vix call overlay,
+a bot you will you will you
+LSD
+crack
+spread collar SOFR curve steepener
+There's a couple of Bitcoins in you Euro
+USD risk reversal
+all built around the news.
+So, let me just see
+status of what's loaded right now.
+Um so, this is how I do a refresh. I I
+could do this
+automatically, but again, it just adds
+more complexity.
+Just a couple of buttons. To me, it's
+not a
+it's not a
+big deal.
+So, there you go. So, these files are
+getting big.
+So, I don't think anything's really
+changed. So, there's only one trade
+still.
+Right? But you can see this this number
+of events now has jumped up from 137 to
+143
+thousand.
+There's a lot of data being pushed
+through here.
+So, these these are all the different
+bots created, okay? This right here,
+this launch bot will launch everything,
+Everything's all identified. Everything
+is is advanced in terms of AI
+implementation outside of MCP servers.
+I don't need MCP servers at all.
+But that's a real thing now. Well, let
+me just show you
+where it gets very interesting.
+Okay.
+So, let me just go back here.
+Uh to
+today.
+So, there's four PDFs plus the bot plan.
+Okay, there's the JSON file.
+So, let me pull that up.
+Uh oh.
+Let's do notepad for
+now for speed.
+So, here's the here's the bots that get
+generated all based around news.
+Okay. So, in here we have a strategy.
+Most people almost say gold.
+Again, this is from news of today.
+Plays a long gold call spread
+financed by short put
+risk reversal to capture geopolitical
+tail hedging demand while reducing
+premium outlay as described in the
+reports precision metals section. I'll
+show you that report.
+So, basically it's doing a long one-time
+long one-time two call spread plus a
+short one plus one put
+where has a 25 uh delta risk reversal.
+That's all options trading speak. Now, I
+have a whole course on that, but you can
+see
+basically it's it's using
+the institutional mindset
+instead of retail. Let me talk about
+retail retail for a minute. I just read
+a report from the Cabocey letter, if
+that's what it's called, the TBL. Um
+they said millions and millions of
+retail traders have now dropped out of
+the market. Okay.
+Including the futures and options. So,
+the volumes are lower. Um so
+uh it's all really institutional right
+now. So, you want to trade like
+institutional. You can see here we got
+some stats here on the time horizon on
+the projections
+and so on.
+This is all simulated. Just want to make
+sure that's known.
+Here we have because what's happening
+with the war in the Middle East, we have
+a lot of activity on oil.
+Here's another one. Brent crude front
+month versus second month calendar
+spread to exploit geopolitical risk
+premium fluctuations. Again, that's for
+fluctuations of volatility because of
+the mind of
+Trump.
+Trump deferred crude dynamic as
+emphasized in the report energy
+uh section. So, it's all it's all driven
+by this so-called reports. So, let's
+that out. So, let me go through all the
+bots though. So, we have a Bitcoin
+Ethereum future beta adjusted spread.
+And I've mentioned this in my live
+stream.
+Uh Bitcoin's still a big thing. Okay.
+We have here oils, another big thing.
+We have here gold future call spread
+with risk reversal.
+Again, involving
+involving options. SOFR uh futures curve
+steepener with option overlay.
+We also have an E-mini S&P put call
+spread spread collar. Pretty standard.
+Um WTI interbenchmark spread arbitrage.
+So, here it's using
+different combinations based upon the
+the Hormuz Strait
+arbitrage opportunity. Okay.
+Um CMC CME Bitcoin option call fly with
+dynamic delta hedge. Now, I'm going to
+show you and I've mentioned this. This
+is so important. If you're a retail
+trader in Bitcoin or anything crypto
+Ethereum Bitcoin specifically
+you're getting hosed. If you don't
+understand what the institutions are
+doing at the options level you you
+you're just guessing what what they're
+doing. Okay. You can use all the charts
+you want. Use all the news you want.
+It's not going to help you. Okay,
+because that's what institutions are
+doing now cuz they're big time involved
+in Bitcoin. And I've talked about this
+before as part of the stream.
+When you have the three big now
+exchanges, CME
+Bitcoin and Ethereum
+which is usually the biggest one. Then
+you have the overnight trading which is
+not usually on Binance cuz the Asian
+traders.
+And then on top of that, that's usually
+actual market futures market and options
+market which is fine.
+Volume's big. And the next little one is
+Bybit, but usually
+CME volume is now just as big as the
+other ones
+based upon the official news sources
+that I'm getting. Not what you read on
+YouTube or what you get on Twitter. I
+think there's so much BS on there. It's
+not funny. Continuing along, we have
+Euro USD FX future risk reversal with
+option overlay.
+There's gas oil crack spread futures
+with option collar.
+The Bund BTP uh sovereign spread futures
+with conditional options.
+Okay, we don't trade Everything I do is
+is US specific. So, we won't trade this
+because I want to have access to the
+market data. Could I could pay for it.
+But I'm not doing that. Then we have VIX
+futures call overlay for equity gap
+risk.
+This is all institutional level stuff if
+you can't figure that out.
+Okay, so let me show you the big report
+this thing's talking about.
+This guy right here.
+So, in here there's four classifications
+from the news. Okay. So, we have crypto
+futures and option institutional
+read-through. That is so
+important. Okay.
+So, here what's happening is I've talked
+about the relationship between Bitcoin
+and Ethereum.
+That's very common. Okay.
+And then it will also look at the
+overall spot ETF complex
+pairing against ETF inflow outflow into
+ETFs, namely IBIT
+and others.
+Uh despite new product launch selective
+inflow elsewhere.
+This is what drives the price of
+Bitcoin.
+Institutions cuz they're driving the
+volume now.
+Like it or not.
+Derivatives narrative whales reportedly
+skewed both short Bitcoin Ethereum
+headline option interest cluster around
+higher Bitcoin strikes.
+If you don't know what that means or you
+don't even know what is what what's
+happening is don't trade Bitcoin. You're
+just kind of like
+throwing money at something that you're
+guessing at. Seriously. Then you have
+Ethereum. Okay, super supply flow.
+So, the foundation for Ethereum
+inversion sales add event supply
+pressure. Do you know that?
+Security compliance headlines exchange
+mistakes
+cyber uh theft and so on.
+Raise risk premium for venue funding
+settlement equality. So, that right
+there is going to add in the risk of
+Ethereum. And then and then based upon
+the AI will figure all this out.
+We have a basis carry book.
+Okay, so again right there. Based upon
+CME versus offshore
+actual
+versus ETF demand. So, those are the
+three dynamics that are going to push
+the overall price or impact the overall
+price of something like Bitcoin.
+So, the basis collapse faster than
+perceived realized volatility does
+reverse the cash and carry style
+expression or reduce long basis
+inventory.
+If panic dissipates, basis re-steepens,
+macro funds re-enter calendar carry
+options right there. Long deferred short
+near or vice versa depending on the
+curve shape.
+I can go on and on and on about this.
+Okay. So, that is what drives the price
+of Bitcoin. Then we have the volatility
+regime that analyzes
+right here. Short data implied elevated
+around geopolitical and regulatory
+headline wing demand on both sides.
+Upside call options there. Breakout
+narrative low and high ETC strike.
+Downside uh put option called right
+there. Whale shorting narrative plus
+inflow outflow persistence. Then we get
+into skewness.
+Squeezing all that stuff. Then we get
+into the institutional level
+involving long gamma short Vega. Again,
+this is all the Greek and all stuff
+going on about. Again, option trading.
+Call spread financed with put spread
+seagull type blah blah blah upside
+participation with lower premium burn.
+Okay, protective collar.
+And now it's involving over-the-counter
+treasury desks
+to warehouse crypto risk.
+And then the famous risk reversal. Okay.
+Directional macro
+book when skew's mispriced versus
+a catalyst path. Now, I can go on and on
+and on. Okay.
+Um but then you get into the commodities
+impact also as part of that risk against
+Bitcoin and Ethereum.
+This is what I'm trying to tell people
+is that
+everything's all driven by options
+market. Just based upon some sampling
+I've given you. We're only on page three
+of 22 pages.
+Okay, then we get into uh macro analysis
+on FX equity indices metals blah blah
+blah. Tokenization of perpetual swap
+that again impacts impacts your flow.
+Um here because it's CME only uh you
+won't hear about tether or USD circle.
+has a huge impact right there.
+Um
+but uh you know, you have liquidity
+tiered execution, blah blah blah.
+Hedging as well.
+This is what institutions are doing.
+And people are not understanding
+that this is what drives the price of
+both Bitcoin and Ethereum. If you're not
+getting access to this sort of stuff and
+trading off of it with the intellect of
+trading options and futures in
+regulated markets like CME versus
+Binance, and Binance can do whatever
+they want and negatively impact you on
+your on your positions.
+Um you know, there's that. Then we get
+into oil and
+uh oil and gold on the futures only, and
+you're going to get slaughtered there
+because you're not understanding what's
+going on in the options market.
+So there's all this risk measured out.
+Um so here you can see like this is what
+big the big funds are doing. And this
+has an price
+impact on oil.
+Uh if if there's this risk or this event
+uh the discretionary macro and commodity
+funds may reduce emerging long beta
+while keeping optional upside for
+renewed disruption. It's all done
+through options. What's calls the like.
+Then you get into this deleveraging mode
+or chop mode of of volatility.
+You realize remaining side trend and
+signal
+weaken. Okay. Now depending upon the
+model it generates this, in this case
+Codex,
+you get different types of analysis.
+Um but this is the best we can get with
+Codex cuz I cannot really do it any more
+with entropic cloud models as I
+mentioned with the harnessing and all
+You can see here has impact on the oil
+using options. Okay. So I could go on.
+Then we have Brent Brent and WTI spread
+uh impact on refining which impacts your
+all these instruments, namely jet fuel.
+Okay. So you're wondering about
+pricing on
+on uh jet fuel how it impacts airlines,
+blah blah blah. You'll be weeks ahead
+knowing this.
+But you can also understand what's going
+to happen at retail and the gasoline
+pricing,
+heating oil, diesel,
+blah blah blah blah blah. Okay. All
+because you're analyzing
+uh the options market. Okay. Not just
+only futures. You're going right into
+the deep end of understanding what
+institutions are doing.
+And they have impact.
+So here is another interesting one that
+you can look at that you don't hear
+about in the news. That's why this type
+of report is very very valuable.
+You can see here Dink tanker booking
+recruiting or rerouting headlines imply
+freight optionality remain valuable in
+listed space that can be bled into.
+Two times spread volatility
+uh basis premium and exportable grade.
+When you see the word basis, that is a
+future future talk, but there's also
+interrelated with the options because
+the options as you can see it's the risk
+that is measured through this.
+Short dated opportunity
+and it impacts other things. And it gets
+right specific into Brent Dubai
+and then O E O E C D impact and what it
+sees.
+And that's just oil, right?
+Then we get into precious metal and what
+how it impacts gold, silver, and the
+like.
+Right here. Anatomy of a fail suggests a
+classic pattern. Event premium gets
+priced in. Then partially fades or
+ceasefire optics.
+But recurring conflict keep risk tail
+hedging alive.
+So depending upon the news, you're able
+to plan around that.
+And that's all because of options.
+Again, I could go over this. And then
+and then it brings in all of these
+institutional level
+trading again on retail Forex.
+Seek those
+technical analysis chartists on
+MetaTrader. They don't understand what's
+going on what's driving the price of
+euro, Japanese yen, and the like. Okay.
+Sorry
+to to to tell you that, but this right
+here is what's driving that. So we have
+here euro rate future
+Bund future options, Europe's energy
+sensitivity and election
+in Hungary, blah blah blah blah impacts
+euro.
+Okay. And you can see the same thing on
+the yen and the like.
+So again here you can see all of the
+options projections made based upon this
+news. And this is telling you exactly
+what a lot of the institutions are
+doing. And they're the ones that impact
+price.
+Gold convexity retained in geopolitical
+portfolio insurance.
+Okay. And you hear about all these
+YouTube human rumors
+and and probably Twitter X
+about this uh
+insurance of gold. That's it. But you
+don't know why. There's all these things
+underlying
+that are are impacting this call.
+And that's why they're dumbfounded on
+when they say buy gold and gold is flat
+or or declines. This is what's driving
+all of it.
+uh it just goes on and on and on. So we
+have US dollar.
+We have options on that.
+We have the SOFR which is the overnight
+rates
+on the euro dollar and that has impact
+there.
+Um we have a euro focus again.
+All the different um complexes of the
+Bunds in Germany
+for now.
+I I could go on. And look look at you
+also get access to New Zealand,
+Mexico. There's no volume there. Sorry.
+Gold futures. This is the big one.
+Okay. And it explains what's happening
+in the options.
+Bull spread detailed geopolitical upside
+collar reduce
+carry cost in trending periods.
+Okay. So it just goes on and on what's
+happening in the news, and it will give
+you future and option talk or speak.
+And this is how everything's really
+done.
+The more you read this, the more you
+understand it. If you don't understand
+the concept, there's a course for that,
+of course.
+Institutional takeaway. And it's again,
+I keep saying the institutions will
+always drive price. Now we're just about
+halfway.
+Okay. So I'm going to go through this
+pretty quick.
+So you can see there's very little
+impact on the stock market. But here's
+the first one
+on the micro S&P. Okay. And maybe Nasdaq
+and uh Russell.
+And then the CME volatility
+as well. So
+if you're only trading equity, meaning
+ETFs and stock, you're missing out on
+where the bigger opportunity is with as
+I said energy, precious metal, and
+crypto
+um as well. And treasury, but it doesn't
+move much, but be surprised by that as
+Um where it's too myopic to only
+trade in stock and equities.
+Um and it and and the way it is is very
+flat. And and you could probably do okay
+there
+for it from a investing point of view,
+but if you want to be
+uh active
+and you get the right type of system
+built out of the right types of calls,
+you you this this stuff can change your
+life. There's always the high risk of
+both the high the upside and the
+downside
+if things don't work out.
+Okay. I could go on and on about this.
+Uh all option related with the gamma
+dynamic, blah blah blah blah.
+Everything's all impacted internally
+between the the treasury
+SOFR
+as well.
+And how to position everything.
+As you saw in the bots.
+Um I could spend hours on this, but this
+is the crux of it.
+So from a career's perspective, it's
+this with the the portfolio managers
+that will run probably I don't know,
+five trading desks, 10, I don't know how
+each company each firm is
+built.
+Uh but uh usually the portfolio managers
+will run
+this, analyze analyze portfolio risk and
+all that, and performance.
+And they do that manually. But we have
+here complete end-to-end
+um end-to-end gather news
+build a bot strategy and build it on
+impact. And we can do that anytime we
+want. And the and and the very valuable
+part is that we're now able to
+dynamically build out with the option
+chain. Okay. That's the most important
+part of the whole thing.
+Okay. Very valuable.
+Very expensive to do. But looks like we
+we we accomplished that.
+Then we have impact on cryptos. Comes
+back to course on on FX, Forex.
+Um here. Canadian versus oil link uh
+expression paired with Brent WTI view.
+uh and you and you're usually watching
+this
+you'll be weeks ahead of the calls.
+Okay. You'll know what's going on. Okay.
+it's really really really important to
+know this stuff cuz everything kind of
+is interrelated built around risk.
+And what you trade based upon that, but
+being in the know-how is very important.
+And And again, we have to build out
+projections on things like inflation,
+problems if there's slowing growth,
+that can have impact on volatility,
+obviously, blah blah blah. And it's just
+all these things that you can plan out.
+Here,
+again,
+small representation of the indexes, the
+market indexes.
+I'll just Right now, there's very little
+bots to perform, but
+as it's uh as it's shown here,
+uh it's still the highest
+volume.
+Wherever that went.
+Yeah. Anyways, I'm showing you the ES,
+the ES S&P 500
+by by a long shot still driven by volume
+compared to everything else.
+but you can see here you can see some
+more
+uh calls on USD,
+option risk reversal,
+Euro USD downside, the yen.
+And then you get to see what's going on
+in China, maybe, or in somewhere in one
+of the emerging markets like Mexico,
+let's say.
+And you see here on freight shipping
+derivatives,
+carbon, wouldn't think, right? There's
+just one
+snapshot of what you can see in the
+markets. This is why
+everything's going to be going up and up
+and up in my feet, okay? Because of
+being able to generate stuff like this.
+Even if I live trade it or not,
+knowing this for signals
+be generated out of and and more
+importantly being able to generate
+these dynamic bots. So, for instance,
+let me show you yesterday's call.
+Uh hopefully this will work.
+So, I'm going to load in yesterday's
+data, okay?
+So, as an example, let me go
+to yesterday. Uh let me think here.
+Maybe this one might
+be good.
+Okay, no
+data there.
+One of these have data
+for sure.
+Okay. Uh let me just see how big these
+are. Yeah, this might be good.
+Okay. So, uh
+we're loading in all of yesterday's
+data. I don't know how long this ran
+for.
+but uh
+this is what I want to show. Okay, so
+coming back to this,
+this is a much more realistic
+snapshot of what happened yesterday.
+More activity because of the markets
+went up
+because of this peace deal or whatever.
+Uh so here we have 60,000 events. This
+probably ran for like maybe 2 hours.
+Um 11 bots, 100 trades, I'll show you in
+a minute.
+Blah blah blah blah.
+the only thing that really ran was this
+one
+and this one. So, what we have is ZT
+and ES again, okay?
+So, here, uh as I let this one run,
+Performance started to kind of improve.
+I've seen that before.
+this is all simulated. I've talked about
+simulated versus backtesting.
+The idea here, when you have a market
+that moves instead of a flat market like
+we have today,
+uh this type of bot, if it's profitable,
+the goal will be eventually to move it
+into a live trading environment and have
+it live trade with real money.
+Okay? That's the goal, when the markets
+allow, okay? Because right now, for
+yesterday, looks great. Running this
+type of strategy
+um was not profitable at all. For For
+one profitable stra- uh one pro-
+profitable position, we we had two
+losing ones. So, it's not worth
+point.
+you'll see here.
+this will be set for a different market
+condition.
+Uh let me just see here.
+I don't know.
+I ac- I don't know what time steps I I
+don't want to go looking for this, which
+time taking up.
+But, I wanted to show
+where we're at with this options, much
+more much more sophisticated, real
+market data, real market analysis, real
+market uh
+strategy bot
+simulation that can be run
+um daily, blah blah blah blah, okay?
+So, it goes right across the the entire
+spectrum of available instruments to
+trade
+on the CME, pretty well everything.
+Okay? If the volume's there,
+the opportunity's there, if the market
+condition and and the dynamically
+generated bot strategy allows, it will
+try to trade it.
+Most of the time, I'm finding it's about
+a 10% um
+out of all the bots, maybe one, maybe
+two, like what what I showed, might
+trade. Um
+and then that you still want to see
+profitable
+opportunity. So,
+we're there. It's We got to wait for the
+market
+uh conditions to improve um and be able
+to trigger profitable
+orders. So, once we start seeing that, I
+can deploy
+these bots in a live market, okay?
+And then the end other goal is the
+Interactive Brokers stuff that I can
+also show as well. I'm going to have a
+separate video for that. Anyways, I know
+this is a very long video
+for those that are still here.
+Um what I would recommend is go to my
+homepage, quantlabs.net.com.
+Couple of options here. You could learn
+uh get a free little book on C++ HFT
+e-book, which is our real hundreds many
+thousands have been downloading it. Put
+your info, I don't spam
+at all. I don't release your
+information.
+And
+while it's still affordable with what
+I've shown you, get access to those kind
+of PDF reports,
+you can try this out. This will be going
+up 50% from Monday, Tuesday next week,
+early next week. So, today's
+April 9th, just so you know. And as I
+said, that's going to be
+much more expensive. Because I can
+always run this every day. I can run it
+multiple times a day, these kind of
+reports.
+All right? Um and then I might,
+depending upon if there's enough demand,
+I might add in the Interactive Brokers
+as well. What I'm planning or could do
+as well. Anyways, I'll leave it at that.
+Thanks for watching. So, have a good
+day.

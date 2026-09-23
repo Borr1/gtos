@@ -1,0 +1,5 @@
+before df2baf060 ('Wave 3 / Session N prompt: record the sparse-checkout trap'): 60 bad
+after  5ffef1a7f ('Stage 3: refresh the A/B after the hour-snap change -- 60 bad -> 60 bad, 0 regressed, +50 passing'): 60 bad
+unchanged: 60   fixed: 0   REGRESSED: 0
+
+No regressions.

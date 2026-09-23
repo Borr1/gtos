@@ -1,0 +1,533 @@
+# I Tested AI Models to Code Trading Bots (The Results Will Shock You)
+URL: https://www.youtube.com/watch?v=zuZBI_ul5wM
+Video ID: zuZBI_ul5wM
+Duration: 1496s
+Fetched: 2026-04-18T13:22:56Z
+---
+
+Good day. Good day everybody. Brian here
+from quantabsnet.com.
+I just wanted to go over with you uh a
+few big things that um have come out.
+First one is
+the uh we're now able to do everything
+on our exchange of choice for futures
+and options being rhythmic using Python.
+So access to everything we've had
+withnet C++
+full market data full uh full orders as
+well. So we're now in a position where
+we can start live trading hopefully
+successfully instead of the last batch
+of few weeks. Next thing first thing I
+want to talk about are the different um
+LLMs out there for for vibe coding and
+what I'm seeing. All right. So, let me
+show you um
+uh our first thing. So, people have been
+reporting from hftcode.com that this
+blueprint
+uh is working is very valuable for them
+for as a starting point. So, I'm going
+to show you the same environment and
+update you with where I'm at with
+serious serious AI generation now. uh
+vibe coding as the kitties call it. So,
+couple things here I want to show you is
+um we've got the ability now to use news
+that I've shown. Okay, that I update now
+in my Quant Labs Net group. Uh let me
+just pull that up for you. So if if you
+have joined my quant labset groups on
+the analytics you'll get access to this
+private chat group here. Here um I'm now
+making available in summary files my
+full analysis of the markets futures and
+options specifically. This is all news
+driven. This is these are monster PDFs
+or 41 pages 100%
+AI generated. I now have the capability
+to uh pass that into what I'm showing
+you here to create different trading
+bots that work um using specific types
+of prompting to generate each individual
+bot based upon that analytical
+trading plan daily. I can do it every
+few hours, whatever I want. But I can
+now create trading uh bots from that. So
+the first batch was done yesterday. The
+next batch was done last night. I'm
+going to show you actually the trading
+uh uh activity for it. And I just
+created one just now uh earlier today.
+Um and then these ones get created as
+well. So in this case what you can see
+here um let's say for today you can see
+we're creating specific trading bots in
+Python for um market conditions and
+strategies. So here we have a treasury
+uh regarding flag a federal stagflation
+type of trade. Let me just open this up
+here.
+Okay, based upon momentum or I'm sorry,
+a Fed stagflation curve, we have here a
+Bitcoin M6 May concerning uh a call for
+HA having call for momentum. Ethereum
+staking support uh with a put sell
+combination. Right now, I'm just using
+futures only because uh I just want to
+stay simple as I keep saying. We also
+have here a comx gold geopolitical tail
+hedging. Obviously that's related around
+the war in Iran, the Middle East. Here
+we have a specific one for the horror
+moves uh breakout
+uh on the oil. Here is natural gas EU
+specifically for EU uh gas cap
+reversion. So you can see these are all
+related around the trends and the
+outcomes of this war with Iran and these
+are the only ones that are getting
+generated. Okay, so this one now I'm
+going to talk about the LLMs and using
+the same prompts
+um to generate these trading prompts.
+I'm going to tell you my experience
+right now. Um this environment that you
+can set up with this
+uh blueprint, we'll call it, you can see
+it's very cheap. I'm going to be
+doubling it in the next few days, just
+so everybody knows. If you want it, you
+get it now while it's that cheap, but it
+will double because it's now at a point
+where it's very valuable. I'm getting
+reports back. It is very, very valuable
+for people. So, um, there's that. Um,
+and you can see here that we have a
+whole variety of different trading bots
+built around,
+uh, last night's news on the outcome of
+this war in the Middle East. Okay. So
+then uh what I did was this was created
+by
+uh GLM
+5 AI the Chinese AI that's the lowest
+cost AI out there out of the three. I
+also with this environment tried it with
+miniax
+and with the prompting because it's so
+big you can saw in that report it's
+about I don't know 1500 line report or
+sorry prompt and I see that in a in a
+like tw or miniax it breaks the the
+communication gets lost with the AI
+servers so this will not work on the
+column lowerc cost Chinese AI at this
+point the Only Chinese AI that this will
+work with is this as I said GLM5.
+Okay, works great. Okay, and that's the
+lowest cost available. So here for
+today's set of news, I purposely did
+further tests to see what would happen
+on the cost and the output quality of
+the code. Now you may go why can't I see
+the code? because as I said this is to
+deal with the provider of the data
+rhythmic I can't show it terms of
+service do not allow me to do that
+understand that okay
+>> the way it goes I don't write the laws
+on this or the conditions just the way
+it is but I will tell you this the
+codeex uh did do everything it's very
+quick
+um the VLM's quite slow uh so codeex is
+That's the latest version of Codeex 5.3.
+Um, that's the best one for the best
+value, I think. And it's so fast as
+well. So, if that's important to you,
+use Codeex. Now, here's where it gets
+really, really sad for Claude. Now,
+Enthropic, I use the Claude 4.6. Now,
+I'm going to put this out as a caveat
+for everybody. We know that claude and
+enthrop are a hot thing right now in AI
+vibe toing just general AI. Um
+especially for coding. Um, I will tell
+you now
+that Codeex is pretty well as good as
+Quad because I always thought Quad was
+the best for the price of it now, which
+is generally three times on average more
+than uh Codeex. So, they're kind of neck
+and neck for this simpler type of
+trading. I will say one thing, the
+difference is when I take that plan,
+that chain plan I showed you,
+um it does create a few extra bots,
+namely um HG, which is copper,
+um and that's it. So, you're paying a
+lot more just to get an extra bot that
+most likely won't perform. So, for the
+cost, not worth it in my mind. the
+codeex
+it's going to generate the same number
+of bots
+as the um as the uh a GLM. So when you
+compare GLM versus
+codeex which is open AI I'm finding
+if you're really sensitive on cost stick
+with the Chinese ones, okay? They're the
+lowest cost and the GLM
+is uh pretty good. It's getting up there
+and it's still quite a bit cheaper than
+the codeex
+for using these kind of techniques. And
+again, these are big prompts. Same
+prompts across
+uh quad uh codeex and GLM. And these are
+the ones that work flawlessly in this
+environment. Again, built around this
+blueprint I'm talking about. Okay. So,
+there's that on the bot side and the
+quality. Okay, I'm starting to probably
+lean towards saying I want to save money
+because I'll be doing this quite a bit
+with the agents out there um that I'm is
+my next big step.
+Um, so class is going to be a big
+factor. I've I've said this already. If
+you're using quad code and you don't
+know what you're doing, you're you're
+going to get hosed one way or another on
+the cost of generating AI and code from
+AI. Okay? Especially if it's quad
+because the quality of code depending
+upon what you're doing um the the
+Chinese LLMs
+are getting are getting there now. the I
+can't for the size of the prompts as I
+said earlier I can't get it to work with
+tw and I can't get it to work with
+miniax anymore because it's too big so
+it just depends upon the size of your
+prompting and stuff when it comes down
+to the cost definitely the Chinese ones
+are as good now again this is all
+because I'm in the world of Python if
+you're trying to do more advanced stuff
+you may need to stick with the codeex
+and plot but because I'm doing now and
+and more trying to just stick with
+Python
+and uh JavaScript
+and HTML. The Chinese ones seem to be
+okay. So again, it just depends upon
+your use case and what you're trying to
+generate, what kind of lang programming
+language and so on so forth. So that's
+an important factor now. Okay. So
+uh let me show you now uh the reporting
+from yesterday. I find this really
+fascinating. Maybe I should show you uh
+the one from uh this yesterday morning.
+Okay, so I ran the bot um
+set of bots for yesterday morning and
+I'll show you the difference. Okay, so
+um this is yesterday morning. So you'll
+see the types of bots that we had uh
+available, the different types of
+strategies. So here's here's yesterday
+morning. So, in here we had and it was a
+pretty bad day because of the markets
+and we're we're still having some bad
+trading days um with with the markets
+because of this war and oil and you can
+see some pretty deep negative moves um
+uh over the last day or so. Okay. And as
+I said before, when things get really
+bad,
+the only one performing is VIX as you
+can see here. and it does quite well
+putting it out there for people. So this
+is the one from
+uh uh yesterday morning. This is what
+kind of shocked me is the best
+performing one was this having called
+momentum base and then the geopolitical
+uh on gold which is a tail hedge again
+this is just futures futures that's it
+I'm just this is all simulated data
+using uh market data from really the CME
+through rhythmic um and then we have a
+uh a stagflation
+uh curve this is easily by far the most
+important metric when it comes to what
+will be the future of quant trading, the
+future of trading firms,
+family offices and the like hedge funds.
+The only jobs that'll be left over are
+going to be systematic portfolio
+managers. This is what we're doing right
+now. So these port these systematic
+portfolio managers go what should be the
+only strategy I should be running for
+today or at this time frame yesterday?
+Surprisingly, it was the Bitcoin.
+Bitcoin having momentum
+drew the most profit. But you can see
+here win ratios pretty good for uh uh
+CZN
+M6 Fed stipflation.
+Um but here we have this is crazy. The
+draw downs are much higher with gold
+than with Bitcoin at this time yesterday
+morning. That's that's the thing is that
+um the volatility and these draw downs
+for gold that's pretty extreme. That's
+that's how extreme and volatile the
+markets are and people may not like it
+and if you're a traditional trader. Uh
+if you're not doing this you're you're
+going to get cleaned out pretty fast and
+or you're going to get scared off from
+trading. But you can see overall if
+you're doing what I'm doing, just
+trading off of news, very short-term uh
+news events, well big news events and
+letting the AI decide what should be
+traded. And you'll see a general trend
+here right across the board over these
+three
+uh data sets. I'll show you. You can see
+here, this is what's being recommended
+right now in very extreme times.
+Bitcoin, gold,
+uh that's Treasury, ZN, and then NX on
+the oil. That's all that's that's
+tradable all the of all these types of
+strategies. Um, and here's the
+individual performance of each all along
+through here. And you can see here the
+best the best for yesterday morning was
+Bitcoin futures and a little bit of
+gold. Okay. So, that's why I stressed
+that systematic portfolio manager is
+going to be the new job of the future
+and only trade where you're making money
+at that time. At the same time being
+able to generate a new set of trading
+bots because of the volatility have a
+new set of trading bots ready to go
+based upon how the market evolves for
+the day because of this extreme bunch of
+exogenous events called war.
+It's it's going to have huge impact on
+oil. It's going to have huge impact on
+gold as you can see and treasury. Okay.
+because the treasury was the financing
+wheel or blood circulation for the US
+government and that gets affected as
+well. So there's really no safe haven uh
+in the traditional sense because of this
+extreme volatility. Okay, so that's
+yesterday morning. But where it gets
+very interesting is when I show you um
+the ones from uh this one right here is
+uh the report
+I believe. Uh let me see here.
+Um,
+yeah, it's a different level of Let me
+see here if I can load it up in my
+PowerShell.
+Uh, okay. So, let me just see here.
+Yeah. So, here,
+uh, yeah, this one right here. So, let
+me see.
+So, uh, okay, I see where it's at. Okay,
+so
+let's just see. making it right here.
+Okay, so this is now kind of late
+yesterday and ran it I believe overnight
+and uh into the morning. So here again
+uh different time period and it
+radically changes. So here we had
+Bitcoin pro proving to be
+uh a really powerhouse for profit
+yesterday morning throughout the day and
+then with something happening in natural
+gas. I could pull it up if I wanted to
+but just from a trend perspective on a
+trend potential you can see here natural
+gas started to profit really good but
+the funny thing is look look at the big
+draw down you get with natural gas. So
+the question becomes, do you do you want
+to take that risk of this crazy
+volatility
+on natural gas if you're going to get
+these severe draw downs? Okay. So I can
+look at the the metrics here and and and
+you can see here that NX was driving a
+4.3
+sharp ratio
+and uh
+we have here a maximum draw down of 36K.
+Now, I can't remember the starting
+amount. Um, but it's this is all
+hostage. This is not real money, but
+it's using real data. But I'm just
+trying to show you how um volatile the
+markets are right now and how
+the the the key word really is
+unpredictable markets, okay? Because of
+this war. And then you see here all the
+other ones are just not performing. Um,
+we got Ethereum in there as well.
+Bitcoin was performing earlier in the
+day. So, it goes to show you
+um that what you think you'd be making
+money on would be crude oil, but it's
+not. It's natural gas if you're willing
+to take on the risk of the volatility.
+Um and again, this is a mean reversing
+strategy, I believe. Um
+but again, that that's what matters. So,
+here we have the NGK. Yeah, it's it's a
+gas cap mean reverting strategy. So it
+was taking advantage of of some form of
+spread
+um and being able to get this type of
+profit because of the news and the AI
+was able to figure out proper strategy
+to use. So a profit from a bit but it it
+uh took on uh quite a bit of volatility
+and draw down for it. So
+um but with a with a a sharp ratio of
+4.3 that's pretty strong. So if you look
+at the metrics now of Bitcoin over the
+same period
+um
+the entries are okay. Uh two two two um
+uh stops were hit um but still made
+money. But again this is what I'm trying
+to prove is the importance of this type
+of analysis. Now, um that's yesterday.
+So, we had a pile. Let me see if I have
+a report from earlier today on the 12th
+of March.
+Do believe I have something here. Let me
+just see.
+I don't think I have. Um so, there you
+go. Um this is a new reality of how to
+make money in the markets. Now uh
+unfortunately uh because of the crazy
+it's not volatility, it's the
+unpredictable events, unpredictable
+uh volatility. Um when you have a
+president
+acting the way he is, who's so
+unpredictable,
+it's just really hard to know
+what and where to make money is. You may
+think as a human, but it's quite clear
+that's not the case. and and and again
+being able to respond to create a
+trading plan for a certain time period
+and then be able to trade out uh create
+bots
+quickly and that's why I like codeex
+because you're not sp I should should
+should uh threat myself based upon this
+type of environment I would prefer to
+use GLM5 to create trading bots but it's
+slow very slow Whereas, if I want to
+create trading bots based upon trading
+news as fast as possible, then that's
+where I'd use the latest codecs. Um, and
+you pay a little more with codecs. Um,
+but the quality, as I said earlier, is
+the same. So, um, under these conditions
+with the high volatility and
+unpredictable nature, I probably would,
+uh, go with a codeex for now. Um,
+anyways, so that's pretty well
+everything I want to show for today. Um,
+as I said, there's a couple things
+happening uh on my website. So, at
+quantabsnet.com,
+we just did a earlier sale uh earlier in
+the week where we we uh raised the cost
+of uh 50%. Okay, so what I'm referring
+to is this under the try option. Right
+now, it's 67 a month. You can try it for
+free in 7 days. This will go up again.
+Okay, this my my target market's 127 a
+month. So, if you took a trial at the 47
+or even lower, congratulations because
+you're now permanently grandfathered in.
+But this will hap this this price
+increase will happen again because of
+now the value that we're seeing the
+markets and proving everything and being
+able to to to to develop trading bots
+very quickly
+uh in response as I talked earlier. So
+this will go up. Um, also I did talk
+about uh my uh at hftcode.com.
+This one right here at hftcode.com.
+This one will double again and probably
+double again as well because this right
+now is well in this case 23 24uro. It'll
+double and then over time in a couple of
+weeks it it will get up to just under
+hundred US dollars. That's the goal. Um,
+and people go, "I can't afford it."
+Well, if you want to afford it, now's
+the time. Um, because as I said, we're
+now able to do live orders, sorry, live
+trading. Um, and once we can get that
+track record underway
+through and show receipts,
+um, then yeah, it's going to be a a
+premium level of service for people
+um, and verifiable on top of that. Um so
+because and be probably only one talking
+about a proven track record. Um that
+will make it very valuable in itself. Um
+and we have a different target. I'm
+having a different target market right
+now as well. So what I'm trying to tell
+you is now is the time to jump on this
+or not. It's not much I can tell you.
+Okay. Um that's just the way it is.
+Thanks for watching. And if you're
+sitting on the fence on this stuff,
+now's the time to jump in and get on my
+email list. If you get on my email list,
+um all you got to do is hit the learn
+tab, you'll get a well year plus book,
+whatever. But it's kind of valuable for
+some people for the um for the
+infrastructure for C++ shops. Um people
+have found value in that. I think we're
+up to 1500 copies, maybe 2,000 copies
+have been uh downloaded and and when
+people join. Okay. So, um we're we're
+reaching much bigger audience and the
+audience is growing much faster now.
+I'll be putting out some reports um on
+this uh over the next couple of days. Uh
+we get big big numbers on that on
+LinkedIn and uh in the 15,000 plus. So,
+we are targeting the right crowd. Um, so
+if we garner the right attention for the
+right target market, things will all
+change. Um, I've said that my streams
+before. So, what I'm trying to say, it
+might not be as accessible for a lot of
+people, but as I said, now's the time to
+jump in. Um, and as I say, the early
+bird gets the worm. We'll talk to you
+later. Have a good day.

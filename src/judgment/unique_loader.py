@@ -1,0 +1,1071 @@
+"""Load unique gold APPLY files into the Challenge writer PID.
+
+Imported from ``src.judgment.__init__``. Never leftover-ships ``book_owner``.
+The place decision is the place Choice. redacted_account idle.
+Verification quarantined. Agents do not place friend tickets.
+
+Canonical stamp is written only by Challenge ``run_book``
+(``operator``). Side tests set ``GTOS_UNIQUE_LOADER_SIDE_TEST=1``.
+"""
+
+from __future__ import annotations
+
+import importlib
+import json
+import os
+import sys
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Mapping
+
+SCHEMA = "gtos.judgment.unique_loader.v1"
+CHALLENGE_LOGIN = "0"
+CHALLENGE_NS = "operator"
+SIDE_TEST_ENV = "GTOS_UNIQUE_LOADER_SIDE_TEST"
+
+# Unique APPLY + default-off observers. Never leftover-ship book_owner.
+# #87 does not rewrite live news_spine.py. #77 persist 0.10 never copied.
+# Friend copy files never order_send from this agent.
+# equity_frame is the Challenge 0 card (equity / to_pass / floor_room).
+UNIQUE_MODULES: tuple[str, ...] = (
+    "gold_priors",
+    "equity_frame",
+    "admission_place",
+    "size_exit",
+    "remaining_seats",
+    "sleeve_jev",
+    "sleeve_ifs",
+    "gold_sleeve_ifs",
+    "gold_entry",
+    "gold_entry_jev",
+    "gold_exit_geometries",
+    "exec_gov_news",
+    "exec_gov_news_ifs",
+    "followthrough",
+    "followthrough_ifs",
+    "jev_client",
+    "jev_questions",
+    "compose",
+    "fluid_local",
+    "host_sites",
+    "manage_choices",
+    "rung_choice",
+    "learn_loop",
+    "learning_choices",
+    "isolated_15m_reentry",
+    "two_stop",
+    "occupancy",
+    "news_frozen_loader",
+    "event_proximity",
+    "event_registry_next14d",
+    "news_tape_join",
+    "news_challenge_stub_sync",
+    "news_calendar_sync",
+    "chair_shadow",
+    "challenge_daily_loop",
+    "jev_history_probe",
+    "x_dig",
+    "x_dig_judge",
+    "x_dig_order",
+    "challenge_feature_label_store",
+    "challenge_command_center",
+    "challenge_trained_models",
+    "hist_apply_candidate",
+    "remaining_ifs",
+    "remaining_ifs_tree",
+    "friend_copy",
+    "friend_copy_bind",
+    "friend_copy_contract",
+    "friend_feedback_loop",
+    "complete_judge",
+    "dig_b_static",
+    "fluid_gates",
+    "fluid_pipeline",
+    "apply_size",
+    "writer_compose_place",
+    "harvest_patterns",
+    "train_row_harvest",
+    "chair_enforce",
+    "chair_static_close",
+    "two_stop_day_circuit",
+    "everywhere_tape",
+    "sleeve_from_tape",
+    "hold_from_tape",
+    "a1_observe_every_candidate",
+    "sleeve_select",
+    "jev_sleeve_select_shadow",
+    "sleeve_on_surface_loader",
+    "place_choice",
+    "place_choice_ensemble",
+    "place_gate",
+    "conf_gate_consume",
+    "cycle_evaluate_post",
+    "host_occupancy",
+    "host_events",
+    "policy_c_admit",
+    "od13_ensemble",
+    "cross_asset",
+    "alive_sleeves_for_symbol",
+    "data_inventory",
+
+    "execution_choices",
+    "skip_choices",
+    "dig_a_place_choice_ensemble_noul_pair",)
+
+LOADED: list[str] = []
+FAILED: dict[str, str] = {}
+PERSIST: float | None = None
+STAMP: dict[str, Any] = {}
+
+_PKG = Path(__file__).resolve().parent
+_REPO = _PKG.parents[1]
+_STAMP_DIR = (
+    _REPO
+    / "pipeline_state"
+    / "ultimate_book"
+    / "operator"
+    / "judgment"
+)
+_STAMP_PATH = _STAMP_DIR / "unique_loader_stamp.json"
+_FIRE_PATH = _STAMP_DIR / "unique_fire_stamp.json"
+_OBSERVE_PATH = _STAMP_DIR / "unique_observe_stamp.json"
+_FIRE_MIN_SEC = 20.0
+_HEAVY_MIN_SEC = 60.0
+_LAST_FIRE: dict[str, Any] = {}
+_LAST_FIRE_MONO = 0.0
+_LAST_HEAVY_MONO = 0.0
+_WOULD_BE_DONE = False
+OCCUPANCY_SEAT = "occupancy"
+# Remaining-owned occupancy pack (~6 IDs). Isolated consumes this.
+# Not gold-catalog isolated_reentry_is_new. Observe seats include occupancy.
+OCCUPANCY_KEEP_ONE = frozenset(
+    {
+        "keep_one",
+        "keep_one_occupied",
+        "keep_one_occupied_integer",
+    }
+)
+NEVER_FLATTEN_TICKET = "294215389"
+_NS_DIR = _REPO / "pipeline_state" / "ultimate_book" / CHALLENGE_NS
+_GOLD_RECORD = _NS_DIR / "trade_records" / f"{NEVER_FLATTEN_TICKET}.json"
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _truthy(raw: str | None) -> bool:
+    return str(raw or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_challenge_writer() -> bool:
+    if _truthy(os.environ.get(SIDE_TEST_ENV)):
+        return False
+    argv = " ".join(sys.argv).replace("\\", "/").lower()
+    return "operator" in argv and "run_book" in argv
+
+
+def _write_stamp(payload: dict[str, Any], *, canonical: bool) -> None:
+    path_pid = _STAMP_DIR / f"unique_loader_stamp.{payload.get('pid')}.json"
+    try:
+        _STAMP_DIR.mkdir(parents=True, exist_ok=True)
+        blob = json.dumps(payload, indent=2, sort_keys=True) + "\n"
+        path_pid.write_text(blob, encoding="utf-8")
+        if canonical:
+            _STAMP_PATH.write_text(blob, encoding="utf-8")
+    except OSError:
+        alt = _PKG / "unique_loader_stamp.json"
+        try:
+            alt.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        except OSError:
+            return
+
+
+def _write_fire(payload: dict[str, Any]) -> None:
+    path_pid = _STAMP_DIR / f"unique_fire_stamp.{payload.get('pid')}.json"
+    try:
+        _STAMP_DIR.mkdir(parents=True, exist_ok=True)
+        blob = json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n"
+        path_pid.write_text(blob, encoding="utf-8")
+        if _is_challenge_writer():
+            _FIRE_PATH.write_text(blob, encoding="utf-8")
+    except OSError:
+        return
+
+
+def _write_observe(payload: dict[str, Any]) -> None:
+    """LABEL observe stamp. Never clobbers the send-choke unique_fire_stamp."""
+    path_pid = _STAMP_DIR / f"unique_observe_stamp.{payload.get('pid')}.json"
+    try:
+        _STAMP_DIR.mkdir(parents=True, exist_ok=True)
+        blob = json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n"
+        path_pid.write_text(blob, encoding="utf-8")
+        if _is_challenge_writer():
+            _OBSERVE_PATH.write_text(blob, encoding="utf-8")
+    except OSError:
+        return
+
+
+def _slim(obj: Any) -> dict[str, Any]:
+    if obj is None:
+        return {}
+    if hasattr(obj, "as_dict"):
+        try:
+            obj = obj.as_dict()
+        except Exception:  # noqa: BLE001
+            return {"type": type(obj).__name__}
+    if not isinstance(obj, dict):
+        return {"type": type(obj).__name__, "repr": str(obj)[:240]}
+    keep = (
+        "schema",
+        "enabled",
+        "skipped",
+        "kind",
+        "apply",
+        "place",
+        "flatten",
+        "never_place",
+        "persist_weight",
+        "persist_ok",
+        "persist_apply",
+        "reason",
+        "fail_closed",
+        "proved",
+        "disposition",
+        "may_place",
+        "may_send",
+        "leave_orig",
+        "occupancy_hold",
+        "occupancy_hold_dead",
+        "occupancy_after_close",
+        "keep_one",
+        "pack_ids",
+        "blocks_send",
+        "may_send",
+        "two_stop_is_integer",
+        "write",
+        "n_keep",
+        "n_kill",
+        "n_label",
+        "n_rows",
+        "html_path",
+        "md_path",
+        "agent_order_send",
+        "NEWS_PROTOCOL_APPLIED",
+        "mill_url",
+        "invented",
+        "posted_ids",
+        "n_posted",
+        "seat",
+        "seat_ids",
+        "size_ids",
+        "asked",
+        "order_send",
+        "n_decided",
+        "historical_only",
+        "decision_emitted",
+    )
+    return {k: obj.get(k) for k in keep if k in obj}
+
+
+def _try_rung(name: str, call: Any) -> dict[str, Any]:
+    try:
+        got = call()
+        slim = _slim(got)
+        slim["ok"] = True
+        slim["rung"] = name
+        return slim
+    except Exception as exc:  # noqa: BLE001 — stamp the exact block
+        return {
+            "ok": False,
+            "rung": name,
+            "block": f"{type(exc).__name__}: {exc}",
+        }
+
+
+def _occupancy_named(obj: Mapping[str, Any] | None) -> str:
+    if not isinstance(obj, dict):
+        return ""
+    raw = obj.get("occupancy_after_close") or obj.get("disposition") or ""
+    if isinstance(raw, dict):
+        raw = raw.get("choice") or raw.get("id") or raw.get("label") or raw.get("answer") or ""
+    return str(raw or "").strip().lower()
+
+
+def _gold_ticket_occupied() -> bool:
+    """Fact: gold 294215389 is open. Never flattens. Never a send refuse."""
+    try:
+        d = json.loads(_GOLD_RECORD.read_text(encoding="utf-8"))
+    except Exception:
+        return False
+    if not isinstance(d, dict):
+        return False
+    return str(d.get("trade_lifecycle_status") or "").lower() == "open"
+
+
+
+def _open_broker_positions() -> list[dict[str, Any]]:
+    """Broker positions from the latest chair wake. No stand-in ticket."""
+    path = _STAMP_DIR / "state" / "chair_wake.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    book = data.get("book") if isinstance(data, dict) else None
+    raw = book.get("positions") if isinstance(book, dict) else None
+    if not isinstance(raw, list):
+        return []
+    found: list[dict[str, Any]] = []
+    for pos in raw:
+        if not isinstance(pos, dict):
+            continue
+        if pos.get("ticket") is None or not pos.get("symbol"):
+            continue
+        found.append(pos)
+    return found
+
+def _occupancy_state(
+    *,
+    login: Any = None,
+    namespace: Any = None,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    ident_login = login or CHALLENGE_LOGIN
+    ident_ns = namespace or CHALLENGE_NS
+    state: dict[str, Any] = {
+        "identity": {"login": ident_login, "ns": ident_ns},
+        "account": ident_login,
+        "namespace": ident_ns,
+        "login": ident_login,
+        "occupancy_hold_dead": True,
+                "never_flatten_tickets": [NEVER_FLATTEN_TICKET, int(NEVER_FLATTEN_TICKET)],
+    }
+    if extra:
+        state.update(extra)
+    return state
+
+
+def _observe_seats() -> list[str]:
+    """BRANCH_SEATS observe plus occupancy. Occupancy is not opt-in."""
+    seats = ["companion", "weekend", "overlay", "frontier", "research", OCCUPANCY_SEAT]
+    try:
+        tree = importlib.import_module("src.judgment.remaining_ifs_tree")
+        raw = (getattr(tree, "BRANCH_SEATS", {}) or {}).get("observe") or ()
+        seats = [str(item) for item in raw]
+    except Exception:
+        pass
+    if OCCUPANCY_SEAT not in seats:
+        seats.append(OCCUPANCY_SEAT)
+    return seats
+
+
+def compose_occupancy_hop(state: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Ask the occupancy pack (~6 IDs). The Choice is the occupancy decision.
+
+    Open gold 294215389 is a fact on the row. This hop does not refuse a send
+    and does not flatten. Isolated consumes the same pack.
+    """
+    row: dict[str, Any] = {
+        "seat": OCCUPANCY_SEAT,
+        "asked": False,
+        "ok": False,
+        "occupancy_hold_dead": True,
+            }
+    st = dict(state or _occupancy_state())
+    st["open_gold"] = {
+        "ticket": NEVER_FLATTEN_TICKET,
+        "occupied": _gold_ticket_occupied(),
+        "never_flatten": True,
+    }
+    try:
+        rem = importlib.import_module("src.judgment.remaining_ifs")
+        occ = rem.compose_occupancy(st)
+        d = occ.as_dict() if hasattr(occ, "as_dict") else (occ if isinstance(occ, dict) else {})
+        named = _occupancy_named(d)
+        row["asked"] = True
+        row["ok"] = True
+        row["disposition"] = d.get("disposition")
+        row["choice"] = d.get("choice") or named or d.get("disposition")
+        row["probabilities"] = d.get("probabilities")
+        row["unique_highest"] = d.get("unique_highest")
+        row["reason"] = d.get("reason")
+        row["occupancy_after_close"] = named
+        row["persist_apply"] = d.get("persist_apply")
+    except Exception as exc:  # noqa: BLE001
+        row["block"] = f"{type(exc).__name__}: {exc}"
+        row["choice"] = None
+    pack_ids: list[str] = []
+    try:
+        tree = importlib.import_module("src.judgment.remaining_ifs_tree")
+        pack_ids = [str(x) for x in (tree.occupancy_pack_ids(st) or ())]
+    except Exception:
+        pack_ids = []
+    row["pack_ids"] = pack_ids
+    row["n_posted"] = len(pack_ids) if pack_ids else None
+    named = str(row.get("occupancy_after_close") or "")
+    disp = str(row.get("disposition") or "").lower()
+    row["keep_one"] = bool(
+        named in OCCUPANCY_KEEP_ONE
+        or disp in OCCUPANCY_KEEP_ONE
+        or "keep_one" in named
+        or "keep_one" in disp
+    )
+    row["gold_ticket_occupied"] = bool(_gold_ticket_occupied())
+    return row
+
+
+def load_unique_apply() -> dict[str, Any]:
+    """Import unique files into this process. Never raise into package init."""
+
+    global PERSIST, STAMP
+    LOADED.clear()
+    FAILED.clear()
+    persist: float | None = None
+    persist_block: str | None = None
+
+    for name in UNIQUE_MODULES:
+        try:
+            importlib.import_module(f"src.judgment.{name}")
+            LOADED.append(name)
+        except Exception as exc:  # noqa: BLE001 — stamp the exact block
+            FAILED[name] = f"{type(exc).__name__}: {exc}"
+
+    if "gold_priors" in LOADED:
+        try:
+            priors = importlib.import_module("src.judgment.gold_priors")
+            persist = float(priors.GATE_COMPOSITE_WEIGHTS["persistence"])
+        except Exception as exc:  # noqa: BLE001
+            persist_block = f"{type(exc).__name__}: {exc}"
+            FAILED["gold_priors.pin"] = persist_block
+    PERSIST = persist
+
+    STAMP = {
+        "schema": SCHEMA,
+        "loaded_at_utc": _now(),
+        "pid": os.getpid(),
+        "login": CHALLENGE_LOGIN,
+        "ns": CHALLENGE_NS,
+        "persist": persist,
+        "persist_block": persist_block,
+        "loaded": list(LOADED),
+        "failed": dict(FAILED),
+        "n_loaded": len(LOADED),
+        "n_failed": len(FAILED),
+        "never_book_owner": True,
+        "fn_idle": True,
+        "verification_quarantined": True,
+        "challenge_writer": _is_challenge_writer(),
+        "n_declared": len(UNIQUE_MODULES),
+        "choice_hops": [
+            "place_choice",
+            "admission_place",
+            "size_exit",
+            "manage_choices",
+            "rung_choice",
+            "exec_gov_news",
+            "gold_sleeve_ifs",
+            "fear_withholds",
+        
+            "execution_choices",
+            "skip_choices",
+            "dig_a_place_choice_ensemble_noul_pair",],
+    }
+    if _is_challenge_writer():
+        try:
+            fear = importlib.import_module("src.components.ultimate_book.minimal_size")
+            boot = getattr(fear, "_fear_boot_stamp", None)
+            if callable(boot):
+                boot()
+        except Exception:
+            pass
+    _write_stamp(STAMP, canonical=_is_challenge_writer())
+    return STAMP
+
+
+
+def _would_be_intent() -> Any:
+    """This bar on the open gold book. The hop asks. This object does not send."""
+    return type(
+        "_WouldBe",
+        (),
+        {
+            "symbol": "XAUUSD",
+            "sleeve": "dsp_descending_lows_accepted",
+            "side": "long",
+            "tag": "dsp_descending_lows_accepted",
+            "details": {
+                "symbol": "XAUUSD",
+                "sleeve": "dsp_descending_lows_accepted",
+                "namespace": CHALLENGE_NS,
+                "ticket": NEVER_FLATTEN_TICKET,
+            },
+        },
+    )()
+
+
+def _open_gold_fact() -> dict[str, Any]:
+    return {
+        "ticket": NEVER_FLATTEN_TICKET,
+        "occupied": _gold_ticket_occupied(),
+        "symbol": "XAUUSD",
+        "never_flatten": True,
+    }
+
+
+def _account_facts() -> dict[str, Any]:
+    """Equity, to_pass, floor_room, closed profit. Facts for the place Choice."""
+    out: dict[str, Any] = {
+        "equity": None,
+        "to_pass": None,
+        "floor_room": None,
+        "closed_profit": None,
+    }
+    try:
+        eq = importlib.import_module("src.judgment.equity_frame")
+        state = eq.attach_account({"identity": {"login": CHALLENGE_LOGIN, "ns": CHALLENGE_NS}})
+    except Exception:
+        state = {}
+    blobs = []
+    if isinstance(state, dict):
+        blobs.append(state)
+        for key in ("account", "equity_frame", "card"):
+            if isinstance(state.get(key), dict):
+                blobs.append(state[key])
+    for blob in blobs:
+        for key in ("equity", "to_pass", "floor_room", "closed_profit"):
+            if out.get(key) is None and blob.get(key) is not None:
+                out[key] = blob.get(key)
+    return out
+
+
+def _sibling(module: str, fn: str, kwargs: dict[str, Any]) -> dict[str, Any]:
+    try:
+        mod = importlib.import_module(module)
+    except Exception as exc:  # noqa: BLE001
+        return {"present": False, "block": type(exc).__name__}
+    call = getattr(mod, fn, None)
+    if not callable(call):
+        return {"present": False}
+    try:
+        got = call(**kwargs)
+        slim = _slim(got)
+        slim["ok"] = True
+        slim["present"] = True
+        return slim
+    except Exception as exc:  # noqa: BLE001
+        return {"present": True, "ok": False, "block": f"{type(exc).__name__}: {exc}"}
+
+
+def _hop_reason(raw: Any) -> Any:
+    return raw
+
+
+def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) -> dict[str, Any]:
+    """Challenge observe. Occupancy is in the seat set. The would-be asks; it does not send.
+
+    Never leftover-ships book_owner. Never sends.
+    """
+
+    global _LAST_FIRE, _LAST_FIRE_MONO, _LAST_HEAVY_MONO, _WOULD_BE_DONE
+
+    ns = str(namespace or "").strip()
+    row: dict[str, Any] = {
+        "schema": "gtos.judgment.unique_observe.v1",
+        "action": "OBSERVE",
+        "origin": origin or "observe_unique_apply",
+        "namespace": ns,
+        "persist": PERSIST,
+        "broker_effect": False,
+        "leave_orig": True,
+        "n_loaded": len(LOADED),
+        "n_failed": len(FAILED),
+        "pid": os.getpid(),
+        "observed_at_utc": _now(),
+    }
+    if ns and ns != CHALLENGE_NS:
+        row["reason"] = "not_challenge"
+        return row
+    if not ns:
+        ns = CHALLENGE_NS
+        row["namespace"] = ns
+
+    now_m = time.monotonic()
+    if _LAST_FIRE and (now_m - _LAST_FIRE_MONO) < _FIRE_MIN_SEC:
+        cached = dict(_LAST_FIRE)
+        cached["reason"] = "unique_apply_throttled"
+        cached["observed_at_utc"] = _now()
+        cached["broker_effect"] = False
+        cached["throttled"] = True
+        return cached
+
+    try:
+        fc = importlib.import_module("src.judgment.friend_copy")
+        row["friend_copy"] = {
+            "schema": getattr(fc, "SCHEMA", None),
+            "agent_order_send": False,
+            "fn_idle": True,
+        }
+    except Exception as exc:  # noqa: BLE001
+        row["friend_copy_block"] = f"{type(exc).__name__}: {exc}"
+
+    try:
+        tape = importlib.import_module("src.judgment.news_tape_join")
+        status = tape.tape_join_status()
+        row["news"] = {
+            "NEWS_PROTOCOL_APPLIED": bool(getattr(tape, "NEWS_PROTOCOL_APPLIED", False)),
+            "mill_url": getattr(tape, "MILL_URL", None),
+            "invented": bool(status.get("invented")) if isinstance(status, dict) else False,
+        }
+    except Exception as exc:  # noqa: BLE001
+        row["news"] = {
+            "NEWS_PROTOCOL_APPLIED": False,
+            "mill_url": None,
+            "block": f"{type(exc).__name__}: {exc}",
+        }
+
+    seats = _observe_seats()
+    row["observe_seats"] = seats
+    challenge_state = {
+        "identity": {"login": CHALLENGE_LOGIN, "ns": CHALLENGE_NS},
+        "account": CHALLENGE_LOGIN,
+        "namespace": CHALLENGE_NS,
+        "login": CHALLENGE_LOGIN,
+        "open_gold": _open_gold_fact(),
+        "account_facts": _account_facts(),
+    }
+    rungs: dict[str, Any] = {}
+    run_heavy = (now_m - _LAST_HEAVY_MONO) >= _HEAVY_MIN_SEC or not _LAST_FIRE
+    if run_heavy:
+        rungs["isolated_15m"] = _try_rung(
+            "isolated_15m",
+            lambda: importlib.import_module("src.judgment.isolated_15m_reentry").maybe_prove_isolated_15m(),
+        )
+        rungs["daily_loop"] = _try_rung(
+            "daily_loop",
+            lambda: importlib.import_module("src.judgment.challenge_daily_loop").maybe_run_daily_loop(
+                login=CHALLENGE_LOGIN,
+                namespace=CHALLENGE_NS,
+            ),
+        )
+        rungs["command_center"] = _try_rung(
+            "command_center",
+            lambda: importlib.import_module("src.judgment.challenge_command_center").maybe_run_command_center(
+                login=CHALLENGE_LOGIN,
+                namespace=CHALLENGE_NS,
+            ),
+        )
+        rungs["hist_apply"] = _try_rung(
+            "hist_apply",
+            lambda: importlib.import_module("src.judgment.hist_apply_candidate").maybe_label(
+                login=CHALLENGE_LOGIN,
+                namespace=CHALLENGE_NS,
+            ),
+        )
+        rungs["remaining_ifs"] = _try_rung(
+            "remaining_ifs",
+            lambda: importlib.import_module("src.judgment.remaining_ifs").compose_remaining_ifs(
+                challenge_state,
+                None,
+                seat="companion",
+                branch="observe",
+                seats=tuple(seats),
+            ),
+        )
+        occ_obs = compose_occupancy_hop(challenge_state)
+        occ_obs["rung"] = "occupancy"
+        rungs["occupancy"] = occ_obs
+        rungs["friend_feedback"] = _try_rung(
+            "friend_feedback",
+            lambda: importlib.import_module("src.judgment.friend_feedback_loop").maybe_run_friend_feedback(
+                login=CHALLENGE_LOGIN,
+                namespace=CHALLENGE_NS,
+            ),
+        )
+        sib_state = dict(challenge_state)
+        rungs["sleeve_select"] = _sibling(
+            "src.judgment.sleeve_select",
+            "decide_sleeve_select_live",
+            {"symbol": "XAUUSD", "state": sib_state},
+        )
+        rungs["gold_sleeve"] = _sibling(
+            "src.judgment.gold_sleeve_ifs",
+            "decide_gold_sleeve_live",
+            {
+                "sleeve": "dsp_descending_lows_accepted",
+                "symbol": "XAUUSD",
+                "side": "long",
+                "state": sib_state,
+            },
+        )
+        try:
+            manage = importlib.import_module("src.judgment.manage_choices")
+            positions = _open_broker_positions()
+            asked: list[dict[str, Any]] = []
+            for pos in positions:
+                acts: dict[str, Any] = {}
+                for act in ("move_sl", "move_tp", "close"):
+                    facts = {
+                        "ticket": pos.get("ticket"),
+                        "symbol": pos.get("symbol"),
+                        "side": pos.get("side"),
+                        "lots": pos.get("lots"),
+                        "live_sl": pos.get("live_sl"),
+                        "entry": pos.get("entry") or pos.get("price_open"),
+                        "bid": pos.get("bid"),
+                        "ask": pos.get("ask"),
+                        "tp": pos.get("tp") or pos.get("live_tp"),
+                    }
+                    got = manage.decide(
+                        act,
+                        ticket=pos.get("ticket"),
+                        symbol=pos.get("symbol"),
+                        reason="open_position_heartbeat",
+                        facts=facts,
+                    )
+                    if (
+                        act == "move_sl"
+                        and isinstance(got, dict)
+                        and got.get("send")
+                        and got.get("choice") == "move_sl"
+                    ):
+                        got = manage.send_unique_move_sl(got, facts=facts)
+                    acts[act] = {
+                        "choice": got.get("choice") if isinstance(got, dict) else None,
+                        "probability": got.get("probability") if isinstance(got, dict) else None,
+                        "send": bool(got.get("send")) if isinstance(got, dict) else False,
+                        "decision_emitted": bool(got.get("decision_emitted")) if isinstance(got, dict) else False,
+                        "agent_order_send": bool(got.get("agent_order_send")) if isinstance(got, dict) else False,
+                    }
+                asked.append({"ticket": pos.get("ticket"), "symbol": pos.get("symbol"), "acts": acts})
+            only = asked[0] if len(asked) == 1 else None
+            sl_sent = any(
+                bool((item.get("acts") or {}).get("move_sl", {}).get("agent_order_send"))
+                for item in asked
+            )
+            row["manage"] = {
+                "ok": True,
+                "order_send": sl_sent,
+                "ticket": None if only is None else only["ticket"],
+                "acts": {} if only is None else only["acts"],
+                "positions": asked,
+            }
+        except Exception as exc:  # noqa: BLE001
+            row["manage"] = {"ok": False, "block": f"{type(exc).__name__}: {exc}", "order_send": False}
+        rungs["exec_gov_news"] = _sibling(
+            "src.judgment.exec_gov_news",
+            "maybe_run_news_skip",
+            {"state": sib_state},
+        )
+        rungs["state_choices"] = _sibling(
+            "src.judgment.state_choices",
+            "maybe_ask_surface",
+            {"namespace": CHALLENGE_NS},
+        )
+        rungs["learning_choices"] = _sibling(
+            "src.judgment.learning_choices",
+            "maybe_ask_learning",
+            {"namespace": CHALLENGE_NS},
+        )
+        _LAST_HEAVY_MONO = now_m
+        row["heavy"] = True
+        if _is_challenge_writer() and not _WOULD_BE_DONE and origin != "gate_order_send":
+            _WOULD_BE_DONE = True
+            try:
+                would = gate_order_send(
+                    intent=_would_be_intent(),
+                    login=CHALLENGE_LOGIN,
+                    namespace=CHALLENGE_NS,
+                    origin="observe_would_be",
+                    extra_state={"open_gold": _open_gold_fact(), "account_facts": _account_facts()},
+                )
+                row["would_be"] = {
+                    "action": would.get("action"),
+                    "choice": would.get("choice"),
+                    "unique_highest": would.get("unique_highest"),
+                    "asked": would.get("asked"),
+                }
+            except Exception as exc:  # noqa: BLE001
+                row["would_be_block"] = f"{type(exc).__name__}: {exc}"
+    else:
+        rungs = dict((_LAST_FIRE.get("rungs") or {}))
+        if isinstance(_LAST_FIRE.get("manage"), dict):
+            row["manage"] = _LAST_FIRE["manage"]
+        row["heavy"] = False
+        row["heavy_throttled"] = True
+
+    row["rungs"] = rungs
+    row["rung_ok"] = {k: bool(v.get("ok")) for k, v in rungs.items() if isinstance(v, dict)}
+    row["reason"] = "unique_apply_observed"
+    row["broker_effect"] = False
+    row["learn_loop_env"] = _truthy(os.environ.get("GTOS_JEV_LEARN_LOOP"))
+    row["trained_models_env"] = _truthy(os.environ.get("GTOS_JEV_TRAINED_MODELS"))
+    row["x_dig_env"] = _truthy(os.environ.get("GTOS_JEV_X_DIG"))
+    if _is_challenge_writer():
+        try:
+            fear = importlib.import_module("src.components.ultimate_book.minimal_size")
+            boot = getattr(fear, "_fear_boot_stamp", None)
+            if callable(boot):
+                boot()
+        except Exception:
+            pass
+    _LAST_FIRE = dict(row)
+    _LAST_FIRE_MONO = now_m
+    _write_observe(row)
+    return row
+
+
+def _intent_details(intent: Any) -> dict[str, Any]:
+    det = getattr(intent, "details", None) if intent is not None else None
+    if isinstance(det, dict):
+        return det
+    return {}
+
+
+def _choice_of(obj: Any) -> Any:
+    if not isinstance(obj, dict):
+        return None
+    for key in ("choice", "action", "admit", "disposition"):
+        val = obj.get(key)
+        if val:
+            return val
+    return None
+
+
+def gate_order_send(
+    *,
+    intent: Any = None,
+    login: Any = None,
+    namespace: Any = None,
+    tick: Any = None,
+    unit: Any = None,
+    extra_state: dict[str, Any] | None = None,
+    origin: str | None = None,
+) -> dict[str, Any]:
+    """Ask place, admit, size, followthrough, and occupancy.
+
+    The place decision is the unique highest place Choice.
+    Admission, size, followthrough, and occupancy are recorded.
+    This function does not send.
+    """
+
+    ns = str(namespace or "").strip()
+    row: dict[str, Any] = {
+        "schema": "gtos.judgment.unique_gate.v1",
+        "origin": origin or "gate_order_send",
+        "namespace": ns or CHALLENGE_NS,
+        "persist": PERSIST,
+        "broker_effect": False,
+        "never_flatten_ticket": NEVER_FLATTEN_TICKET,
+        "n_loaded": len(LOADED),
+        "n_failed": len(FAILED),
+        "pid": os.getpid(),
+        "gated_at_utc": _now(),
+        "observed_at_utc": _now(),
+    }
+    if ns and ns != CHALLENGE_NS:
+        row["action"] = None
+        row["choice"] = None
+        row["reason"] = "not_challenge"
+        return row
+
+    details = _intent_details(intent)
+    hops: dict[str, Any] = {}
+    asked: dict[str, bool] = {}
+    gold = _open_gold_fact()
+    place_extra = dict(extra_state or {})
+    place_extra["open_gold"] = gold
+    place_extra["account_facts"] = _account_facts()
+
+    place = details.get("jev_place_receipt") if isinstance(details.get("jev_place_receipt"), dict) else None
+    if place is None:
+        try:
+            pc = importlib.import_module("src.judgment.place_choice")
+            place = pc.evaluate_place_choice(
+                intent,
+                login=login or CHALLENGE_LOGIN,
+                namespace=ns or CHALLENGE_NS,
+                extra_state=place_extra,
+                observe=False,
+            )
+            asked["place"] = True
+        except Exception as exc:  # noqa: BLE001
+            place = {
+                "action": None,
+                "choice": None,
+                "source": "place_hop_exception",
+                "error": type(exc).__name__,
+                "seat": "gate",
+            }
+            asked["place"] = False
+    else:
+        asked["place"] = True
+    if not isinstance(place, dict):
+        place = {}
+    choice = place.get("action")
+    if isinstance(choice, str):
+        choice = choice.strip().upper() or None
+    hops["place"] = {
+        "action": choice,
+        "choice": choice,
+        "probabilities": place.get("probabilities"),
+        "unique_highest": place.get("unique_highest") is True,
+        "probability": place.get("probability"),
+        "source": place.get("source"),
+        "error": place.get("error"),
+        "posted_ids": place.get("posted_ids"),
+        "n_posted": place.get("n_posted"),
+        "seat": place.get("seat") or "gate",
+        "model": place.get("model") or "jev-1.13.0",
+        "asked": bool(asked.get("place")),
+    }
+
+    admit = details.get("jev_admission_receipt") if isinstance(details.get("jev_admission_receipt"), dict) else None
+    if admit is None:
+        try:
+            ap = importlib.import_module("src.judgment.admission_place")
+            decision = ap.decide_admission_place(
+                intent=intent,
+                tick=tick,
+                unit=unit,
+                login=login or CHALLENGE_LOGIN,
+                ns=ns or CHALLENGE_NS,
+            )
+            admit = decision.as_dict() if hasattr(decision, "as_dict") else {}
+            asked["admission"] = True
+        except Exception as exc:  # noqa: BLE001
+            admit = {
+                "admit": None,
+                "reason": "admission_hop_exception",
+                "disposition": None,
+                "error": type(exc).__name__,
+            }
+            asked["admission"] = False
+    else:
+        asked["admission"] = True
+    if not isinstance(admit, dict):
+        admit = {}
+    admit_choice = admit.get("admit") or admit.get("disposition")
+    hops["admission"] = {
+        "admit": admit_choice,
+        "choice": admit.get("choice") or admit_choice,
+        "probabilities": admit.get("probabilities"),
+        "unique_highest": admit.get("unique_highest"),
+        "probability": admit.get("probability"),
+        "disposition": admit.get("disposition"),
+        "reason": admit.get("reason"),
+        "error": admit.get("error"),
+        "seat": "admission",
+        "seat_ids": admit.get("seat_ids"),
+        "asked": bool(asked.get("admission")),
+    }
+
+    size_state = dict(place_extra)
+    size_state.setdefault("identity", {"login": login or CHALLENGE_LOGIN, "ns": ns or CHALLENGE_NS})
+    size_d: dict[str, Any] = {}
+    try:
+        se = importlib.import_module("src.judgment.size_exit")
+        try:
+            sized = se.decide_size_exit(state=size_state, evaluate_jev=True)
+        except TypeError:
+            sized = se.decide_size_exit(state=size_state)
+        size_d = sized.as_dict() if hasattr(sized, "as_dict") else (sized if isinstance(sized, dict) else {})
+        asked["size"] = True
+    except Exception as exc:  # noqa: BLE001
+        size_d = {"action": None, "error": type(exc).__name__, "source": "size_hop_exception"}
+        asked["size"] = False
+    size_choice = size_d.get("choice") or size_d.get("action")
+    if not asked.get("size"):
+        size_d["account_facts"] = place_extra.get("account_facts") or _account_facts()
+    hops["size"] = {
+        "action": size_choice,
+        "choice": size_choice,
+        "probabilities": size_d.get("probabilities"),
+        "unique_highest": size_d.get("unique_highest"),
+        "probability": size_d.get("probability"),
+        "seat": "size",
+        "size_ids": size_d.get("size_ids"),
+        "n_posted": len(size_d.get("size_ids") or []) or size_d.get("n_posted"),
+        "asked": bool(asked.get("size")),
+        "source": size_d.get("source"),
+        "account_facts": size_d.get("account_facts"),
+    }
+
+    leftover_row: dict[str, Any] = {}
+    try:
+        ft = importlib.import_module("src.judgment.followthrough")
+        state = {
+            "identity": {"login": login or CHALLENGE_LOGIN, "ns": ns or CHALLENGE_NS},
+            "account": login or CHALLENGE_LOGIN,
+            "namespace": ns or CHALLENGE_NS,
+            "open_gold": gold,
+            "account_facts": place_extra.get("account_facts"),
+        }
+        try:
+            got = ft.compose_from_intent(state, None, branch="leftover", evaluate_jev=True)
+        except TypeError:
+            got = ft.compose_from_intent(state, branch="leftover", evaluate_jev=True)
+        leftover_row = got if isinstance(got, dict) else {}
+        asked["leftover"] = True
+    except Exception as exc:  # noqa: BLE001
+        leftover_row = {"decision": {"disposition": None, "error": type(exc).__name__}}
+        asked["leftover"] = False
+    decision = leftover_row.get("decision") if isinstance(leftover_row.get("decision"), dict) else {}
+    left_choice = _choice_of(decision) or _choice_of(leftover_row)
+    pack_keys = leftover_row.get("pack_payload_keys") if isinstance(leftover_row, dict) else None
+    hops["leftover"] = {
+        "choice": left_choice,
+        "disposition": decision.get("disposition"),
+        "leave_orig": decision.get("leave_orig"),
+        "reason": decision.get("reason"),
+        "seat": "leftover",
+        "n_posted": len(pack_keys) if isinstance(pack_keys, list) else None,
+        "asked": bool(asked.get("leftover")),
+    }
+
+    occ = compose_occupancy_hop(
+        _occupancy_state(login=login or CHALLENGE_LOGIN, namespace=ns or CHALLENGE_NS)
+    )
+    asked["occupancy"] = bool(occ.get("asked"))
+    hops["occupancy"] = {
+        "seat": OCCUPANCY_SEAT,
+        "choice": occ.get("choice"),
+        "disposition": occ.get("disposition"),
+        "reason": occ.get("reason"),
+        "occupancy_after_close": occ.get("occupancy_after_close"),
+        "keep_one": occ.get("keep_one"),
+        "gold_ticket_occupied": occ.get("gold_ticket_occupied"),
+        "pack_ids": occ.get("pack_ids"),
+        "n_posted": occ.get("n_posted"),
+        "occupancy_hold_dead": True,
+        "asked": bool(occ.get("asked")),
+    }
+
+    row["hops"] = hops
+    row["asked"] = asked
+    row["action"] = choice
+    row["choice"] = choice
+    row["unique_highest"] = hops["place"].get("unique_highest") is True
+    row["probability"] = hops["place"].get("probability")
+    row["probabilities"] = hops["place"].get("probabilities")
+    row["model"] = "jev-1.13.0"
+    row["reason"] = "place_choice" if choice else "no_choice"
+    row["broker_effect"] = False
+    row["observe_seats"] = _observe_seats()
+
+    try:
+        det = getattr(intent, "details", None)
+        if isinstance(det, dict):
+            det["jev_send_gate"] = {
+                "action": choice,
+                "choice": choice,
+                "unique_highest": row.get("unique_highest"),
+                "model": "jev-1.13.0",
+            }
+    except Exception:
+        pass
+
+    fire = dict(row)
+    fire["schema"] = "gtos.judgment.unique_fire.v1"
+    _write_fire(fire)
+    return row

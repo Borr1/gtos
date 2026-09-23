@@ -1,0 +1,6 @@
+before 550aa72d7 ('Merge wave21/three-month-postmortem: Feb PASS / AprMay REJECT autopsy, family scope, geometry, V2 spec + pass bars — the BAR-3 definition source bound by BAR3_RATIFICATION_20260811'): 52 bad
+after  72021a607 ('Wave-21 forward-shadow: frozen-fit would-trade-rate diagnostic (owner-relevant LSR-lane finding)'): 52 bad
+unchanged: 52   fixed: 0   REGRESSED: 0
+
+No regressions.
+DIFF_EXIT=0

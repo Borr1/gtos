@@ -1,0 +1,26 @@
+## Filtering Complete
+
+**226 claims → 28 findings (12.4% hit rate)**
+
+### Key Results:
+
+**5 FALSE BELIEFS identified** (popular YouTube advice our data refutes):
+1. **Sweep improves OB quality** — 5 videos promote this; our data: ANTI-PREDICTIVE (71.6% without vs 63.4% with)
+2. **M1 refinement improves RR** — 3 videos; our data: -0.414R/trade trap
+3. **Day-of-week matters** — 3 videos; our data: p=0.768 null
+4. **Bigger OBs are better** — 1 video; our data: p=0.97 null
+5. **COT predicts gold** — 1 video; our data: r=+0.048 (p=0.495)
+
+**5 CONVERGENT clusters** (independent sources confirm our findings):
+1. Sweep filters hurt (Trader Zan's 10-year quant test independently confirms)
+2. 3R target optimal across strategies
+3. No break-even stops on mechanical systems
+4. M1 entries kill accounts (prop firm data confirms)
+5. OB/FVG freshness matters (untested in our system — top priority new variable)
+
+**Top new testable variables**: OB freshness, NWOG alignment, body vs wick BOS on gold, stacked OB behavior.
+
+Agent 4 can now start. Signal file updated.
+s/.agent3_done`
+
+Agent 4 can now start.

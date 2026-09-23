@@ -1,0 +1,123 @@
+--- a/src/mt5/mt5_real.py  (host-local)
++++ b/src/mt5/mt5_real.py  (phase3/safety-spine)
+@@ -25,6 +25,12 @@
+ from typing import Optional
+ 
+ from .mt5_interface import MT5Interface, TickData, PositionInfo, OrderResult, MAGIC_NUMBER
++from src.safety.activation_token import (
++    PositionsUnavailable,
++    account_digest,
++    enforce_broker_mutation_authorized,
++    strict_positions_provider,
++)
+ 
+ # Plausible broker-server UTC offset band for the deployed props (FTMO ~UTC+2/+3 CET/EET, redacted_account
+ # ~UTC+3 EET) with DST + margin. A tick-derived offset outside this band is a stale/closed-market quote
+@@ -387,8 +393,107 @@
+         if info and info.margin_mode == 0:
+             return "netting"
+         return "hedging"
++
++    def set_activation_context(
++        self,
++        *,
++        namespace: str | None = None,
++        config_digest_sha256: str | None = None,
++    ) -> None:
++        """Declare which namespace/config this adapter is running under.
++
++        A token may bind either. A binding the token declares and this process
++        cannot answer is a **denial**, not a pass, so an entrypoint that trades
++        under a namespace must say so here or its own token will refuse it.
++        """
++
++        self._activation_namespace = namespace or None
++        self._activation_config_digest = config_digest_sha256 or None
++
++    @strict_positions_provider
++    def positions_for_activation(self, symbol: str = "") -> list:
++        """Positions as the BROKER sees them — for the activation gate only.
++
++        ``get_positions`` is the wrong reader for an authorization decision, in
++        three ways that all point the same direction: they make a live position
++        look absent, and an absent position turns a close into "new exposure".
+ 
++        * It **masks a failed read as an empty list** (line 321-322:
++          ``if positions is None: return []``). ``MetaTrader5.positions_get``
++          signals failure with ``None``, so a transient IPC/terminal hiccup was
++          indistinguishable from a flat account. This method raises
++          ``PositionsUnavailable`` instead, which the gate treats as *unverified*
++          and therefore lets the close through.
++        * It **filters by magic** (line 333). The gate's question is "does this
++          ticket exist at the broker", not "does this book own it" — a position
++          adopted from an earlier deployment, opened by hand, or carrying a
++          changed magic must still be closable.
++        * It is **called with the request's symbol**, so a broker-suffixed or
++          mis-resolved symbol could hide the position. This reads the whole
++          account in one round-trip; ``symbol`` is accepted and ignored to keep
++          the provider signature.
++
++        Returns the raw broker records. The gate reads ``ticket``/``type``/
++        ``volume``/``sl`` off them by attribute, exactly as it does for
++        ``PositionInfo``, so no conversion is needed — and no conversion means
++        no second place for a filter to reappear.
++        """
++
++        module = self._mt5
++        if module is None:
++            raise PositionsUnavailable("MT5 module not initialised")
++        try:
++            positions = module.positions_get()
++        except Exception as exc:  # noqa: BLE001 — surface as unavailability, not a crash
++            raise PositionsUnavailable(f"positions_get raised: {exc!r}") from exc
++        if positions is None:
++            raise PositionsUnavailable("positions_get returned None — the broker read failed")
++        return list(positions)
++
++    def account_login_sha256(self) -> "str | None":
++        """The connected account's login digest, using the same convention the
++        profiles carry in ``broker_profile.expected_account.login_sha256``.
++        Cached: the login cannot change without a reconnect."""
++
++        cached = getattr(self, "_account_login_sha256", None)
++        if cached:
++            return cached
++        module = getattr(self, "_mt5", None)
++        if module is None:
++            return None
++        try:
++            info = module.account_info()
++            login = getattr(info, "login", None) if info is not None else None
++        except Exception:  # noqa: BLE001 — identity unavailable is a denial, not a crash
++            return None
++        if not login:
++            return None
++        digest = account_digest(login)
++        self._account_login_sha256 = digest
++        return digest
++
+     def order_send(self, request: dict) -> OrderResult:
++        # THE ACTIVATION CHOKE POINT.
++        #
++        # Every broker mutation the engine performs arrives here: execution.py's
++        # four direct sites, its one `executor.submit(self.mt5.order_send, ...)`
++        # site (invisible to any AST census keyed on a Call node, C2 — and
++        # covered automatically by a check inside the callee), and anything
++        # added later. Exposure-increasing requests need a valid activation
++        # token for THIS account; risk-reducing ones never do, so an expired
++        # token can never trap the account in an open position.
++        #
++        # The provider is `positions_for_activation`, NOT `get_positions`: the
++        # latter masks a failed broker read as `[]`, which made a close look
++        # like new exposure and refused it — the never-strand invariant failing
++        # in exactly the state it exists for (B101).
++        enforce_broker_mutation_authorized(
++            request,
++            account_login_sha256=self.account_login_sha256(),
++            positions_provider=self.positions_for_activation,
++            namespace=getattr(self, "_activation_namespace", None),
++            config_digest_sha256=getattr(self, "_activation_config_digest", None),
++        )
+         result = self._mt5.order_send(request)
+         if result is None:
+             return OrderResult(retcode=10011, order=0, volume=0, price=0,

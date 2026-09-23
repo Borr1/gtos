@@ -1,0 +1,38 @@
+========================================================================
+BATCH BACKTEST REPORT (DUAL KILL ZONE)
+========================================================================
+  Billing mode:             Batch API (50% discount)
+
+── Overview ──────────────────────────────────────────────
+  Total sessions (days):    80
+  Days with trades:         12
+  Total trades:             14  (London: 6, NY: 8)
+  Trade frequency:          17.5% (trades/session)
+
+── Trade Outcomes ────────────────────────────────────────
+  Wins:                     10
+  Losses:                   4
+  Breakeven:                0
+  Win rate:                 71.4%
+
+── R-Multiple Analysis ───────────────────────────────────
+  Total R:                  +6.64R
+  Avg winner:               0.94R
+  Avg loser:                0.70R
+  Expectancy:               0.47R per trade
+
+── Per-Framework Breakdown ───────────────────────────────
+  ob_retest: 14 trades, WR=71%, W=10 L=4, Exp=0.47R, Total=6.64R
+
+── Candle Decision Breakdown ─────────────────────────────
+  Total candles submitted:  2080
+  CANDIDATE:                16
+  NO_TRADE:                 1981
+
+── Batch API Cost ────────────────────────────────────────
+  Total LLM calls:          1997
+  Batch cost (50% off):     $25.5264
+  Cost per session:         $0.3191
+  vs sequential API est:    ~$51.0527 (2x batch)
+
+========================================================================

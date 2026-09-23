@@ -1,0 +1,312 @@
+route_id: vnext_moonshot_production_replacement_activation_2026_05_26
+stage_id: stage_11_activation_dossier_and_config_overlay
+schema_version: vnext_replacement_stage11_config_overlay_diff_v2
+generated_at_utc: '2026-05-26T14:59:45Z'
+repo_config_changed_by_stage11: false
+application_state:
+  production_activation_overlay_applied_now: false
+  required_gate_before_application: stage_12_final_semantic_verifier_status_passed
+  reason: Stage13 repaired the activation selector mechanically. The production overlay
+    now maps to the row-level repaired FVG/FOLLOW/broker-native/configured-KZ/selected-policy
+    BE-after-trigger slice rather than the toxic source-bound default-primary slice.
+  external_surfaces_not_used:
+  - live_trading
+  - broker_account_order_deal_position_history_mutation
+  - paid_api_or_vendor_model_calls
+  - credential_changes
+  - remote_push
+  - destructive_source_deletion
+  - history_rewrite
+input_guardrails:
+  candidate_rows: 253234
+  dynamic_policy_replay_rows: 214536
+  old_gtos_live_current_j46_j49_expectancy_r: 0.18021810925213116
+  moonshot_be_after_trigger_expectancy_r: 0.3894716001928676
+  activated_default_source_bound_primary_expectancy_r: -0.4555420048452026
+  activated_default_source_bound_primary_total_r: -7197.108134549356
+  activated_default_source_bound_primary_selected_count: 15799
+  activated_default_source_bound_primary_blocks_production_overlay: true
+  stage05_warnings:
+  - activated_source_bound_primary_rows_have_nonpositive_expectancy_stage12_must_not_apply_overlay
+  stage09_paid_calls_made: 0
+  stage09_route_state_budget_cap_usd: null
+  stage13_activation_repair_summary: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_REPAIRED_ACTIVATION_OVERLAY_SUMMARY_2026-05-26.json
+  stage13_activation_repair_ledger: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_REPAIRED_ACTIVATION_OVERLAY_LEDGER_2026-05-26.jsonl
+  stage13_failure_enumeration: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_STAGE13_ACTIVATION_REPAIR_FAILURE_ENUMERATION_2026-05-26.json
+  repaired_production_activation_overlay_selected_count: 6479
+  repaired_production_activation_overlay_expectancy_r: 0.9261009412722961
+  repaired_production_activation_overlay_total_r: 6000.207998503207
+  repaired_production_activation_overlay_profit_factor: 7.283047601691435
+  repaired_production_activation_overlay_win_rate: 0.7158512116067295
+  repaired_overlay_beats_old_gtos: true
+  repaired_overlay_beats_fixed_1_5r: true
+  repaired_overlay_source_incomplete_rows_with_capture_monitoring: 2587
+selected_replacement:
+  candidate_name: moonshot_fvg_be_after_trigger_prop_aware_router
+  primary_framework: fvg_fill
+  primary_branch: origin_current_fvg_fill
+  dynamic_execution_policy: be_after_trigger
+  replaces: live_current_j46_j49
+  prop_policy_reference: ACCOUNT_ABANDON_OR_RESTART
+  prop_default_retained_over_condition_challenger: true
+  condition_challenger_status: condition_router_beats_global_row_expectancy_but_is_rejected_as_primary_prop_default_from_local_prop_replay
+  best_stream_allowed_trades: 49002
+  best_stream_expectancy_r: 0.583865928044
+  best_stream_total_r: 28610.598206027866
+  best_stream_expected_payout_proxy_usd_fee599_payout8000: 7842.539723
+  best_stream_pass_probability_proxy: 0.981666130589
+  repaired_activation_selected_rows: 6479
+  repaired_activation_expectancy_r: 0.9261009412722961
+  repaired_activation_total_r: 6000.207998503207
+  repaired_activation_profit_factor: 7.283047601691435
+  repaired_activation_win_rate: 0.7158512116067295
+  repaired_condition_challenger_expectancy_r: 1.0080148665105177
+  condition_challenger_raw_subset_status: higher_raw_expectancy_but_not_prop_default;
+    Stage11 prop-aware replay retains BE because ACCOUNT_ABANDON_OR_RESTART comparison
+    has higher EV per terminal day and more accepted trades
+current_shadow_base:
+  config_path: config/agent_config.yaml
+  gtos_vnext_runtime:
+    enabled: true
+    mode: shadow
+    apply_to_execution: false
+    pre_ai_apply_to_ai_call: false
+    ai_policy_apply_to_ai_call: false
+    ai_policy_follow_no_ai_enabled: false
+    pending_policy_enabled: true
+    ltf_path_execution_apply_to_execution: false
+    prop_safe_selector_apply_to_execution: false
+    moonshot_dynamic_execution_router_enabled: false
+    moonshot_dynamic_execution_router_apply_to_execution: false
+    moonshot_dynamic_execution_router_policy: be_after_trigger
+    moonshot_dynamic_execution_router_condition_challenger_enabled: false
+    replacement_monitoring_enabled: true
+    replacement_monitoring_log_enabled: true
+    replacement_monitoring_log_path: shadow_logs/gtos_vnext_replacement_monitoring.jsonl
+    replacement_ml_apply_to_execution: false
+    exit_management_residue_apply_to_execution: false
+    ready8_failure_control_residue_apply_to_execution: false
+  deployment_phase_change: none
+demo_shadow_overlay:
+  allowed_without_broker_or_account_mutation: true
+  purpose: Log replacement decisions, dynamic policy, source completeness, and monitoring
+    surfaces without changing orders.
+  config:
+    gtos_vnext_runtime:
+      enabled: true
+      mode: demo_shadow_vnext_replacement
+      apply_to_execution: false
+      pre_ai_apply_to_ai_call: false
+      ai_policy_apply_to_ai_call: false
+      ai_policy_follow_no_ai_enabled: false
+      pending_policy_enabled: true
+      ltf_path_execution_apply_to_execution: false
+      prop_safe_selector_apply_to_execution: false
+      moonshot_dynamic_execution_router_enabled: true
+      moonshot_dynamic_execution_router_apply_to_execution: false
+      moonshot_dynamic_execution_router_policy: be_after_trigger
+      moonshot_dynamic_execution_router_condition_challenger_enabled: false
+      replacement_monitoring_enabled: true
+      replacement_monitoring_log_enabled: true
+      replacement_monitoring_log_path: shadow_logs/gtos_vnext_replacement_monitoring.jsonl
+      replacement_ml_apply_to_execution: false
+      exit_management_residue_apply_to_execution: false
+      ready8_failure_control_residue_apply_to_execution: false
+semantic_gated_production_activation_overlay_candidate:
+  application_gate: Apply only after Stage12 semantic verifier passes overlay behavioral
+    diff and rollback proof.
+  must_fail_if:
+  - repaired_production_activation_overlay_expectancy_r_below_zero
+  - repaired_production_activation_overlay_expectancy_r_below_old_gtos_without_positive_ev_proof
+  - branch_label_not_follow_receives_execution_effect
+  - selected_policy_same_bar_ambiguous_rows_receive_execution_effect
+  - outside_configured_kill_zone_or_broker_unavailable_rows_receive_execution_effect
+  - source_completeness_used_as_trade_selection_proxy
+  - prop_safe_selector_apply_to_execution_false
+  - ltf_path_execution_apply_to_execution_false
+  - monitoring_log_absent_or_missing_required_surfaces
+  - ml_apply_to_execution_true_without_sealed_validation
+  deployment_phase_change: none_in_this_route_without_owner_account_runtime_start_approval
+  config:
+    gtos_vnext_runtime:
+      enabled: true
+      mode: production_replacement_vnext_moonshot
+      apply_to_execution: true
+      pre_ai_apply_to_ai_call: true
+      ai_policy_apply_to_ai_call: false
+      ai_policy_follow_no_ai_enabled: true
+      ai_policy_allow_mixed_ai_resolution: true
+      pending_policy_enabled: true
+      ltf_path_execution_apply_to_execution: true
+      prop_safe_selector_apply_to_execution: true
+      moonshot_dynamic_execution_router_enabled: true
+      moonshot_dynamic_execution_router_apply_to_execution: true
+      moonshot_dynamic_execution_router_policy: be_after_trigger
+      moonshot_dynamic_execution_router_condition_challenger_enabled: false
+      moonshot_dynamic_execution_router_replaces_policy: live_current_j46_j49
+      replacement_monitoring_enabled: true
+      replacement_monitoring_log_enabled: true
+      replacement_monitoring_log_path: shadow_logs/gtos_vnext_replacement_monitoring.jsonl
+      replacement_ml_apply_to_execution: false
+      risk_adjustment_enabled: true
+      risk_zero_blocks_execution: true
+      exit_management_residue_apply_to_execution: false
+      ready8_failure_control_residue_apply_to_execution: false
+      moonshot_dynamic_execution_router_ordered_path_scope: selected_policy
+      moonshot_dynamic_execution_router_source_window_complete_blocks_activation: false
+      moonshot_dynamic_execution_router_require_configured_kill_zone: true
+      moonshot_dynamic_execution_router_repaired_overlay_selector: fvg_follow_broker_native_configured_kz_selected_policy_ordered_be_after_trigger
+      moonshot_dynamic_execution_router_stage13_repair_summary_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_REPAIRED_ACTIVATION_OVERLAY_SUMMARY_2026-05-26.json
+rollback_overlay:
+  purpose: Restore current shadow/default-off execution behavior while retaining monitoring.
+  config:
+    gtos_vnext_runtime:
+      enabled: true
+      mode: shadow
+      apply_to_execution: false
+      pre_ai_apply_to_ai_call: false
+      ai_policy_apply_to_ai_call: false
+      ai_policy_follow_no_ai_enabled: false
+      pending_policy_enabled: true
+      ltf_path_execution_apply_to_execution: false
+      prop_safe_selector_apply_to_execution: false
+      moonshot_dynamic_execution_router_enabled: false
+      moonshot_dynamic_execution_router_apply_to_execution: false
+      moonshot_dynamic_execution_router_policy: be_after_trigger
+      moonshot_dynamic_execution_router_condition_challenger_enabled: false
+      replacement_monitoring_enabled: true
+      replacement_monitoring_log_enabled: true
+      replacement_monitoring_log_path: shadow_logs/gtos_vnext_replacement_monitoring.jsonl
+      replacement_ml_apply_to_execution: false
+      exit_management_residue_apply_to_execution: false
+      ready8_failure_control_residue_apply_to_execution: false
+market_activation_phase_rules:
+  broker_native_live_feed_symbols:
+  - AUDJPY
+  - AUDUSD
+  - BTCUSD
+  - CHFJPY
+  - ETHUSD
+  - EURGBP
+  - EURJPY
+  - EURUSD
+  - GBPJPY
+  - GBPUSD
+  - JP225
+  - NAS100
+  - NZDUSD
+  - SPX500
+  - UK100
+  - US30_cash
+  - USDCAD
+  - USDCHF
+  - USDJPY
+  - XAGUSD
+  - XAUUSD
+  broker_native_activation_eligible_symbols:
+  - AUDJPY
+  - AUDUSD
+  - BTCUSD
+  - CHFJPY
+  - ETHUSD
+  - EURGBP
+  - EURJPY
+  - EURUSD
+  - GBPJPY
+  - GBPUSD
+  - JP225
+  - NAS100
+  - NZDUSD
+  - SPX500
+  - UK100
+  - US30_cash
+  - USDCAD
+  - USDCHF
+  - USDJPY
+  - XAGUSD
+  - XAUUSD
+  broker_native_symbols_initial_phase: demo_shadow_or_paper_capture_only_until_stage12_and_owner_runtime_handoff
+  broker_contract_verification_pending_not_excluded_symbols: []
+  broker_exact_excluded_symbols:
+  - GER40
+  - UKOIL_cash
+  - USOIL_cash
+  excluded_until_broker_source_exists_count: 0
+  legacy_live_deployment_symbols_not_activation_ceiling:
+  - GBPJPY
+  - GBPUSD
+  - NAS100
+  - US30_cash
+  - USDJPY
+  - XAGUSD
+  - XAUUSD
+  proxy_context_excluded_count: 0
+  forward_capture_requirement_rows: 33
+  market_source_invariant: Do not cap activation to the stale legacy deployment list.
+    Historical-only, source-missing, and Sierra-delayed context are not proof redacted_account
+    lacks a market; broker-native MT5/redacted_account contract verification decides eligibility.
+monitoring:
+  log_path: shadow_logs/gtos_vnext_replacement_monitoring.jsonl
+  surface_count: 10
+  surfaces:
+  - vnext_apply_status
+  - router_decisions
+  - label_effects
+  - avoid_mixed_legacy_distribution_and_execution_effect
+  - dynamic_exit_transitions
+  - ltf_pending_monitor_health
+  - prop_budget_projection
+  - source_capture_completeness
+  - old_live_fallback_leakage
+  - malformed_ai_responses
+  ml_apply_to_execution: false
+input_artifacts:
+  stage03_contract:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_PRODUCTION_CANDIDATE_CONTRACT_2026-05-26.json
+    sha256: 145197cc8900f18c9bd9289e08a4a061307d7ecc7af4df75a7bf683e09868863
+  stage05_summary:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_FULL_ACTIVATED_REPLAY_SUMMARY_2026-05-26.json
+    sha256: a80f4332d759faf4f7c3fe8ec83819cf0510010cae5f02b2bad2ffb2c608b988
+  stage05_verifier:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_FULL_ACTIVATED_REPLAY_VERIFIER_2026-05-26.json
+    sha256: 621aefed209c2b7548a37c44a381504d449a7f872cc1f06450e64fa58b525ac5
+  stage06_verifier:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_LEGACY_VS_VNEXT_DELTA_VERIFIER_2026-05-26.json
+    sha256: a0648f9aedd5b7d5e5559c8c5b8777c8c3fa954a23e7216ca7ee02e9081b2b0a
+  stage08_market_map:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_MARKET_SOURCE_ACTIVATION_MAP_2026-05-26.json
+    sha256: e7c50ed71730555cb36a08247b66f615fba0504ddcf33b1c5f507fe55c680ae2
+  stage09_ai_manifest:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_AI_CALIBRATION_MANIFEST_2026-05-26.json
+    sha256: b02f5a6bc90b700414ae5452c6f4765515801c381b5920c2a3cf3cd93b1889ed
+  stage10_monitoring_map:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_ML_MONITORING_INTEGRATION_MAP_2026-05-26.json
+    sha256: e7d7918ae29e881c03229949e797017897bf3963fea024cd8eefe127f1deea51
+  moonshot_runtime_map:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_substrate_dynamic_execution_repair_2026_05_26/VNEXT_MOONSHOT_RUNTIME_INTEGRATION_MAP_2026-05-26.json
+    sha256: 5bc95cad939f88a56d0c26312a50db23104604c486539f6e96ded20ef93dd0cf
+  moonshot_branch_summary:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_substrate_dynamic_execution_repair_2026_05_26/VNEXT_MOONSHOT_CORRECTED_BRANCH_SUMMARY_2026-05-26.json
+    sha256: c2ceff113e7724efc8afa56925f664ccc37ed75b9d4f0e9bcc7151169a839af2
+  moonshot_condition_map:
+    path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_substrate_dynamic_execution_repair_2026_05_26/VNEXT_MOONSHOT_STAGE11_CONDITION_ROUTER_INTEGRATION_MAP_2026-05-26.json
+    sha256: 876f54c723f1f263a7318ca1c6a59eec80a83a7f773450c4614d4bce4692921e
+stage13_activation_repair:
+  summary_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_REPAIRED_ACTIVATION_OVERLAY_SUMMARY_2026-05-26.json
+  ledger_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_REPAIRED_ACTIVATION_OVERLAY_LEDGER_2026-05-26.jsonl
+  failure_enumeration_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_STAGE13_ACTIVATION_REPAIR_FAILURE_ENUMERATION_2026-05-26.json
+  repaired_overlay_metrics:
+    selected_count: 6479
+    performance_count: 6479
+    total_r: 6000.207998503207
+    expectancy_r: 0.9261009412722961
+    win_rate: 0.7158512116067295
+    profit_factor: 7.283047601691435
+    wins: 4638
+    gross_win_r: 6955.191690953334
+    gross_loss_r: 954.9836924501277
+  source_completeness_rule: source_window_complete is capture-readiness evidence,
+    not a trade-selection rule; selected source-incomplete rows retain source-capture
+    monitoring fields
+  branch_semantics_rule: Only FOLLOW rows can receive execution effect; AVOID/MIXED/LEGACY
+    remain inert.

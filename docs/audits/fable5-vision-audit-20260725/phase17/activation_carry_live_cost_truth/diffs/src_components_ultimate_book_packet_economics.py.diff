@@ -1,0 +1,142 @@
+--- a/src/components/ultimate_book/packet_economics.py (host before CN)
++++ b/src/components/ultimate_book/packet_economics.py (host after CN)
+@@ -352,18 +352,73 @@
+     "broker_position_aggregate_commission",
+     "broker_position_aggregate_swap",
+     "broker_position_aggregate_fee",
+ )
+
++# CN / OD-ALL-IN. The live broker-net model now charges commission as its fourth term.  Keep the
++# legacy declaration beside it because every v2 packet already on disk has only the first three;
++# historical rows must remain readable as the contract they actually carried, not be silently
++# reinterpreted under today's model.
++LEGACY_MODELLED_COST_COMPONENTS: tuple[str, ...] = (
++    "spread_r",
++    "expected_slippage_r",
++    "swap_cost_r",
++)
++MODELLED_COST_COMPONENTS: tuple[str, ...] = (
++    "spread_r",
++    "expected_slippage_r",
++    "swap_cost_r",
++    "commission_r",
++)
++LEGACY_MODELLED_COST_EXCLUDES: tuple[str, ...] = ("commission",)
++MODELLED_COST_EXCLUDES: tuple[str, ...] = ()
++
+
+ def _as_float(value: Any) -> float | None:
+     if isinstance(value, bool) or value is None or (isinstance(value, str) and not value):
+         return None
+     try:
+         return float(value)
+     except (TypeError, ValueError):
+         return None
++
++
++def _modelled_cost_contract(src: Mapping[str, Any]) -> tuple[tuple[str, ...], tuple[str, ...]]:
++    """Resolve the component contract carried by one row, with v2-safe inference.
++
++    New producers write both declarations explicitly.  Old producers wrote neither (or only the
++    derived exclusion list), so absence must mean the historical three-component v2 contract.
++    """
++    raw_expected = src.get("modelled_cost_components_expected")
++    if isinstance(raw_expected, (list, tuple)) and all(
++        isinstance(value, str) and value for value in raw_expected
++    ):
++        expected = tuple(raw_expected)
++    else:
++        raw_components = src.get("modelled_cost_components")
++        version = str(src.get("modelled_cost_model_version") or "")
++        has_commission = (
++            isinstance(raw_components, Mapping) and "commission_r" in raw_components
++        )
++        expected = (
++            MODELLED_COST_COMPONENTS
++            if has_commission or version.endswith("_v3")
++            else LEGACY_MODELLED_COST_COMPONENTS
++        )
++
++    raw_excludes = src.get("modelled_cost_excludes")
++    if isinstance(raw_excludes, (list, tuple)) and all(
++        isinstance(value, str) and value for value in raw_excludes
++    ):
++        excludes = tuple(raw_excludes)
++    else:
++        excludes = (
++            MODELLED_COST_EXCLUDES
++            if "commission_r" in expected
++            else LEGACY_MODELLED_COST_EXCLUDES
++        )
++    return expected, excludes
+
+
+ def build_cost_block(outcome: Mapping[str, Any] | None) -> dict[str, Any] | None:
+     """Realized broker cost, separated from modelled cost, with the gap left computable.
+
+@@ -392,10 +447,45 @@
+     modelled_cost_r = _as_float(src.get("modelled_cost_r"))
+     spread_r = _as_float(src.get("spread_r"))
+     if not realized and not aggregate and modelled_cost_r is None and spread_r is None:
+         return None
+
++    # The modelled side, by set-difference like the realized side above.
++    expected_components, declared_excludes = _modelled_cost_contract(src)
++    raw_components = src.get("modelled_cost_components")
++    modelled_components: dict[str, float] = {}
++    if isinstance(raw_components, Mapping):
++        for key in expected_components:
++            val = _as_float(raw_components.get(key))
++            if val is not None:
++                modelled_components[key] = val
++    modelled_missing = sorted(set(expected_components) - set(modelled_components))
++    # Comparability is a property of BOTH sides. Subtracting is safe only when the realized side
++    # charges nothing the modelled side omits -- so an absent commission on the realized side is
++    # not a licence to subtract, it is just a row where the question has not arisen yet.
++    charged_commission = [
++        k for k in ("broker_entry_commission", "broker_exit_commission")
++        if realized.get(k) not in (None, 0.0)
++    ]
++    if modelled_cost_r is None:
++        modelled_comparable = None
++        modelled_incomparable_reason = "modelled_cost_absent"
++    elif charged_commission and "commission" in declared_excludes:
++        modelled_comparable = False
++        modelled_incomparable_reason = (
++            "realized_charges_commission_modelled_excludes_it:" + ",".join(sorted(charged_commission))
++        )
++    elif charged_commission and "commission_r" not in modelled_components:
++        modelled_comparable = False
++        modelled_incomparable_reason = "realized_charges_commission_modelled_commission_component_missing"
++    elif not realized:
++        modelled_comparable = None
++        modelled_incomparable_reason = "realized_cost_absent"
++    else:
++        modelled_comparable = True
++        modelled_incomparable_reason = None
++
+     # Set-difference, not accumulation: name what is absent.
+     missing = sorted(set(_REALIZED_COST_FIELDS) - set(realized))
+     block: dict[str, Any] = {
+         "contract_version": PACKET_ECONOMICS_CONTRACT_VERSION,
+         "realized_components": realized,
+@@ -404,10 +494,19 @@
+         "realized_provenance": MEASURED if realized else UNAVAILABLE,
+         "realized_complete": not missing,
+         "aggregate_components": aggregate or None,
+         "modelled_cost_r": modelled_cost_r,
+         "modelled_cost_provenance": MODELLED if modelled_cost_r is not None else UNAVAILABLE,
++        "modelled_components": modelled_components or None,
++        "modelled_components_expected": list(expected_components),
++        "modelled_components_missing": modelled_missing,
++        "modelled_cost_excludes": list(declared_excludes),
++        # The one boolean a cost reader needs before subtracting. False whenever the realized side
++        # charges a component the modelled side structurally cannot, which today is commission on
++        # every row that has one.
++        "modelled_vs_realized_comparable": modelled_comparable,
++        "modelled_vs_realized_incomparable_reason": modelled_incomparable_reason,
+         "spread_r": spread_r,
+         "spread_r_provenance": src.get("spread_r_provenance")
+         or (MEASURED if spread_r is not None else UNAVAILABLE),
+     }
+     # Only sum when the component set is complete. A partial sum is a wrong number wearing the

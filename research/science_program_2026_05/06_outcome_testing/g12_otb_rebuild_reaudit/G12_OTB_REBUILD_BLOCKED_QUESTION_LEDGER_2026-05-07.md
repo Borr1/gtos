@@ -1,0 +1,38 @@
+# G12 OTB Rebuild Blocked Question Ledger - 2026-05-07
+
+**Promotion verdict:** `NO_PROMOTION_VERDICT`
+
+## Blocking Questions
+
+| Family | Packet | Experiment | Next exact question |
+| --- | --- | --- | --- |
+| OTB1R | OTG0-PKT-017 | EXP-G11-OBSERVER-EXPANSION-006 | Should observer status rows be converted by a dedicated observer lifecycle logger, or should EXP-G11-OBSERVER-EXPANSION-006 stay blocked outside lifecycle/no-fill packet testing? |
+| OTB2R | OTG0-PKT-031 | EXP-G3-DC-OVERSHOOT-002 | Which source-specific input-only packet builder supplies dc_overshoot_ratio_at_decision_packet, decision_asof_utc, ordered_path_source_id, duplicate_group_id, source_hash, cost_model_version, same_bar_ambiguity_policy without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-032 | EXP-G3-DC-SWING-001 | Which source-specific input-only packet builder supplies dc_threshold_grid_packet, dc_event_count_at_decision, dc_event_rate_lookback_only, duplicate_group_id, source_hash, ordered_path_source_id without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-036 | EXP-G3-TDA-007 | Which source-specific input-only packet builder supplies embedding_window_end_at_decision, persistence_summary_packet, path_start_utc, path_end_utc, source_hash, duplicate_group_id without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-044 | EXP-G4-STOP-CASCADE-MOMENTUM-006 | Which source-specific input-only packet builder supplies registered_source_contracts, sweep_cascade_packet, entry_sl_tp_or_level_packet, matched_group_id_or_duplicate_group_id, source_hash, ordered_path_source_id without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-049 | EXP-G4G6-CASCADE-GENERIC-010 | Which source-specific input-only packet builder supplies registered_source_contracts, g4_g6_matched_packet, source_valid_flow_depth_fields, matched_group_id, source_symbol, source_hash without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-052 | EXP-G5-AMH-004 | Which source-specific input-only packet builder supplies unresolved_source_refs, monthly_decay_packet, month_closed_timestamp_utc, next_month_path_label_boundary, source_hash, duplicate_group_id, sample_floor_effective_n without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-053 | EXP-G5-CROWD-001 | Which source-specific input-only packet builder supplies google_trends_extractor_cache, source_publication_timestamp_utc, query_protocol_hash, crowding_proxy_value_asof, duplicate_group_id, ordered_path_source_id without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-056 | EXP-G5-PRED-003 | Which source-specific input-only packet builder supplies registered_source_contracts, stress_proxy_packet, g4_source_valid_stress_source, matched_baseline_packet, source_hash, duplicate_cluster_key without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-060 | G6-EXP-001-OB-VS-GENERIC-RETRACE | Which source-specific input-only packet builder supplies registered_source_contracts, ob_vs_generic_packet, generic_retrace_comparator, entry_sl_tp_or_level_packet, duplicate_setup_id, source_hash without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-062 | G6-EXP-003-OPENING-DRIVE-CONTINUATION | Which source-specific input-only packet builder supplies registered_source_contracts, opening_drive_packet, frozen_range_definition, path_start_utc, path_end_utc, cost_model_version, duplicate_breakout_key without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-063 | G6-EXP-004-EXHAUSTION-CHANGEPOINT | Which source-specific input-only packet builder supplies registered_source_contracts, exhaustion_changepoint_packet, threshold_freeze, ordered_path_source_id, duplicate_impulse_key, source_hash, cost_model_version without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-066 | G6-EXP-007-GOLD-ROUND-OB-CONFLUENCE | Which source-specific input-only packet builder supplies registered_source_contracts, round_number_band_packet, ob_bounds, liquidity_sweep_asof_fields, ordered_path_source_id, duplicate_ob_zone_key, source_hash without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-069 | EXP-G7-CROSSASSET-STRESS-008 | Which source-specific input-only packet builder supplies fred_dxy_parser_cache_asof_proof, stress_state_packet, source_cache_time_utc, stress_state_timestamp_utc, source_hash, ordered_path_source_id, duplicate_stress_episode_key without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-074 | EXP-G7-LBMA-FIX-004 | Which source-specific input-only packet builder supplies lbma_parser_timestamp_test, fix_window_packet, source_hash, timezone_rule, matched_non_fix_controls, ordered_path_source_id, duplicate_setup_fix_key without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+| OTB2R | OTG0-PKT-075 | EXP-G7-USD-REALRATE-001 | Which source-specific input-only packet builder supplies fred_dxy_validation_ready_cache, usd_realrate_state_packet, source_hash, publication_or_close_time_rule, ordered_path_source_id, duplicate_day_setup_key, same_day_daily_close_leakage_test without broker_actual_r, synthetic_path_r, win_loss, outcome_r, or replay-result columns? |
+
+## Nonblocking Residual Source/Covariate Questions
+
+These do not block this input-only prior-blocker reaudit, but they must be answered before any result implementation uses those covariates.
+
+| Family | Packet | Experiment | Residual question |
+| --- | --- | --- | --- |
+| OTB1R | OTG0-PKT-016 | EXP-G11-FRICTION-GATE-007 | For EXP-G11-FRICTION-GATE-007, should friction fields come from pending_limit_lifecycle spread fields, contract-spec snapshots, or a separate source-contract sidecar before outcome testing opens? |
+| OTB1R | OTG0-PKT-025 | EXP-G2-GARCH-LIFECYCLE-002 | For EXP-G2-GARCH-LIFECYCLE-002, which realized-vol/vol-of-vol as-of feature source should be packet-bound, or should G12 audit lifecycle truth separately from volatility covariates? |
+| OTB1R | OTG0-PKT-045 | EXP-G4-XAUUSD-FOOTPRINT-ABSORB-003 | For EXP-G4-XAUUSD-FOOTPRINT-ABSORB-003, which local Sierra/Databento/GTOS footprint source should be packet-bound before this lifecycle packet can be audited as source-complete? |
+| OTB1R | OTG0-PKT-055 | EXP-G5-NEWS-005 | For EXP-G5-NEWS-005, should a later packet builder add a local event-window matcher, or should the packet stay blocked until parser and no-lookahead fixtures are cleared? |
+| OTB1R | OTG0-PKT-059 | EXP-G5-XG7-MACRO-ATTN-009 | For EXP-G5-XG7-MACRO-ATTN-009, should a later packet builder add a local event-window matcher, or should the packet stay blocked until parser and no-lookahead fixtures are cleared? |
+| OTB1R | OTG0-PKT-071 | EXP-G7-FOMC-ATTN-003 | For EXP-G7-FOMC-ATTN-003, should a later packet builder add a local event-window matcher, or should the packet stay blocked until parser and no-lookahead fixtures are cleared? |
+| OTB1R | OTG0-PKT-079 | EXP-G8-CD2-02-SHORTVOL-LIFECYCLE-001 | For EXP-G8-CD2-02-SHORTVOL-LIFECYCLE-001, should Cboe same-day rows be treated as unavailable until next-day close, or remain blocked until official publication/legal timing is proven? |

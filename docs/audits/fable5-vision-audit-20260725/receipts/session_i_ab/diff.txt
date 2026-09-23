@@ -1,0 +1,16 @@
+before 8ed443982 ('Cleanup: retire twelve merged worktrees; preserve the unique .hermes campaign evidence'): 83 bad
+after  3e332cca2 ('Safety spine: behavioural tests for hole 3, the one deliverable that had none'): 74 bad
+unchanged: 74   fixed: 9   REGRESSED: 0
+
+FIXED:
+  + tests/safety/test_raw_broker_script_guards.py::test_the_raw_guard_allows_a_close_without_a_token
+  + tests/safety/test_raw_broker_script_guards.py::test_the_raw_guard_refuses_a_new_entry_without_a_token
+  + tests/test_fn_smoke_trade.py::test_run_symbol_does_not_report_closed_on_transient_positions_get_none
+  + tests/test_fn_smoke_trade.py::test_run_symbol_handles_entry_retcode_failure_gracefully
+  + tests/test_fn_smoke_trade.py::test_run_symbol_handles_order_send_returning_none
+  + tests/test_fn_smoke_trade.py::test_run_symbol_refuses_without_an_activation_token
+  + tests/test_fn_smoke_trade.py::test_run_symbol_reports_closed_with_real_pnl_on_success
+  + tests/test_fn_smoke_trade.py::test_run_symbol_reports_failed_to_close_when_position_persists
+  + tests/test_fn_smoke_trade.py::test_run_symbol_skips_telegram_on_failed_to_close
+
+No regressions.

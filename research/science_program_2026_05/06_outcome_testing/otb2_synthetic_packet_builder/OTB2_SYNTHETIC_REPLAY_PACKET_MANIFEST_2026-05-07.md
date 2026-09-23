@@ -1,0 +1,36 @@
+# OTB2 Synthetic Replay Packet Builder Manifest - 2026-05-07
+
+Promotion posture: `NO_PROMOTION_VERDICT`
+
+OTB2 built non-result packet artifacts only. It did not run replay outcomes,
+did not create quarantine/result outputs, did not call paid/API sources, and
+left `validation_safe=false` plus `outcome_review_opened=false`.
+
+## Summary
+
+- Packets decided: `16`
+- Ready for G12 blocker audit: `1`
+- Blocked with owner question: `15`
+- Local recovered path rows in ready packet: `86`
+- External fetches/API/Databento calls: `0`
+
+## Packet Decisions
+
+| Packet | Experiment | Decision | Records | Packet hash prefix |
+| --- | --- | --- | --- | --- |
+| OTG0-PKT-013 | G10-EXP-RISKBANK-005 | PACKET_READY_FOR_G12_BLOCKER_AUDIT | 86 | abe22c565fa72a69 |
+| OTG0-PKT-031 | EXP-G3-DC-OVERSHOOT-002 | BLOCKED_WITH_OWNER_QUESTION | 0 | bc5cbf09ab3625e4 |
+| OTG0-PKT-032 | EXP-G3-DC-SWING-001 | BLOCKED_WITH_OWNER_QUESTION | 0 | 464082e938f326a4 |
+| OTG0-PKT-036 | EXP-G3-TDA-007 | BLOCKED_WITH_OWNER_QUESTION | 0 | be6f92d45feb59c7 |
+| OTG0-PKT-044 | EXP-G4-STOP-CASCADE-MOMENTUM-006 | BLOCKED_WITH_OWNER_QUESTION | 0 | 98cf843233778dd0 |
+| OTG0-PKT-049 | EXP-G4G6-CASCADE-GENERIC-010 | BLOCKED_WITH_OWNER_QUESTION | 0 | d2715c9290a959eb |
+| OTG0-PKT-052 | EXP-G5-AMH-004 | BLOCKED_WITH_OWNER_QUESTION | 0 | 35b2f6d8ae2468fe |
+| OTG0-PKT-053 | EXP-G5-CROWD-001 | BLOCKED_WITH_OWNER_QUESTION | 0 | 41dcd431d82c4050 |
+| OTG0-PKT-056 | EXP-G5-PRED-003 | BLOCKED_WITH_OWNER_QUESTION | 0 | 8249e7dd2ef1944f |
+| OTG0-PKT-060 | G6-EXP-001-OB-VS-GENERIC-RETRACE | BLOCKED_WITH_OWNER_QUESTION | 0 | dd86f5af81c0ec1c |
+| OTG0-PKT-062 | G6-EXP-003-OPENING-DRIVE-CONTINUATION | BLOCKED_WITH_OWNER_QUESTION | 0 | b50e9b3ee1deb60f |
+| OTG0-PKT-063 | G6-EXP-004-EXHAUSTION-CHANGEPOINT | BLOCKED_WITH_OWNER_QUESTION | 0 | 68b33b6d2fc6cf58 |
+| OTG0-PKT-066 | G6-EXP-007-GOLD-ROUND-OB-CONFLUENCE | BLOCKED_WITH_OWNER_QUESTION | 0 | 07bf4f152165cebb |
+| OTG0-PKT-069 | EXP-G7-CROSSASSET-STRESS-008 | BLOCKED_WITH_OWNER_QUESTION | 0 | 53dfe8604de63709 |
+| OTG0-PKT-074 | EXP-G7-LBMA-FIX-004 | BLOCKED_WITH_OWNER_QUESTION | 0 | 85a25a68002765cd |
+| OTG0-PKT-075 | EXP-G7-USD-REALRATE-001 | BLOCKED_WITH_OWNER_QUESTION | 0 | 68bcff818719065e |

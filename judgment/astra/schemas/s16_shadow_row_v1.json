@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.astra.s16_shadow_row_v1",
+  "title": "s16_shadow_row_v1",
+  "description": "Shadow-only Dig/Chair multi-stage guard row. Off Challenge place scoreboard. Never place, remint, flatten, invent NEWS_PROTOCOL, or set broker_effect true.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "steal",
+    "stage",
+    "api",
+    "action",
+    "fail_mode",
+    "broker_effect",
+    "never_place",
+    "off_challenge_place_scoreboard"
+  ],
+  "properties": {
+    "steal": {"const": "S16"},
+    "schema": {"const": "gtos.chair.s16.shadow_row.v1"},
+    "stage": {"enum": ["input", "tool_pre", "observation", "response", "claim_verify"]},
+    "api": {"enum": ["screenInput", "assessAction", "screenObservation", "screenOutput", "verifyClaim"]},
+    "action": {"enum": ["allow", "review", "block", "support"]},
+    "fail_mode": {"enum": ["closed", "review"]},
+    "heuristics_hit": {"type": "boolean"},
+    "jev_block_honored": {"type": "boolean"},
+    "claim_verdict": {
+      "type": ["string", "null"],
+      "enum": ["supported", "contradicted", "insufficient", "fabricated", null]
+    },
+    "completion": {
+      "type": ["string", "null"],
+      "enum": ["DONE_OK", "NOT_DONE", "REVIEW", "NOT_DONE_JEV_ADVISORY_ONLY", null]
+    },
+    "broker_effect": {"const": false},
+    "never_place": {"const": true},
+    "never_remint": {"const": true},
+    "never_flatten": {"const": true},
+    "never_host-mesh": {"const": true},
+    "off_challenge_place_scoreboard": {"const": true},
+    "mode": {"const": "shadow_log_only"},
+    "confidence_as_permission": {"const": false},
+    "fail_mode_open": {"const": false},
+    "invented_news": {"const": false},
+    "news_protocol": {"type": "null"}
+  }
+}

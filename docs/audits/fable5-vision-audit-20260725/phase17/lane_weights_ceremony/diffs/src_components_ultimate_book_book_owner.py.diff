@@ -1,0 +1,62 @@
+--- host-before/src/components/ultimate_book/book_owner.py
++++ session-co/src/components/ultimate_book/book_owner.py
+@@ -141,7 +141,8 @@
+ class UltimateBookOwner:
+     def __init__(self, base_config: dict, mt5, repo_root: str, namespace: str = "operator_profile",
+                  engine_factory: Optional[Callable[[str], Any]] = None,
+-                 frontier_exits: tuple = (), spread_geometry_floor=None):
++                 frontier_exits: tuple = (), spread_geometry_floor=None,
++                 lane_weight_controller=None):
+         # `frontier_exits` is a SET OF SLEEVE NAMES reached from `run_book.py --frontier-exits`
+         # (Session AU, B1550; carried by Session AZ, B1850). It is not a boolean because the two
+         # target-override sleeves are in opposite live states -- `mx_btcusd` is not in either
+@@ -169,6 +170,7 @@
+         self.base_config = base_config or {}
+         self._frontier_exits = tuple(frontier_exits or ())
+         self._spread_geometry_floor = dict(spread_geometry_floor or {})
++        self._lane_weight_controller = lane_weight_controller
+         self._mt5 = mt5
+         self._repo_root = repo_root
+         self._namespace = namespace
+@@ -178,7 +180,8 @@
+         self._broker_symbol = build_broker_symbol_resolver(self.base_config)
+         self.engine = UltimateBookLiveEngine(rt, mt5, repo_root, namespace=namespace,
+                                              broker_symbol=self._broker_symbol,
+-                                             spread_geometry_floor=self._spread_geometry_floor)
++                                             spread_geometry_floor=self._spread_geometry_floor,
++                                             lane_weight_controller=self._lane_weight_controller)
+         self.router = UltimateBookOrderRouter(self.base_config, namespace=namespace,
+                                               frontier_exits=self._frontier_exits)
+         self._engine_factory = engine_factory or _default_engine_factory(self.base_config, mt5)
+@@ -1355,7 +1358,9 @@
+         decision=None,
+         place: bool = True,
+     ) -> None:
+-        bridge = summary.get("bridge") or self._runtime_learning_bridge_context(decision)
++        bridge = dict(summary.get("bridge") or self._runtime_learning_bridge_context(decision))
++        if isinstance(summary.get("lane_weights"), dict):
++            bridge["lane_weights"] = dict(summary["lane_weights"])
+         packets: list[dict] = []
+         ts = now.isoformat()
+         base_outcome = {
+@@ -1458,6 +1463,12 @@
+
+     def _emit_management_runtime_learning(self, summary: dict, now: datetime) -> None:
+         bridge = self._runtime_learning_bridge_context()
++        if self._lane_weight_controller is not None:
++            lane_weights = self._lane_weight_controller.snapshot(now)
++        else:
++            lane_weights = dict(getattr(self.engine, "_last_lane_weights_snapshot", {}) or {})
++        summary["lane_weights"] = lane_weights
++        bridge["lane_weights"] = lane_weights
+         packets: list[dict] = []
+         ts = now.isoformat()
+         rows = [
+@@ -1524,6 +1535,7 @@
+         summary = {"ok": res["ok"], "reason": res["reason"], "n_intents": res["n_intents"],
+                    "runtime_effect_now": res["runtime_effect_now"], "placed": [], "shadow": 0,
+                    "skipped": [], "bar_consumable": True}
++        summary["lane_weights"] = dict(res.get("lane_weights") or {})
+         summary["skipped"].extend(res.get("generation_skips", []) or [])
+         if not res["ok"] or res["decision"] is None:
+             # bar-consumed-on-transient-failure: the engine did NOT evaluate (equity_unavailable /

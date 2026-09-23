@@ -1,0 +1,52 @@
+2025-10 19929 2.2
+2025-11 17178 3.7
+2025-12 18705 5.7
+2026-01 17878 14.3
+2026-02 16748 21.1
+2026-03 18413 28.3
+2026-04 18620 29.8
+2026-05 17254 31.3
+
+SIGNAL IN BPS OF PRICE BY HORIZON — every cohort with n>=200.  Broker toll ~3.19 bps/trade.
+cohort                                               n       2h       8h      24h      72h     160h     320h      max
+ALL                                             144725    0.121    0.224    0.163    0.173    0.114    0.137    0.224
+--- by origin family (7) ---
+FAM|regime_transition_break                       2320    0.684    1.195    1.904   -1.553   -1.927    0.032    1.904
+FAM|displacement_continuation                    39517    0.201    0.464    0.646    0.826    0.661    0.718    0.826
+FAM|volatility_compression_expansion              5341    0.765   -1.191   -4.087   -3.627   -3.380   -3.993    0.765
+FAM|cross_asset_lead_lag                         21678    0.106    0.482    0.439    0.449    0.420    0.413    0.482
+FAM|liquidity_sweep_reclaim                      43751    0.252    0.432    0.362    0.402    0.318    0.304    0.432
+FAM|structural_distance_extreme                  23923   -0.111   -0.123   -0.126   -0.126   -0.126   -0.126   -0.111
+FAM|session_open_range_break                      8195   -0.827   -1.073   -0.840   -1.085   -0.865   -0.793   -0.793
+--- by instrument, top 14 by max signal ---
+SYM|XAGUSD                                        6168    2.339    3.088    2.404    2.774    3.099    3.294    3.294
+SYM|USOIL_cash                                    5964    1.032    1.240    2.375    3.245    2.879    2.247    3.245
+SYM|BTCUSD                                        5069    1.534    2.391    2.239    2.673    2.947    3.076    3.076
+SYM|XAUUSD                                        5808    0.365    1.475    2.305    1.464    1.307    1.258    2.305
+SYM|ETHUSD                                        4845   -0.488    0.388   -0.554    1.701    0.924    0.855    1.701
+SYM|UK100                                         6467    0.067    0.407    0.409    0.393    0.385    0.407    0.409
+SYM|GER40                                         6037    0.256   -0.129   -0.174    0.239    0.255    0.404    0.404
+SYM|SPX500                                        6382    0.074    0.091    0.182    0.330    0.212    0.346    0.346
+SYM|EURJPY                                        5184    0.008    0.140    0.324    0.242    0.232    0.268    0.324
+SYM|JP225                                         5363   -0.339    0.302   -0.208   -0.999   -0.631   -0.762    0.302
+SYM|NAS100                                        7112    0.011    0.244   -0.723   -0.514   -0.567   -0.362    0.244
+SYM|UKOIL_cash                                    5836    0.208   -1.122   -1.482   -4.061   -4.672   -4.207    0.208
+SYM|CHFJPY                                        5325   -0.173   -0.200    0.164    0.092   -0.026   -0.063    0.164
+SYM|GBPJPY                                        6822   -0.042    0.028    0.091    0.034    0.091    0.019    0.091
+--- by family x instrument, top 14 by max signal (168 cohorts) ---
+FXS|volatility_compression_expansion|USOIL_cas     254    2.529    4.730   18.937   29.206   28.093   13.811   29.206
+FXS|volatility_compression_expansion|XAGUSD        209    5.647   -1.396   -6.473   -1.267   10.641   15.991   15.991
+FXS|volatility_compression_expansion|BTCUSD        212    6.896   14.901   -2.829   -0.762   -4.053   -7.292   14.901
+FXS|liquidity_sweep_reclaim|XAGUSD                1842    6.050    8.325    6.021    5.363    5.972    5.433    8.325
+FXS|session_open_range_break|XAUUSD                330    4.109    8.081    5.959    5.379    5.059    3.292    8.081
+FXS|displacement_continuation|ETHUSD              1678    3.683    5.541    5.456    7.806    7.596    7.418    7.806
+FXS|session_open_range_break|GER40                 319    1.029    2.835    2.012    7.684    7.145    7.145    7.684
+FXS|liquidity_sweep_reclaim|USOIL_cash            1633    4.310    4.207    6.829    7.363    7.314    7.314    7.363
+FXS|session_open_range_break|UK100                 319    0.675    3.537    5.249    6.965    6.393    5.909    6.965
+FXS|displacement_continuation|BTCUSD              1607    1.278    2.985    6.154    6.668    6.551    6.776    6.776
+FXS|cross_asset_lead_lag|XAGUSD                   1016    3.203    5.603    5.489    5.489    5.489    5.489    5.603
+FXS|volatility_compression_expansion|JP225         215    5.409    0.077  -11.015   -7.069   -7.332   -9.047    5.409
+FXS|displacement_continuation|USOIL_cash          1769    1.711    1.216    0.647    3.885    4.245    4.890    4.890
+FXS|structural_distance_extreme|BTCUSD             563    4.715    4.611    4.611    4.611    4.611    4.611    4.715
+
+cohorts whose BEST horizon beats the 3.19 bps toll: 21 of 159

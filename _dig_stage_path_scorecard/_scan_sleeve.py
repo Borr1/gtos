@@ -1,0 +1,18 @@
+﻿from pathlib import Path
+adm = Path(r"host-local\redacted_host\repo\src\components\ultimate_book\admission.py")
+reg = Path(r"host-local\redacted_host\repo\src\components\ultimate_book\sleeves\registry.py")
+text = adm.read_text(encoding="utf-8", errors="replace")
+print("admission_bytes", len(text))
+print("has_SleeveSpec", "class SleeveSpec" in text)
+print("has_sub_mid", "sub_mid" in text)
+print("has_dsp_expanding", "dsp_expanding" in text)
+print("registry_exists", reg.exists())
+if reg.exists():
+    rt = reg.read_text(encoding="utf-8", errors="replace")
+    print("--- registry head ---")
+    print(rt[:2000])
+sleeves = Path(r"host-local\redacted_host\repo\src\components\ultimate_book\sleeves")
+subs = sorted(p.name for p in sleeves.glob("*sub*") if p.suffix==".py")
+print("sub_modules", subs[:30])
+live_armed = list(Path(r"host-local\redacted_host\repo").glob("**/live_armed_set.json"))
+print("live_armed_hits", [str(p) for p in live_armed[:5]])

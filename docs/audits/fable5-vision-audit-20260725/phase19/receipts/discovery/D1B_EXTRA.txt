@@ -1,0 +1,45 @@
+=== SIGNAL CONTENT IN PRICE UNITS (bps), which makes families comparable ===
+dirval_bps = per-row (real - coin) in R  x  that row's risk distance in bps.
+toll_bps   = per-row toll in R x risk distance = the h1 four-term broker cost in bps.
+cohort                                   n  gross_bps  dirval_bps               CI95_bps  toll_bps  dir/toll   need x
+cross_asset_lead_lag                 20052    +0.3640     +0.1674 [-0.2761,+0.6186]    3.3107   +0.0506     19.8
+current_breaker_re_entry             10449    -1.2128     -1.5982 [-2.5614,-0.6068]    2.9163   -0.5480      nan
+current_fvg_fill                    146565    -1.4707     -1.5899 [-2.7373,-0.6444]    3.0196   -0.5265      nan
+current_ob_retest                    17466    +0.0186     -0.3598 [-1.3227,+0.6235]    2.6861   -0.1339      nan
+displacement_continuation            36929    +0.5332     +0.2610 [-0.4773,+1.0069]    3.2178   +0.0811     12.3
+liquidity_sweep_reclaim              41152    +0.0617     +0.0012 [-0.4656,+0.4620]    2.9333   +0.0004   2435.1
+regime_transition_break               2216    +0.0077     +0.2150 [-2.6309,+3.2368]    3.1846   +0.0675     14.8
+session_open_range_break              7855    -0.8214     -0.9465 [-2.5201,+0.5234]    2.1859   -0.4330      nan
+structural_distance_extreme          22612    +0.1455     -0.0350 [-0.2722,+0.2025]    2.6171   -0.0134      nan
+volatility_compression_expansion      4987    +0.5777     +0.5862 [-1.4499,+2.7192]    3.4901   +0.1680      6.0
+__ATMARKET__                        135803    +0.2155     +0.0605 [-0.2332,+0.3546]    2.9950   +0.0202     49.5
+__POI__                             174480    -1.3062     -1.4673 [-2.4652,-0.6489]    2.9800   -0.4924      nan
+__ALL__                             310283    -0.6402     -0.7986 [-1.3814,-0.3226]    2.9866   -0.2674      nan
+
+=== best family: structural_distance_extreme, per instrument (clean, t2.0) ===
+symbol              n   gross_R  gross_bps  toll_bps
+USDJPY           1004  +0.20746    +0.3770    1.0412
+USDCHF           1056  +0.17096    +0.4007    1.5602
+EURUSD            897  +0.15788    +0.2575    0.8372
+BTCUSD            551  +0.15426    +2.6997    7.2479
+EURJPY            892  +0.13605    +0.2357    1.2923
+GBPJPY            914  +0.12688    +0.2675    1.5606
+NZDUSD            989  +0.11132    +0.2741    2.3547
+EURGBP            707  +0.11131    +0.1470    1.4020
+USDCAD           1156  +0.11027    +0.1554    1.1529
+GBPUSD            979  +0.08831    +0.2898    0.9829
+UKOIL_cash        808  +0.08114    +2.3744    9.5219
+AUDUSD            870  +0.05807    +0.2258    1.5417
+CHFJPY           1006  +0.05170    +0.1084    1.5892
+UK100            1208  +0.05034    +0.0055    1.7591
+GER40             943  +0.04240    +0.0487    0.8570
+XAGUSD           1021  +0.03988    -0.2785    9.6614
+US30_cash        1086  +0.03701    -0.0014    0.5196
+SPX500           1175  +0.03107    -0.0568    1.0066
+AUDJPY           1006  +0.00804    -0.0029    2.0857
+ETHUSD            348  +0.00616    -1.2665   12.7541
+XAUUSD            762  +0.00215    -0.0899    1.4082
+JP225            1127  -0.04377    -0.5538    1.6411
+NAS100           1303  -0.04813    -0.4449    0.6732
+USOIL_cash        804  -0.05020    -0.9104    9.9886
+positive on 21/24 instruments with n>=100

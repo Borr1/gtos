@@ -1,0 +1,3362 @@
+2026-08-05T23:49:14Z [december_2025] START free=44.03GB
+PASS 5/5 pre-existing windows byte-identical [december_2025:pre]
+2026-08-05T23:49:14Z [december_2025] step 1/3 materialize-window free=44.03GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 31,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 746260,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202512",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true
+ },
+ "receipt_root_sha256": "6d81223cc0b98c3d57a0dae62807cc252b6fcb3bb9485a05f7de28584dfd14c7",
+ "registry_root_sha256": "9b52ad518649e227a6e66aab83ac97ce2bcd8aa12158ade23f31eea9e0c7b433",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 20,
+ "tick_gap_status": null,
+ "tick_row_count": 10843865,
+ "tick_source_count": 4,
+ "wall_seconds": 546.103,
+ "window": [
+  "2025-12-01",
+  "2025-12-31"
+ ],
+ "window_id": "december_2025"
+}
+2026-08-05T23:58:20Z [december_2025] step 1 exit=0 free=50.87GB
+PASS 5/5 pre-existing windows byte-identical [december_2025:materialize]
+2026-08-05T23:58:20Z [december_2025] step 2/3 bind-source-plan free=50.87GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "canonical_source_plan_digest_sha256": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_true_utc_fragment_rebind_contract": "rows_unchanged; fragment maps to exactly one broker day; M1 and M15 prove that broker day spans adjacent UTC dates; unchanged M1/M15 floor must pass on the complete broker day",
+ "lane_true_utc_fragment_rebind_count": 3,
+ "lane_true_utc_fragment_rebinds": [
+  {
+   "effective_min_rows": 84,
+   "lane_authority_rebind_reason": "corrected_true_utc_day_boundary_splits_complete_broker_day",
+   "lane_broker_clock_rule": "new_york_plus_7",
+   "lane_enclosing_broker_day": "2025-12-26",
+   "lane_enclosing_broker_day_authority_id": "source_day:c7a50d357820de2be37d7b96",
+   "lane_enclosing_broker_day_m15_row_count": 95,
+   "lane_enclosing_broker_day_m1_row_count": 1395,
+   "lane_original_utc_fragment_authority_hash_sha256": "bc77c84f87d9710153694898003cc6e12ce2465d2e6b724015ce217ccebdc8d3",
+   "m15_row_count": 7,
+   "m1_row_count": 81,
+   "source_day_authority_id": "source_day:69e8d9becd45554f2b6dcd4c",
+   "symbol": "NZDUSD",
+   "trading_day": "2025-12-25"
+  },
+  {
+   "effective_min_rows": 48,
+   "lane_authority_rebind_reason": "corrected_true_utc_day_boundary_splits_complete_broker_day",
+   "lane_broker_clock_rule": "new_york_plus_7",
+   "lane_enclosing_broker_day": "2025-12-29",
+   "lane_enclosing_broker_day_authority_id": "source_day:baee0f94bb7ecce4e4b0b85f",
+   "lane_enclosing_broker_day_m15_row_count": 92,
+   "lane_enclosing_broker_day_m1_row_count": 1354,
+   "lane_original_utc_fragment_authority_hash_sha256": "ba3520309eb3b9293b3fff087bb64623725eeb854c312e4e7f78fe143c0cb6aa",
+   "m15_row_count": 4,
+   "m1_row_count": 44,
+   "source_day_authority_id": "source_day:deffc9acad926d2f42f7244a",
+   "symbol": "XAGUSD",
+   "trading_day": "2025-12-28"
+  },
+  {
+   "effective_min_rows": 48,
+   "lane_authority_rebind_reason": "corrected_true_utc_day_boundary_splits_complete_broker_day",
+   "lane_broker_clock_rule": "new_york_plus_7",
+   "lane_enclosing_broker_day": "2025-12-08",
+   "lane_enclosing_broker_day_authority_id": "source_day:c0dcdd92b4aff99a1390db6b",
+   "lane_enclosing_broker_day_m15_row_count": 92,
+   "lane_enclosing_broker_day_m1_row_count": 1349,
+   "lane_original_utc_fragment_authority_hash_sha256": "776ccffc697da49c908a0d804d6953f004d73f52ae12806725a8ce1b0ca3d4b4",
+   "m15_row_count": 4,
+   "m1_row_count": 39,
+   "source_day_authority_id": "source_day:4c4833c1b3a90d45b3d0d050",
+   "symbol": "XAUUSD",
+   "trading_day": "2025-12-07"
+  }
+ ],
+ "march_outcomes_read": false,
+ "r2_source_plan_claimed": false,
+ "receipt_root_sha256": "0c09baa04fabb7e06206f293bbe32ec7f6933bf90724c05ad9cebfe435f342e7",
+ "registry_root_sha256": "22dbf402b8fcc538b14adab937d26f320b1d115afdcf6d4c285247ce0bf34471",
+ "schema": "gtos.lane.rematerialization.canonical_source_plan.v1",
+ "source_authority_day_count": 31,
+ "source_manifest_root_sha256": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+ "status": "LANE_CANONICAL_SOURCE_PLAN_BOUND",
+ "surface": "VAL",
+ "symbol_count": 24,
+ "wall_seconds": 14.434,
+ "window": [
+  "2025-12-01",
+  "2025-12-31"
+ ],
+ "window_id": "december_2025"
+}
+2026-08-05T23:58:36Z [december_2025] step 2 exit=0 free=50.86GB
+PASS 5/5 pre-existing windows byte-identical [december_2025:source-plan]
+2026-08-05T23:58:36Z [december_2025] step 3/3 build-packs free=50.86GB
+2026-08-05T23:59:16Z [october_2025] START free=50.84GB
+2026-08-05T23:59:16Z [november_2025] START free=50.84GB
+2026-08-05T23:59:16Z [september_2025] START free=50.84GB
+PASS 5/5 pre-existing windows byte-identical [october_2025:pre]
+PASS 5/5 pre-existing windows byte-identical [september_2025:pre]
+PASS 5/5 pre-existing windows byte-identical [november_2025:pre]
+2026-08-05T23:59:16Z [september_2025] step 1/3 materialize-window free=50.84GB
+2026-08-05T23:59:16Z [october_2025] step 1/3 materialize-window free=50.84GB
+2026-08-05T23:59:16Z [november_2025] step 1/3 materialize-window free=50.84GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 30,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 744726,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202509",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true
+ },
+ "receipt_root_sha256": "31cbb4b28906ad8a061f315f51bbd4d41d9afadc526750bdd9b20c26948b2a73",
+ "registry_root_sha256": "3ba4b2ab4463ef726dfdf9593adef16e6217b2ef41eb4081be9ed77b99f73d33",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 24,
+ "tick_gap_status": "captured_tick_archive_begins_after_window",
+ "tick_row_count": 0,
+ "tick_source_count": 0,
+ "wall_seconds": 76.027,
+ "window": [
+  "2025-09-01",
+  "2025-09-30"
+ ],
+ "window_id": "september_2025"
+}
+2026-08-06T00:00:33Z [september_2025] step 1 exit=0 free=50.37GB
+PASS 5/5 pre-existing windows byte-identical [september_2025:materialize]
+2026-08-06T00:00:33Z [september_2025] step 2/3 bind-source-plan free=50.36GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "canonical_source_plan_digest_sha256": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03",
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_true_utc_fragment_rebind_contract": "rows_unchanged; fragment maps to exactly one broker day; M1 and M15 prove that broker day spans adjacent UTC dates; unchanged M1/M15 floor must pass on the complete broker day",
+ "lane_true_utc_fragment_rebind_count": 2,
+ "lane_true_utc_fragment_rebinds": [
+  {
+   "effective_min_rows": 96,
+   "lane_authority_rebind_reason": "corrected_true_utc_day_boundary_splits_complete_broker_day",
+   "lane_broker_clock_rule": "new_york_plus_7",
+   "lane_enclosing_broker_day": "2025-09-15",
+   "lane_enclosing_broker_day_authority_id": "source_day:8baf87ce71975e82aa7cc0dd",
+   "lane_enclosing_broker_day_m15_row_count": 92,
+   "lane_enclosing_broker_day_m1_row_count": 1200,
+   "lane_original_utc_fragment_authority_hash_sha256": "4ddfe7301f32de454e263f0b14ee3a9dc74d781432de7383e378ccad5edb4426",
+   "m15_row_count": 8,
+   "m1_row_count": 86,
+   "source_day_authority_id": "source_day:3c00ca2ee0de910dc1254862",
+   "symbol": "JP225",
+   "trading_day": "2025-09-14"
+  },
+  {
+   "effective_min_rows": 96,
+   "lane_authority_rebind_reason": "corrected_true_utc_day_boundary_splits_complete_broker_day",
+   "lane_broker_clock_rule": "new_york_plus_7",
+   "lane_enclosing_broker_day": "2025-09-22",
+   "lane_enclosing_broker_day_authority_id": "source_day:acc3c138db62cfc4d26d55f8",
+   "lane_enclosing_broker_day_m15_row_count": 92,
+   "lane_enclosing_broker_day_m1_row_count": 1240,
+   "lane_original_utc_fragment_authority_hash_sha256": "d9b8ef97c98c9fd6a0aaac2d3849b1b96842457f95fb780714c6e606ee2fcee5",
+   "m15_row_count": 8,
+   "m1_row_count": 86,
+   "source_day_authority_id": "source_day:c8c1208897f7067dc0c5830a",
+   "symbol": "USOIL_cash",
+   "trading_day": "2025-09-21"
+  }
+ ],
+ "march_outcomes_read": false,
+ "r2_source_plan_claimed": false,
+ "receipt_root_sha256": "387d10c9de389cc4682780c365e70af6193fd519f617421573ca863f4540171f",
+ "registry_root_sha256": "4113f9ffc96564404a2b0799d7cea507490d9e6eb575cf4057d2b28004da7df2",
+ "schema": "gtos.lane.rematerialization.canonical_source_plan.v1",
+ "source_authority_day_count": 30,
+ "source_manifest_root_sha256": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79",
+ "status": "LANE_CANONICAL_SOURCE_PLAN_BOUND",
+ "surface": "VAL",
+ "symbol_count": 24,
+ "wall_seconds": 15.076,
+ "window": [
+  "2025-09-01",
+  "2025-09-30"
+ ],
+ "window_id": "september_2025"
+}
+2026-08-06T00:00:48Z [september_2025] step 2 exit=0 free=49.98GB
+PASS 5/5 pre-existing windows byte-identical [september_2025:source-plan]
+2026-08-06T00:00:48Z [september_2025] step 3/3 build-packs free=49.98GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 30,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 687207,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202511",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "7dd045a90574926d20c7900fba6a862cbf2d6bebc962b3725f4ba4ac283ccf46",
+ "registry_root_sha256": "cf4a2c86a4608f6b1d1e79f939848813f82e126ab2965dc8593409033c82c897",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "77099a1e36f525cbb164fee580a5df889c497564af7c4bf950cd2417623b0ab7",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 20,
+ "tick_gap_status": null,
+ "tick_row_count": 8544796,
+ "tick_source_count": 4,
+ "wall_seconds": 614.18,
+ "window": [
+  "2025-11-01",
+  "2025-11-30"
+ ],
+ "window_id": "november_2025"
+}
+2026-08-06T00:23:29Z [november_2025] step 1 exit=0 free=45.38GB
+PASS 5/5 pre-existing windows byte-identical [november_2025:materialize]
+2026-08-06T00:23:29Z [november_2025] step 2/3 bind-source-plan free=45.38GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 31,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 786429,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202510",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "november_2025": null,
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "november_2025": "77099a1e36f525cbb164fee580a5df889c497564af7c4bf950cd2417623b0ab7",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true,
+  "november_2025": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "bdc02458d0e2ac5c8628fe61e293b60c35d0a7a0f8024240cd6bd8f84e440555",
+ "registry_root_sha256": "4d2795ce905912969a982aa26b24c8251af9b32c107a02c6c5196999e90edfae",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 20,
+ "tick_gap_status": null,
+ "tick_row_count": 9687147,
+ "tick_source_count": 4,
+ "wall_seconds": 619.033,
+ "window": [
+  "2025-10-01",
+  "2025-10-31"
+ ],
+ "window_id": "october_2025"
+}
+2026-08-06T00:23:34Z [october_2025] step 1 exit=0 free=45.38GB
+PASS 5/5 pre-existing windows byte-identical [october_2025:materialize]
+2026-08-06T00:23:34Z [october_2025] step 2/3 bind-source-plan free=45.38GB
+Traceback (most recent call last):
+  File [35m"<frozen runpy>"[0m, line [35m198[0m, in [35m_run_module_as_main[0m
+  File [35m"<frozen runpy>"[0m, line [35m88[0m, in [35m_run_code[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4383[0m, in [35m<module>[0m
+    raise SystemExit([31mmain[0m[1;31m()[0m)
+                     [31m~~~~[0m[1;31m^^[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4341[0m, in [35mmain[0m
+    payload = bind_canonical_source_plan(
+        registry_path=ns.registry,
+        window_id=ns.window,
+        log_look=not ns.no_log,
+    )
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m2907[0m, in [35mbind_canonical_source_plan[0m
+    measured = _measure_canonical_source_plan(inputs)
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m2820[0m, in [35m_measure_canonical_source_plan[0m
+    raise LaneRematerializationError("canonical_source_plan_invalid")
+[1;35mLaneRematerializationError[0m: [35mcanonical_source_plan_invalid[0m
+2026-08-06T00:23:46Z [november_2025] step 2 exit=1 free=45.36GB
+2026-08-06T00:23:46Z [august_2025] START free=45.36GB
+PASS 5/5 pre-existing windows byte-identical [august_2025:pre]
+2026-08-06T00:23:46Z [august_2025] step 1/3 materialize-window free=45.36GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "canonical_source_plan_digest_sha256": "b36eb41c0d382ad9e9df5d51502d45a569b719fac591737a5a6f73a23ec32178",
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_true_utc_fragment_rebind_contract": "rows_unchanged; fragment maps to exactly one broker day; M1 and M15 prove that broker day spans adjacent UTC dates; unchanged M1/M15 floor must pass on the complete broker day",
+ "lane_true_utc_fragment_rebind_count": 0,
+ "lane_true_utc_fragment_rebinds": [],
+ "march_outcomes_read": false,
+ "r2_source_plan_claimed": false,
+ "receipt_root_sha256": "68e891a839f1111c6c83d18f9a966647fd86f96c047ec340664c266aeaed1c2b",
+ "registry_root_sha256": "0a70b385b0ba5d4db358db57b03e5d6fcf5da92e45767ed4f38b5c1036832c3f",
+ "schema": "gtos.lane.rematerialization.canonical_source_plan.v1",
+ "source_authority_day_count": 31,
+ "source_manifest_root_sha256": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+ "status": "LANE_CANONICAL_SOURCE_PLAN_BOUND",
+ "surface": "VAL",
+ "symbol_count": 24,
+ "wall_seconds": 16.702,
+ "window": [
+  "2025-10-01",
+  "2025-10-31"
+ ],
+ "window_id": "october_2025"
+}
+2026-08-06T00:23:52Z [october_2025] step 2 exit=0 free=45.35GB
+PASS 5/5 pre-existing windows byte-identical [october_2025:source-plan]
+2026-08-06T00:23:52Z [october_2025] step 3/3 build-packs free=45.35GB
+2026-08-06T00:24:00Z PACKCAP stop pid=89956 (rank 3 > cap 2)
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 31,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 720604,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202508",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "november_2025": null,
+  "october_2025": "b36eb41c0d382ad9e9df5d51502d45a569b719fac591737a5a6f73a23ec32178",
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "november_2025": "77099a1e36f525cbb164fee580a5df889c497564af7c4bf950cd2417623b0ab7",
+  "october_2025": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true,
+  "november_2025": true,
+  "october_2025": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "6f1a730f3c585d49e69249d9d05257210ec1abd964a3797174e2d8ff78eed93e",
+ "registry_root_sha256": "c23d371458a120b34308103250ad4417690ec0191eb289e437c75c0ed2da258c",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "81fa6e94dfc98467de2f270763fb756d4ae71b4ece8f9fa9605b48dd5d0f403f",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 24,
+ "tick_gap_status": "captured_tick_archive_begins_after_window",
+ "tick_row_count": 0,
+ "tick_source_count": 0,
+ "wall_seconds": 61.099,
+ "window": [
+  "2025-08-01",
+  "2025-08-31"
+ ],
+ "window_id": "august_2025"
+}
+2026-08-06T00:24:48Z [august_2025] step 1 exit=0 free=45.20GB
+PASS 5/5 pre-existing windows byte-identical [august_2025:materialize]
+2026-08-06T00:24:48Z [august_2025] step 2/3 bind-source-plan free=45.20GB
+Traceback (most recent call last):
+  File [35m"<frozen runpy>"[0m, line [35m198[0m, in [35m_run_module_as_main[0m
+  File [35m"<frozen runpy>"[0m, line [35m88[0m, in [35m_run_code[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4383[0m, in [35m<module>[0m
+    raise SystemExit([31mmain[0m[1;31m()[0m)
+                     [31m~~~~[0m[1;31m^^[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4341[0m, in [35mmain[0m
+    payload = bind_canonical_source_plan(
+        registry_path=ns.registry,
+        window_id=ns.window,
+        log_look=not ns.no_log,
+    )
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m2907[0m, in [35mbind_canonical_source_plan[0m
+    measured = _measure_canonical_source_plan(inputs)
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m2820[0m, in [35m_measure_canonical_source_plan[0m
+    raise LaneRematerializationError("canonical_source_plan_invalid")
+[1;35mLaneRematerializationError[0m: [35mcanonical_source_plan_invalid[0m
+2026-08-06T00:25:03Z [august_2025] step 2 exit=1 free=45.17GB
+2026-08-06T00:25:03Z [july_2025] START free=45.17GB
+PASS 5/5 pre-existing windows byte-identical [july_2025:pre]
+2026-08-06T00:25:03Z [july_2025] step 1/3 materialize-window free=45.17GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 31,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 782542,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202507",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "august_2025": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "november_2025": null,
+  "october_2025": "b36eb41c0d382ad9e9df5d51502d45a569b719fac591737a5a6f73a23ec32178",
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "august_2025": "81fa6e94dfc98467de2f270763fb756d4ae71b4ece8f9fa9605b48dd5d0f403f",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "november_2025": "77099a1e36f525cbb164fee580a5df889c497564af7c4bf950cd2417623b0ab7",
+  "october_2025": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "august_2025": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true,
+  "november_2025": true,
+  "october_2025": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "26863d49761bb55f44d44586be319a5ea66bff64b89350502056e3492b5e668b",
+ "registry_root_sha256": "5fe1f8f681c60c6e972328b6d89381669b02862b01dc817ce386ff0bf9ccd87c",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "76c854f21688808e50eb4b10e5d4d61517fee845555fcc426cb61a3077a72f76",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 24,
+ "tick_gap_status": "captured_tick_archive_begins_after_window",
+ "tick_row_count": 0,
+ "tick_source_count": 0,
+ "wall_seconds": 152.028,
+ "window": [
+  "2025-07-01",
+  "2025-07-31"
+ ],
+ "window_id": "july_2025"
+}
+2026-08-06T00:27:35Z [july_2025] step 1 exit=0 free=44.87GB
+PASS 5/5 pre-existing windows byte-identical [july_2025:materialize]
+2026-08-06T00:27:35Z [july_2025] step 2/3 bind-source-plan free=44.87GB
+Traceback (most recent call last):
+  File [35m"<frozen runpy>"[0m, line [35m198[0m, in [35m_run_module_as_main[0m
+  File [35m"<frozen runpy>"[0m, line [35m88[0m, in [35m_run_code[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4526[0m, in [35m<module>[0m
+    raise SystemExit([31mmain[0m[1;31m()[0m)
+                     [31m~~~~[0m[1;31m^^[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4484[0m, in [35mmain[0m
+    payload = bind_canonical_source_plan(
+        registry_path=ns.registry,
+        window_id=ns.window,
+        log_look=not ns.no_log,
+    )
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m3031[0m, in [35mbind_canonical_source_plan[0m
+    measured = _measure_canonical_source_plan(inputs)
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m2944[0m, in [35m_measure_canonical_source_plan[0m
+    raise LaneRematerializationError("canonical_source_plan_invalid")
+[1;35mLaneRematerializationError[0m: [35mcanonical_source_plan_invalid[0m
+2026-08-06T00:27:53Z [july_2025] step 2 exit=1 free=46.59GB
+2026-08-06T00:27:53Z [june_2025] START free=46.59GB
+PASS 5/5 pre-existing windows byte-identical [june_2025:pre]
+2026-08-06T00:27:53Z [june_2025] step 1/3 materialize-window free=46.59GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 29,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 723692,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202506",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "july_2025": null,
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "october_2025": "b36eb41c0d382ad9e9df5d51502d45a569b719fac591737a5a6f73a23ec32178",
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "july_2025": "76c854f21688808e50eb4b10e5d4d61517fee845555fcc426cb61a3077a72f76",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "october_2025": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "july_2025": true,
+  "march_2026": true,
+  "may_2026": true,
+  "october_2025": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "7e826d1e3297f92108653136ff7ad5b111c69a6ec04204cc62ed7c2f54df72ee",
+ "registry_root_sha256": "78c825f399c7cb9d6f2fd336e7b19cfa9bd6ae2e56fa6208369b7a8b3ecaf5b1",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "e06a2b10eaf04d54523caf8e5eefd7971e30a77693ed45ce6a911d264ffe7f9b",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 24,
+ "tick_gap_status": "captured_tick_archive_begins_after_window",
+ "tick_row_count": 0,
+ "tick_source_count": 0,
+ "wall_seconds": 39.003,
+ "window": [
+  "2025-06-02",
+  "2025-06-30"
+ ],
+ "window_id": "june_2025"
+}
+2026-08-06T00:28:32Z [june_2025] step 1 exit=0 free=46.46GB
+PASS 5/5 pre-existing windows byte-identical [june_2025:materialize]
+2026-08-06T00:28:32Z [june_2025] step 2/3 bind-source-plan free=46.46GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "canonical_source_plan_digest_sha256": "b23f7b34d8a31bedea02da66dbdfce746dff7a282b0b88ecc12ee09efce49be6",
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_true_utc_fragment_rebind_contract": "rows_unchanged; fragment maps to exactly one broker day; M1 and M15 prove that broker day spans adjacent UTC dates; unchanged M1/M15 floor must pass on the complete broker day",
+ "lane_true_utc_fragment_rebind_count": 0,
+ "lane_true_utc_fragment_rebinds": [],
+ "march_outcomes_read": false,
+ "r2_source_plan_claimed": false,
+ "receipt_root_sha256": "d8e8918febfee729fe7a06792a31f320f54950c62aba4a1aaff548dc542603d6",
+ "registry_root_sha256": "b771539725234d9eda4fa9857bb7265c9eacd9e1e1756fd9942d2922dcb81d1f",
+ "schema": "gtos.lane.rematerialization.canonical_source_plan.v1",
+ "source_authority_day_count": 29,
+ "source_manifest_root_sha256": "e06a2b10eaf04d54523caf8e5eefd7971e30a77693ed45ce6a911d264ffe7f9b",
+ "status": "LANE_CANONICAL_SOURCE_PLAN_BOUND",
+ "surface": "VAL",
+ "symbol_count": 24,
+ "wall_seconds": 14.865,
+ "window": [
+  "2025-06-02",
+  "2025-06-30"
+ ],
+ "window_id": "june_2025"
+}
+2026-08-06T00:28:47Z [june_2025] step 2 exit=0 free=46.43GB
+PASS 5/5 pre-existing windows byte-identical [june_2025:source-plan]
+2026-08-06T00:28:47Z [june_2025] step 3/3 build-packs free=46.43GB
+2026-08-06T00:28:52Z PACKCAP stop pid=83019 (rank 3 > cap 2)
+Traceback (most recent call last):
+  File [35m"<frozen runpy>"[0m, line [35m198[0m, in [35m_run_module_as_main[0m
+  File [35m"<frozen runpy>"[0m, line [35m88[0m, in [35m_run_code[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4526[0m, in [35m<module>[0m
+    raise SystemExit([31mmain[0m[1;31m()[0m)
+                     [31m~~~~[0m[1;31m^^[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m4476[0m, in [35mmain[0m
+    payload = build_packs(
+        registry_path=ns.registry,
+    ...<3 lines>...
+        successor_tag=ns.successor_tag,
+    )
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/lane_rematerialization.py"[0m, line [35m3227[0m, in [35mbuild_packs[0m
+    build = replay_prepared_day_pack.build_campaign_prepared_day_pack(
+        output_dir=destination,
+    ...<4 lines>...
+        borrow_campaign_cache_owner=True,
+    )
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m811[0m, in [35mbuild_campaign_prepared_day_pack[0m
+    manifest = seal_prepared_day_pack(
+        output_dir=output_dir,
+    ...<3 lines>...
+        target_raw_shard_bytes=target_raw_shard_bytes,
+    )
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m513[0m, in [35mseal_prepared_day_pack[0m
+    for global_ordinal, (record, raw, record_hash) in [31menumerate[0m[1;31m(encoded)[0m:
+                                                      [31m~~~~~~~~~[0m[1;31m^^^^^^^^^[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m494[0m, in [35m<genexpr>[0m
+    [31mencode[0m[1;31m(row)[0m for row in records
+    [31m~~~~~~[0m[1;31m^^^^^[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m489[0m, in [35mencode[0m
+    return _encode_record(row, bindings=bound)
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m422[0m, in [35m_encode_record[0m
+    validated = _validate_record(record, bindings=bindings)
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m391[0m, in [35m_validate_record[0m
+    [31m_validate_predecision_tree[0m[1;31m([0m
+    [31m~~~~~~~~~~~~~~~~~~~~~~~~~~[0m[1;31m^[0m
+        [1;31masof_row,[0m
+        [1;31m^^^^^^^^^[0m
+        [1;31mdecision_time=parsed_decision_time,[0m
+        [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+        [1;31mpath=f"$.symbols[{symbol_row.get('symbol')}].asof_row",[0m
+        [1;31m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+    [1;31m)[0m
+    [1;31m^[0m
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m241[0m, in [35m_validate_predecision_tree[0m
+    observed = _parse_utc(
+        timestamp,
+        path=f"{child_path}.{timeframe}",
+    )
+  File [35m"/Users/borr/GTOSActive/worktrees/fa2-integration-20260803/src/research_infra/replay_prepared_day_pack.py"[0m, line [35m195[0m, in [35m_parse_utc[0m
+    raise PreparedDayPackError(f"prepared_timestamp_invalid:{path}")
+[1;35msrc.research_infra.replay_prepared_day_pack.PreparedDayPackError[0m: [35mprepared_timestamp_invalid:$.symbols[UKOIL_cash].asof_row.decision_max_source_time_utc_by_timeframe.H1[0m
+2026-08-06T00:29:02Z [june_2025] step 3 exit=1 free=46.42GB
+2026-08-06T00:32:44Z PACKCAP cont pid=89956
+2026-08-06T00:32:44Z PACKCAP stop pid=19397 rank=3
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "builds": [
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62233611,
+   "day": "2025-12-01",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-01_2025-12-01",
+   "pack_root_sha256": "69d8eb9c88666b723a4e7d6569ecf93b31f70a9e3d48a7c3dd10b5361bfcff50",
+   "preparation_wall_seconds": 73.121,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61382308,
+   "day": "2025-12-02",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-02_2025-12-02",
+   "pack_root_sha256": "57c218d5cb44d672a143f7995b78fda4665e134bafcd8680b4261785bbca6f03",
+   "preparation_wall_seconds": 79.233,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59924139,
+   "day": "2025-12-03",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-03_2025-12-03",
+   "pack_root_sha256": "09835daf71df65cbead43a04982a02947da726212915b8d4841c0b6930bbf9f4",
+   "preparation_wall_seconds": 84.178,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56837765,
+   "day": "2025-12-04",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-04_2025-12-04",
+   "pack_root_sha256": "62427aed5bfcf59e752a134ee90fd94e06b21dcba2771218c13a9003932c7e96",
+   "preparation_wall_seconds": 79.42,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 55883395,
+   "day": "2025-12-05",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-05_2025-12-05",
+   "pack_root_sha256": "2c765dc08f52dcabf18e8956eda908dd6d1b8d85bd19bcd51fe23d91297ee51b",
+   "preparation_wall_seconds": 77.696,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 98785,
+   "day": "2025-12-06",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-06_2025-12-06",
+   "pack_root_sha256": "b9c46311a1a35f245cbed90a4522f110d1bb64272bdfab205b4e81d8da040e2b",
+   "preparation_wall_seconds": 0.46,
+   "record_count": 32
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 14321,
+   "day": "2025-12-07",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-07_2025-12-07",
+   "pack_root_sha256": "40921819fe43cf947364a734941f8be268377f316ea72cd7aaf273dcba081e96",
+   "preparation_wall_seconds": 0.174,
+   "record_count": 88
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 54679542,
+   "day": "2025-12-08",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-08_2025-12-08",
+   "pack_root_sha256": "587033db8d9e15d60144709c25140456e967e7837002cbc037493e519e3084c8",
+   "preparation_wall_seconds": 75.829,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 54466076,
+   "day": "2025-12-09",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-09_2025-12-09",
+   "pack_root_sha256": "d195eee21cc20029d0193a7ba0589f5d1980d59a62326f2b4135490ac1ed27d8",
+   "preparation_wall_seconds": 78.389,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 53856962,
+   "day": "2025-12-10",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-10_2025-12-10",
+   "pack_root_sha256": "c99a777d6984c3d785292cac553eda83a7f6d250bb23e362f8ef3c7ba0e1ba34",
+   "preparation_wall_seconds": 75.746,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 54715684,
+   "day": "2025-12-11",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-11_2025-12-11",
+   "pack_root_sha256": "c2a9c8986225bacecc824318309a1bb858263595e3337d398c952be6f2138b11",
+   "preparation_wall_seconds": 73.656,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 53635755,
+   "day": "2025-12-12",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-12_2025-12-12",
+   "pack_root_sha256": "3c6c621062366f621926489320b1318ba22985e7372523b4930be56f70d3084f",
+   "preparation_wall_seconds": 74.427,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 308116,
+   "day": "2025-12-13",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-13_2025-12-13",
+   "pack_root_sha256": "4f3293f40e62ef691c5c6bf684ce4c513adf92501a7404cd7b7d00bc6334b2ee",
+   "preparation_wall_seconds": 1.163,
+   "record_count": 92
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 13468,
+   "day": "2025-12-14",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-14_2025-12-14",
+   "pack_root_sha256": "44f31570457f179df7cd7ab274076b6bee473c2e843a150d86441e3716532d62",
+   "preparation_wall_seconds": 0.151,
+   "record_count": 80
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 54831285,
+   "day": "2025-12-15",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-15_2025-12-15",
+   "pack_root_sha256": "ecd11b404a5e2bbfa8aac93f038a0e191b26264c4aaeb0a3ec69c04a3c5a5524",
+   "preparation_wall_seconds": 73.368,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56127820,
+   "day": "2025-12-16",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-16_2025-12-16",
+   "pack_root_sha256": "30997323b9b2b5bf7cef647155edf55cb5c47d3816fde969fc32d4537a16db5c",
+   "preparation_wall_seconds": 77.882,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56895872,
+   "day": "2025-12-17",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-17_2025-12-17",
+   "pack_root_sha256": "3d372808255d136db00ef6b64bcbb3d194cba63bc6543c15ecc7c2a1e5f668f3",
+   "preparation_wall_seconds": 92.933,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56821235,
+   "day": "2025-12-18",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-18_2025-12-18",
+   "pack_root_sha256": "0ce37a871042adb9c6f195c756c44e2e2da1aeb86a7c8c6d1d27d90c8cdeed7f",
+   "preparation_wall_seconds": 69.238,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58225698,
+   "day": "2025-12-19",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-19_2025-12-19",
+   "pack_root_sha256": "dbca8a7b75bb2a5eac41201f292750df93d1c916ac6a51838b7d784a7b441530",
+   "preparation_wall_seconds": 74.041,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 304941,
+   "day": "2025-12-20",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-20_2025-12-20",
+   "pack_root_sha256": "3381adbd892cfb86c931dfd2940c317e59fb02a2517eb0ad51a3f603b032250f",
+   "preparation_wall_seconds": 1.139,
+   "record_count": 92
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15800,
+   "day": "2025-12-21",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-21_2025-12-21",
+   "pack_root_sha256": "fb88f3cb7c3bcd9392461db17133f1b0958bceae824063dec24badea8f2e5247",
+   "preparation_wall_seconds": 0.167,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58637448,
+   "day": "2025-12-22",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-22_2025-12-22",
+   "pack_root_sha256": "6569784e3223f4c5429dd96b568b4827c47348e8a5a77d2cfbebef4e24c76091",
+   "preparation_wall_seconds": 72.801,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57405547,
+   "day": "2025-12-23",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-23_2025-12-23",
+   "pack_root_sha256": "05669525943bfef7dc7de445fd6ee8bf36abe9c50101ad05355bc8dc04bd5518",
+   "preparation_wall_seconds": 71.159,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15783,
+   "day": "2025-12-24",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-24_2025-12-24",
+   "pack_root_sha256": "691e107506736a193fb5dd3ea9b4a435034aa0b3182e98b6fa347f2b4e3f0cf7",
+   "preparation_wall_seconds": 0.17,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 17392,
+   "day": "2025-12-25",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-25_2025-12-25",
+   "pack_root_sha256": "71ed24926061622176d6883475118a7c1097af99b9efebfaf940e9b90fbf13a8",
+   "preparation_wall_seconds": 0.271,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 16477,
+   "day": "2025-12-26",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-26_2025-12-26",
+   "pack_root_sha256": "e8141d004f66d36b51bc71a3f069bba78a0d426c456d974b95d53bdac45dcf2c",
+   "preparation_wall_seconds": 0.217,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 306229,
+   "day": "2025-12-27",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-27_2025-12-27",
+   "pack_root_sha256": "c5314e6b762b52755f8f3256394a033c33e92090167ae6642bd7fab1b736e96b",
+   "preparation_wall_seconds": 1.138,
+   "record_count": 92
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 17393,
+   "day": "2025-12-28",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-28_2025-12-28",
+   "pack_root_sha256": "4bc5e6b4292d182215495d0558a0702c07efd97830088bb6df41ddadace84c25",
+   "preparation_wall_seconds": 0.264,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56779407,
+   "day": "2025-12-29",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-29_2025-12-29",
+   "pack_root_sha256": "b0bf4c89aeed6286b2b4c4ddd2de4edca997fc7248b0c239e283cab194146199",
+   "preparation_wall_seconds": 73.105,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58131691,
+   "day": "2025-12-30",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-30_2025-12-30",
+   "pack_root_sha256": "d2a8dd2366be67948f3bf70c6b38cc236c8afd58a6fc2dd6b93f26ed4e2ff7d6",
+   "preparation_wall_seconds": 75.237,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15788,
+   "day": "2025-12-31",
+   "factor_reads_detected": false,
+   "pack_path": "packs/december_2025/lane_validation/2025-12-31_2025-12-31",
+   "pack_root_sha256": "ba5ceb595b8f5552f0f9eacb0dfd99d0cfa8a85cb3b593301c3a9b676cbac3c9",
+   "preparation_wall_seconds": 0.166,
+   "record_count": 96
+  }
+ ],
+ "campaign_sealed": false,
+ "compressed_bytes": 1082615733,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "march_outcomes_read": false,
+ "pack_config_authority": {
+  "campaign_sealed": false,
+  "decision_contract_sha256": "182ce6ba1837317063065251322ac9a5c87dace6b7c094c8a7a2e3504ee59fb0",
+  "factor_neutral_config_root_sha256": "e24c67eeec76bb6f94d4201da38c22ed340d19ef38b1f62076c5db27c998fb90",
+  "factorial_argument_shell_arm": "S0R0",
+  "factorial_economics_in_pack_fingerprint": false,
+  "profile": "repaired_package_conversion_v3",
+  "schema": "gtos.lane.rematerialization.pack_config_authority.v1"
+ },
+ "pack_count": 31,
+ "pack_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1/packs/december_2025",
+ "prepared_pack_sealed_marker_semantics": "byte_integrity_only_not_campaign_seal",
+ "receipt_root_sha256": "a6ad3ee1a91f3027b8948e3abb1ad86386f67d4f9c2206acf0d3f3e9ac0620f0",
+ "record_count": 2876,
+ "registry_root_sha256": "f21ee5360570ac5172c692c728b9761b0dd0905b07301b66bb23f6ec80ddfc19",
+ "schema": "gtos.lane.rematerialization.pack_build.v1",
+ "source_manifest_root_sha256": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+ "status": "LANE_TRUE_UTC_PACKS_BUILT_AND_VALIDATED",
+ "successor_of_pack_root_repo_relpath": null,
+ "successor_tag": null,
+ "surface": "VAL",
+ "wall_seconds": 1458.156,
+ "window": [
+  "2025-12-01",
+  "2025-12-31"
+ ],
+ "window_id": "december_2025"
+}
+2026-08-06T00:37:08Z [december_2025] step 3 exit=0 free=45.93GB
+PASS 5/5 pre-existing windows byte-identical [december_2025:packs]
+2026-08-06T00:37:08Z [december_2025] COMPLETE free=45.93GB
+2026-08-06T00:37:15Z PACKCAP cont pid=19397
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "builds": [
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57337231,
+   "day": "2025-09-01",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-01_2025-09-01",
+   "pack_root_sha256": "00490ff11bb7c9e00f6bbe85857623e88fca3fb04507a67f1eb5cbcdec52568b",
+   "preparation_wall_seconds": 75.399,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58591391,
+   "day": "2025-09-02",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-02_2025-09-02",
+   "pack_root_sha256": "a4345e93318dd82dfbf4a3122ba63e08592f4bb7d9b31b92950916e19bb2b17d",
+   "preparation_wall_seconds": 77.223,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59956620,
+   "day": "2025-09-03",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-03_2025-09-03",
+   "pack_root_sha256": "701fa3b13ffc98a5b1ebb7d7468dedd623872563a124708b0648265c72ca93f5",
+   "preparation_wall_seconds": 73.893,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60786843,
+   "day": "2025-09-04",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-04_2025-09-04",
+   "pack_root_sha256": "f9b2419839b86eb508075ea965b10b47aba0738f8d7e4a4502cc6cb8ea726aca",
+   "preparation_wall_seconds": 79.448,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 52809651,
+   "day": "2025-09-05",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-05_2025-09-05",
+   "pack_root_sha256": "9e6f62923aebaa88f059a178c8c3b2eeab4a44a52e35bd9dafa6f70d64754f40",
+   "preparation_wall_seconds": 71.018,
+   "record_count": 84
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 31034,
+   "day": "2025-09-06",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-06_2025-09-06",
+   "pack_root_sha256": "96a9d7ae2a9d3e5ce53da8b4f44c80fa42448bec2276a1a34de0287bb7e3834c",
+   "preparation_wall_seconds": 0.142,
+   "record_count": 8
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15799,
+   "day": "2025-09-07",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-07_2025-09-07",
+   "pack_root_sha256": "a9020104df6d643e77553ba60ea613bc1948f2e67fc56af94f830bea01847c51",
+   "preparation_wall_seconds": 0.179,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61698058,
+   "day": "2025-09-08",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-08_2025-09-08",
+   "pack_root_sha256": "11fd3abf08bd8dd7627baddee98c894b20078d5a980b8edd82bbda751c40cf6e",
+   "preparation_wall_seconds": 80.278,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61658817,
+   "day": "2025-09-09",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-09_2025-09-09",
+   "pack_root_sha256": "578b5351db2634f56d4940a00d8d9b53a5ecf967d16af3c6f231ed93e91d95ee",
+   "preparation_wall_seconds": 606.213,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60001248,
+   "day": "2025-09-10",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-10_2025-09-10",
+   "pack_root_sha256": "d67aadb987b8306e77c078472e5b0c184deb183706092bdb50531bbcec753fd6",
+   "preparation_wall_seconds": 72.636,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59276865,
+   "day": "2025-09-11",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-11_2025-09-11",
+   "pack_root_sha256": "efa1b00416f6bd72c5ce727d49226dd8d50ef048060160efe8adef49bf89790f",
+   "preparation_wall_seconds": 72.508,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58834099,
+   "day": "2025-09-12",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-12_2025-09-12",
+   "pack_root_sha256": "c6c0e0b866467d2392ba03c566b40ff07c1db016977851947a503f16da22e7bf",
+   "preparation_wall_seconds": 73.366,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 297302,
+   "day": "2025-09-13",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-13_2025-09-13",
+   "pack_root_sha256": "153d3414f50b7061905f8f13306b788193769b90b44f1e5aa3f000a54356bafd",
+   "preparation_wall_seconds": 1.085,
+   "record_count": 86
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15800,
+   "day": "2025-09-14",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-14_2025-09-14",
+   "pack_root_sha256": "4542a4ae046ec54f2c8b22048576d300bc9a23d20a5cf5f6883a914ec12b7c1c",
+   "preparation_wall_seconds": 0.164,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58910006,
+   "day": "2025-09-15",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-15_2025-09-15",
+   "pack_root_sha256": "aef5f8d8c6d5c40f78c535b14aa47937031a9e469d33b8513bf2d60c6c603e2e",
+   "preparation_wall_seconds": 73.731,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58974665,
+   "day": "2025-09-16",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-16_2025-09-16",
+   "pack_root_sha256": "fff42f86f2f37a6405f6363740e4d9013dda2cae1f2934937baf23d2194ce238",
+   "preparation_wall_seconds": 74.338,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56904407,
+   "day": "2025-09-17",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-17_2025-09-17",
+   "pack_root_sha256": "595a248129561b228f0da676c008301461f0a22aa41943e6f168b9837a6170d8",
+   "preparation_wall_seconds": 70.709,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56538666,
+   "day": "2025-09-18",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-18_2025-09-18",
+   "pack_root_sha256": "25a1bcbe332f0faccf3e019fc15b9cc7ddb0675971f9ed76b14e6ef524e76f1b",
+   "preparation_wall_seconds": 70.562,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 56392337,
+   "day": "2025-09-19",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-19_2025-09-19",
+   "pack_root_sha256": "a7f6cd141ee5a946911819965976f2a238ab7b5c0a4d4c23cea9ef0311420f52",
+   "preparation_wall_seconds": 71.114,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 260860,
+   "day": "2025-09-20",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-20_2025-09-20",
+   "pack_root_sha256": "dba74ecb8a687f33339565847ebd0c9916f7d5934a778e2e8adc79312cc12379",
+   "preparation_wall_seconds": 1.038,
+   "record_count": 80
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15799,
+   "day": "2025-09-21",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-21_2025-09-21",
+   "pack_root_sha256": "2aed2cbdac00e5119321f7ce26098050b73f0e9fa65113d9da8220cd6cc13664",
+   "preparation_wall_seconds": 0.165,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57668279,
+   "day": "2025-09-22",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-22_2025-09-22",
+   "pack_root_sha256": "b936ade3d1c9a341013b4a7f0cc986e798a332d2030239ad5a3ced8881fad69e",
+   "preparation_wall_seconds": 73.356,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58665312,
+   "day": "2025-09-23",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-23_2025-09-23",
+   "pack_root_sha256": "b79a324985216d29d285e21a0c18b06bdcb40da578adae8433b53ed0efe57578",
+   "preparation_wall_seconds": 73.05,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59882577,
+   "day": "2025-09-24",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-24_2025-09-24",
+   "pack_root_sha256": "15f31fc45dbc3c3ef1f6100ee07d67287feab76e9314c24427d5faca8408781f",
+   "preparation_wall_seconds": 74.652,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59944664,
+   "day": "2025-09-25",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-25_2025-09-25",
+   "pack_root_sha256": "bb93f335a035c534c3d06b3321769264f06eaf3e59dfbe9ceeafddd3b997b5d6",
+   "preparation_wall_seconds": 75.319,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60476356,
+   "day": "2025-09-26",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-26_2025-09-26",
+   "pack_root_sha256": "328fc54813367d5fdc874a31221ca78f3bd405b2eaef816e523c8b22e9b38956",
+   "preparation_wall_seconds": 76.537,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 99595,
+   "day": "2025-09-27",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-27_2025-09-27",
+   "pack_root_sha256": "647b00aeccacb2b492d0176063e65954e72ba6ac471c41d06def9c2729bc479c",
+   "preparation_wall_seconds": 0.432,
+   "record_count": 32
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 11761,
+   "day": "2025-09-28",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-28_2025-09-28",
+   "pack_root_sha256": "88a391493ba05ea645c318c3ffbe1a593109855e10c66f39c2fd29aa4c478bbc",
+   "preparation_wall_seconds": 0.127,
+   "record_count": 68
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60865274,
+   "day": "2025-09-29",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-29_2025-09-29",
+   "pack_root_sha256": "fc525a9cbb1d0895eb32bc3f6738292dfdd0fdb7d45fee8802c6c1a1fa7d0564",
+   "preparation_wall_seconds": 76.203,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60490109,
+   "day": "2025-09-30",
+   "factor_reads_detected": false,
+   "pack_path": "packs/september_2025/lane_validation/2025-09-30_2025-09-30",
+   "pack_root_sha256": "2a7dbe2f75bfb9503cc1e0ded600f09c3e55c32a6d44f36ab03f02dc7676905b",
+   "preparation_wall_seconds": 82.986,
+   "record_count": 96
+  }
+ ],
+ "campaign_sealed": false,
+ "compressed_bytes": 1297411425,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "march_outcomes_read": false,
+ "pack_config_authority": {
+  "campaign_sealed": false,
+  "decision_contract_sha256": "182ce6ba1837317063065251322ac9a5c87dace6b7c094c8a7a2e3504ee59fb0",
+  "factor_neutral_config_root_sha256": "e24c67eeec76bb6f94d4201da38c22ed340d19ef38b1f62076c5db27c998fb90",
+  "factorial_argument_shell_arm": "S0R0",
+  "factorial_economics_in_pack_fingerprint": false,
+  "profile": "repaired_package_conversion_v3",
+  "schema": "gtos.lane.rematerialization.pack_config_authority.v1"
+ },
+ "pack_count": 30,
+ "pack_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1/packs/september_2025",
+ "prepared_pack_sealed_marker_semantics": "byte_integrity_only_not_campaign_seal",
+ "receipt_root_sha256": "cec72d46ae79d5546530587c708fae05bea77fad0e727a4d7049e915657718de",
+ "record_count": 2662,
+ "registry_root_sha256": "3078087c2b2659a7e825af0535b32f2ebe528552b2ef1059965401c3b0de1dea",
+ "schema": "gtos.lane.rematerialization.pack_build.v1",
+ "source_manifest_root_sha256": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79",
+ "status": "LANE_TRUE_UTC_PACKS_BUILT_AND_VALIDATED",
+ "successor_of_pack_root_repo_relpath": null,
+ "successor_tag": null,
+ "surface": "VAL",
+ "wall_seconds": 2179.102,
+ "window": [
+  "2025-09-01",
+  "2025-09-30"
+ ],
+ "window_id": "september_2025"
+}
+2026-08-06T00:51:55Z [september_2025] step 3 exit=0 free=44.58GB
+PASS 5/5 pre-existing windows byte-identical [september_2025:packs]
+2026-08-06T00:51:55Z [september_2025] COMPLETE free=44.58GB
+2026-08-06T00:52:14Z [november_2025] START free=44.56GB
+PASS 5/5 pre-existing windows byte-identical [november_2025:pre]
+2026-08-06T00:52:14Z [november_2025] step 1/3 materialize-window free=44.56GB
+2026-08-06T01:00:31Z [october_2025] step 3/3 build-packs (resume) free=44.48GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 29,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 687207,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202511",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "october_2025": "b36eb41c0d382ad9e9df5d51502d45a569b719fac591737a5a6f73a23ec32178",
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "october_2025": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true,
+  "october_2025": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "4f170c4c33a992381d7c585ccf9bd2e7092aad05581f2afa5737b8d9f3064e0c",
+ "registry_root_sha256": "406c14bffd7d2ffd6abf214af99077aa5dc5c83df724a869bdd0b0c219d980c0",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "e2212e97fce1f8aafe3ea7b3e3479387f89dccd7eaa55b6d81f4415eda139d7c",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 20,
+ "tick_gap_status": null,
+ "tick_row_count": 8524879,
+ "tick_source_count": 4,
+ "wall_seconds": 503.001,
+ "window": [
+  "2025-11-01",
+  "2025-11-29"
+ ],
+ "window_id": "november_2025"
+}
+2026-08-06T01:05:00Z [november_2025] step 1 exit=0 free=43.70GB
+PASS 5/5 pre-existing windows byte-identical [november_2025:materialize]
+2026-08-06T01:05:00Z [november_2025] step 2/3 bind-source-plan free=43.70GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "canonical_source_plan_digest_sha256": "b51195fed36a96ef28d5ace9da8dcc14d4be646dc01344febbe12f10f874bc62",
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_true_utc_fragment_rebind_contract": "rows_unchanged; fragment maps to exactly one broker day; M1 and M15 prove that broker day spans adjacent UTC dates; unchanged M1/M15 floor must pass on the complete broker day",
+ "lane_true_utc_fragment_rebind_count": 0,
+ "lane_true_utc_fragment_rebinds": [],
+ "march_outcomes_read": false,
+ "r2_source_plan_claimed": false,
+ "receipt_root_sha256": "559675bb49dbfa11c940e4983977420ec59cfc07af85e96a8fb0eec75ff885dc",
+ "registry_root_sha256": "94ee38a5402d5df23dd6f005b1a1feb583d5a2ed1a69bf4817ac34acccd50d2b",
+ "schema": "gtos.lane.rematerialization.canonical_source_plan.v1",
+ "source_authority_day_count": 29,
+ "source_manifest_root_sha256": "e2212e97fce1f8aafe3ea7b3e3479387f89dccd7eaa55b6d81f4415eda139d7c",
+ "status": "LANE_CANONICAL_SOURCE_PLAN_BOUND",
+ "surface": "VAL",
+ "symbol_count": 24,
+ "wall_seconds": 13.577,
+ "window": [
+  "2025-11-01",
+  "2025-11-29"
+ ],
+ "window_id": "november_2025"
+}
+2026-08-06T01:05:14Z [november_2025] step 2 exit=0 free=43.69GB
+PASS 5/5 pre-existing windows byte-identical [november_2025:source-plan]
+2026-08-06T01:05:15Z [november_2025] step 3/3 build-packs free=43.69GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "builds": [
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60535316,
+   "day": "2025-10-01",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-01_2025-10-01",
+   "pack_root_sha256": "f9fbbaf51a21573b1e4c0005560e80f58a755b9e96ee052ec4f06534cbd36a0d",
+   "preparation_wall_seconds": 78.671,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60526981,
+   "day": "2025-10-02",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-02_2025-10-02",
+   "pack_root_sha256": "600a7f7ec2431bb5cc820410ff139ee44b5a31ad3bbe9c5f4bb40b0ee0990427",
+   "preparation_wall_seconds": 70.969,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60964363,
+   "day": "2025-10-03",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-03_2025-10-03",
+   "pack_root_sha256": "c74fd0a0c2f4be1df29070b3d9b6082d3826975340b96e5627d8731a4b576ba0",
+   "preparation_wall_seconds": 73.832,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 242781,
+   "day": "2025-10-04",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-04_2025-10-04",
+   "pack_root_sha256": "d480443944734d15617b091546d0f7858087659b49308493dd8206043ca93102",
+   "preparation_wall_seconds": 0.92,
+   "record_count": 72
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15797,
+   "day": "2025-10-05",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-05_2025-10-05",
+   "pack_root_sha256": "aeb11068aef189fb32f1908901dd4ec7ae831cf7f17ee9492a75ab667452df10",
+   "preparation_wall_seconds": 0.168,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62548548,
+   "day": "2025-10-06",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-06_2025-10-06",
+   "pack_root_sha256": "13b29529ea92d339af51e260195cf16d87eeeb1246be6312d96df925bc18756b",
+   "preparation_wall_seconds": 75.933,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61252385,
+   "day": "2025-10-07",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-07_2025-10-07",
+   "pack_root_sha256": "5d95b9e654fa91c1b60ce948e1db64d5e877553b7e8164024447464f1c9e6010",
+   "preparation_wall_seconds": 74.594,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59835479,
+   "day": "2025-10-08",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-08_2025-10-08",
+   "pack_root_sha256": "e167f616a2e320534be2ea9b8a41b4539c2fc18f03bff6f38b7972ab57ab658e",
+   "preparation_wall_seconds": 75.282,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60881666,
+   "day": "2025-10-09",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-09_2025-10-09",
+   "pack_root_sha256": "8234caebe5e57ef605f46ca7ee4423995d379a3940e40f6719d0926946bd7676",
+   "preparation_wall_seconds": 73.799,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60531069,
+   "day": "2025-10-10",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-10_2025-10-10",
+   "pack_root_sha256": "3eddd361f60856e17ad0563288041cff5606172f8883838cac6eb0e1ac391534",
+   "preparation_wall_seconds": 73.694,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 259789,
+   "day": "2025-10-11",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-11_2025-10-11",
+   "pack_root_sha256": "3a56fb7537f6bc970225dce254dc09c8d539e1f8cfb375ef09f7aff54897eded",
+   "preparation_wall_seconds": 1.005,
+   "record_count": 80
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15797,
+   "day": "2025-10-12",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-12_2025-10-12",
+   "pack_root_sha256": "fe8639a76a4b062a111bba18a8edbce8c9c2644c7400c058974627b3ccdde5fb",
+   "preparation_wall_seconds": 0.166,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59956243,
+   "day": "2025-10-13",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-13_2025-10-13",
+   "pack_root_sha256": "7545afeb220ee4ecab543ba10bb7a239c8951b3059edc62e2b72c26fbb457f3a",
+   "preparation_wall_seconds": 71.897,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61494554,
+   "day": "2025-10-14",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-14_2025-10-14",
+   "pack_root_sha256": "c196d84a1a43e0c6598d4df70c3079e4a66e3c8469dc169aed495160613a79e9",
+   "preparation_wall_seconds": 72.366,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60996439,
+   "day": "2025-10-15",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-15_2025-10-15",
+   "pack_root_sha256": "12e4634a6ab58cf5bca4523faaf5276ee0c0a6ed498d64404c9a34b5590b5d5c",
+   "preparation_wall_seconds": 69.789,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59548748,
+   "day": "2025-10-16",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-16_2025-10-16",
+   "pack_root_sha256": "466c9c1919a8f757d25c8421fc477b14d83eebc87e26463404f6f1f20f5ff91e",
+   "preparation_wall_seconds": 69.483,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61188777,
+   "day": "2025-10-17",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-17_2025-10-17",
+   "pack_root_sha256": "d1d4c36616e368102af2c5fa89dca925478e20ca847f797a3be83b3fba21b176",
+   "preparation_wall_seconds": 72.651,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 260078,
+   "day": "2025-10-18",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-18_2025-10-18",
+   "pack_root_sha256": "b4f47b01ded3a6e45d7cd0140e02789ad842095f5472b074d6aa9d7fa5d1e1e2",
+   "preparation_wall_seconds": 0.997,
+   "record_count": 80
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15800,
+   "day": "2025-10-19",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-19_2025-10-19",
+   "pack_root_sha256": "1b06b7753862379a52936d3b0a0e0ab547512a0feb131a42205f360f0022b52f",
+   "preparation_wall_seconds": 0.162,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62617913,
+   "day": "2025-10-20",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-20_2025-10-20",
+   "pack_root_sha256": "f56c2aeeb821de815f6249477d970d6420cb8c997f935e3129d1afd9a03f2b9a",
+   "preparation_wall_seconds": 74.195,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62172244,
+   "day": "2025-10-21",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-21_2025-10-21",
+   "pack_root_sha256": "f20d8e18b831b8b868494cb63cc24fde48ac9b13b390a9cbe06b6189bc5d4710",
+   "preparation_wall_seconds": 76.79,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60576602,
+   "day": "2025-10-22",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-22_2025-10-22",
+   "pack_root_sha256": "c836a38bd8eb3c12d022c8837c1bd7834843e2b887da772cb6c8985e7e0af34c",
+   "preparation_wall_seconds": 73.908,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60470231,
+   "day": "2025-10-23",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-23_2025-10-23",
+   "pack_root_sha256": "22d7715bb1df60f5e33bc15e3508713381f8042f04fddce66d40db843f2bb41e",
+   "preparation_wall_seconds": 73.354,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59586532,
+   "day": "2025-10-24",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-24_2025-10-24",
+   "pack_root_sha256": "c7bbc07ddc8485e642893b3650c7b2b6cbfb80c364a24996c0e4602c1cb16103",
+   "preparation_wall_seconds": 74.901,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 228402,
+   "day": "2025-10-25",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-25_2025-10-25",
+   "pack_root_sha256": "eb2d0c43950db73fc9e030c2bd6579601cc78676b00dc8aa040477312a1fab6d",
+   "preparation_wall_seconds": 0.951,
+   "record_count": 72
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15798,
+   "day": "2025-10-26",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-26_2025-10-26",
+   "pack_root_sha256": "450e063f98a226774df97864afd8ef85e5635226cd4f23ff98cc3c36fb96eba9",
+   "preparation_wall_seconds": 0.173,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60926876,
+   "day": "2025-10-27",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-27_2025-10-27",
+   "pack_root_sha256": "b35dacfd264e4827c1349402b9170f6864a8422019b7ba606b8830902a1e987a",
+   "preparation_wall_seconds": 79.305,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62874960,
+   "day": "2025-10-28",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-28_2025-10-28",
+   "pack_root_sha256": "ce0a805465537b9415673bcca67cd18d19cda1219e76fb8571a5e6a1e108c4e4",
+   "preparation_wall_seconds": 80.192,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62573378,
+   "day": "2025-10-29",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-29_2025-10-29",
+   "pack_root_sha256": "2e0ba963224bd19c475350344053d2221dc8bf529fad3c439dedcad053fc71cb",
+   "preparation_wall_seconds": 81.8,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62144621,
+   "day": "2025-10-30",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-30_2025-10-30",
+   "pack_root_sha256": "43073b7fe006fb8d57c30867d96104c2df032d08831262117210a97178a98c03",
+   "preparation_wall_seconds": 76.233,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61989493,
+   "day": "2025-10-31",
+   "factor_reads_detected": false,
+   "pack_path": "packs/october_2025/lane_validation/2025-10-31_2025-10-31",
+   "pack_root_sha256": "eb211e1962d8abb341675f3b4b280d7a6f33fa23dc15926cb714a83bbd354588",
+   "preparation_wall_seconds": 81.582,
+   "record_count": 96
+  }
+ ],
+ "campaign_sealed": false,
+ "compressed_bytes": 1407247660,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "march_outcomes_read": false,
+ "pack_config_authority": {
+  "campaign_sealed": false,
+  "decision_contract_sha256": "182ce6ba1837317063065251322ac9a5c87dace6b7c094c8a7a2e3504ee59fb0",
+  "factor_neutral_config_root_sha256": "e24c67eeec76bb6f94d4201da38c22ed340d19ef38b1f62076c5db27c998fb90",
+  "factorial_argument_shell_arm": "S0R0",
+  "factorial_economics_in_pack_fingerprint": false,
+  "profile": "repaired_package_conversion_v3",
+  "schema": "gtos.lane.rematerialization.pack_config_authority.v1"
+ },
+ "pack_count": 31,
+ "pack_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1/packs/october_2025",
+ "prepared_pack_sealed_marker_semantics": "byte_integrity_only_not_campaign_seal",
+ "receipt_root_sha256": "9e515f6c0cb68675af1530e2b46090316a53c435e8e4604537dc056aeb3a8814",
+ "record_count": 2896,
+ "registry_root_sha256": "c30264f7e4f99d301d05a164286255efd25ab5c1ebf7bec5ba286171ed16836b",
+ "schema": "gtos.lane.rematerialization.pack_build.v1",
+ "source_manifest_root_sha256": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+ "status": "LANE_TRUE_UTC_PACKS_BUILT_AND_VALIDATED",
+ "successor_of_pack_root_repo_relpath": null,
+ "successor_tag": null,
+ "surface": "VAL",
+ "wall_seconds": 1730.934,
+ "window": [
+  "2025-10-01",
+  "2025-10-31"
+ ],
+ "window_id": "october_2025"
+}
+2026-08-06T01:29:38Z [october_2025] step 3 exit=0 free=41.38GB
+PASS 5/5 pre-existing windows byte-identical [october_2025:packs]
+2026-08-06T01:29:38Z [october_2025] COMPLETE free=41.38GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "builds": [
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 306307,
+   "day": "2025-11-01",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-01_2025-11-01",
+   "pack_root_sha256": "1c6e19b0ff41a18321542121a55a623f544e8206270dca07f28801ec47da3442",
+   "preparation_wall_seconds": 1.15,
+   "record_count": 92
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 13488,
+   "day": "2025-11-02",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-02_2025-11-02",
+   "pack_root_sha256": "8efe0739a7edf0997a86c9d400873dee64579ef784d47ace28b0640c6c91c383",
+   "preparation_wall_seconds": 0.142,
+   "record_count": 80
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 63156746,
+   "day": "2025-11-03",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-03_2025-11-03",
+   "pack_root_sha256": "a2f12e2d1b2288278045264dc30505ae03f2345ca5c7cb04b9349a9d9455db30",
+   "preparation_wall_seconds": 73.737,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 63520729,
+   "day": "2025-11-04",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-04_2025-11-04",
+   "pack_root_sha256": "c5ca5425193eb3d95297153c527c92c52b825e800a1efd50aa8369ea29b309e2",
+   "preparation_wall_seconds": 76.969,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 64139077,
+   "day": "2025-11-05",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-05_2025-11-05",
+   "pack_root_sha256": "8927e2b35e6cb02f49892cfd53ea3f94544e3932cd4e6198129fcca0980fea3a",
+   "preparation_wall_seconds": 73.288,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 63369312,
+   "day": "2025-11-06",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-06_2025-11-06",
+   "pack_root_sha256": "3ac5b775944f5e1d69463897125b3d6e85f58a3874f03460c7954dbdf9cf4b6f",
+   "preparation_wall_seconds": 72.337,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62438858,
+   "day": "2025-11-07",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-07_2025-11-07",
+   "pack_root_sha256": "f07584d461ae049100c3e29e8b00550ff7102d99d2f7b14477820de22064f79e",
+   "preparation_wall_seconds": 72.082,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 230496,
+   "day": "2025-11-08",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-08_2025-11-08",
+   "pack_root_sha256": "0ce8caf5ff682f08e85bfdc00cd6df8a1fac36cc2acf1835412ec7a81a95d63b",
+   "preparation_wall_seconds": 0.9,
+   "record_count": 72
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15798,
+   "day": "2025-11-09",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-09_2025-11-09",
+   "pack_root_sha256": "fd2582964f529d512cf64e7596c2ccca2f2804f987930cef6d250a0aa841d385",
+   "preparation_wall_seconds": 0.162,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 64947034,
+   "day": "2025-11-10",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-10_2025-11-10",
+   "pack_root_sha256": "f9c9929d4d2e5baaf602b2eb318c9b797d148106b5aa697b9f2736d300b8747f",
+   "preparation_wall_seconds": 74.574,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 63388067,
+   "day": "2025-11-11",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-11_2025-11-11",
+   "pack_root_sha256": "b23a51de2b7156e9c53db802e3c67d6fdbc374c9ae91a6e9174bfc7ecc903be3",
+   "preparation_wall_seconds": 73.515,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61143021,
+   "day": "2025-11-12",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-12_2025-11-12",
+   "pack_root_sha256": "70a24b06cf4e4834957c9991c3be9a49f3617a2106ab8b101f6e4696086a756d",
+   "preparation_wall_seconds": 72.577,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62121242,
+   "day": "2025-11-13",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-13_2025-11-13",
+   "pack_root_sha256": "dec94330ff213449737d158ee8411bbf3ba3193164dcdb02b0bd6d6081026af5",
+   "preparation_wall_seconds": 74.131,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61701063,
+   "day": "2025-11-14",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-14_2025-11-14",
+   "pack_root_sha256": "c67f166dd8c1fe4bd728ee7108c7ac5af6cccae4d95cf398745ede26a845aafb",
+   "preparation_wall_seconds": 73.707,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 307026,
+   "day": "2025-11-15",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-15_2025-11-15",
+   "pack_root_sha256": "04c4d0ffa2f932220d57a82ddd65a519c931df711826ae06fb31d9635e76d53e",
+   "preparation_wall_seconds": 1.144,
+   "record_count": 92
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15798,
+   "day": "2025-11-16",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-16_2025-11-16",
+   "pack_root_sha256": "a6564f8fd372478980b12da09f687865baf0f3d7b8ad5b33a42e745dc2cb39fb",
+   "preparation_wall_seconds": 0.163,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61944620,
+   "day": "2025-11-17",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-17_2025-11-17",
+   "pack_root_sha256": "c2069106ed2deb1fd4e2894737e2b47e11a7508b9149c3789bc111059231b707",
+   "preparation_wall_seconds": 76.239,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62161016,
+   "day": "2025-11-18",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-18_2025-11-18",
+   "pack_root_sha256": "8fe9834f35413803da1bf3b69caae0996b11f5d2ffaefe581610ab267f51dae7",
+   "preparation_wall_seconds": 78.584,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62640892,
+   "day": "2025-11-19",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-19_2025-11-19",
+   "pack_root_sha256": "a1d158f5d4f099fcbb5cca51c9b3d28cf1815e0a2de86b806e2e1b10570b5dfa",
+   "preparation_wall_seconds": 77.099,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 65290632,
+   "day": "2025-11-20",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-20_2025-11-20",
+   "pack_root_sha256": "f40006235408051a37358ecac87cf6501d69f7cee1f04115283b741498f6c694",
+   "preparation_wall_seconds": 82.464,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 65208388,
+   "day": "2025-11-21",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-21_2025-11-21",
+   "pack_root_sha256": "85fa9f010b1a8a2d6de3f54be437305c6a0de076959aa6d50f4d4530ff065cbc",
+   "preparation_wall_seconds": 82.935,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 234358,
+   "day": "2025-11-22",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-22_2025-11-22",
+   "pack_root_sha256": "8268b983a72ce057b15d3f7a8a33a33e6d0289615182abb3121595955b55644d",
+   "preparation_wall_seconds": 0.922,
+   "record_count": 72
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15799,
+   "day": "2025-11-23",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-23_2025-11-23",
+   "pack_root_sha256": "809135579bf5fdddea03188f89afb6b36968343b0c172522bf00970ba26a5f34",
+   "preparation_wall_seconds": 0.165,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 67663067,
+   "day": "2025-11-24",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-24_2025-11-24",
+   "pack_root_sha256": "226ab9d9e495ed457f830945e41c9c87122638dc0a3e7a5e6c85739f3f5e7570",
+   "preparation_wall_seconds": 84.217,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 66486844,
+   "day": "2025-11-25",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-25_2025-11-25",
+   "pack_root_sha256": "50367777bba2cc8a0103507f969a36801d9d282a62dc7df44643f522e2ea9e88",
+   "preparation_wall_seconds": 81.763,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 65047899,
+   "day": "2025-11-26",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-26_2025-11-26",
+   "pack_root_sha256": "443f90d10782b71bb62ae9afa68396a91474fd4d6e715b7de08d8b5f6120115e",
+   "preparation_wall_seconds": 79.69,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62790867,
+   "day": "2025-11-27",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-27_2025-11-27",
+   "pack_root_sha256": "a4d541f6f70686bb32f97001767d14474e3bac24f79192ecd6d48658b32aff76",
+   "preparation_wall_seconds": 77.14,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62809859,
+   "day": "2025-11-28",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-28_2025-11-28",
+   "pack_root_sha256": "8de606cdb09a71405072c9cc53947c91a7833f8e6ba2cb512fc9079e31e29ec9",
+   "preparation_wall_seconds": 74.11,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 306031,
+   "day": "2025-11-29",
+   "factor_reads_detected": false,
+   "pack_path": "packs/november_2025/lane_validation/2025-11-29_2025-11-29",
+   "pack_root_sha256": "c55248d65574d4bf4bf83a5e797df849a76ca00a68e3abd83ebc356e4e5f378b",
+   "preparation_wall_seconds": 1.138,
+   "record_count": 92
+  }
+ ],
+ "campaign_sealed": false,
+ "compressed_bytes": 1273414334,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "march_outcomes_read": false,
+ "pack_config_authority": {
+  "campaign_sealed": false,
+  "decision_contract_sha256": "182ce6ba1837317063065251322ac9a5c87dace6b7c094c8a7a2e3504ee59fb0",
+  "factor_neutral_config_root_sha256": "e24c67eeec76bb6f94d4201da38c22ed340d19ef38b1f62076c5db27c998fb90",
+  "factorial_argument_shell_arm": "S0R0",
+  "factorial_economics_in_pack_fingerprint": false,
+  "profile": "repaired_package_conversion_v3",
+  "schema": "gtos.lane.rematerialization.pack_config_authority.v1"
+ },
+ "pack_count": 29,
+ "pack_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1/packs/november_2025",
+ "prepared_pack_sealed_marker_semantics": "byte_integrity_only_not_campaign_seal",
+ "receipt_root_sha256": "c0dd4520d8088c6e014837605508275f1bddf06728ff9890005652ded67dde04",
+ "record_count": 2708,
+ "registry_root_sha256": "02b425198151202c4803fe2131932f64131e5d17c90e02d49206dbdf604605b9",
+ "schema": "gtos.lane.rematerialization.pack_build.v1",
+ "source_manifest_root_sha256": "e2212e97fce1f8aafe3ea7b3e3479387f89dccd7eaa55b6d81f4415eda139d7c",
+ "status": "LANE_TRUE_UTC_PACKS_BUILT_AND_VALIDATED",
+ "successor_of_pack_root_repo_relpath": null,
+ "successor_tag": null,
+ "surface": "VAL",
+ "wall_seconds": 1538.011,
+ "window": [
+  "2025-11-01",
+  "2025-11-29"
+ ],
+ "window_id": "november_2025"
+}
+2026-08-06T01:31:07Z [november_2025] step 3 exit=0 free=41.30GB
+PASS 5/5 pre-existing windows byte-identical [november_2025:packs]
+2026-08-06T01:31:07Z [november_2025] COMPLETE free=41.30GB
+2026-08-06T01:31:07Z [august_2025] START free=41.30GB
+PASS 5/5 pre-existing windows byte-identical [august_2025:pre]
+2026-08-06T01:31:07Z [august_2025] step 1/3 materialize-window free=41.30GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 30,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 720604,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202508",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "november_2025": "b51195fed36a96ef28d5ace9da8dcc14d4be646dc01344febbe12f10f874bc62",
+  "october_2025": "b36eb41c0d382ad9e9df5d51502d45a569b719fac591737a5a6f73a23ec32178",
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "november_2025": "e2212e97fce1f8aafe3ea7b3e3479387f89dccd7eaa55b6d81f4415eda139d7c",
+  "october_2025": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true,
+  "november_2025": true,
+  "october_2025": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "2c86592068940e492cc965af47a2e16ecb3b5ac0e219028199b9d67408fba9f6",
+ "registry_root_sha256": "f47b51367f39cda337aeb31f56177fdb6fc493370302cff790bbdc50de9d43a8",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "93c61b7bd36dba4564d51601d7a25d254e2ef3395ee19431e5a5b6cbdc2444fa",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 24,
+ "tick_gap_status": "captured_tick_archive_begins_after_window",
+ "tick_row_count": 0,
+ "tick_source_count": 0,
+ "wall_seconds": 4.096,
+ "window": [
+  "2025-08-01",
+  "2025-08-30"
+ ],
+ "window_id": "august_2025"
+}
+2026-08-06T01:31:12Z [august_2025] step 1 exit=0 free=41.26GB
+PASS 5/5 pre-existing windows byte-identical [august_2025:materialize]
+2026-08-06T01:31:12Z [august_2025] step 2/3 bind-source-plan free=41.26GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "canonical_source_plan_digest_sha256": "e604c43af82ed4625d56d0c45e618d69ed6db46d0fb1a855930bc57b65aebe3f",
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_true_utc_fragment_rebind_contract": "rows_unchanged; fragment maps to exactly one broker day; M1 and M15 prove that broker day spans adjacent UTC dates; unchanged M1/M15 floor must pass on the complete broker day",
+ "lane_true_utc_fragment_rebind_count": 0,
+ "lane_true_utc_fragment_rebinds": [],
+ "march_outcomes_read": false,
+ "r2_source_plan_claimed": false,
+ "receipt_root_sha256": "33fec29486fc3da51297c785c3fdb456551e2adc233c2f38ede14a72221eb1c2",
+ "registry_root_sha256": "3cfa3394a56953f199a60ec7dc6223816e6fb06a909d139021a6e3f64bffba74",
+ "schema": "gtos.lane.rematerialization.canonical_source_plan.v1",
+ "source_authority_day_count": 30,
+ "source_manifest_root_sha256": "93c61b7bd36dba4564d51601d7a25d254e2ef3395ee19431e5a5b6cbdc2444fa",
+ "status": "LANE_CANONICAL_SOURCE_PLAN_BOUND",
+ "surface": "VAL",
+ "symbol_count": 24,
+ "wall_seconds": 13.162,
+ "window": [
+  "2025-08-01",
+  "2025-08-30"
+ ],
+ "window_id": "august_2025"
+}
+2026-08-06T01:31:25Z [august_2025] step 2 exit=0 free=41.26GB
+PASS 5/5 pre-existing windows byte-identical [august_2025:source-plan]
+2026-08-06T01:31:25Z [august_2025] step 3/3 build-packs free=41.26GB
+2026-08-06T01:55:11Z [june_2025] START free=41.03GB
+PASS 5/5 pre-existing windows byte-identical [june_2025:pre]
+2026-08-06T01:55:11Z [june_2025] step 1/3 materialize-window free=41.03GB
+{
+ "bar_symbol_count": 24,
+ "broker_clock_rule": "new_york_plus_7",
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "captured_tick_archive_span": [
+  "2025-10-01T00:05:03.362000+00:00",
+  "2026-04-29T23:54:59.709000+00:00"
+ ],
+ "clock_conversion": "src.utils.broker_clock.broker_epoch_to_utc",
+ "day_count": 28,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1",
+ "logical_source_repo_root": "/Users/borr/GTOSActive/lane-inputs-true-utc-hold-20260805",
+ "m1_row_count": 723692,
+ "m1_source_count": 24,
+ "m1_source_family": "bridge_ftmo_m1_202506",
+ "march_outcomes_read": false,
+ "outcome_summary_statistics_computed": false,
+ "pre_existing_canonical_source_plan_digest_sha256": {
+  "april_2026": null,
+  "august_2025": "e604c43af82ed4625d56d0c45e618d69ed6db46d0fb1a855930bc57b65aebe3f",
+  "december_2025": "b63e8d9115ff8c01288ed46bdd4bd3693ad1c31b8aff4e8eea2e9d620d9696b1",
+  "february_2026": null,
+  "january_2026": "b44b433039bf7f5372fc067f62477cdb5c8b0d2caf4202755a922a7c198be954",
+  "march_2026": "8163172cbae28ae943ae940f3293bb2272671114e9e9bc0de3a7e04f79ffdf8e",
+  "may_2026": null,
+  "november_2025": "b51195fed36a96ef28d5ace9da8dcc14d4be646dc01344febbe12f10f874bc62",
+  "october_2025": "b36eb41c0d382ad9e9df5d51502d45a569b719fac591737a5a6f73a23ec32178",
+  "september_2025": "3df3c931dcdec9d29589cc079ac89db433965c7141f245cd6148669cd875ab03"
+ },
+ "pre_existing_source_manifest_root_sha256": {
+  "april_2026": "41dec186fa3cdd9a55f37b4debafbf82ed01ff269d59329689c9fd5c138fdafa",
+  "august_2025": "93c61b7bd36dba4564d51601d7a25d254e2ef3395ee19431e5a5b6cbdc2444fa",
+  "december_2025": "4d547da7bcfcd44723a146e36eea614668edbcdb9826fa2b30b79118f1a43ba5",
+  "february_2026": "955937e4f0c4c66ea95dcf52f1c3ac1a40b90e7c00411a9b1490e19a623e9148",
+  "january_2026": "8b7d3b269081f3e84672d57dbb304c4a81f8328600284c876c3a4ecf518754e3",
+  "march_2026": "f74b7f95cae570c9ea6c474f42a1b56eba558f14063b6cd3ee0ce1af1c147fbf",
+  "may_2026": "7e0864b2c2ca2619e8029a9715ff5a40de220e872233dfd3bacedbcd5f1b24e3",
+  "november_2025": "e2212e97fce1f8aafe3ea7b3e3479387f89dccd7eaa55b6d81f4415eda139d7c",
+  "october_2025": "9f05faa3de9a96546ae67f5420d9f2ada190b4e2613a67b04cddfe1a1e98236f",
+  "september_2025": "cbd202b14bbc9f594ff05ca1158067c1bc68880532ff07cdb71632c6170efe79"
+ },
+ "pre_existing_window_entries_unchanged": {
+  "april_2026": true,
+  "august_2025": true,
+  "december_2025": true,
+  "february_2026": true,
+  "january_2026": true,
+  "march_2026": true,
+  "may_2026": true,
+  "november_2025": true,
+  "october_2025": true,
+  "september_2025": true
+ },
+ "receipt_root_sha256": "80811b84098f0a6a277d615487fc9a1deae8909faad9b7cb9f277fb44a1456a7",
+ "registry_root_sha256": "9f501df8f82772a1ffe22798115da6c558ffa894842b82d854d95823938f722c",
+ "schema": "gtos.lane.rematerialization.receipt.v1",
+ "source_manifest_root_sha256": "6cab71b76a605d245a80a89b1eef3dc5d0c86231e4a65501c224f4ce2dec2b7f",
+ "static_bar_coverage": {
+  "D1": {
+   "max_first_utc": "2021-01-20T22:00:00+00:00",
+   "min_last_utc": "2026-06-14T21:00:00+00:00",
+   "symbol_count": 24
+  },
+  "H4": {
+   "max_first_utc": "2021-01-21T18:00:00+00:00",
+   "min_last_utc": "2026-06-15T01:00:00+00:00",
+   "symbol_count": 24
+  },
+  "M15": {
+   "max_first_utc": "2025-06-02T00:00:00+00:00",
+   "min_last_utc": "2026-06-09T20:45:00+00:00",
+   "symbol_count": 24
+  }
+ },
+ "static_bar_rows_reused_by_reference": 72,
+ "status": "LANE_TRUE_UTC_WINDOW_SOURCE_EXTENSION_COMPLETE",
+ "surface": "VAL",
+ "tick_gap_count": 24,
+ "tick_gap_status": "captured_tick_archive_begins_after_window",
+ "tick_row_count": 0,
+ "tick_source_count": 0,
+ "wall_seconds": 4.189,
+ "window": [
+  "2025-06-03",
+  "2025-06-30"
+ ],
+ "window_id": "june_2025"
+}
+2026-08-06T01:55:15Z [june_2025] step 1 exit=0 free=40.98GB
+PASS 5/5 pre-existing windows byte-identical [june_2025:materialize]
+2026-08-06T01:55:15Z [june_2025] step 2/3 bind-source-plan free=40.98GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "campaign_sealed": false,
+ "canonical_source_plan_digest_sha256": "b2de9cb0e396beffc06bdb18e50d3b168f9848d1f48996d0eab84891da66ab2e",
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "lane_true_utc_fragment_rebind_contract": "rows_unchanged; fragment maps to exactly one broker day; M1 and M15 prove that broker day spans adjacent UTC dates; unchanged M1/M15 floor must pass on the complete broker day",
+ "lane_true_utc_fragment_rebind_count": 0,
+ "lane_true_utc_fragment_rebinds": [],
+ "march_outcomes_read": false,
+ "r2_source_plan_claimed": false,
+ "receipt_root_sha256": "22ee6daa4ffdf6a98843b4ba614af5d13011d879d1cea421fc0ecbf89390dfa3",
+ "registry_root_sha256": "8e83b04feac6a31707b978fddb7965adcf931704c9538ab62e5e5b1238676b0f",
+ "schema": "gtos.lane.rematerialization.canonical_source_plan.v1",
+ "source_authority_day_count": 28,
+ "source_manifest_root_sha256": "6cab71b76a605d245a80a89b1eef3dc5d0c86231e4a65501c224f4ce2dec2b7f",
+ "status": "LANE_CANONICAL_SOURCE_PLAN_BOUND",
+ "surface": "VAL",
+ "symbol_count": 24,
+ "wall_seconds": 13.129,
+ "window": [
+  "2025-06-03",
+  "2025-06-30"
+ ],
+ "window_id": "june_2025"
+}
+2026-08-06T01:55:29Z [june_2025] step 2 exit=0 free=40.97GB
+PASS 5/5 pre-existing windows byte-identical [june_2025:source-plan]
+2026-08-06T01:55:29Z [june_2025] step 3/3 build-packs free=40.97GB
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "builds": [
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 115752,
+   "day": "2025-06-03",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-03_2025-06-03",
+   "pack_root_sha256": "d334d6944490dcc78f17ce15c7cc2df26754113c832f34237b63479e91b5e055",
+   "preparation_wall_seconds": 4.456,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 116474,
+   "day": "2025-06-04",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-04_2025-06-04",
+   "pack_root_sha256": "b0afe17aba41891132e09927a4db439353364afbdec794edef622c06c5032420",
+   "preparation_wall_seconds": 4.431,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 123161,
+   "day": "2025-06-05",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-05_2025-06-05",
+   "pack_root_sha256": "70dea510f74b4703613fe9bb628e09de0e957134b81f63b9c43e672207af50de",
+   "preparation_wall_seconds": 4.505,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 105100,
+   "day": "2025-06-06",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-06_2025-06-06",
+   "pack_root_sha256": "e7cd580cd5164e73ffbc393c709209bfa936257c222a291807168455ba5cf5c8",
+   "preparation_wall_seconds": 4.088,
+   "record_count": 88
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 229479,
+   "day": "2025-06-07",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-07_2025-06-07",
+   "pack_root_sha256": "bc2388cca154ee8750e9e4e41a89fe5b79623438a58f819fc35b69bb7afb8a94",
+   "preparation_wall_seconds": 0.922,
+   "record_count": 72
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15801,
+   "day": "2025-06-08",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-08_2025-06-08",
+   "pack_root_sha256": "4d4783078e1b7e7cbc2051c32d9b863d17b9aa84b2608b2eb5caee7fb252b4c7",
+   "preparation_wall_seconds": 0.165,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 12146291,
+   "day": "2025-06-09",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-09_2025-06-09",
+   "pack_root_sha256": "c75f016a134eda9283d1c15149cded1f6d49b5068f304b2bfb89f93d8fa63eba",
+   "preparation_wall_seconds": 16.462,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 37352569,
+   "day": "2025-06-10",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-10_2025-06-10",
+   "pack_root_sha256": "05d62296e8760dd31f0298550d49d7043dc3bd16aa332d99b01f168e9dffbeb3",
+   "preparation_wall_seconds": 49.262,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57009620,
+   "day": "2025-06-11",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-11_2025-06-11",
+   "pack_root_sha256": "d87ceac25931d4095a138d8c95b24343778d88af8de20071fe055e167e9e0892",
+   "preparation_wall_seconds": 73.905,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57754087,
+   "day": "2025-06-12",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-12_2025-06-12",
+   "pack_root_sha256": "ccf925146776f9c90a197fdc765c54652acb40d7f79b7fc2a3d32aba30f42d24",
+   "preparation_wall_seconds": 74.905,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 52432704,
+   "day": "2025-06-13",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-13_2025-06-13",
+   "pack_root_sha256": "8b396e1be6c0eb416b5d73020bd799e7db5e23bd4ae35d4816e716150eef2bb4",
+   "preparation_wall_seconds": 71.996,
+   "record_count": 88
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 266927,
+   "day": "2025-06-14",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-14_2025-06-14",
+   "pack_root_sha256": "60125c504ac256e0fff62fef3b3cb2a39a70013f2f3b3ba5a8292387175cf092",
+   "preparation_wall_seconds": 1.018,
+   "record_count": 80
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 14662,
+   "day": "2025-06-15",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-15_2025-06-15",
+   "pack_root_sha256": "92c08842122ba6ece2d12f7f9aa44d3e4b9aeeb5aec4a397c4d7b5e7d80a30b9",
+   "preparation_wall_seconds": 0.152,
+   "record_count": 88
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60562398,
+   "day": "2025-06-16",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-16_2025-06-16",
+   "pack_root_sha256": "1df3975d52dad1afbeebee207acc381bb3ac7027ebaea4f6e8efdf10ab1307d3",
+   "preparation_wall_seconds": 73.893,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59416758,
+   "day": "2025-06-17",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-17_2025-06-17",
+   "pack_root_sha256": "a35caeaab91b1ede9e3c16a96a9823951bfeb519ea127cf1c296b1ab1f70bb69",
+   "preparation_wall_seconds": 72.917,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58961329,
+   "day": "2025-06-18",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-18_2025-06-18",
+   "pack_root_sha256": "69e2ed656d8100a2b8cc046a2f576435c62e4e103d5658d959f74d9525c38e86",
+   "preparation_wall_seconds": 72.088,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58371398,
+   "day": "2025-06-19",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-19_2025-06-19",
+   "pack_root_sha256": "2824f1eddd474c2fc17bcfde36736c7817067e73b1b45eb78c860e43a280a6b3",
+   "preparation_wall_seconds": 69.364,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59828226,
+   "day": "2025-06-20",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-20_2025-06-20",
+   "pack_root_sha256": "3e6bf91f681f80dfb4eb150929a869ec2a862a3152c233d9d2602c88bfc3a02d",
+   "preparation_wall_seconds": 72.016,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 305871,
+   "day": "2025-06-21",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-21_2025-06-21",
+   "pack_root_sha256": "a4be290b5bbd7267c00aef5dd0da194f1ae035026585ca93c4223022786b0d56",
+   "preparation_wall_seconds": 1.17,
+   "record_count": 92
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 13496,
+   "day": "2025-06-22",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-22_2025-06-22",
+   "pack_root_sha256": "dbc364d567e7249a3e4183c40154692d1011ed92c9db2431bbecf71521b45e08",
+   "preparation_wall_seconds": 0.144,
+   "record_count": 80
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61007693,
+   "day": "2025-06-23",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-23_2025-06-23",
+   "pack_root_sha256": "15712c86e37b634b8dfb5df5795c584f1570c3e758e0ea62067abad1e0918d6e",
+   "preparation_wall_seconds": 72.88,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61073990,
+   "day": "2025-06-24",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-24_2025-06-24",
+   "pack_root_sha256": "e38480ecbd8d358a41c43779d3f40327f07655d274e5e31ef2cb879d74dd0559",
+   "preparation_wall_seconds": 70.557,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59675956,
+   "day": "2025-06-25",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-25_2025-06-25",
+   "pack_root_sha256": "0a29a29b51d371111a8fb3c6e8f7e03214f3433bc028fa46aa1d06264f7772a1",
+   "preparation_wall_seconds": 69.022,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59223161,
+   "day": "2025-06-26",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-26_2025-06-26",
+   "pack_root_sha256": "6df34403cf11eb4f32fb3303a458d424d42f0f10eb032b1a0561318e0fb50529",
+   "preparation_wall_seconds": 69.605,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59570296,
+   "day": "2025-06-27",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-27_2025-06-27",
+   "pack_root_sha256": "3adf95e55629669f11f663468a4c155fad0de1c1fe773bd12cb0658b94cb903d",
+   "preparation_wall_seconds": 72.133,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 228921,
+   "day": "2025-06-28",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-28_2025-06-28",
+   "pack_root_sha256": "35f9d4ee2b3ba30ab08862d10091ee3428f43f0f039b8bc84f4d9b3b4ce99050",
+   "preparation_wall_seconds": 0.926,
+   "record_count": 72
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15799,
+   "day": "2025-06-29",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-29_2025-06-29",
+   "pack_root_sha256": "7ab334c7e42d337259489238be0fef75685e4af82c1cd3bdae8861ff26e60bdf",
+   "preparation_wall_seconds": 0.163,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61623883,
+   "day": "2025-06-30",
+   "factor_reads_detected": false,
+   "pack_path": "packs/june_2025/lane_validation/2025-06-30_2025-06-30",
+   "pack_root_sha256": "0b853d82dffa81555984942fc1eefbf2c21239a7f5d178859ea72e7ba7f65e17",
+   "preparation_wall_seconds": 74.947,
+   "record_count": 96
+  }
+ ],
+ "campaign_sealed": false,
+ "compressed_bytes": 877561802,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "march_outcomes_read": false,
+ "pack_config_authority": {
+  "campaign_sealed": false,
+  "decision_contract_sha256": "182ce6ba1837317063065251322ac9a5c87dace6b7c094c8a7a2e3504ee59fb0",
+  "factor_neutral_config_root_sha256": "e24c67eeec76bb6f94d4201da38c22ed340d19ef38b1f62076c5db27c998fb90",
+  "factorial_argument_shell_arm": "S0R0",
+  "factorial_economics_in_pack_fingerprint": false,
+  "profile": "repaired_package_conversion_v3",
+  "schema": "gtos.lane.rematerialization.pack_config_authority.v1"
+ },
+ "pack_count": 28,
+ "pack_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1/packs/june_2025",
+ "prepared_pack_sealed_marker_semantics": "byte_integrity_only_not_campaign_seal",
+ "receipt_root_sha256": "8ec6d72bcaedd62fa434f4687fb38e539bade63c596574e14f111d474b964d8e",
+ "record_count": 2580,
+ "registry_root_sha256": "bd36e731d7565a5fb333713608dec2cab4fd730bd32342e9375f577a4bc662c3",
+ "schema": "gtos.lane.rematerialization.pack_build.v1",
+ "source_manifest_root_sha256": "6cab71b76a605d245a80a89b1eef3dc5d0c86231e4a65501c224f4ce2dec2b7f",
+ "status": "LANE_TRUE_UTC_PACKS_BUILT_AND_VALIDATED",
+ "successor_of_pack_root_repo_relpath": null,
+ "successor_tag": null,
+ "surface": "VAL",
+ "wall_seconds": 1098.916,
+ "window": [
+  "2025-06-03",
+  "2025-06-30"
+ ],
+ "window_id": "june_2025"
+}
+2026-08-06T02:14:02Z [june_2025] step 3 exit=0 free=39.30GB
+PASS 5/5 pre-existing windows byte-identical [june_2025:packs]
+2026-08-06T02:14:02Z [june_2025] COMPLETE free=39.30GB
+2026-08-06T02:14:02Z JUNE DONE
+{
+ "broker_live_authority": false,
+ "broker_mutation_enabled": false,
+ "builds": [
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 52364026,
+   "day": "2025-08-01",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-01_2025-08-01",
+   "pack_root_sha256": "5901edacf6b6ff144bb3a6af5df39bce58ccee65f485c9687a92e218280738bb",
+   "preparation_wall_seconds": 64.835,
+   "record_count": 84
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 31896,
+   "day": "2025-08-02",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-02_2025-08-02",
+   "pack_root_sha256": "d7fbb35f8858e998ad684741547368af5d137a38fa26c2997ecfa5ee6c1723ad",
+   "preparation_wall_seconds": 0.127,
+   "record_count": 8
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 14387,
+   "day": "2025-08-03",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-03_2025-08-03",
+   "pack_root_sha256": "95094f572fed179ee804ed67d69c8c488db83d3a9c68b850972bcb390d7a9c30",
+   "preparation_wall_seconds": 0.152,
+   "record_count": 86
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62021663,
+   "day": "2025-08-04",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-04_2025-08-04",
+   "pack_root_sha256": "c9c8c077e581d163b79269785c73ae240461afb972de240b78ea5d293d5d9613",
+   "preparation_wall_seconds": 75.907,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62463270,
+   "day": "2025-08-05",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-05_2025-08-05",
+   "pack_root_sha256": "2357e54774b22f2965d189f4aff2b3b4c2c13abc05193b7747a8384e7014e510",
+   "preparation_wall_seconds": 77.821,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60968425,
+   "day": "2025-08-06",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-06_2025-08-06",
+   "pack_root_sha256": "fc003fb46969c0d9316f67e66c1470d497b88febdac459b8491fae668f956402",
+   "preparation_wall_seconds": 73.974,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60510084,
+   "day": "2025-08-07",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-07_2025-08-07",
+   "pack_root_sha256": "c8fa53f49c8f00f92c5d3c6fd5ba2f65d622d2938e485bffa04d8131dd24a943",
+   "preparation_wall_seconds": 75.739,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60927097,
+   "day": "2025-08-08",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-08_2025-08-08",
+   "pack_root_sha256": "c58b9805b14fd94af805c5a8885b2c595e3c5fd0e14dc3f5b51e709ea4d29570",
+   "preparation_wall_seconds": 77.184,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 308823,
+   "day": "2025-08-09",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-09_2025-08-09",
+   "pack_root_sha256": "2572f0ba98db39ed2d5a4122394ba3428a9f2abb8cb4788cb321fb09c5a20b76",
+   "preparation_wall_seconds": 1.164,
+   "record_count": 92
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15800,
+   "day": "2025-08-10",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-10_2025-08-10",
+   "pack_root_sha256": "23946970dc388f3971a17b7b5d9d391f5efc51b313aea06c40008b8f7d80aaca",
+   "preparation_wall_seconds": 0.167,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 62460516,
+   "day": "2025-08-11",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-11_2025-08-11",
+   "pack_root_sha256": "16b46494244e2c6e157e11cd19cb48f0ce4ceadd0700095128405f51644b525f",
+   "preparation_wall_seconds": 78.66,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61431600,
+   "day": "2025-08-12",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-12_2025-08-12",
+   "pack_root_sha256": "788256c8baca66a9dd2a917032454104d9150ba342d0adc5ee8eadd3b010cc15",
+   "preparation_wall_seconds": 82.483,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 61020420,
+   "day": "2025-08-13",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-13_2025-08-13",
+   "pack_root_sha256": "8bd6d25ab4196c4eaa03ca0558ce0c93e1f0d4577d67fc3c7588ceaa3c0aeb88",
+   "preparation_wall_seconds": 78.325,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60261208,
+   "day": "2025-08-14",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-14_2025-08-14",
+   "pack_root_sha256": "97884ed777df45d8e97298df8b8095eac1c7c9513bbd2bc504cd284352121e12",
+   "preparation_wall_seconds": 73.735,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59087872,
+   "day": "2025-08-15",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-15_2025-08-15",
+   "pack_root_sha256": "a5b0d182b30a1c1726846142b6a1ebb67137b9c6f7dfd9de5b6741115c782edd",
+   "preparation_wall_seconds": 73.498,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 217121,
+   "day": "2025-08-16",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-16_2025-08-16",
+   "pack_root_sha256": "8570fd32505ad3084f760a8c34089db983990039422c372a7a9023f082b99661",
+   "preparation_wall_seconds": 0.85,
+   "record_count": 68
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15799,
+   "day": "2025-08-17",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-17_2025-08-17",
+   "pack_root_sha256": "b5608e6a79aa9f498e05d8dd64b268904d19ced1f2b8c6b25d42210eee646e48",
+   "preparation_wall_seconds": 0.165,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 60323036,
+   "day": "2025-08-18",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-18_2025-08-18",
+   "pack_root_sha256": "062622c606c91dc2c099085406854849915257afe32034218e56841fee582700",
+   "preparation_wall_seconds": 72.843,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 59044086,
+   "day": "2025-08-19",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-19_2025-08-19",
+   "pack_root_sha256": "5b240b326c576fe0a19c16484b0cdf9fd0042b16fed618f38a725e201824325f",
+   "preparation_wall_seconds": 72.565,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58201373,
+   "day": "2025-08-20",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-20_2025-08-20",
+   "pack_root_sha256": "b49098983e2336be8eb8f7deb1ad69007cf761deae33740702393321c7fd34cd",
+   "preparation_wall_seconds": 73.806,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57474034,
+   "day": "2025-08-21",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-21_2025-08-21",
+   "pack_root_sha256": "36e44b70973579ec01df3d9f718118772af83316d35a233dce188b176aab73e1",
+   "preparation_wall_seconds": 69.845,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57196033,
+   "day": "2025-08-22",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-22_2025-08-22",
+   "pack_root_sha256": "0e06c7b0fde0ff5e2ef8ec1f4de5e5b688bb4bec6630d127f8c8e247d3b166f3",
+   "preparation_wall_seconds": 69.072,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 205846,
+   "day": "2025-08-23",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-23_2025-08-23",
+   "pack_root_sha256": "31ee52547a1879cddc72f2dcefc5e61fa686e8670fa2c7fcc2b00b99554e55a5",
+   "preparation_wall_seconds": 0.798,
+   "record_count": 64
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 16461,
+   "day": "2025-08-24",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-24_2025-08-24",
+   "pack_root_sha256": "3dee26b652faa6cc142e1606e36e66e628fee4a9a949dc9afc50c74d6351d454",
+   "preparation_wall_seconds": 0.212,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 15776,
+   "day": "2025-08-25",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-25_2025-08-25",
+   "pack_root_sha256": "66962d2ed56851106d9fe040614b6cd240224ffcf0c6fb9437850daf8bec221a",
+   "preparation_wall_seconds": 0.164,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 58065722,
+   "day": "2025-08-26",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-26_2025-08-26",
+   "pack_root_sha256": "69e1f13e0d03b43a26dd5db3a6433eb059a047cdabc405a21c06c8066d5ee27c",
+   "preparation_wall_seconds": 71.371,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57442542,
+   "day": "2025-08-27",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-27_2025-08-27",
+   "pack_root_sha256": "83413b354b6f807773798c0bf000c44f1927b2e455feceb53599220d57629002",
+   "preparation_wall_seconds": 70.739,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 57575983,
+   "day": "2025-08-28",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-28_2025-08-28",
+   "pack_root_sha256": "1678f9f24419569ce46b235a3619754e9995683b0cd916607bfedaf73ec3133f",
+   "preparation_wall_seconds": 71.555,
+   "record_count": 96
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 49762583,
+   "day": "2025-08-29",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-29_2025-08-29",
+   "pack_root_sha256": "9d3bc2e94dd72080bd9abf677edd1649c9a3b782ce778fa858ce8cafcf89e3f3",
+   "preparation_wall_seconds": 58.912,
+   "record_count": 84
+  },
+  {
+   "broker_mutation_enabled": false,
+   "compressed_bytes": 31163,
+   "day": "2025-08-30",
+   "factor_reads_detected": false,
+   "pack_path": "packs/august_2025/lane_validation/2025-08-30_2025-08-30",
+   "pack_root_sha256": "602e35b03915a55e1851bb56514fc936e22a82e89bb35ecaeb576a73fc718a41",
+   "preparation_wall_seconds": 0.123,
+   "record_count": 8
+  }
+ ],
+ "campaign_sealed": false,
+ "compressed_bytes": 1179474645,
+ "economic_outcomes_read": false,
+ "evidence_class": "LANE_ITERATION_EVIDENCE - unbilled exploration, never admission-grade",
+ "march_outcomes_read": false,
+ "pack_config_authority": {
+  "campaign_sealed": false,
+  "decision_contract_sha256": "182ce6ba1837317063065251322ac9a5c87dace6b7c094c8a7a2e3504ee59fb0",
+  "factor_neutral_config_root_sha256": "e24c67eeec76bb6f94d4201da38c22ed340d19ef38b1f62076c5db27c998fb90",
+  "factorial_argument_shell_arm": "S0R0",
+  "factorial_economics_in_pack_fingerprint": false,
+  "profile": "repaired_package_conversion_v3",
+  "schema": "gtos.lane.rematerialization.pack_config_authority.v1"
+ },
+ "pack_count": 30,
+ "pack_root_repo_relpath": ".hermes/evidence/phase16/cj-rematerialization/LANE_INPUTS_TRUE_UTC_V1/packs/august_2025",
+ "prepared_pack_sealed_marker_semantics": "byte_integrity_only_not_campaign_seal",
+ "receipt_root_sha256": "8f9df27680479ca861010364e76e94293bdd1b46530cbf25465fe5d230bd4f11",
+ "record_count": 2606,
+ "registry_root_sha256": "b2760cdefa8786cb5d430f5f81c9458a48c87e01e4317d78b4b87b1d64394502",
+ "schema": "gtos.lane.rematerialization.pack_build.v1",
+ "source_manifest_root_sha256": "93c61b7bd36dba4564d51601d7a25d254e2ef3395ee19431e5a5b6cbdc2444fa",
+ "status": "LANE_TRUE_UTC_PACKS_BUILT_AND_VALIDATED",
+ "successor_of_pack_root_repo_relpath": null,
+ "successor_tag": null,
+ "surface": "VAL",
+ "wall_seconds": 1467.801,
+ "window": [
+  "2025-08-01",
+  "2025-08-30"
+ ],
+ "window_id": "august_2025"
+}
+2026-08-06T02:14:39Z [august_2025] step 3 exit=0 free=39.27GB
+PASS 5/5 pre-existing windows byte-identical [august_2025:packs]
+2026-08-06T02:14:39Z [august_2025] COMPLETE free=39.27GB
+2026-08-06T02:14:39Z REBUILDS DONE

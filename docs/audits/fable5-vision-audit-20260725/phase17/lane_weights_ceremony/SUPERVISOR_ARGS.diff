@@ -1,0 +1,35 @@
+Session CO semantic supervisor-args diff
+========================================
+
+This is deliberately not a whole-file patch.  The live supervisor is a host-specific fork
+whose last receipt records only sha256 prefix 63079cec; overwriting it with the repository
+copy would discard prior ceremony edits.  Apply these two argument additions to each existing
+per-book command after verifying its current tags/contracts below.
+
+FTMO existing command must already contain:
+  --tags crypto,energy_agri,sub_xvol_pullback,sub_mid_dn_revert,mx_btcusd_d1_donchian_20_breakout
+  --frontier-exits mx_btcusd_d1_donchian_20_breakout
+  --spread-geometry-floor sub_mid_dn_revert,sub_xvol_pullback
+
+FTMO add:
++ --lane-weights C:\ProgramData\GTOS\lane-weights\operator_profile.json
++ --lane-weights-key C:\ProgramData\GTOS\lane-weights\lane_weights.key
+
+redacted_account existing command must already contain:
+  --tags crypto,energy_agri,sub_xvol_pullback,sub_mid_dn_revert
+  --spread-geometry-floor sub_mid_dn_revert,sub_xvol_pullback
+  (no --frontier-exits)
+
+redacted_account add:
++ --lane-weights C:\ProgramData\GTOS\lane-weights\redacted_account_live_bee34003.json
++ --lane-weights-key C:\ProgramData\GTOS\lane-weights\lane_weights.key
+
+Do not add --entry-hour or --weekend-flat.  Session CH's current verdict keeps entry-hour
+off; the weekend rule is not part of Session CO's commission.
+
+Rollback diff, both accounts:
+- --lane-weights <account-file>
+- --lane-weights-key C:\ProgramData\GTOS\lane-weights\lane_weights.key
+
+The carried code then stays inert.  On the next launch it has no controller input and sizes
+every sleeve at x1.00.

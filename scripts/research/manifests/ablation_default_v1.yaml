@@ -1,0 +1,129 @@
+# L57 Ablation Framework — Default Pre-Registered Manifest v1
+#
+# CRITICAL — PRE-REGISTRATION CONTRACT:
+#   This file MUST be authored, frozen, and committed BEFORE the runner
+#   is invoked on any baseline prompt you intend to draw an inference
+#   from. Editing this file after seeing ablation results is POST-HOC
+#   HYPOTHESIS FORMATION, banned by CLAUDE.md "Prohibited Behaviors" #5.
+#   Authors who want a different ablation set must commit a NEW manifest
+#   under a new filename (e.g. `ablation_default_v2.yaml`) with a new
+#   `manifest_set_id`, mirroring the L56 metrics-pack pattern.
+#
+# The runner hashes (filename, content) into the run report — any
+# post-run edit changes the run_hash and is detectable at review time.
+#
+# Schema (one entry per ablation under `ablations:`):
+#   name:           short identifier — used in output paths + summary keys
+#   description:    human-readable explanation of what's being ablated
+#                   and why
+#   transformation: one of [drop_section, drop_framework, drop_gate,
+#                            replace_text, regex_remove]
+#   params:         transformation-specific parameters; see
+#                   src/research_infra/ablation_framework.py docstring
+#                   for the per-transformation key list
+
+manifest_set_id: ablation_default_v1
+description: >
+  Default pre-registered ablation manifest for L57. Ten ablations
+  covering OB-zone explanation, cross-instrument context, kill-zone
+  schedule, confidence scoring, session memory, framework prioritization,
+  tone, displacement, liquidity sweep, and touch-count rule. Each entry
+  is a Wave-1-applicable transformation (prompt-text only).
+
+ablations:
+  - name: drop_ob_zone_section
+    description: >
+      Remove the OB Zone Mechanism section from the prompt. Tests whether
+      the explicit zone-precision rationale is load-bearing for the
+      AI's CANDIDATE rate or realized R.
+    transformation: drop_section
+    params:
+      heading: "OB Zone Mechanism"
+
+  - name: drop_cross_instrument_context
+    description: >
+      Remove the cross-instrument context paragraph (XAU-D1-direction
+      hint that may bias non-correlated instruments — see CLAUDE.md
+      unresolved item #9 / ADR-006 follow-up B.1). Tests whether
+      removing the cross-instrument paragraph changes XAU-bias on
+      GBPUSD/USDJPY CANDIDATEs.
+    transformation: drop_section
+    params:
+      heading: "Cross-Instrument Context"
+
+  - name: drop_kill_zone_schedule
+    description: >
+      Remove the explicit kill-zone schedule table from the prompt.
+      Tests whether removing the time-window block changes CANDIDATE
+      timing or quantity.
+    transformation: drop_section
+    params:
+      heading: "Kill Zone Schedule"
+
+  - name: drop_confidence_scoring
+    description: >
+      Remove the confidence-scoring section. Per CLAUDE.md, the
+      confidence scorer is a rubber stamp (98% emit confidence=80) —
+      this ablation tests whether explicitly removing it changes
+      decisions.
+    transformation: drop_section
+    params:
+      heading: "Confidence Scoring"
+
+  - name: drop_session_memory_refs
+    description: >
+      Strip references to session memory from the prompt. Session memory
+      is disabled in production (T2b proved 55% CR suppression); this
+      ablation tests whether the residual prompt mention itself biases
+      decisions.
+    transformation: regex_remove
+    params:
+      pattern: "(?i)\\bsession\\s+memory\\b[^.\\n]*[.\\n]"
+
+  - name: drop_framework_prioritization
+    description: >
+      Remove the framework-prioritization paragraph that orders
+      ob_retest > fvg_fill > breaker_re_entry. Tests whether removing
+      the explicit ordering changes which framework is chosen on
+      multi-framework eligible candles.
+    transformation: drop_section
+    params:
+      heading: "Framework Prioritization"
+
+  - name: replace_wait_for_confirmation
+    description: >
+      Soften the "wait for confirmation" tone. Replaces the canonical
+      cautious phrase with a single neutral sentence. Tests whether
+      the cautionary tone is load-bearing for the CANDIDATE rate.
+    transformation: replace_text
+    params:
+      find: "Wait for confirmation before emitting CANDIDATE."
+      replace: "Emit CANDIDATE if the structural conditions are met."
+
+  - name: drop_displacement_requirement
+    description: >
+      Remove the displacement-required clause. Tests whether explicitly
+      requiring displacement before BOS is load-bearing for the AI's
+      CANDIDATE rate.
+    transformation: regex_remove
+    params:
+      pattern: "(?i)\\bdisplacement\\s+(is\\s+)?required[^.\\n]*[.\\n]"
+
+  - name: drop_liquidity_sweep_heuristic
+    description: >
+      Remove the liquidity-sweep heuristic paragraph. Tests whether
+      the sweep-detection guidance is load-bearing for entry timing.
+    transformation: drop_section
+    params:
+      heading: "Liquidity Sweep Heuristic"
+
+  - name: drop_touch_count_rule
+    description: >
+      Remove the touch-count rejection rule from the prompt. Note: this
+      is PROMPT-ONLY ablation; the canonical touch-count gate lives in
+      `src/components/permissions.py` (ADR-005) and is NOT removed by
+      this manifest. Tests whether the prompt-side mention adds anything
+      beyond the gate.
+    transformation: regex_remove
+    params:
+      pattern: "(?i)\\btouch[\\s_-]*count[^.\\n]*[.\\n]"

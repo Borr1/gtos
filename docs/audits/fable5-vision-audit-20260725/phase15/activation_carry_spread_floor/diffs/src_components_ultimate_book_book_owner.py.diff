@@ -1,0 +1,49 @@
+--- a/src/components/ultimate_book/book_owner.py
++++ b/src/components/ultimate_book/book_owner.py
+@@ -140,9 +140,9 @@
+ 
+ class UltimateBookOwner:
+     def __init__(self, base_config: dict, mt5, repo_root: str, namespace: str = "operator_profile",
+                  engine_factory: Optional[Callable[[str], Any]] = None,
+-                 frontier_exits: tuple = ()):
++                 frontier_exits: tuple = (), spread_geometry_floor=None):
+         # `frontier_exits` is a SET OF SLEEVE NAMES reached from `run_book.py --frontier-exits`
+         # (Session AU, B1550; carried by Session AZ, B1850). It is not a boolean because the two
+         # target-override sleeves are in opposite live states -- `mx_btcusd` is not in either
+         # account's `--tags` today, while `sub_xvol_pullback` IS armed at 3R on both accounts --
+@@ -152,19 +152,34 @@
+         # NOT a config key: `config/agent_config.yaml` and `config/profiles/redacted_account.yaml` are
+         # both hashed into a live activation token's config digest, so a key in either would
+         # stop the armed book placing until the token was re-minted. Default () ==
+         # byte-identical to what this host runs today.
++        # `spread_geometry_floor` is the second of the same shape, reached from `run_book.py
++        # --spread-geometry-floor` (Session AY, B1810; carried by Session CE, B2300). It is a
++        # PER-SLEEVE MAP rather than a boolean because AY-1 measured the repair sleeve by
++        # sleeve at the ratified rule and it is a REPAIR on two of the armed sleeves
++        # (`sub_mid_dn_revert` +0.426 R/day, `sub_xvol_pullback` +0.264), NEUTRAL on the other
++        # two (`crypto`, `energy_agri` -- inside the random-drop envelope at every band) and a
++        # NO-OP on seven of the estate. One boolean would force the two NEUTRAL sleeves to be
++        # armed with the two REPAIRs. It reaches GENERATION only -- the send-layer gate it
++        # mirrors already exists on this host and is untouched. It is a constructor argument
++        # and NOT a config key for the same reason `frontier_exits` is: both
++        # `config/agent_config.yaml` and `config/profiles/redacted_account.yaml` are hashed into a
++        # live activation token's config digest. Default {} == byte-identical to what this
++        # host runs today.
+         self.base_config = base_config or {}
+         self._frontier_exits = tuple(frontier_exits or ())
++        self._spread_geometry_floor = dict(spread_geometry_floor or {})
+         self._mt5 = mt5
+         self._repo_root = repo_root
+         self._namespace = namespace
+         rt = (self.base_config.get("gtos_vnext_runtime", self.base_config))
+         # the canonical->broker map lives on the full merged config (instruments[].market.mt5_symbol),
+         # NOT the gtos_vnext_runtime subtree -> build it from base_config and inject into the engine.
+         self._broker_symbol = build_broker_symbol_resolver(self.base_config)
+         self.engine = UltimateBookLiveEngine(rt, mt5, repo_root, namespace=namespace,
+-                                             broker_symbol=self._broker_symbol)
++                                             broker_symbol=self._broker_symbol,
++                                             spread_geometry_floor=self._spread_geometry_floor)
+         self.router = UltimateBookOrderRouter(self.base_config, namespace=namespace,
+                                               frontier_exits=self._frontier_exits)
+         self._engine_factory = engine_factory or _default_engine_factory(self.base_config, mt5)
+         # Per-(symbol, sleeve) execution engines. A symbol can be held by several sleeves at once

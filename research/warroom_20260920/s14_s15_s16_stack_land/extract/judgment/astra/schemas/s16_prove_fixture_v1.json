@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gtos.judgment.astra.s16_prove_fixture_v1",
+  "title": "s16_prove_fixture_v1",
+  "description": "Offline Dig/Chair S16 prove fixture. Reject unless schema+steal match. No network, host-mesh, place, or broker path.",
+  "type": "object",
+  "required": ["schema", "steal", "id", "request", "expected"],
+  "properties": {
+    "schema": {"const": "gtos.chair.s16.prove_fixture.v1"},
+    "steal": {"const": "S16"},
+    "id": {"type": "string"},
+    "label": {"type": "string"},
+    "request": {
+      "type": "object",
+      "required": ["stage"],
+      "properties": {
+        "stage": {"enum": ["input", "tool_pre", "observation", "response", "claim_verify"]},
+        "api": {"type": "string"},
+        "tool": {"type": ["string", "null"]},
+        "prompt": {"type": "string"},
+        "text": {"type": "string"},
+        "claim": {"type": "string"},
+        "action": {"type": "object"}
+      }
+    },
+    "mocks": {"type": ["object", "null"]},
+    "expected": {"type": "object"}
+  }
+}

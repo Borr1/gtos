@@ -1,0 +1,11 @@
+# Chair receipt — PR #34 Jev Everywhere / CF D shadow
+- URL: https://github.com/Borr1/ai-trading-agent/pull/34
+- Branch: cursor/jev-everywhere-shadow-f408
+- Cloud agent: bc-de321ae0-c0a3-52fd-ad67-becbea33f408
+- State: OPEN — SHADOW only; place VETO; religion revoked
+- Tests: judgment 112 passed
+- Historical prove: pass (Challenge 0)
+- Chair match bank: 10/10
+- Claim soft remains: CF D 70/30 hold +4.713 (anti-oracle); this PR wires compose labels on sidecar
+- Affinity law still applies: instrument×sleeve — CF D is soft after idea selection, not portable pattern license
+- Next: land extract onto VPS warroom_shadow when Chair chooses; do not NAME APPLY

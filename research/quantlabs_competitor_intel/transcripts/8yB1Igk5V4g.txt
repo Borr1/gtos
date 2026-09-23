@@ -1,0 +1,579 @@
+# Stop Backtesting! Use AI-Driven Algorithmic Trading Bots for Real Market Data
+URL: https://www.youtube.com/watch?v=8yB1Igk5V4g
+Video ID: 8yB1Igk5V4g
+Duration: 1612s
+Fetched: 2026-04-18T13:23:10Z
+---
+
+Hello everybody. Brian here from
+quantabsnet.com.
+What I'm about to show you is pretty
+incredible. I've uh come up with a new
+way to deploy strategies. We go through
+a phase which is better than back
+testing. Um, and once all a series of
+bots proved to be profitable after a day
+or two, you can then deploy them in real
+trading environments against live money.
+So, let me show you what I'm uh
+referring to here. Okay. So, in here,
+um, I've been running, uh, a bunch of,
+uh, bots here. So, this is just one
+example. You can see them spanned out
+across this uh PowerShell window.
+There's about 12 of them been running
+since Thursday night. And um you know,
+it's all great and all. Somebody want to
+see that. Um so, let me just show you
+what I've pretty well got. Okay, so
+we've got a bunch of PDFs and with the
+magic of uh AI, I'm able to um generally
+see how the bots are doing with their
+logs,
+text files that they generate. There's
+again 12 of them since two nights ago.
+And I'm going to show you how and which
+ones are best performing. So, I have an
+overall comparison of all of the bots
+available uh that have been running. And
+um you can see the periods here from
+February 4th uh to the 26.
+Um and that's all cool. So, let's go
+through this and I'm going to go through
+each detail. I'm just going to show you
+the best performing bots. So, here we
+can measure on a variety of things. So,
+these some of the bots. Okay. So, we
+have a Brent Crew geopolitical risk
+premium bot. This one is supposed to be
+the most profitable stable coin uh peg
+arbitrage. This Ethereum uh stake
+staking premium capture. This one's the
+most profitable. It's an XRP short
+squeeze. Uh we also have um gold silver
+ratio bot, copper aluminum spread, VIX
+call spread. We also have a few um
+Bitcoin bots breakout and ATR. And then
+we have an intraday futures uh bot as
+well. And I just want to show you just
+generally which ones are most
+profitable. Uh there's some other things
+you may want to uh be uh watch for
+throughout this video. Um just because I
+have another report that will show show
+you which trending styles are the best.
+So this one is the uh breakthrough
+goes through the orders. So some of them
+don't have a lot of trades. maybe one
+trade. Um there's a couple of other ones
+like the uh I think this is the stable
+coin one. Yeah. So this is the uh USDT
+arbitrage. Let me see if I have that
+available. So let me just go through
+this. These are available if you take a
+trial of my qua analytics. So here's the
+metrics for uh the XRP. So it's only
+been running for a few hours today. It's
+already up $13,000.
+rate of return at uh 28%. So this is the
+shortest running bot uh today only and
+it's pretty incredible when you look at
+profit factor 4.54 sharp ratio 2.84
+win ratio right now is a 50%
+um and so on. Okay, there's uh this one
+which has been doing very well. This
+one's I started last night 13,000 uh
+dollars
+um which is um the XRP
+squeeze bot. So this is running on uh
+CME. Okay, this is a big winner, one
+stopout. So those are the top two
+winners. Um so oddly enough, even though
+there's bad news in crypto, uh I did put
+up a putting breakdown on on this spot
+as well.
+um on uh the stablecoin one earlier
+today. So you can see here these are the
+top performing bots. So the only ones
+that are doing well the XRP squeeze and
+the stable coin.
+Everything else has lost money. So my
+point here is what's important is you
+let these things run in a test
+environment with real market data and
+then you let them run a day or two and
+just see if they end up being profitable
+or not over that time period and you
+look for these kind of metrics. So once
+you start seeing that these metrics
+profitable, there's no reason not to
+deploy them into the live market once
+you're comfortable with what you're
+seeing. Okay. So what I can do now is I
+can go through each individual
+um bot. So here is the first one I
+mentioned about the stable coin. Um so
+you can see here it's done uh in this
+case $620
+win ratio of 75% total trades at 12 and
+since last uh since today. Okay so this
+is a very very good bot. This will only
+work if your country lets you have
+access to perpetual stable coin uh
+markets for both uh USDC and uh USDT
+which is Tether. So, I'm not going to go
+into the details of it because I said I
+have a coding breakdown on it already.
+Um, but you see the metrics here are
+quite quite detailed. Gives you a
+trading log as well. Um, and this is
+real data. So, this has done very very
+good one day. Okay. So, it's using a box
+spread. Um, and then a reversal as well.
+So, from what the coding breakdown said,
+it's not very dependent on uh the crypto
+market itself. the condition of let's
+say the direction of uh Bitcoin or
+Ethereum. It's all independent, which is
+kind of what you want. So, I'm pretty
+pretty happy about it. Um, but you can
+see here with the charting uh and what
+I'm able to do uh is pretty pretty
+impressive. So, uh let me just see here
+if I can show you if you wanted to take
+a trial and get access to this. Let's go
+to the to the group section. uh do a
+trial for the Quan Analytics and uh I
+could do this all the time, but I'm just
+showing you the process. Now, one last
+step before I go live, be able to um
+take this. Um so, here's the coding
+breakdown on this on the blog. Most
+profitable, lucrative, stable coin, RBOT
+posted. Okay. Um that's the code. Sorry.
+Um let me just show you the uh groups
+here. So, come into the groups. Look for
+uh Quant Finance group here.
+And um
+yeah,
+right here is the uh set of reports I'm
+talking about, right? This this thing
+right here. Um so you can get that. You
+can get the trial again at my homepage
+and just go to the trial right here.
+Okay. Get access to it. Seven days.
+Anyways, um let's get back to this. This
+is very very exciting stuff. So um
+that's the stable coin. uh arbitrage bot
+that's done pretty good. Um let me show
+you the other one
+or the XRP which I really surprised me
+that that would be the most profitable.
+Um so this is the
+XRP short squeeze. Um here you could see
+uh the different um metrics
+runs on uh CME.
+I believe this is running on the MXRP
+uh MXRP which is a new symbol for C CME.
+Um look at that profit. Okay, 13,000 win
+ratio of 50%. So this was launched last
+night. This this has done absolutely
+incredible. Best trade at 56% return.
+Worst trade at 16% which is pretty good.
+Um look at the riskreward one to 3.45.
+That's strong. That's out of six trades.
+Um,
+so here's some of the uh trades from the
+last couple hours or 12 hours. Uh, so we
+have buy sell by sell. Okay, here's the
+profit. I don't know what it starts
+with. So here's the total capital initi
+uh invested $48,000. So not even in a
+full 24h hour period, we got a $17,000
+return. Okay, so this is all virtual as
+I said, but it's using real world market
+data. This is the important thing here.
+Anything over two for a profit factor is
+very good. Here we're at four and a half
+sharp ratio, which is pretty good at
+2.8, but that's estimated because it's
+not enough trading, but that's still
+pretty good with an ROI return on
+investment 28%. In less than one hour in
+one day. Okay. And again this is totally
+um dependent not dependent on direction
+but um this was a very very good bot. So
+the entry is when the short interest is
+greater than two standard volume two
+times exit at uh 25% trailing stop stop
+loss and then there's your position
+sizing as well at 50%.
+So you can see this analysis pretty
+good. All again all generated by AI. Low
+win ratio two trades max monthly trades
+limit blah blah blah. Um
+okay. So we'll leave that. That's pretty
+pretty good. So those are the two most
+pro popular or profitable strategies.
+Okay. So let's start looking at the
+other ones that you would have thought
+was profitable. So, um, let's check out
+this one, which is the Bitcoin. And
+there's two types that were run. These
+were running for the full two days.
+Okay. So, um, there was an ATR one and a
+breakout one. Okay. ATR trend.
+Um, so it lost money. Okay. Two trades.
+Not a lot to go on. But these type of
+stret
+this these type of strategies don't give
+me a lot of confidence from the get-go
+compared to what I've shown before with
+the other two. Um so you can see here um
+it's losing money and that's on each
+position there. So I probably wouldn't
+move ahead with this particular strategy
+either one on the ETR or the breakout.
+Um there's something here that must be
+paid attention to. So configure trading
+session between 5 and 4. Uh CME futures
+trading hours. Log times are in local
+time discrepancy between the local and
+the server time on at the CME which is
+in uh Chicago in Illinois.
+So uh you can see here it goes through
+all the different breakdown and again I
+have that available as I've hinted at.
+So let's go on to the next uh one. Now,
+this one I'm going to show you just out
+of time. I believe uh well,
+I think it's Yeah, this it' be this one.
+I think it's this one. This will tell
+you um the overall which style of
+strategies is most profitable.
+So, in here um you can see here uh I
+don't know
+uh which one this is. So you can see
+here the XRP
+and the uh stable coin strategy has done
+really well. This is from earlier today
+the analysis.
+Okay. Um I think it was either yesterday
+or today. Um anyways so the cryptos
+futures so the BTC these are projected
+now. Okay. So what I'm showing you is
+been running for a couple of days
+against real data. Okay. So some of the
+one I'm showing you here is all
+projected. Okay. So this will go through
+Ethereum futures. Uh we'll look at we
+just looked at the XRP. Uh the USDC
+stable coin we looked at. Um here's the
+different strategies. So even though
+crypto's um doing not great as an asset
+class, there are pockets of strategies
+in terms of trading opportunities. Okay?
+So they exist. So we we've we've tried
+to run a Brent that's losing money. And
+again, what I'm showing you is
+projected. So again, this is gold losing
+money on that one, too. Copper losing
+money. Okay, gasoline. I don't think I
+ran that. Um and then again, you can see
+how detailed this goes. I don't think I
+ran any of the um Forex ones. So this
+one is a short on the usual USD uh
+Japanese yen eurous USD
+um Australian a uh Australian USD
+um so we have some of those and these
+are again projected so I can run and and
+I do project on bond and treasury as
+well um again
+not the greatest okay that I've seen and
+then we have different ones involving
+VIX which I have and there there's just
+multip strategies that AI can pick out
+and now I have the capability to run and
+see how it does against each other
+before I launch it live into the
+markets. So, um let's check out a couple
+other ones here.
+So, uh
+I think it's this one I just Okay.
+Yeah, I just showed you that.
+Okay. Um, let's see here. This might be
+this one here.
+Okay, I think it's this one. Okay, so
+this is a hodge to to get the AI to run
+these this this is going through 500k of
+data logs plus the trading logs for each
+bot. So to to to to get the reports to
+be generated are quite challenging. Uh,
+moving forward, it's going to be a lot
+easier because I'll have fewer bots. um
+uh to to to be looked at. So these are
+the different types of bots again in
+this particular report. So the gold
+silver seem to be profitable. Okay,
+that's what this is telling me. Um
+now
+okay, that's not the best one either.
+Let's uh Okay. Um I showed you the BTC.
+I've shown you the XRP. Let's take a
+look at Ethereum here.
+So this is Ethereum purely. This is um a
+uh staking premium. Okay. Now was this
+profitable or not is the question. Uh
+this one's quite detailed.
+Um
+so you can see here win ratio of 66%
+but still overall it's still lost. Okay.
+So only three. These are very early day
+um
+early day tests. I guess you could say
+like one or two days is not enough. But
+if you want to see what's profitable as
+you test, this one looks good at at a
+win ratio of 66%. I may consider that
+one to run live. So this was only
+running 18 hours.
+Okay. And here's the typical whole time
+and all those three positions.
+800 uh events meaning different type of
+but data uh came in if it was streaming
+whatnot. Um so this is an interesting
+one that the Ethereum particular for
+this one is profitable um quite
+interesting. Okay. So, close that one
+out. And again, you're comparing against
+things like ETF flow
+stake staking using uh another metric of
+the E and Bitcoin uh ratio, Ethereum
+price, support versus support, blah blah
+blah blah blah. Again, this is all 100%
+generated by yeah, every single thing
+I'm showing you here. Um, okay. So, we
+have that. Let's take a look at the um
+uh this one
+oil trading. This is this is another one
+of interest. So this one totally lost
+money. Okay, you can see that that lost
+win ratio. Didn't only one position
+absolutely I wouldn't move forward with
+this but full analysis is there. If you
+get access to it, you can check it out.
+Um let me see if there is the one report
+I wanted to show.
+Uh, let me see here.
+Uh,
+I think it must have been that one.
+Yeah, let's hope it's this one. Okay,
+this is what I want to show. So, here's
+a little more in depth, I believe. Yeah,
+it is. Okay, so this report looked at
+multiple um multiple bots. So we have
+here the gold future. We have a a
+high-grade gold strategy. We have a mini
+gold f uh futures one as well. Okay. So
+these are the order execution.
+Um and and it tries to explain why no
+orders were placed which is kind of
+cool. There's not enough data. The the
+strategy may be overly complicated. So
+we can do that. But what I want to show
+you here. So we have a VWAP, support
+resistance, paired trading, trend
+following, mean reverting and momentum.
+So these are what I wanted to show
+initially of the types of strategies. So
+the number one profitable one is
+momentum breakout and then the mean
+reversion as well. So let's go through
+that roughly. So you can see here these
+are the standard metrics from a
+portfolio management perspective among
+all these bots that have been tested.
+the momentum breakout was the highest.
+So, it had a 1 to 2.5 uh re riskreward
+plus a very good win ratio of 65. But
+meanwhile, you can see here this one at
+70% for trend following
+uh with the risk reward at 1 point uh
+1:3.
+but uh actually it's it's kind of odd
+because anyways I don't think this is in
+order but you can see momentum breakout
+trend following uh done quite well.
+Let's check it out. There's there's
+charts here for that. Okay.
+So you can see here which are the most
+profitable. Okay. Uh these are the
+returns. Okay. So you can see here trend
+following is the number one out there
+for that momentum based and the hard
+part now is what's been happening
+specifically in the stock market the
+markets have not been consistently
+profitable for the last little while
+like couple of weeks or even a couple of
+months. So if they were which they have
+been for let's say 15 years that's why
+people have built well quite quickly
+because of the simple trend following of
+those asset classes of the market
+indices but also we have the momentum
+base but the key here is to look at
+which ones are doing well comparatively
+the VWAP and mean reversion as well.
+Okay. And again, strategy analysis
+report risk-to-reward ratio consistency
+still here with a trend following and
+momentum are best followed by um VWAP as
+well. Okay. So, if we look at the
+overall portfolio metrics and now put
+your portfolio manager hat on
+um these are if you ran everything
+together, you would be hypothetically up
+240%.
+Um let me just make sure I think this is
+for all. Yeah. So this is for if I'm not
+mistaken here. So you can see here for
+momentum
+breakout. Okay. So this is what you
+would have returned estimated based upon
+the these data tests. So we would be up
+annualized at 15% and the volatility is
+super low. Okay. The rat sharp ratio is
+not too bad. Certino's pretty good there
+and that is pretty spectacular. Negative
+point 2.1 max draw down over that time
+period. Meanwhile, we're still estimated
+to get 12% volatility which is very low
+um and an annualized return of that. So
+again, this is pretty strong for
+momentum breakout. And then we get into
+the trend following. I mean this is kind
+of early day testing so it's not
+foolproof but it just kind of gives you
+an early
+hint of what to focus on um but using
+real data and again you can see the the
+the volatile is a little lower again uh
+annualized return 200% which is pretty
+good actually uh sharp ratio 1.68 68
+um win ratio which is very strong at win
+uh 70% win ratio which is very good.
+Okay. and then mean reversion which
+you'd think would do well but if things
+got really bad were all you had were
+mean reverting regimes
+what we would get here uh 120 with a
+hypothetical sorry a return at 78% I'll
+take it but not as strong the volatility
+is still comparable but you can see here
+that the sharp ratio is not as strong at
+0.95
+max draw down still fairly So, okay. And
+then again, when you start to break down
+things, um, these are your top three
+types of strategies. I show this because
+I think it's important to understand
+when you when you hear certain types of
+strategies, those are the ones that will
+do generally well,
+okay? But of course, there's the
+exception with I've shown with the XRP
+and the stable coin strategies, which
+show very early signs of good profit.
+That doesn't mean they'll be forever.
+Um, but in this condition right now,
+those are definitely the ones I'd kind
+of go with with the Ethereum as well.
+And this is outside of uh gold, as I
+said, copper
+uh oil as well.
+And you might be asking, why aren't you
+not seeing the um market indices?
+Because they're not performing all that
+great right now. I mean, they're they're
+very low swings. It's kind of flat. Um,
+you can see here that we have uh gold
+futures
+only 3%
+mini gold at 0.9. You would think that
+why would the mini gold contract be
+lower than the gold contract. Okay, I
+can't explain that. Um, but then when
+you look at the full uh copper, boom,
+1.8. Not bad. All right. So again, we
+can see here based upon the trend style.
+Okay. Now again, these are early early
+days. It's not foolproof, but just kind
+of gives you an idea of what's looking
+good. So the trend based or trend
+following at 2.7
+um average return not bad. Momentum base
+at 2.1 as well. And the risk is fairly
+low or medium. And here you're getting
+poultry
+type of um returns with a high high risk
+and a medium high risk on the mean
+reverting and statistical. So if you
+only focus only on these type of
+strategies,
+um chances are you have a much higher
+probability of getting profit. Okay? And
+and we have to admit the market
+conditions we have right now are pretty
+tough.
+Um and here here we go again. uh gold,
+copper.
+Okay. Uh
+but if you compare this against the
+crypto, oddly enough, the crypto with
+the right strategy conditions
+uh can do really well. Uh which is kind
+of surprising for me um as well. And we
+have the VWAP analysis, the volatility,
+blah blah blah blah blah blah blah blah
+blah. Um yeah, so that's pretty well it.
+I have to say that this is quite an
+interesting um quite an interesting
+analysis. So as I said if you want to
+get access to this stuff take the trial
+quantet.com
+just click on the try button there as I
+said you should be able to find it in
+the in the group section
+um as I showed earlier and uh yeah there
+the code is getting posted uh but that's
+in my lead. Now the other thing when it
+comes to this um I have talked about
+this before
+um you can
+mimic what you're seeing here with this
+at this price which is disgustingly
+cheap. um it will go up fast as we go
+live, we prove profit and more
+importantly if we are able to uh
+generate alpha from it consistently for
+a couple of months then I can guarantee
+we will be able to substantiate
+our claim on analysis because I don't
+think anyone's doing this type of
+analysis looking at real world data and
+analyzing using AI and then going full
+transparency on it um especially in a
+tough market as regarding this. This is
+uh basically if you seen the video with
+interactive brokers, you don't have to
+have interactive brokers. You can just
+use the demo mode paper trading uh with
+Jthon. Um and you can use this
+um quite easily to start your journey.
+Every time somebody asks me where do I
+begin, this is where I point them. Um,
+but uh this will definitely go up at
+hftcode.com.
+Other than that, thanks for watching.
+Have yourselves a good day.

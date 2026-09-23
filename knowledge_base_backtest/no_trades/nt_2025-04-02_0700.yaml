@@ -1,0 +1,15 @@
+candle_time: '2025-04-02T07:00:00Z'
+data_quality_ok: true
+date: '2025-04-02'
+decision: NO_TRADE
+reason: Daily bias unclear/ranging - fails Step 1 requirement for directional daily
+  structure
+reasoning:
+  daily_bias: null
+  full_explanation: 'Session produced 0 candidates. Primary reasons: Daily bias unclear/ranging
+    - fails Step 1 requirement for directional daily structure, Daily bias is transitional/ranging
+    - requires clear bullish or bearish Daily structure, Daily bias unclear/ranging
+    - Model A requires clear Daily directional bias'
+  h4_alignment: null
+  stopped_at_step: null
+record_id: nt_2025-04-02_0700

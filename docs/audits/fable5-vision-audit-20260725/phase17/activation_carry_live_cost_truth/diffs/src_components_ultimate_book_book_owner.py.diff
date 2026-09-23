@@ -1,0 +1,148 @@
+--- a/src/components/ultimate_book/book_owner.py (host before CN)
++++ b/src/components/ultimate_book/book_owner.py (host after CN)
+@@ -26,11 +26,17 @@
+     SCHEMA_VERSION as RUNTIME_LEARNING_PACKET_SCHEMA_VERSION,
+     RuntimeLearningPacketWriter,
+     build_runtime_learning_packet,
+     stable_hash,
+ )
+-from .packet_economics import build_economics_block
++from .packet_economics import (
++    LEGACY_MODELLED_COST_COMPONENTS,
++    LEGACY_MODELLED_COST_EXCLUDES,
++    MODELLED_COST_COMPONENTS,
++    MODELLED_COST_EXCLUDES,
++    build_economics_block,
++)
+ from .packet_guard import GuardedPacketWriter
+ from src.components.ai_companion.control_state import AICompanionRuntimeGate
+
+ _log = logging.getLogger(__name__)
+
+@@ -942,10 +948,114 @@
+             "broker_position_fill_adjusted_take_profit": fill_adjusted_tp,
+             "broker_position_broker_risk_adjusted_take_profit": broker_risk_adjusted_tp,
+             "broker_position_planned_target_r": planned_target_r,
+             "broker_position_price_tolerance": tolerance,
+         }
++
++    @staticmethod
++    def _runtime_learning_modelled_cost(trade_params: "dict | None") -> dict[str, Any]:
++        """OD-P3/CN. Flatten pretrade cost truth without copying the nested broker packet.
++
++        Session P (`PACKET_EMITTER_CARRY.md` §6 item 1, B213) filed this as the largest remaining
++        packet gap and described the repair as *"a small change to that allowlist"* -- add
++        `gtos_vnext_pretrade_cost_model` to the flat key list above. Measured here, that literal
++        repair does not work and does not fail quietly:
++
++        - The model is the ~40-key packet `broker_net_cost_engine.build_pretrade_cost_packet`
++          returns, and it carries `profile.server`. `server` is in `FORBIDDEN_RAW_KEYS`
++          (`runtime_learning_packet.py:70`) and `_contains_forbidden_raw_key` scans the packet
++          RECURSIVELY at `:617`, so every placed-trade packet would validate as
++          `forbidden_raw_keys:server` and be quarantined by `GuardedPacketWriter`. Loud, but a
++          repair that stops the thing it was meant to fix.
++        - The packet also embeds `symbol_spec`, `explicit_session_table` and `profile`, none of
++          which a cost reader wants on every row.
++
++        So the model is READ and the scalars are DERIVED. Its total and components,
++        nothing nested that a forbidden-key scan can trip on.
++
++        CN moved the current producer to v3, where `commission_r` is a fourth component backed by
++        broker truth. Historical v2 models remain three-component and explicitly exclude
++        commission. The declaration is resolved per model so old rows are never reinterpreted as
++        if they had charged a component they did not carry.
++
++        Emits nothing at all when the model is absent or `NOT_APPLICABLE`; a modelled cost of
++        "unknown" must never read as a modelled cost of zero.
++
++        Duck-typed, not `isinstance(..., Mapping)`: this module imports only Any/Callable/Optional
++        from typing, so a bare `Mapping` at runtime is a NameError no syntax check catches -- the
++        same trap `_broker_server_name` documents at :1369. Written the wrong way first here.
++        """
++        model = (trade_params or {}).get("gtos_vnext_pretrade_cost_model")
++        if not hasattr(model, "get") or not model:
++            return {}
++        status = str(model.get("status") or "").strip()
++        if status == "NOT_APPLICABLE":
++            # The vnext production path did not run, so there is no model -- not a zero-cost model.
++            return {"modelled_cost_status": status}
++        out: dict[str, Any] = {"modelled_cost_status": status or None}
++        total = model.get("total_cost_r")
++        if total is not None:
++            out["modelled_cost_r"] = total
++        components = model.get("total_cost_components")
++        raw_expected = model.get("total_cost_components_expected")
++        if isinstance(raw_expected, (list, tuple)) and all(
++            isinstance(value, str) and value for value in raw_expected
++        ):
++            expected = tuple(raw_expected)
++        else:
++            version = str(model.get("model_version") or "")
++            expected = (
++                MODELLED_COST_COMPONENTS
++                if version.endswith("_v3")
++                else LEGACY_MODELLED_COST_COMPONENTS
++            )
++        raw_excludes = model.get("cost_excludes")
++        if isinstance(raw_excludes, (list, tuple)) and all(
++            isinstance(value, str) and value for value in raw_excludes
++        ):
++            excludes = tuple(raw_excludes)
++        else:
++            excludes = (
++                MODELLED_COST_EXCLUDES
++                if "commission_r" in expected
++                else LEGACY_MODELLED_COST_EXCLUDES
++            )
++        if hasattr(components, "items"):
++            present = {
++                str(k): v
++                for k, v in components.items()
++                if str(k) in expected
++                and v is not None
++                and not hasattr(v, "get")
++                and not isinstance(v, (list, tuple))
++            }
++            if present:
++                out["modelled_cost_components"] = present
++            missing = sorted(set(expected) - set(present))
++            if missing:
++                out["modelled_cost_components_missing"] = missing
++        out["modelled_cost_components_expected"] = list(expected)
++        out["modelled_cost_excludes"] = list(excludes)
++        for src_key, out_key in (
++            ("model_version", "modelled_cost_model_version"),
++            ("cost_authority", "modelled_cost_authority"),
++            ("max_total_cost_r", "modelled_cost_max_total_cost_r"),
++            ("commission_mode", "modelled_commission_mode"),
++            ("commission_cost_authority", "modelled_commission_cost_authority"),
++            ("commission_cost_provenance", "modelled_commission_cost_provenance"),
++        ):
++            if model.get(src_key) is not None:
++                out[out_key] = model.get(src_key)
++        commission = model.get("commission_cost")
++        if hasattr(commission, "get"):
++            for src_key, out_key in (
++                ("source_status", "modelled_commission_cost_source_status"),
++                ("artifact", "modelled_commission_cost_artifact"),
++            ):
++                if commission.get(src_key) is not None:
++                    out[out_key] = commission.get(src_key)
++        return {k: v for k, v in out.items() if v is not None}
+
+     @staticmethod
+     def _runtime_learning_trade_context(
+         *,
+         ticket: Any = None,
+@@ -1210,10 +1320,11 @@
+             and status_rank.get(record_joinability_status, -1) <= status_rank[computed_joinability_status]
+         ):
+             ctx["joinability_status"] = record_joinability_status
+         else:
+             ctx["joinability_status"] = computed_joinability_status
++        ctx.update(UltimateBookOwner._runtime_learning_modelled_cost(tp))
+         ctx.update(UltimateBookOwner._runtime_learning_policy_clock_context(policy_clock))
+         return ctx
+
+     @staticmethod
+     def _runtime_learning_policy_clock_context(policy_clock: dict | None) -> dict:

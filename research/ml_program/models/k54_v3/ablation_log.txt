@@ -1,0 +1,23 @@
+Cohort: 528 rows; v3 features 1240; arch_a features 1234
+K54 v3 new features (6): ['kw__k10_round_aligned', 'kw__k10_round_dist_min_atr', 'kw__k7_osler_stopcluster_proxy', 'kw__k10_round50_above_below_asym', 'kw__k8_ob_age_power_law', 'kw__k9_regime_x_round_x_side']
+W-unit min/max: 0.100 / 10.000
+
+>>> Variant: K54 v3 features + W-unit ON (current spec)
+  Selected HP idx=0, OOS mean AUC=0.5100, all HP means: [0.51, 0.51, 0.5076, 0.4905, 0.4989]
+  Mean Jaccard top-100 = 0.1859
+  Elapsed 19s
+
+>>> Variant: K54 v3 features + W-unit OFF
+  Selected HP idx=0, OOS mean AUC=0.5640, all HP means: [0.564, 0.564, 0.5573, 0.5624, 0.5576]
+  Mean Jaccard top-100 = 0.2016
+  Elapsed 18s
+
+>>> Variant: Arch A reproduction (no kw__ + W-unit OFF)
+  Selected HP idx=0, OOS mean AUC=0.5605, all HP means: [0.5605, 0.5605, 0.5528, 0.5588, 0.5438]
+  Mean Jaccard top-100 = 0.1936
+  Elapsed 18s
+
+=== Ablation summary ===
+  K54 v3 features + W-unit ON (current spec): best AUC=0.5100, Jaccard=0.1859
+  K54 v3 features + W-unit OFF: best AUC=0.5640, Jaccard=0.2016
+  Arch A reproduction (no kw__ + W-unit OFF): best AUC=0.5605, Jaccard=0.1936

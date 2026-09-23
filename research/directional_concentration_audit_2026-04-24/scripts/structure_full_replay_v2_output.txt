@@ -1,0 +1,34 @@
+
+=== XAUUSD ===
+  D1 (lb=30): n_closes=46  bullish=8 (17.4%), bearish=2 (4.3%), transitional=36 (78.3%)
+    first bearish close: 2026-04-13 stats={'hh': 2, 'hl': 0, 'lh': 1, 'll': 1, 'rp': 1}
+  H4 (lb=80): n_closes=371  bullish=350 (94.3%), bearish=21 (5.7%), transitional=0 (0.0%)
+    first bearish close: 2026-03-25 00:00:00 stats={'hh': 2, 'hl': 5, 'lh': 5, 'll': 5, 'rp': 3}
+  H1 (lb=168): n_closes=1554  bullish=1554 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%)
+
+=== US30_cash ===
+  D1 (lb=30): n_closes=47  bullish=2 (4.3%), bearish=4 (8.5%), transitional=41 (87.2%)
+    first bearish close: 2026-03-03 stats={'hh': 0, 'hl': 2, 'lh': 2, 'll': 2, 'rp': 2}
+  H4 (lb=80): n_closes=374  bullish=347 (92.8%), bearish=27 (7.2%), transitional=0 (0.0%)
+    first bearish close: 2026-01-27 20:00:00 stats={'hh': 8, 'hl': 2, 'lh': 4, 'll': 6, 'rp': 3}
+  H1 (lb=168): n_closes=1566  bullish=1566 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%)
+
+=== USDJPY ===
+  D1 (lb=30): n_closes=47  bullish=16 (34.0%), bearish=5 (10.6%), transitional=26 (55.3%)
+    first bearish close: 2026-02-12 stats={'hh': 0, 'hl': 0, 'lh': 2, 'll': 1, 'rp': 1}
+  H4 (lb=80): n_closes=377  bullish=377 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%)
+  H1 (lb=168): n_closes=1657  bullish=1657 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%)
+
+=== GBPJPY ===
+  D1 (lb=30): n_closes=47  bullish=4 (8.5%), bearish=5 (10.6%), transitional=38 (80.9%)
+    first bearish close: 2026-02-18 stats={'hh': 2, 'hl': 0, 'lh': 2, 'll': 2, 'rp': 2}
+  H4 (lb=80): n_closes=377  bullish=364 (96.6%), bearish=13 (3.4%), transitional=0 (0.0%)
+    first bearish close: 2026-01-28 16:00:00 stats={'hh': 2, 'hl': 4, 'lh': 6, 'll': 5, 'rp': 3}
+  H1 (lb=168): n_closes=1657  bullish=1657 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%)
+
+=== GBPUSD ===
+  D1 (lb=30): n_closes=47  bullish=0 (0.0%), bearish=28 (59.6%), transitional=19 (40.4%)
+    first bearish close: 2026-02-23 stats={'hh': 0, 'hl': 1, 'lh': 2, 'll': 2, 'rp': 2}
+  H4 (lb=80): n_closes=377  bullish=368 (97.6%), bearish=9 (2.4%), transitional=0 (0.0%)
+    first bearish close: 2026-02-19 16:00:00 stats={'hh': 3, 'hl': 2, 'lh': 6, 'll': 5, 'rp': 3}
+  H1 (lb=168): n_closes=1657  bullish=1657 (100.0%), bearish=0 (0.0%), transitional=0 (0.0%)

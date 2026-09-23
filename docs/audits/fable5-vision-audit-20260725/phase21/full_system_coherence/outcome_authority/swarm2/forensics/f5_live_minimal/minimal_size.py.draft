@@ -1,0 +1,423 @@
+"""GTOS minimal-size live experiment: NOMINAL decisions, SCALED lots, NOTIONAL governor.
+
+DRAFT — not applied to src/. Intended destination: src/components/ultimate_book/minimal_size.py
+(a NEW file: nothing under src/ is bound by the R2 decision contract — see F5 §1.5 for the
+membership check. Only config/agent_config.yaml and config/profiles/operator_profile.yaml
+are bound, and this package edits neither.)
+
+================================ THE ONE IDEA =================================
+The owner's constraint: the whole decision pipeline must run at NOMINAL risk (the production
+dial, 2.0%) and produce bit-identical decisions to production. Only the final lot is scaled.
+
+If the allocator saw $1 candidates it would be a different system: `admission._enforce_gross_open_
+risk_cap` (admission.py:1372-1418) sheds against a 4% gross budget expressed as a PERCENT OF
+EQUITY, `_governor_decision` (admission.py:1320-1367) derisks on drawdown percentages, the
+Kelly-lite conviction multiplier keys on the running count of firing sleeves
+(admission.py:920-935, 1188), and `book_engine._open_risk_pct` (book_engine.py:860-891) sums
+worst-case-stop loss over OPEN BROKER POSITIONS. Scale the lots and leave those alone and every
+one of them silently stops binding: at 1/200th size the 4% gross cap NEVER binds, so the book
+would run 20+ concurrent units where production runs 2, and the experiment would measure a
+system that will never be deployed.
+
+So there are FOUR surfaces, and only ONE of them is scaled:
+
+  NOTIONAL (N1) equity / day-start balance / high-water  -> NotionalLedger, not the broker
+  NOTIONAL (N2) open_risk_pct                            -> sum of NOMINAL unit risk on open units
+  NOTIONAL (N3) realized_today_pct                       -> from the notional ledger
+  SCALED   (S1) risk_amount -> lots                      -> execution.py:3445, the LAST step
+
+and one behaviour change:
+
+  ROUND-UP (S2) sub-minimum lots are rounded UP to volume_min, never shed
+                (execution.py:3474-3479 today RETURNS None -> the trade never happens)
+
+============================== WHY ROUND-UP ===================================
+`_normalize_volume(require_broker_geometry=True)` returns None below `volume_min`
+(execution.py:2344-2350) and `open_trade` sheds the unit as terminal at :3474-3479. That is
+correct for production (a sub-minimum unit is a real breadth loss) and CATASTROPHIC for this
+experiment: it would silently delete exactly the expensive-stop instruments — BTCUSD, XAGUSD,
+XAUUSD, ETHUSD on FTMO; those plus the 10x-contract indices US30/GER30/UK100/NDX100/SPX500 on
+redacted_account — and the surviving sample would be a biased subset that answers no cost question.
+
+MEASURED (F5 receipts/F5_MIN_LOT_FLOOR_V1.json, 9,083 throttled estate trades 2024-2026):
+at a $10 target, 5.7% of FTMO trades and 10.0% of redacted_account trades sit above the target and
+are rounded up; they carry 13.4% / 24.3% of total dollar risk. Every fill records
+`f5_intended_risk_usd` and `f5_actual_risk_usd` so the analysis reweights exactly.
+
+============================== EPOCHS =========================================
+When the NOTIONAL book breaches (the governor's own daily/max-DD verdicts), production would be
+dead. This experiment must observe the stand-down AND survive it. So:
+  1. the stand-down is executed for real (flatten, block entries) — that exercises the code,
+  2. a NOTIONAL_STANDDOWN event is written as a first-class record,
+  3. the notional ledger opens a NEW EPOCH at the initial balance and collection continues.
+The reset is explicit, logged, numbered, and never silent. Analysis slices by epoch.
+
+============================== NO LOSS BUDGET =================================
+Owner decision, 2026-08-12: "there should be no limit set as i'll be there to witness it so that
+we dont kill or suffocate the system." An earlier draft of this module carried a non-resettable
+real-money budget with an automatic permanent stand-down. **It is removed.** The experiment runs
+inside the firm's own limits and the production governor exactly as the armed book does, and
+nothing here weakens or bypasses either.
+
+`real_pnl_usd_cumulative` is still accumulated — for `scripts/f5_status.py`, not for a gate.
+Nothing in this module reads it to make a decision.
+
+======================== TWO SURFACES, ONE ACCOUNT ===========================
+The experiment runs alongside the armed three-sleeve book on the SAME account. Namespace
+isolates every file surface (lock, conviction ledger, placement ledger, trade records, governor
+state). It isolates NO broker surface: `MAGIC_NUMBER` is one module constant
+(`mt5_interface.py:58`) and five armed-book reads filter on it. The experiment therefore takes
+its own broker identity — `magic_for_namespace(namespace)` -> 0 and a `F5:` comment
+prefix — so `RealMT5.get_open_positions` (`mt5_real.py:358`) returns zero experiment rows to an
+armed worker, which closes the gross-cap read, the same-symbol gate, the correlation gate,
+adoption and the out-of-universe alert at one source. See PATCHES_V1.md §A1-A4.
+
+The one coupling no design removes is shared real equity, and it is measured: the armed book
+derisks only below `governor_static_initial_balance x 0.93` = $93,000, and both accounts are
+above it ($15,342 clear on FTMO, $3,229 on redacted_account). Instrumented as a tripwire in
+`f5_status.py`, not gated.
+"""
+from __future__ import annotations
+
+import json
+import math
+import os
+import threading
+from dataclasses import dataclass, asdict, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any, Mapping, Optional
+
+SCHEMA = "gtos.ultimate_book.minimal_size.v1"
+
+
+# --------------------------------------------------------------------------------------------
+# configuration, parsed from run_book.py CLI flags ONLY.
+#
+# It is a HARD REQUIREMENT that this never touches config/agent_config.yaml: that file is bound
+# by the R2 decision contract (common_behavior_inputs) AND its bytes enter the activation-token
+# config digest (activation_token.config_digest_for, activation_token.py:1089-1116), so a single
+# byte would invalidate both accounts' tokens and the book would refuse to place. The CLI-flag
+# route is the established precedent -- see book_engine.py:987-991 on --vol-level-tilt: "the
+# launcher flag reaches the bridge as an injected key on a COPY of the runtime dict, never as a
+# byte of agent_config.yaml".
+# --------------------------------------------------------------------------------------------
+@dataclass(frozen=True)
+class MinimalSizeConfig:
+    enabled: bool = False
+    target_risk_usd: float = 10.0          # --f5-minimal-size-usd
+    notional_initial_usd: float = 100000.0 # --f5-notional-initial-usd
+    max_epochs: int = 0                    # 0 = unlimited notional epochs
+    round_up_to_min_lot: bool = True       # requirement 4; False would bias the sample
+    # NO loss_budget field, by owner decision. See the NO LOSS BUDGET note in the module docstring.
+
+    def validate(self) -> None:
+        if not self.enabled:
+            return
+        if not (0.01 <= self.target_risk_usd <= 500.0):
+            raise ValueError(f"f5 target_risk_usd out of range: {self.target_risk_usd}")
+        if self.notional_initial_usd <= 0:
+            raise ValueError("f5 notional_initial_usd must be > 0")
+
+
+# --------------------------------------------------------------------------------------------
+# the notional ledger
+# --------------------------------------------------------------------------------------------
+@dataclass
+class _OpenUnit:
+    ticket: int
+    sleeve: str
+    symbol: str
+    nominal_risk_usd: float     # what production WOULD have risked
+    actual_risk_usd: float      # what the broker actually holds (post round-up)
+    intended_risk_usd: float    # target_risk_usd before round-up
+    opened_utc: str
+    decision_day: str
+
+
+class NotionalLedger:
+    """The equity curve production WOULD have had, driven by scale-free R.
+
+    R is scale-invariant, which is the whole reason this works:
+        realised_R      = broker_net_pnl_usd / actual_cash_risk_usd
+        notional_pnl    = realised_R * nominal_risk_usd
+    `actual_cash_risk_usd` is not guessed -- `execution.py:3490` already computes
+    `pre_send_cash_risk_amount` from the broker's own `order_calc_profit` for the NORMALIZED
+    volume, and `_write_trade_record` (book_owner.py:3238) persists it per ticket.
+
+    State is a single JSON file under the namespace's pipeline_state directory, so a restart
+    resumes the same epoch rather than silently starting a new one.
+    """
+
+    def __init__(self, path: Path, cfg: MinimalSizeConfig, clock=None):
+        self._path = Path(path)
+        self._cfg = cfg
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._lock = threading.RLock()
+        self._state = self._load()
+
+    # ---- persistence -----------------------------------------------------------------------
+    def _blank(self) -> dict:
+        return {
+            "schema": SCHEMA,
+            "epoch": 1,
+            "epoch_opened_utc": self._clock().isoformat(),
+            "notional_equity": float(self._cfg.notional_initial_usd),
+            "notional_high_water": float(self._cfg.notional_initial_usd),
+            "notional_initial": float(self._cfg.notional_initial_usd),
+            "day_key": None,
+            "day_start_notional": float(self._cfg.notional_initial_usd),
+            "open_units": {},
+            # REAL money, across ALL epochs, never reset:
+            "real_pnl_usd_cumulative": 0.0,
+            "real_pnl_usd_today": 0.0,
+            "real_day_key": None,
+            "standdown_permanent": False,
+            "standdown_reason": None,
+            "epochs_closed": [],
+            "trades_recorded": 0,
+        }
+
+    def _load(self) -> dict:
+        try:
+            if self._path.is_file():
+                st = json.loads(self._path.read_text())
+                if st.get("schema") == SCHEMA:
+                    return st
+        except Exception:
+            pass
+        return self._blank()
+
+    def _save(self) -> None:
+        try:
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self._path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(self._state, indent=1, sort_keys=True))
+            tmp.replace(self._path)
+        except Exception:
+            # NEVER break the live path on a ledger write. A lost write costs one row of
+            # analysis; a raised exception here would propagate into the tick loop.
+            pass
+
+    # ---- the three notional surfaces the governor reads -------------------------------------
+    def equity(self) -> float:
+        return float(self._state["notional_equity"])
+
+    def high_water(self) -> float:
+        return float(self._state["notional_high_water"])
+
+    def day_start_balance(self, day_key: str) -> float:
+        with self._lock:
+            if self._state.get("day_key") != day_key:
+                self._state["day_key"] = day_key
+                self._state["day_start_notional"] = float(self._state["notional_equity"])
+                self._save()
+            return float(self._state["day_start_notional"])
+
+    def open_risk_pct(self) -> float:
+        """N2. The 4% gross cap must see NOMINAL risk over open units, not the scaled broker
+        volume. `book_engine._open_risk_pct` computes vol*|entry-sl|*value_per_point from the
+        BROKER's positions (book_engine.py:875-885) -- at 1/200th lot size that returns ~0.0002
+        and the cap can never bind. This returns what production would see."""
+        eq = self.equity()
+        if eq <= 0:
+            return 0.0
+        tot = sum(u["nominal_risk_usd"] for u in self._state["open_units"].values())
+        return max(0.0, tot / eq)
+
+    # ---- lifecycle -------------------------------------------------------------------------
+    def on_open(self, *, ticket: int, sleeve: str, symbol: str, nominal_risk_usd: float,
+                actual_risk_usd: float, intended_risk_usd: float, decision_day: str) -> None:
+        with self._lock:
+            self._state["open_units"][str(int(ticket))] = asdict(_OpenUnit(
+                ticket=int(ticket), sleeve=str(sleeve), symbol=str(symbol),
+                nominal_risk_usd=float(nominal_risk_usd),
+                actual_risk_usd=float(actual_risk_usd),
+                intended_risk_usd=float(intended_risk_usd),
+                opened_utc=self._clock().isoformat(), decision_day=str(decision_day)))
+            self._save()
+
+    def on_close(self, *, ticket: int, broker_net_pnl_usd: float,
+                 realised_r: Optional[float] = None) -> dict:
+        """Fold a closed trade into BOTH ledgers. Returns the recorded row (for the capture log)."""
+        with self._lock:
+            u = self._state["open_units"].pop(str(int(ticket)), None)
+            if u is None:
+                # An adopted position with no F5 record: count the REAL money (it is real) but
+                # do not fabricate a notional leg. FAIL-VISIBLE, not fail-silent.
+                self._state["real_pnl_usd_cumulative"] += float(broker_net_pnl_usd)
+                self._save()
+                return {"ticket": int(ticket), "f5_unmatched_close": True,
+                        "broker_net_pnl_usd": float(broker_net_pnl_usd)}
+            r = realised_r
+            if r is None:
+                ar = float(u["actual_risk_usd"]) or 0.0
+                r = (float(broker_net_pnl_usd) / ar) if ar > 0 else 0.0
+            notional_pnl = float(r) * float(u["nominal_risk_usd"])
+            self._state["notional_equity"] += notional_pnl
+            self._state["notional_high_water"] = max(
+                float(self._state["notional_high_water"]), float(self._state["notional_equity"]))
+            self._state["real_pnl_usd_cumulative"] += float(broker_net_pnl_usd)
+            self._state["trades_recorded"] += 1
+            row = {
+                "ticket": int(ticket), "sleeve": u["sleeve"], "symbol": u["symbol"],
+                "realised_r": float(r),
+                "broker_net_pnl_usd": float(broker_net_pnl_usd),
+                "notional_pnl_usd": float(notional_pnl),
+                "f5_nominal_risk_usd": float(u["nominal_risk_usd"]),
+                "f5_actual_risk_usd": float(u["actual_risk_usd"]),
+                "f5_intended_risk_usd": float(u["intended_risk_usd"]),
+                "f5_size_ratio_actual_over_intended":
+                    (float(u["actual_risk_usd"]) / float(u["intended_risk_usd"]))
+                    if float(u["intended_risk_usd"]) > 0 else None,
+                "f5_scalar_effective":
+                    (float(u["actual_risk_usd"]) / float(u["nominal_risk_usd"]))
+                    if float(u["nominal_risk_usd"]) > 0 else None,
+                "epoch": int(self._state["epoch"]),
+                "notional_equity_after": float(self._state["notional_equity"]),
+                "real_pnl_usd_cumulative": float(self._state["real_pnl_usd_cumulative"]),
+            }
+            self._save()
+            return row
+
+    def roll_real_day(self, real_day_key: str) -> None:
+        with self._lock:
+            if self._state.get("real_day_key") != real_day_key:
+                self._state["real_day_key"] = real_day_key
+                self._state["real_pnl_usd_today"] = 0.0
+                self._save()
+
+    # ---- reporting only. THERE IS NO BUDGET GATE. -------------------------------------------
+    # `real_pnl_usd_cumulative` / `real_pnl_usd_today` exist so `scripts/f5_status.py` can show
+    # the owner what the experiment has actually cost. NOTHING in this module or in book_owner
+    # reads them to decide anything. If a future session adds a threshold here, that is a policy
+    # change and needs the owner's word -- he removed the budget deliberately on 2026-08-12.
+
+    def open_new_epoch(self, reason: str) -> dict:
+        """Requirement 3: a NOTIONAL breach stands the book down exactly as production would,
+        is logged as a first-class event, and then the notional equity resets so collection
+        continues. Explicit and numbered -- never silent."""
+        with self._lock:
+            closed = {
+                "epoch": int(self._state["epoch"]),
+                "opened_utc": self._state["epoch_opened_utc"],
+                "closed_utc": self._clock().isoformat(),
+                "reason": str(reason),
+                "notional_equity_at_close": float(self._state["notional_equity"]),
+                "notional_drawdown_usd": float(self._state["notional_equity"])
+                                          - float(self._state["notional_initial"]),
+                "trades_in_epoch": int(self._state["trades_recorded"]),
+            }
+            self._state["epochs_closed"].append(closed)
+            self._state["epoch"] = int(self._state["epoch"]) + 1
+            self._state["epoch_opened_utc"] = self._clock().isoformat()
+            self._state["notional_equity"] = float(self._cfg.notional_initial_usd)
+            self._state["notional_high_water"] = float(self._cfg.notional_initial_usd)
+            self._state["day_start_notional"] = float(self._cfg.notional_initial_usd)
+            self._state["day_key"] = None
+            self._state["trades_recorded"] = 0
+            # open_units are NOT cleared: the real positions are being flattened by the caller,
+            # and their closes must still fold into the new epoch's real-money ledger.
+            self._save()
+            return closed
+
+    def snapshot(self) -> dict:
+        return json.loads(json.dumps(self._state))
+
+
+# --------------------------------------------------------------------------------------------
+# the scaler -- the ONLY thing that touches money size
+# --------------------------------------------------------------------------------------------
+class MinimalSizeScaler:
+    """Applied at execution.py:3445, AFTER every gate has run at nominal.
+
+    Everything upstream is untouched and provably so: `_vnext_pretrade_cost_model` (:3407) and
+    `_evaluate_execution_manager_v4` (:3411) both receive the NOMINAL `risk_pct`; admission,
+    the conviction multiplier, the cluster cap, the gross-risk cap and the governor all ran
+    before `open_trade` was ever called. The scaler cannot reach them.
+    """
+
+    def __init__(self, cfg: MinimalSizeConfig, ledger: NotionalLedger):
+        self._cfg = cfg
+        self._ledger = ledger
+        self.last: dict[str, Any] = {}
+
+    def scaled_risk_amount(self, nominal_risk_amount: float, trade_params: Mapping) -> float:
+        """nominal_risk_amount = notional_equity * risk_pct/100 (production's number).
+        Returns the TARGET dollar risk. The min-lot round-up happens later, in
+        `_normalize_volume`, because only there is the broker's volume geometry known."""
+        target = float(self._cfg.target_risk_usd)
+        self.last = {
+            "f5_nominal_risk_usd": float(nominal_risk_amount),
+            "f5_intended_risk_usd": target,
+            "f5_scalar_requested": (target / float(nominal_risk_amount))
+                                    if nominal_risk_amount > 0 else None,
+            "f5_symbol": trade_params.get("symbol"),
+            "f5_sleeve": trade_params.get("sleeve") or trade_params.get("gtos_vnext_sleeve"),
+            "f5_candidate_id": trade_params.get("candidate_id"),
+        }
+        return target
+
+
+def round_up_to_min_lot(lots: float, sym_info) -> tuple[float, dict]:
+    """Requirement 4. Replaces the `return None` shed at execution.py:3474-3479 UNDER THE FLAG.
+
+    Returns (lots, provenance). `lots` is guaranteed >= volume_min and on the volume_step grid.
+    Provenance records the inflation so the analysis can reweight; nothing is ever dropped."""
+    try:
+        vmin = float(sym_info.volume_min)
+        vstep = float(sym_info.volume_step)
+        vmax = float(sym_info.volume_max)
+    except (TypeError, ValueError, AttributeError):
+        return lots, {"f5_round_up": "geometry_unreadable"}
+    if vmin <= 0 or vstep <= 0 or vmax <= 0:
+        return lots, {"f5_round_up": "geometry_invalid"}
+    if lots >= vmin:
+        return lots, {"f5_round_up": "not_needed", "f5_lot_inflation": 1.0}
+    if vmin > vmax:
+        # the pre-existing (min > max) pathology -- unreachable on either funded account (all 42
+        # traded specs are min 0.01 / step 0.01) but it must not silently produce an off-grid lot.
+        return lots, {"f5_round_up": "refused_vmin_above_vmax"}
+    inflation = (vmin / lots) if lots > 0 else None
+    return round(vmin, 8), {
+        "f5_round_up": "applied",
+        "f5_lots_requested": float(lots),
+        "f5_lots_placed": float(vmin),
+        "f5_lot_inflation": inflation,
+    }
+
+
+# --------------------------------------------------------------------------------------------
+# capture: one append-only JSONL, one row per decision-affecting event
+# --------------------------------------------------------------------------------------------
+class MinimalSizeCapture:
+    """`shadow_logs/f5_minimal/<namespace>/events.jsonl`.
+
+    NAMESPACED ON PURPOSE. `shadow_logs/slippage.jsonl` carries no account field on any row
+    (slippage_shadow_logger.py builds no namespace key), so two books' fill rows are
+    indistinguishable there. Every F5 row stamps `namespace` and `account_login` so the joins
+    are unambiguous, and every row carries `broker_mutation: false` EXCEPT the fill rows, which
+    say what was actually sent."""
+
+    def __init__(self, path: Path, namespace: str, account_login: Optional[int] = None):
+        self._path = Path(path)
+        self._ns = namespace
+        self._login = account_login
+        self._lock = threading.RLock()
+
+    def emit(self, event: str, payload: Mapping) -> None:
+        row = {
+            "schema": "gtos.f5.minimal_size_event.v1",
+            "event": str(event),
+            "ts_utc": datetime.now(timezone.utc).isoformat(),
+            "namespace": self._ns,
+            "account_login": self._login,
+        }
+        row.update(payload)
+        try:
+            with self._lock:
+                self._path.parent.mkdir(parents=True, exist_ok=True)
+                with self._path.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(row, sort_keys=True, default=str) + "\n")
+        except Exception:
+            pass   # capture must never break the live path

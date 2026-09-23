@@ -1,0 +1,4139 @@
+market:
+  symbol: XAUUSD
+  kill_zones:
+    london:
+      start_utc: 07:00
+      end_utc: '10:30'
+      core_end_utc: 09:30
+    ny:
+      start_utc: '13:00'
+      end_utc: '15:30'
+    tokyo:
+      start_utc: 00:00
+      end_utc: 03:00
+      core_end_utc: 03:00
+  session_start_utc: 07:00
+  session_end_utc: 09:30
+  session_timeout_utc: '12:00'
+  asian_session_start_utc: 00:00
+  asian_session_end_utc: 07:00
+risk:
+  risk_per_trade_pct: 2.0
+  max_daily_loss_pct: 4.0
+  max_weekly_loss_pct: 4.0
+  max_monthly_loss_pct: 8.0
+  max_concurrent: null
+  max_trades_per_kill_zone_enabled: true
+  max_trades_per_kill_zone: 2
+  min_rr: 1.5
+  inverted_geometry_policy: reject
+  inverted_geometry_source_path: knowledge_base/wf1_inverted_tp_analysis.md
+  inverted_geometry_corrected_avg_r: -0.325
+  tp1_close_pct: 100
+  max_spread_cents: 100
+  sl_buffer_dollars: 1.2
+  sl_absolute_min: 5.0
+  cross_instrument_correlation_enabled: true
+  cross_instrument_correlation_threshold: 0.4
+  cross_instrument_correlation_min_positions: 2
+  cross_instrument_pair_budget_enabled: true
+  cross_instrument_pair_budget_groups:
+  - name: JPY_SHARED_BUDGET
+    instruments:
+    - USDJPY
+    - GBPJPY
+    risk_multiplier: 0.5
+    source_path: .context/02_session_handoffs/04_apr6_expansion_sprint.md
+    source_line_no: 232
+  sl_buffer_atr_multiplier: 0.25
+  sl_buffer_breaker_atr_multiplier: 0.5
+  sl_buffer_min_ticks: 5
+  side_aware_sizing:
+    enabled: true
+    mode: contextual
+    apply_to_execution: true
+    long_multiplier: 0.5
+    short_multiplier: 1.0
+    contextual_default_multiplier: 1.0
+    contextual_weak_multiplier: 0.5
+    contextual_adverse_multiplier: 0.25
+    contextual_full_risk_multiplier: 1.0
+    contextual_min_multiplier: 0.0
+    contextual_max_multiplier: 1.0
+    contextual_full_risk_min_score: 2.0
+    contextual_weak_score_threshold: -0.25
+    contextual_adverse_score_threshold: -1.0
+    contextual_min_effective_n: 3
+    h1_autocorrelation_follow_threshold: 0.0
+    contextual_decision_scores:
+      FOLLOW: 2.0
+      MIXED: -1.0
+      AVOID: -3.0
+      LEGACY: 0.0
+    contextual_side_scores: {}
+    contextual_symbol_scores: {}
+    contextual_symbol_family_scores: {}
+    contextual_session_scores: {}
+    contextual_session_phase_enabled: true
+    contextual_session_first_window_minutes: 90.0
+    contextual_session_late_after_minutes: 90.0
+    contextual_session_first_window_score: 0.25
+    contextual_session_late_score: -0.5
+    contextual_framework_scores: {}
+    contextual_route_family_scores: {}
+    contextual_regime_scores: {}
+    contextual_market_timeframe_scores: {}
+    contextual_align_score_enabled: true
+    contextual_align_score_min: 2.0
+    contextual_align_support_score: 0.5
+    contextual_fvg_in_impulse_enabled: true
+    contextual_fvg_in_impulse_support_score: 0.5
+    contextual_fvg_in_impulse_delta_pp:
+      XAUUSD: 19.7
+      US30: 11.4
+      GBPUSD: 11.3
+      GBPJPY: 7.9
+      USDJPY: 7.1
+    contextual_sweep_before_ob_enabled: true
+    contextual_sweep_before_ob_score: -0.5
+    contextual_sweep_before_ob_with_continuation_wr_pct: 63.4
+    contextual_sweep_before_ob_without_continuation_wr_pct: 71.6
+    contextual_internal_session_volatility_enabled: true
+    contextual_session_vol_ratio_support_min: 1.2
+    contextual_session_vol_ratio_support_score: 0.5
+    contextual_garch_evt_removed_high_vol_delta_r: -18.8
+    contextual_derived_order_flow_enabled: true
+    contextual_order_flow_clv_threshold: 0.2
+    contextual_order_flow_bvc_threshold: 0.6
+    contextual_order_flow_net_flow_threshold: 0.0
+    contextual_order_flow_min_signals: 2
+    contextual_order_flow_aligned_score: 0.5
+    contextual_order_flow_opposed_score: -0.5
+    contextual_asian_range_enabled: true
+    contextual_asian_too_narrow_threshold_pct: 28.0
+    contextual_asian_narrow_support_max_pct: 50.0
+    contextual_asian_wide_threshold_pct: 80.0
+    contextual_asian_too_narrow_score: -1.0
+    contextual_asian_narrow_support_score: 0.5
+    contextual_asian_wide_score: -1.0
+    contextual_news_event_enabled: true
+    contextual_news_currencies:
+    - USD
+    - GBP
+    contextual_news_impact_levels:
+    - HIGH
+    contextual_news_hard_pre_minutes: 15.0
+    contextual_news_hard_post_minutes: 2.0
+    contextual_news_reduce_pre_minutes: 60.0
+    contextual_news_reduce_post_minutes: 10.0
+    contextual_news_hard_window_score: -3.0
+    contextual_news_reduce_window_score: -1.0
+    contextual_volatility_regime_enabled: true
+    contextual_gvz_symbol_families:
+    - XAUUSD_GC_FAMILY
+    - XAGUSD_SILVER_FAMILY
+    contextual_gvz_elevated_threshold: 30.0
+    contextual_gvz_high_threshold: 40.0
+    contextual_gvz_elevated_score: -0.5
+    contextual_gvz_high_score: -1.0
+    contextual_ready8_enabled: true
+    contextual_ready8_rule_artifact_paths:
+    - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_READY8_CONTEXT_RISK_RULES_2026-05-18.json
+    - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_READY8_DISCRIMINATIVE_CONTEXT_RULES_2026-05-18.json
+    contextual_ready8_adjustment_enabled: true
+    contextual_ready8_adjustment_rule_artifact_paths:
+    - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_READY8_FAILURE_CONTEXT_ADJUSTMENT_RULES_2026-05-18.json
+    contextual_ready8_rules:
+    - card_id: HAZ-001
+      horizon_m15_bars: '32'
+      target_family_id: neutral_high_low_excursion_m15_horizons_v1
+      score: 0.5
+      evidence_delta: 0.5498694567843504
+      source_path: research/science_program_2026_05/06_outcome_testing/g12_scid_ready8_discriminative_sealed_validation_result_audit/G12_R8DISC_SEALED_VALIDATION_AUDIT_RECOMPUTATION_LEDGER_2026-05-13.json
+      source_line_no: 476
+      reason: haz001_h32_positive_neutral_movement_support
+    - card_id: MAC-001
+      horizon_m15_bars: '32'
+      target_family_id: neutral_high_low_excursion_m15_horizons_v1
+      symbol_family: XAUUSD_GC_FAMILY
+      score: -1.0
+      evidence_delta: -0.5151404151404151
+      source_path: research/science_program_2026_05/06_outcome_testing/g12_scid_ready8_discriminative_sealed_validation_result_audit/G12_R8DISC_SEALED_VALIDATION_AUDIT_RECOMPUTATION_LEDGER_2026-05-13.json
+      source_line_no: 2784
+      reason: mac001_xauusd_h32_inverse_avoid_risk
+    contextual_validation_leash_enabled: true
+    contextual_validation_leash_rules:
+    - symbol: GBPJPY
+      score: -0.5
+      source_path: .context/01_knowledge_base/kb_validation_and_monitoring_framework.md
+      source_line_no: 41
+      reason: gbpjpy_familywise_correction_failed_razor_thin_margin
+    - symbol: XAUUSD
+      side: LONG
+      score: -0.5
+      source_path: .context/01_knowledge_base/validated_numbers_caveats.md
+      source_line_no: 38
+      reason: xauusd_v1_long_only_h2_decay_alarm_neutral_long_leash
+    contextual_monthly_decay_enabled: true
+    contextual_monthly_decay_rules:
+    - symbol: XAUUSD
+      side: LONG
+      detector_versions:
+      - v1
+      - v2_shadow
+      score: -0.5
+      alert_kinds:
+      - WR_DECAY
+      - EXP_DECAY
+      current_wr_pct: 18.2
+      baseline_wr_pct: 57.7
+      wr_drop_pp: 39.5
+      current_exp_r: -0.55
+      baseline_exp_r: 0.44
+      exp_drop_r: 0.99
+      source_path: research/monthly_decay_monitor/2026-04_report_including_a1.md
+      source_line_no: 14
+      reason: xauusd_v1_monthly_wr_exp_decay_long_risk_reducer
+    - symbol: USDJPY
+      side: LONG
+      detector_versions:
+      - v1
+      - v2_shadow
+      score: -0.5
+      alert_kinds:
+      - WR_DECAY
+      - EXP_DECAY
+      current_wr_pct: 42.9
+      baseline_wr_pct: 59.1
+      wr_drop_pp: 16.2
+      current_exp_r: 0.07
+      baseline_exp_r: 0.48
+      exp_drop_r: 0.41
+      source_path: research/monthly_decay_monitor/2026-04_report_including_a1.md
+      source_line_no: 12
+      reason: usdjpy_v1_monthly_wr_exp_decay_long_risk_reducer
+    sprt_window_size: 20
+    sprt_wr_threshold: 0.5
+  autocorrelation_sizing:
+    enabled: true
+    apply_to_execution: true
+    window: 20
+    min_autocorrelation: 0.0
+    decay_risk_multiplier: 0.5
+drawdown_reduction:
+  threshold: 0.08
+  reduced_risk_pct: 0.5
+  contract_size: 100
+filters:
+  max_gap_pct: 1.5
+gate1:
+  touch_count_reject_threshold: 2
+  ob_retest_sl_exception: true
+  ob_retest_sl_min_buffer_atr: 0.5
+  sl_liquidity_cluster_enabled: false
+  sl_liquidity_cluster_margin_atr: 0.5
+position_mgmt:
+  j46_j49_v2:
+    enabled: true
+    partial_close_ratio: 0.0
+    be_trigger: immediate_on_tp1
+    time_stop_bars: 12
+    tp1_distance_r: 3.0
+    higher_target_r: 6.0
+model_a:
+  bias_timeframes:
+  - D1
+  - H4
+  setup_timeframe: H1
+  entry_timeframe: M15
+  enabled_frameworks:
+  - ob_retest
+  - fvg_fill
+  - breaker_re_entry
+  ote_zone_fib_top: 0.618
+  ote_zone_fib_bottom: 0.786
+  displacement_min_ratio: 1.5
+  equal_level_tolerance: 2.5
+ai:
+  billing_mode: api
+  primary_model: claude-sonnet-4-6
+  primary_effort: max
+  candidate_rate_model_guard_enabled: true
+  candidate_rate_blocked_model_efforts:
+  - model: claude-sonnet-4-6
+    efforts:
+    - medium
+    - high
+    medium_candidate_rate_pct: 11.6
+    high_candidate_rate_pct: 17.4
+    lost_trades_wr_pct: 67.0
+    source_path: .context/02_session_handoffs/11_apr12_strategic_advisor_T2c_handoff.md
+    source_line_no: 63
+    reason: t2c_sonnet46_medium_high_over_rejected_good_trades
+  - model_prefixes:
+    - claude-opus-4-
+    efforts:
+    - ''
+    - medium
+    - high
+    - max
+    opus_candidate_rate_pct: 19.0
+    opus_win_rate_pct: 61.0
+    opus_cr_wr: 0.116
+    winner_model: claude-sonnet-4-6
+    winner_effort: max
+    winner_cr_wr: 0.265
+    source_path: .context/02_session_handoffs/12_apr12_strategic_advisor_L4_handoff.md
+    source_line_no: 10
+    reason: p2c_opus4x_primary_analyzer_killed_by_cr_wr_and_cost
+  debate_model: claude-sonnet-4-6
+  postmortem_model: claude-sonnet-4-6
+  review_model: claude-sonnet-4-6
+  debate_round2_enabled: true
+  max_api_retries: 1
+  api_timeout_seconds: 90
+  timeout_retry_enabled: false
+ai_call_policy:
+  enabled: true
+  apply_to_ai_call: true
+  decision_log_enabled: true
+  decision_log_path: shadow_logs/ai_call_policy_decisions.jsonl
+  production_purposes:
+  - production_trade_decision
+  - canary_schema_stability
+  - ai_reliability_smoke
+  research_ai_purposes:
+  - ai_decision_value_audit
+  - ai_delta_audit
+  - ai_reliability_audit
+  - prompt_model_regression
+  no_api_contexts:
+  - historical_replay
+  - market_edge_replay
+  - mechanical_replay
+  - goal_session_projection
+  - research_market_edge
+  - missed_opportunity_inventory
+  require_manifest_for_research_ai: true
+  require_budget_cap_for_research_ai: true
+  require_owner_approval_for_research_ai: true
+  require_cache_key_for_research_ai: true
+ai_supervisor:
+  enabled: true
+  apply_runtime_overrides: true
+  decision_log_enabled: true
+  decision_log_path: shadow_logs/ai_supervisor_decisions.jsonl
+  ai_decision_trace_path: shadow_logs/ai_decision_trace.jsonl
+  malformed_response_path: shadow_logs/malformed_responses.jsonl
+  vnext_decision_log_path: shadow_logs/gtos_vnext_runtime_decisions.jsonl
+  max_log_rows: 500
+  max_malformed_rows: 5
+  max_malformed_demoted_rows: 2
+  max_missing_source_bound_rows: 1
+  max_candidate_cluster_rows: 3
+  format_repair_enabled: true
+ai_narrowing:
+  enabled: false
+  mode: shadow
+  allow_ai_call_skip: false
+  owner_approval_confirmed: false
+  production_change_review_approved: false
+  runtime_halt_removed: false
+  focused_parser_selector_canary_tests_passed: false
+  capacity_blocklist_active: false
+  capacity_blocklist_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_AI_NARROWING_CAPACITY_BLOCKLIST_LEDGER_2026-05-18.jsonl
+  policy_ledger_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_AI_NARROWING_POLICY_LEDGER_2026-05-18.jsonl
+  shadow_evaluation_log: shadow_logs/ai_narrowing_policy_shadow_evaluations.jsonl
+structural_c_gate:
+  enabled: true
+  apply_to_ai_call: true
+  only_when_deterministic_bias_absent: true
+  d1_lag_h4_h1_consensus_enabled: true
+  d1_lag_nas100_blocked_candles: 54
+  d1_lag_nas100_rally_pct: 4.2
+  t6_cgate_pass_wr_pct: 69.4
+  t6_cgate_pass_total_r: 44.2
+  q_score_correlation_r: -0.06
+  q_score_correlation_p: 0.574
+gtos_vnext_runtime:
+  enabled: true
+  mode: shadow
+  apply_to_execution: false
+  moonshot_dynamic_execution_router_enabled: false
+  moonshot_dynamic_execution_router_apply_to_execution: false
+  moonshot_broader_origin_live_generation_enabled: true
+  moonshot_broader_origin_execute_pre_ai_pre_l2: true
+  moonshot_broader_origin_extended_session_enabled: true
+  moonshot_broader_origin_cross_asset_fetch_enabled: true
+  moonshot_broader_origin_cross_asset_fetch_bars: 80
+  moonshot_dynamic_execution_router_runtime_map_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_substrate_dynamic_execution_repair_2026_05_26/VNEXT_MOONSHOT_RUNTIME_INTEGRATION_MAP_2026-05-26.json
+  moonshot_dynamic_execution_router_policy: momentum_exhaustion
+  moonshot_dynamic_execution_router_momentum_exception_policy: partial_be_runner
+  moonshot_dynamic_execution_router_momentum_exception_origin_families_to_partial_be_runner:
+  - cross_asset_lead_lag
+  - displacement_continuation
+  - liquidity_sweep_reclaim
+  - regime_transition_break
+  - session_open_range_break
+  - volatility_compression_expansion
+  moonshot_dynamic_execution_router_allow_policy_invariant_selected_cell_risk_geometry: true
+  moonshot_dynamic_execution_router_be_trigger_r: 1.0
+  moonshot_dynamic_execution_router_be_final_target_r: 1.5
+  moonshot_dynamic_execution_router_be_time_stop_bars: null
+  moonshot_dynamic_execution_router_partial_trigger_r: 1.0
+  moonshot_dynamic_execution_router_partial_final_target_r: 3.0
+  moonshot_dynamic_execution_router_partial_close_ratio: 0.5
+  moonshot_dynamic_execution_router_partial_time_stop_bars: null
+  moonshot_dynamic_execution_router_trailing_trigger_r: 1.0
+  moonshot_dynamic_execution_router_trailing_final_target_r: 3.0
+  moonshot_dynamic_execution_router_trailing_gap_r: 0.5
+  moonshot_dynamic_execution_router_trailing_time_stop_bars: null
+  moonshot_dynamic_execution_router_momentum_trigger_r: 1.0
+  moonshot_dynamic_execution_router_momentum_final_target_r: 2.0
+  moonshot_dynamic_execution_router_momentum_pullback_r: 0.4
+  moonshot_dynamic_execution_router_momentum_time_stop_bars: null
+  moonshot_dynamic_execution_router_condition_challenger_policy: condition_asof_displacement_v1
+  moonshot_dynamic_execution_router_condition_challenger_enabled: true
+  moonshot_dynamic_execution_router_condition_challenge_map_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_substrate_dynamic_execution_repair_2026_05_26/VNEXT_MOONSHOT_STAGE11_CONDITION_ROUTER_INTEGRATION_MAP_2026-05-26.json
+  moonshot_dynamic_execution_router_replaces_policy: live_current_j46_j49
+  moonshot_dynamic_execution_router_default_source_mode: OHLC_M15_CSV
+  moonshot_dynamic_execution_router_default_source_path_feature_status: computed_from_source_ohlc_asof
+  moonshot_dynamic_execution_router_default_source_window_complete: true
+  moonshot_dynamic_execution_router_default_ordered_path_status: ordered_path_not_ambiguous_in_m15_replay
+  moonshot_dynamic_execution_router_ordered_path_scope: selected_policy
+  moonshot_dynamic_execution_router_source_window_complete_blocks_activation: false
+  moonshot_dynamic_execution_router_require_configured_kill_zone: true
+  moonshot_dynamic_execution_router_repaired_overlay_selector: full_moonshot_old_three_plus_broader_origin_positive_native_be_after_trigger
+  moonshot_dynamic_execution_router_stage13_repair_summary_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_STAGE13_FULL_MOONSHOT_PRODUCTION_SELECTOR_SUMMARY_2026-05-26.json
+  moonshot_dynamic_execution_router_repaired_branch_allowlist_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_STAGE13_FULL_MOONSHOT_REPAIRED_BRANCH_ALLOWLIST_2026-05-26.json
+  moonshot_dynamic_execution_router_broader_origin_allowlist_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_STAGE13_BROADER_ORIGIN_ACTIVATION_ALLOWLIST_2026-05-26.json
+  moonshot_dynamic_execution_router_require_selected_cell_risk_ledger: true
+  moonshot_dynamic_execution_router_selected_cell_risk_ledger_path: research/science_program_2026_05/06_outcome_testing/vnext_moonshot_production_replacement_activation_2026_05_26/VNEXT_REPLACEMENT_STAGE13_redacted_account_SELECTED_CELL_RISK_LEDGER_2026-05-26.jsonl
+  selected_cell_pretrade_cost_model_required: true
+  selected_cell_pretrade_max_spread_r: 0.1
+  selected_cell_commission_model_required: true
+  selected_cell_allowed_commission_model_statuses:
+  - SELECTED_CELL_RISK_LEDGER_VERIFIED_NO_EXECUTION_CRITICAL_COMMISSION_GAP
+  - COMMISSION_INCLUDED_IN_SELECTED_CELL_RISK
+  moonshot_dynamic_execution_router_repaired_branch_action: MOONSHOT_REPAIRED_FOLLOW
+  moonshot_dynamic_execution_router_required_branch_labels:
+  - FOLLOW
+  moonshot_dynamic_execution_router_activated_frameworks:
+  - breaker_re_entry
+  - fvg_fill
+  - ob_retest
+  moonshot_dynamic_execution_router_activated_origin_families:
+  - cross_asset_lead_lag
+  - displacement_continuation
+  - liquidity_sweep_reclaim
+  - regime_transition_break
+  - session_open_range_break
+  - structural_distance_extreme
+  - volatility_compression_expansion
+  moonshot_dynamic_execution_router_broader_origin_min_group_rows: 20
+  moonshot_dynamic_execution_router_repaired_branch_min_rows: 20
+  moonshot_dynamic_execution_router_broker_native_eligible_symbols:
+  - AUDJPY
+  - AUDUSD
+  - BTCUSD
+  - CHFJPY
+  - ETHUSD
+  - EURGBP
+  - EURJPY
+  - EURUSD
+  - GBPJPY
+  - GBPUSD
+  - GER40
+  - JP225
+  - NAS100
+  - NZDUSD
+  - SPX500
+  - UK100
+  - UKOIL_cash
+  - US30_cash
+  - USDCAD
+  - USDCHF
+  - USDJPY
+  - USOIL_cash
+  - XAGUSD
+  - XAUUSD
+  moonshot_dynamic_execution_router_broker_native_exact_excluded_symbols: []
+  replacement_monitoring_enabled: true
+  replacement_monitoring_log_enabled: true
+  replacement_monitoring_log_path: shadow_logs/gtos_vnext_replacement_monitoring.jsonl
+  replacement_ml_apply_to_execution: false
+  replacement_ml_role_source_manifest: research/science_program_2026_05/06_outcome_testing/vnext_activation_edge_anatomy_ai_budget_ml_feasibility_2026_05_26/VNEXT_ACTIVATION_ML_CHALLENGER_RESULTS_2026-05-26.json
+  replacement_ml_role_keys:
+  - ai_call_reducer
+  - source_confidence_scorer
+  - partition_robustness_scorer
+  - timeout_ambiguous_monitor
+  - drift_detector
+  replacement_ml_ai_call_reducer_enabled: true
+  replacement_ml_source_confidence_scorer_enabled: true
+  replacement_ml_partition_robustness_scorer_enabled: true
+  replacement_ml_timeout_ambiguous_monitor_enabled: true
+  replacement_ml_drift_detector_enabled: true
+  replacement_ml_drift_psi_warn_threshold: 0.25
+  pre_ai_enabled: true
+  pre_ai_apply_to_ai_call: false
+  pre_ai_evaluate_all_sides: true
+  pre_ai_evaluate_route_variants: true
+  pre_ai_prune_route_variants_to_artifact_scopes: true
+  pre_ai_match_artifact_scopes_directly: true
+  pre_ai_skip_when_bias_side_avoid: true
+  pre_ai_exclude_zero_risk_routes: true
+  pre_ai_min_route_risk_multiplier: 1.0e-06
+  pre_ai_min_follow_effective_n: 3
+  pre_ai_follow_effective_n_bypass_risk_reasons:
+  - vnext_risk_strong_positive_proxy_class
+  pre_ai_select_stronger_follow_side_enabled: true
+  pre_ai_stronger_follow_dominance_ratio: 1.5
+  pre_ai_stronger_follow_min_abs_pressure: 1.0
+  pre_ai_ob_core_framework_preference_enabled: true
+  pre_ai_ob_core_framework: ob_retest
+  pre_ai_ob_core_min_abs_pressure: 1.0
+  pre_ai_ob_core_competing_framework_dominance_ratio: 1.5
+  pre_ai_xau_asian_sweep_continuation_enabled: true
+  pre_ai_xau_asian_sweep_evaluate_continuation_side: true
+  pre_ai_xau_asian_sweep_symbol_families:
+  - XAUUSD_GC_FAMILY
+  pre_ai_xau_asian_sweep_framework: ob_retest
+  pre_ai_exclude_blocked_frameworks_enabled: true
+  pre_ai_framework_exclusion_candidates:
+  - ob_retest
+  - fvg_fill
+  - breaker_re_entry
+  pre_ai_ai_narrowing_policy_decision_enabled: true
+  pre_ai_ai_narrowing_capacity_blocklist_decision_enabled: true
+  pre_ai_ai_narrowing_load_capacity_blocklist_artifact: true
+  pre_ai_ai_narrowing_capacity_blocklist_artifact_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_AI_NARROWING_CAPACITY_BLOCKLIST_LEDGER_2026-05-18.jsonl
+  pre_ai_ai_narrowing_allow_blocklist_required_scopes: false
+  pre_ai_ai_narrowing_capacity_blocklist_active: false
+  load_cp281_rule_replay_result_table_artifact: true
+  cp281_rule_replay_result_table_artifact_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_CP281_RULE_REPLAY_EXECUTION_MATERIALIZATION_RESULT_TABLE_LEDGER_2026-05-18.jsonl
+  load_cp281_rule_replay_event_artifact: true
+  cp281_rule_replay_event_artifact_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_CP281_RULE_REPLAY_EXECUTION_MATERIALIZATION_EVENT_LEDGER_2026-05-18.jsonl
+  load_cp281_branch_decisions_artifact: true
+  cp281_branch_decisions_artifact_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_CP281_BRANCH_DECISIONS_LEDGER_2026-05-18.jsonl
+  load_cp281_ready_runtime_aggregate_artifact: true
+  cp281_ready_runtime_aggregate_artifact_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_CP281_READY_RUNTIME_MAPPING_AGGREGATE_LEDGER_2026-05-18.jsonl
+  load_cp281_ready_runtime_rule_artifact: true
+  cp281_ready_runtime_rule_artifact_path: research/science_program_2026_05/06_outcome_testing/main_orchestrator_24h_full_stack_research_integration_materialization/MAIN_ORCH48_CP281_READY_RUNTIME_MAPPING_RULE_LEDGER_2026-05-18.jsonl
+  pre_ai_ai_role_context_enabled: true
+  pre_ai_ai_role_context_apply_to_prompt: true
+  pre_ai_ai_role_context_uses_would_action: true
+  pre_ai_ai_role_context_side_limit: 4
+  pre_ai_ai_role_context_source_artifact_path: .context/00_core/llm_specialization_research_backlog.md
+  pre_ai_ai_role_pressure_test_enabled: true
+  pre_ai_ai_role_pressure_test_steps:
+  - critic_mode
+  - list_issues
+  - fix_or_reject
+  - state_what_was_fixed
+  pre_ai_ai_role_per_instrument_scope_guard_enabled: true
+  pre_ai_ai_role_null_result_is_valid: true
+  ai_policy_enabled: true
+  ai_policy_apply_to_ai_call: false
+  ai_policy_follow_no_ai_enabled: true
+  ai_policy_follow_validator_risk_tiers:
+  - standard
+  - elevated
+  - high
+  - funded_prop
+  ai_policy_allow_mixed_ai_resolution: true
+  ai_policy_mixed_resolution_requires_source_bound_fields: true
+  ai_policy_allow_legacy_broad_fallback: false
+  ai_policy_legacy_requires_replayed_scope: true
+  ai_policy_prompt_hash_logging_required: true
+  ai_policy_schema_validation_required: true
+  ai_policy_content_addressed_cache_required: true
+  local_heavy_data_search_enabled: true
+  local_heavy_data_use_default_roots: false
+  local_heavy_data_search_roots:
+  - C:/Users/MSI/Documents/ai-trading-agent
+  - C:/tmp
+  include_artifact_source_components: true
+  artifact_source_component_evidence_families:
+  - numeric_router_system_recommendations
+  - numeric_router_source_repair
+  - moonshot_target_stop_ordering
+  - moonshot_entry_adverse_stop_first
+  - moonshot_broker_repaired_proxy
+  - moonshot_repaired_proxy_symbol_surface
+  - moonshot_unified_numeric_result
+  - moonshot_exact_r_missing_proof
+  - moonshot_source_geometry_repair
+  - moonshot_challenger_frontier_action
+  - moonshot_challenger_frontier_route
+  - moonshot_control_screen
+  - moonshot_control_screen_route_queue
+  - moonshot_gtos_replay_blocker
+  - moonshot_accepted_builder
+  - moonshot_accepted_builder_binding
+  - moonshot_accepted_builder_branch
+  - moonshot_accepted_builder_entry_adverse
+  - moonshot_accepted_builder_family
+  - moonshot_accepted_builder_m15
+  - moonshot_accepted_builder_m1
+  - moonshot_accepted_builder_positive
+  - moonshot_accepted_builder_source
+  - moonshot_accepted_builder_rejected_repair
+  - moonshot_market_gap_primitive_expansion
+  - moonshot_nearmiss_market_entry_join
+  - moonshot_recommendation_merge_bucket
+  - moonshot_recommendation_family_rollup
+  - moonshot_recommendation_unified_candidate
+  - moonshot_recommendation_scope_rollup
+  - moonshot_unified_candidate_market_rollup
+  - expanded_market_source_geometry
+  - gtos_vnext_nofill_pending_lifecycle
+  - gtos_vnext_production_change_promotions
+  - gtos_vnext_production_change_kill_redesign_guards
+  - gtos_vnext_production_change_mixed_resolution
+  - gtos_vnext_entry_offset_050r_cluster_guard
+  - gtos_vnext_opening_drive_source_contract
+  - gtos_vnext_numeric_router_catalog_runtime
+  - gtos_vnext_survivor_failure_runtime
+  - gtos_vnext_source_repair_missing_denominator
+  - gtos_vnext_nr_source_repair_execution_identity
+  - gtos_vnext_ai_narrowing_default_off_runtime
+  - gtos_vnext_ai_decision_trace_routing_guard
+  - gtos_vnext_pre_ai_post_l2_routing_policy
+  - gtos_vnext_rejected_candidate_l2_value_mining
+  - gtos_vnext_legacy_ai_cascade_model_runtime
+  - gtos_vnext_legacy_t7_simulation_friction
+  - gtos_vnext_legacy_v2_v3_paper_live_friction
+  - gtos_vnext_sl_beyond_ob_outcome_join_source_repair
+  - gtos_vnext_fvg_trade_record_bounds_execution_runtime
+  - gtos_vnext_exit_management_trailing_j46
+  - gtos_vnext_exit_management_residue
+  - gtos_vnext_q62_partial_close_exit_runtime
+  - gtos_vnext_ready8_failure_control_residue
+  - gtos_vnext_trade_record_execution_lifecycle
+  - gtos_vnext_lifecycle_execution_source_guard
+  - gtos_vnext_execution_adjacent_friction_residue
+  - gtos_vnext_accepted_candidate_m1_fill_source_repair
+  - gtos_vnext_sierra_depth_source_acquisition
+  - gtos_vnext_risk_proxy_stress_cost
+  - gtos_vnext_gate_selector_session_timeframe
+  - gtos_vnext_adverse_stop_first_execution
+  - gtos_vnext_branch_followup_computation
+  - gtos_vnext_branch_ambiguity_collapse
+  - gtos_vnext_branch_implementation_replay
+  - gtos_vnext_cp280_scorer_filter_router
+  - gtos_vnext_observable_execution
+  - gtos_vnext_unified_execution_action_work_order
+  - gtos_vnext_target_stop_ordering_execution_scoring
+  - gtos_vnext_branch_replay_execution_repair
+  - gtos_vnext_unified_candidate_action_execution
+  - gtos_vnext_unified_candidate_scoring_execution
+  - gtos_vnext_unified_execution_decision
+  - gtos_vnext_unified_shadow_source_materialization
+  - gtos_vnext_scid_forward_source_capture
+  - gtos_vnext_scid_future_capture_source_state
+  - gtos_vnext_scid_combined_source_capture_poi_bounds
+  - gtos_vnext_scid_noapi_source_repair
+  - gtos_vnext_pre_ai_h1_poi_source_gap
+  - gtos_vnext_shadow_source_log_materialization
+  - gtos_vnext_tick_m15_execution_friction
+  - gtos_vnext_tick_m15_target_control
+  - gtos_vnext_main_orch24_tick_structural_entry_runtime
+  - gtos_vnext_main_orch24_structural_repair_action_runtime
+  - gtos_vnext_main_orch24_action_completeness_residual_r_runtime
+  - gtos_vnext_main_orch24_implementation_selection_runtime
+  - gtos_vnext_main_orch24_snapshot_dependency_repair_runtime
+  - gtos_vnext_main_orch48_final_review_selector_runtime
+  - gtos_vnext_ltf_path_geometry_source_runtime
+  - gtos_vnext_instrument_expansion_market_session_runtime
+  - gtos_vnext_main_orch24_source_accepted_action_repair_runtime
+  - gtos_vnext_main_orch24_swing_protected_source_repair_runtime
+  - gtos_vnext_main_orch24_source_m15_branch_repair_runtime
+  - gtos_vnext_main_orch24_live_mechanical_geometry_outcome_runtime
+  - gtos_vnext_main_orch24_unified_candidate_path_proxy_runtime
+  - gtos_vnext_tick_source_recovery_quote_contract_runtime
+  - gtos_vnext_legacy_live_shadow_decision_runtime
+  - gtos_vnext_scid_target_horizon_control
+  - expanded_market_reduced_surface
+  - ai_decision_architecture
+  artifact_source_component_exclusions: []
+  implementation_action_decision_enabled: true
+  implementation_action_follow_tokens:
+  - DEFAULT_OFF_SCORER_SURFACE_READY_WITH_SOURCE_GUARDS
+  - IMPLEMENT_DEFAULT_OFF_SCORER_SCOPE_WITH_GUARDS
+  - REGISTER_DEFAULT_OFF_CP281_FOLLOW_SCORER_RULE
+  - REGISTER_DEFAULT_OFF_BRANCH_LOCAL_LEAKAGE_REDUCED_SURFACE_CANDIDATE
+  - REGISTER_DEFAULT_OFF_BRANCH_LOCAL_PRESERVED_REDUCED_SURFACE_CANDIDATE
+  - KEEP_SOURCE_REPAIRED_PROXY_AS_DEFAULT_OFF_SCORER_OR_GUARD_INPUT
+  - REPAIRED_PROXY_DEFAULT_OFF_SCORER_WITH_GUARDS
+  - UNIFIED_CANDIDATE_DEFAULT_OFF_SCORER_WITH_SOURCE_GUARDS
+  - KEEP_NOFILL_CHALLENGER_COMPARATOR_STRONG_POSITIVE
+  - KEEP_STRONG_POSITIVE_PROXY_R_WITH_CONTROL
+  - KEEP_POSITIVE_PROXY_R_WITH_CONTROL
+  - IMPLEMENT_DEFAULT_OFF_SCORER_RESEARCH_MODULE
+  implementation_action_avoid_tokens:
+  - REGISTER_NEGATIVE_PROXY_FAILURE_FEATURE
+  - IMPLEMENT_AVOID_INVERSE_OR_FAILURE_FILTER_SCOPE
+  - AVOID_CURRENT_ENTRY_STOP_FIRST_PROXY
+  - FAIL_CLOSED_OR_DOWNWEIGHT_AMBIGUOUS_NEGATIVE_PROXY
+  - REGISTER_DEFAULT_OFF_CP281_AVOID_FILTER_RULE
+  - KEEP_SOURCE_REPAIRED_NEGATIVE_PROXY_AS_AVOID_OR_REDESIGN_INPUT
+  - UNIFIED_CANDIDATE_AVOID_OR_FAILURE_FILTER
+  - CONVERT_STRONG_NEGATIVE_TO_AVOID_INVERSE_OR_FAILURE_FILTER
+  implementation_action_mixed_tokens:
+  - BROKER_EXECUTION_GEOMETRY_REQUIRED_FOR_EXACT_R
+  - BROKER_GEOMETRY_ATTACHMENT_REQUIRED_FOR_EXACT_SPREAD_PROXY
+  - EXECUTE_SOURCE_GEOMETRY_REPAIR_SCOPE
+  - SOURCE_JOIN_REPAIR_REQUIRED
+  - READY_DEFAULT_OFF_SOURCE_REPAIR
+  - SOURCE_PACKET_CONTEXT_SELECTOR_EXECUTION_IDENTITY_ABSENT
+  - ORDERING_OR_INTERVAL_COLLAPSE_BEFORE_DIRECTIONAL_USE
+  - MERGE_AS_CONTEXT_STRESS_GUARD_INPUT
+  - MERGE_CONTEXT_STRESS_SCOPE_AS_GUARD_INPUT
+  - KEEP_AI_UNCHANGED
+  - REDESIGN_ONLY
+  - PRESERVE_NUMERIC_ROUTER_SYSTEM_RECOMMENDATION_AS_NON_TERMINAL_INPUT
+  - MERGE_SOURCE_REPAIRED_FLAT_PROXY_AS_CONTEXT
+  - BROKER_GEOMETRY_REPAIR_REQUIRES_DIRECT_TRADE_IDENTIFIER
+  - SOURCE_GEOMETRY_REPAIR_OR_GUARD_BINDING_REQUIRED
+  - MERGE_AS_CONTROL_CONTEXT_PENDING_EXACT_GEOMETRY
+  - KEEP_NEUTRAL_PROXY_AS_CONTEXT_OR_STRESS_CONTROL
+  - REDESIGN_NEGATIVE_PROXY_OR_MERGE_AS_CONTEXT_FEATURE
+  - REDESIGN_OR_REPLAY_REPAIR_REQUIRED_NO_NUMERIC_PROXY
+  - EXPANDED_MARKET_SOURCE_GEOMETRY_CONTEXT_GUARD
+  failure_intelligence_guard_enabled: true
+  failure_intelligence_non_executable_tokens:
+  - SOURCE_REPAIR
+  - SOURCE_CAPTURE_REQUIRED
+  - SOURCE_CAPTURE_REQUIREMENT
+  - SOURCE_JOIN_REPAIR_REQUIRED
+  - SOURCE_LIMITED
+  - SOURCE_BLOCKED
+  - MISSING_REQUIRED
+  - BROKER_EXECUTION_GEOMETRY_REQUIRED
+  - BROKER_GEOMETRY_ATTACHMENT_REQUIRED
+  - EXECUTE_SOURCE_GEOMETRY_REPAIR_SCOPE
+  - SOURCE_PACKET_CONTEXT_SELECTOR_EXECUTION_IDENTITY_ABSENT
+  - FAIL_CLOSED
+  - FAIL_CLOSED_OR_DOWNWEIGHT
+  - UNDERPOWERED
+  - UNPROVEN
+  - CONTROL_EXPLAINED
+  - DUPLICATE_AVOID_FILTER_PROXY_REFERENCE_NOT_COUNTED
+  - REFERENCE_ONLY
+  - NOT_COUNTED
+  - BOUNDED_AMBIGUOUS
+  - RESULT_MATERIALIZATION_REQUIRED
+  - REDESIGN_ONLY
+  - REPAIR_NEEDED
+  failure_intelligence_executable_avoid_tokens:
+  - AVOID_FILTER
+  - INVERSE_FILTER
+  - FAILURE_FILTER
+  - IMPLEMENT_AVOID_INVERSE_OR_FAILURE_FILTER_SCOPE
+  - REGISTER_DEFAULT_OFF_CP281_AVOID_FILTER_RULE
+  - CANONICAL_AVOID_FILTER_SAVED_R_OWNER
+  - MAIN_ORCH24_SWING_PROTECTED_POSITIVE_PROXY
+  - MAIN_ORCH24_SWING_PROTECTED_NEGATIVE_PROXY_AVOID
+  - MAIN_ORCH24_SWING_PROTECTED_UNPROTECTED_STOP_AVOID
+  failure_intelligence_source_complete_fields:
+  - source_complete
+  - source_bound
+  orderflow_diagnostic_guard_enabled: true
+  orderflow_diagnostic_tokens:
+  - ORDERFLOW
+  - ORDER_FLOW
+  - FOOTPRINT
+  - DEPTH
+  - LADDER
+  - MBO
+  - MBP
+  - DATABENTO
+  - SCID
+  - FUTURES_PROXY_TRANSFER
+  - FUTURES_TO_CFD
+  - PROXY_TRANSFER
+  - QUEUE_POSITION
+  - ABSORPTION
+  orderflow_runtime_validated_fields:
+  - orderflow_runtime_validated
+  - proxy_transfer_validated
+  - futures_to_cfd_transfer_validated
+  - source_transfer_validated
+  orderflow_runtime_ready_tokens:
+  - ORDERFLOW_RUNTIME_VALIDATED
+  - VALIDATED_FUTURES_PROXY_TRANSFER
+  - SYMBOL_PROXY_TRANSFER_VALIDATED
+  bridge_diagnostics_enabled: true
+  bridge_diagnostic_artifact_paths:
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_BRIDGE_RESIDUE_RUNTIME_ROWS_2026-05-18.jsonl
+  pre_ai_route_timeframes:
+  - M1
+  - M5
+  - M15
+  - H1
+  - H4
+  - D1
+  pre_ai_route_horizons:
+  - h4
+  - h16
+  - h32
+  pre_ai_route_frameworks:
+  - ob_retest
+  - fvg_fill
+  - breaker_re_entry
+  pre_ai_route_families:
+  - moonshot_mechanical
+  - moonshot_control_screen
+  - moonshot_control_screen_route_queue
+  - moonshot_gtos_replay_blocker
+  - moonshot_accepted_builder
+  - moonshot_accepted_builder_binding
+  - moonshot_accepted_builder_branch
+  - moonshot_accepted_builder_entry_adverse
+  - moonshot_accepted_builder_family
+  - moonshot_accepted_builder_m15
+  - moonshot_accepted_builder_m1
+  - moonshot_accepted_builder_positive
+  - moonshot_accepted_builder_source
+  - moonshot_accepted_builder_rejected_repair
+  - moonshot_branch_followup_binding
+  - moonshot_branch_followup_branch
+  - moonshot_branch_followup_bucket
+  - moonshot_branch_followup_family
+  - moonshot_branch_followup_m15
+  - moonshot_branch_followup_m1
+  - moonshot_branch_followup_positive
+  - moonshot_branch_followup_source
+  - moonshot_branch_ambiguity_collapse
+  - moonshot_branch_implementation_replay
+  - main_orch24_snapshot_dependency_repair
+  - numeric_router
+  - survivor_failure_proxy
+  - cp281_native_rule
+  - mechanical_ai_selector
+  - nofill_mechanical
+  - source_discovery
+  pre_ai_route_source_components:
+  - nofill_far_miss_avoid
+  - nofill_far_miss_retest
+  - nofill_far_miss_family
+  - nofill_far_miss_source_confidence
+  - nofill_near_miss_market_entry
+  - nofill_near_miss_offset
+  - nofill_near_miss_source_requirement
+  - source_repair_proof
+  - sl_beyond_ob_outcome_capture_gap
+  - sl_beyond_ob_pass_adverse_outcome_reference
+  - sl_beyond_ob_pass_nofill_outcome_reference
+  - sl_beyond_ob_pass_outcome_reference
+  - sl_beyond_ob_rejected_l2_counterfactual
+  - sl_beyond_ob_legacy_zero_buffer_source_repair
+  - entry_geometry_fillability_tick_path_ordering
+  - entry_geometry_fillability_tick_path_ordering_retest_control
+  - fvg_entry_geometry_and_lock_metadata
+  - fvg_ob_confluence_shared_path_scorer
+  - pending_lifecycle_fill_cancel_expiry_source_capture
+  - lifecycle_still_pending_no_fill_source_guard
+  - lifecycle_wrong_side_no_fill_source_guard
+  - trade_index_lifecycle_action_required_source_repair
+  - opportunity_lifecycle_reset_policy_source_guard
+  - prefill_delivery_adverse_reversal_path
+  - prefill_delivery_adverse_reversal_path_retest_control
+  - source_cost_spread_bar_proxy_implication
+  - structural_lock_reentry_cost_metadata
+  - structural_swing_protected_stop_geometry
+  - tick_derived_structural_source_repair
+  - target_stop_ordering
+  - entry_adverse_stop_first
+  - adverse_stop_first_execution
+  - entry_adverse_execution
+  - targetstop_na_binding_repair
+  - target_stop_path_control
+  - survivor_failure_proxy
+  - gbpjpy_long_adverse_avoid_reclass
+  - ohlc_challenger_frontier_action
+  - ohlc_challenger_frontier_route
+  - ohlc_control_screen
+  - ohlc_control_screen_route_queue
+  - gtos_replay_blocker
+  - gtos_accepted_builder
+  - gtos_accepted_builder_binding
+  - gtos_accepted_builder_branch
+  - gtos_accepted_builder_entry_adverse
+  - gtos_accepted_builder_family
+  - gtos_accepted_builder_m15
+  - gtos_accepted_builder_m1
+  - gtos_accepted_builder_positive
+  - gtos_accepted_builder_source
+  - gtos_accepted_builder_rejected_repair
+  - gtos_branch_followup_binding
+  - gtos_branch_followup_branch
+  - gtos_branch_followup_bucket
+  - gtos_branch_followup_family
+  - gtos_branch_followup_m15
+  - gtos_branch_followup_m1
+  - gtos_branch_followup_positive
+  - gtos_branch_followup_source
+  - gtos_branch_ambiguity_branch
+  - gtos_branch_ambiguity_bucket
+  - gtos_branch_ambiguity_cause_matrix
+  - gtos_branch_ambiguity_interval
+  - gtos_branch_ambiguity_m15_same_bar
+  - gtos_branch_ambiguity_ordering
+  - gtos_branch_ambiguity_source_repair
+  - gtos_branch_impl_action
+  - gtos_branch_impl_candidate
+  - gtos_branch_impl_cause_matrix
+  - gtos_branch_impl_code_replay
+  - gtos_branch_impl_control_source_split
+  - gtos_branch_impl_full_outcome
+  - gtos_branch_impl_guarded_scope_scorer
+  - gtos_branch_impl_m1_chronology
+  - gtos_branch_impl_m1_interval
+  - gtos_branch_impl_m1_support
+  - gtos_branch_impl_next_compute
+  - gtos_branch_impl_numeric_decision
+  - gtos_branch_impl_numeric_router
+  - gtos_branch_impl_ordering_collapse
+  - gtos_branch_impl_positive_challenger
+  - gtos_branch_impl_replay_builder
+  - gtos_branch_impl_replay_matrix
+  - gtos_branch_impl_router_scoring
+  - gtos_branch_impl_score_export
+  - gtos_branch_impl_source_spread_recompute
+  - cp280_scorer_filter_router
+  - cp280_numeric_router_system_recommendations
+  - cp280_numeric_module_router_application
+  - cp280_numeric_shadow_scorer
+  - cp280_router_application_scoring
+  - cp280_score_export_packet
+  - cp280_unified_candidate_scorer
+  - cp280_cost_fill_proxy_scorer
+  - cp280_observable_runtime_work
+  - cp280_unified_action_result
+  - observable_execution_follow_scorer
+  - observable_execution_control_guard
+  - observable_execution_denominator_guard
+  - observable_execution_source_policy_guard
+  - observable_execution_source_repair
+  - observable_execution_horizon_repair
+  - observable_execution_avoid_filter
+  - shadow_source_guard
+  - market_gap_code
+  - expanded_market_source_geometry
+  - expanded_market_ohlc_source_reachable
+  - expanded_market_source_gap
+  - ltf_path_source_blocked_guard
+  - ltf_path_source_recovered_context
+  - ltf_path_contract_complete_context
+  - ltf_path_strategy_candidate_context
+  - ltf_path_source_context
+  - instrument_expansion_route_follow
+  - instrument_expansion_route_avoid
+  - instrument_expansion_route_context
+  - instrument_expansion_market_candidate_follow
+  - instrument_expansion_market_candidate_avoid
+  - instrument_expansion_market_candidate_context
+  - instrument_expansion_h1_h2_decay_guard
+  - instrument_expansion_h1_h2_decay_context
+  - instrument_expansion_monthly_context
+  - instrument_expansion_natural_kz_window
+  - instrument_expansion_microstructure_cost_guard
+  - instrument_expansion_microstructure_context
+  - instrument_expansion_tier2_slice_follow
+  - instrument_expansion_tier2_slice_avoid
+  - instrument_expansion_tier2_slice_context
+  - instrument_expansion_tier2_source_repair_guard
+  - instrument_expansion_tier2_job_context
+  - instrument_expansion_gbpusd_observer_follow
+  - instrument_expansion_gbpusd_observer_avoid
+  - instrument_expansion_gbpusd_nofill_context
+  - instrument_expansion_hourly_session_context
+  - instrument_expansion_decay_results_context
+  - instrument_expansion_decay_cluster_context
+  - g3_geometry_source_repair_guard
+  - g3_geometry_stop_first_avoid
+  - g3_geometry_target_first_follow
+  - g3_geometry_entry_missed_nofill
+  - g3_geometry_same_m1_ambiguity_guard
+  - data_inventory
+  - sierra_scid_source_bound_m15_bar_replay
+  - sierra_depth_source_gap
+  - sierra_depth_window_sample_block
+  - sierra_depth_in_window_clear_repair
+  - sierra_depth_live_feature_status
+  - sierra_depth_source_acquisition
+  - risk_source_cost_cap
+  - risk_cost_fill_proxy
+  - risk_rstyle_proxy_outcome
+  - risk_source_stress_acquisition
+  - risk_stress_robustness
+  - risk_sizing_policy
+  - risk_ai_cost_control
+  - risk_proxy_gap_status
+  - risk_touch_count_proxy
+  - risk_proxy_stress_cost_context
+  - gate_touch_count
+  - gate_touch_count_gate
+  - gate_sl_beyond_ob
+  - gate_sl_beyond_ob_l2
+  - gate_pre_ai_poi_availability
+  - gate_pre_ai_h1_poi_availability
+  - gate_cross_instrument_correlation
+  - gate_cross_instrument_correlation_gate
+  - confidence_filter_quarantine
+  - fvg_ob_framework_repair
+  - l2_entry_in_ob_rejection_value
+  - l2_h1_poi_rejection_value
+  - l2_m15_choch_rejection_value
+  - l2_sl_beyond_ob_rejection_value
+  - rejected_candidate_blocked_limit_value
+  - rejected_candidate_c1_failed_value
+  - rejected_candidate_c2_m15_opposing_value
+  - rejected_candidate_c3_direction_mismatch_value
+  - rejected_candidate_no_qualifying_h1_poi_value
+  - rejected_candidate_no_reason_logged_value
+  - rejected_candidate_ob_proximity_value
+  - rejected_candidate_other_unknown_value
+  - rejected_candidate_parse_error_value
+  - rejected_candidate_prescreen_no_direction_value
+  - a4_fill_simulation_result_pressure
+  - accepted_candidate_distribution_result_pressure
+  - accepted_candidate_feature_ranking_pressure
+  - accepted_candidate_feature_stratification_pressure
+  - accepted_candidate_touch_bucket_result_pressure
+  - accepted_filled_candidate_result_pressure
+  - exact_r_bridge_kill_branch_avoid
+  - m1_fill_quality_result_pressure
+  - ltf_selector_repair
+  - kill_scope_preservation
+  - ai_hallucination_guard
+  - legacy_v4_lira_guard
+  - ai_v3_cascade_preferred
+  - no_ai_shadow_observer
+  - ai_source_lineage_materialization_guard
+  - ai_routing_architecture_context
+  - ai_narrowing_policy_residue
+  - ai_limit_order_prompt_context
+  - framework_gate_selector
+  - selector_shadow_source_guard
+  - session_timeframe_selector
+  - expanded_market_source_expansion
+  - repaired_proxy_symbol_surface
+  - repaired_proxy_score_bridge
+  - repaired_proxy_symbol_action
+  - repaired_proxy_cost_symbol
+  - unified_candidate_market_rollup
+  - unified_candidate_default_off_scorer
+  - unified_candidate_guard
+  - unified_candidate_source_repair
+  - default_off_application
+  - default_off_scorer_application
+  - registry_scorer_module
+  - unified_candidate_action_branch_avoid_filter
+  - unified_candidate_action_fillability_redesign
+  - unified_candidate_action_market_entry_comparator
+  - unified_candidate_action_provenance_guard
+  - unified_candidate_action_market_gap_avoid_inverse
+  - unified_candidate_action_market_gap_entry_geometry
+  - unified_candidate_action_source_expansion
+  - unified_candidate_action_concentration_restress
+  - unified_candidate_action_symbol_session
+  - unified_candidate_action_scorer_spec
+  - unified_candidate_scoring_avoid_inverse_execution
+  - unified_candidate_scoring_entry_geometry_execution
+  - unified_execution_decision_avoid_redirect
+  - unified_execution_decision_fillability_retest_redesign
+  - unified_execution_decision_market_entry_challenger
+  - unified_execution_decision_market_gap_avoid_inverse
+  - unified_execution_decision_market_gap_entry_geometry
+  - unified_execution_decision_provenance_guard
+  - unified_execution_decision_source_expansion_guard
+  - unified_candidate_variant_avoid_inverse
+  - unified_candidate_variant_entry_geometry
+  - unified_candidate_variant_source_expansion
+  - unified_shadow_scorer_branch_failure_avoid_filter
+  - unified_shadow_scorer_avoid_filter
+  - unified_shadow_scorer_market_gap_avoid_filter
+  - unified_shadow_scorer_entry_geometry
+  - unified_shadow_scorer_market_gap_entry_geometry
+  - unified_shadow_scorer_market_entry_comparator
+  - unified_shadow_scorer_branch_proxy_scorer
+  - unified_shadow_scorer_source_materialization
+  - unified_source_materialization_execution
+  - scid_future_capture_baseline_control
+  - scid_future_capture_framework_setup
+  - scid_future_capture_entry_reference
+  - scid_future_capture_side_direction
+  - scid_future_capture_stop_reference
+  - scid_future_capture_target_reference
+  - scid_future_capture_lifecycle_status
+  - scid_combined_framework_setup_source_gap
+  - scid_combined_orderflow_depth_source_gap
+  - scid_combined_entry_reference_source_gap
+  - scid_combined_side_direction_source_gap
+  - scid_combined_stop_reference_source_gap
+  - scid_combined_target_reference_source_gap
+  - scid_combined_lifecycle_source_gap
+  - scid_combined_ltf_path_source_gap
+  - scid_combined_poi_bounds_source_gap
+  - pre_ai_h1_poi_bullish_source_gap
+  - pre_ai_h1_poi_bearish_source_gap
+  - shadow_action_required_source_gap
+  - shadow_candidate_poi_source_gap
+  - shadow_external_source_blocker
+  - shadow_framework_qualification_source_gap
+  - shadow_generic_source_materialization_gap
+  - shadow_join_status_source_gap
+  - shadow_missing_exact_required_fields
+  - shadow_path_contract_source_gap
+  - tick_m15_execution_friction_spread_competes
+  - tick_m15_execution_friction_movement_dominates
+  - tick_m15_execution_friction_weak_denominator
+  - tick_m15_target_control_negative_alignment
+  - tick_m15_target_control_placebo_ready_positive
+  - tick_m15_target_control_flat_or_negative_abs
+  - tick_m15_target_control_small_n_context
+  - main_orch24_tick_structural_kill_guard
+  - main_orch24_tick_redesign_source_repair
+  - main_orch24_tick_preserve_source_acquisition
+  - main_orch24_tick_negative_proxy_guard
+  - main_orch24_tick_positive_proxy_follow
+  - main_orch24_nas100_tick_order_repair_follow
+  - main_orch24_entry_offset_025r_kill_guard
+  - main_orch24_entry_offset_050r_challenger
+  - main_orch24_entry_offset_tick_source_acquisition
+  - main_orch24_structural_metadata_default_off_follow
+  - main_orch24_structural_ltf_positive_follow
+  - main_orch24_structural_pending_lifecycle_context
+  - main_orch24_structural_fvg_ob_shared_path_context
+  - main_orch24_structural_context
+  - main_orch24_structural_source_repair_requirement
+  - main_orch24_snapshot_dependency_source_repair_requirement
+  - main_orch24_structural_fvg_ob_single_family_kill_guard
+  - main_orch24_structural_standalone_fvg_kill_guard
+  - main_orch24_structural_swing_unprotected_kill_guard
+  - main_orch24_structural_duplicate_redesign_guard
+  - main_orch24_structural_ltf_adverse_redesign_guard
+  - main_orch24_structural_prefill_redesign_guard
+  - main_orch24_structural_gbpjpy_long_adverse_redesign_guard
+  - main_orch24_structural_repair_redesign_guard
+  - main_orch24_structural_repair_kill_guard
+  - main_orch24_action_completeness_default_off_follow
+  - main_orch24_action_completeness_fvg_structural_follow
+  - main_orch24_action_completeness_entry_offset_follow
+  - main_orch24_action_completeness_source_provenance_follow
+  - main_orch24_action_completeness_keep_context
+  - main_orch24_action_completeness_context
+  - main_orch24_action_completeness_source_repair_requirement
+  - main_orch24_residual_numeric_r_materialized_context
+  - main_orch24_residual_numeric_r_context
+  - main_orch24_action_completeness_fvg_ob_kill_guard
+  - main_orch24_action_completeness_nofill_far_miss_kill_guard
+  - main_orch24_action_completeness_swing_unprotected_kill_guard
+  - main_orch24_action_completeness_kill_guard
+  - main_orch24_action_completeness_redesign_guard
+  - main_orch24_action_completeness_pending_redesign_guard
+  - main_orch24_action_completeness_entry_offset_redesign_guard
+  - main_orch24_action_completeness_source_provenance_redesign_guard
+  - main_orch24_residual_numeric_r_redesign_guard
+  - main_orch24_residual_numeric_r_adverse_avoid_guard
+  - main_orch24_residual_numeric_r_distance_context
+  - main_orch24_source_accepted_m15_ordering_follow
+  - main_orch24_source_accepted_source_cost_proxy_follow
+  - main_orch24_source_accepted_degraded_redesign_source_acquisition
+  - main_orch24_swing_protected_tick_repair_follow
+  - main_orch24_swing_protected_unprotected_stop_guard
+  - main_orch24_swing_protected_negative_proxy_guard
+  - main_orch24_swing_protected_source_acquisition
+  - main_orch24_swing_protected_neutral_context
+  - main_orch24_source_m15_ordering_positive_follow
+  - main_orch24_source_m15_kill_or_no_fill_guard
+  - main_orch24_source_m15_redesign_guard
+  - main_orch24_source_m15_source_acquisition
+  - main_orch24_source_m15_default_off_context
+  - main_orch24_source_m15_neutral_context
+  - main_orch24_live_mechanical_forward_follow
+  - main_orch24_live_mechanical_stop_or_nofill_avoid
+  - main_orch24_live_mechanical_source_acquisition
+  - main_orch24_live_mechanical_ambiguous_path_guard
+  - main_orch24_live_mechanical_pending_lifecycle_guard
+  - main_orch24_live_mechanical_kill_guard
+  - main_orch24_live_mechanical_redesign_guard
+  - main_orch24_live_mechanical_context
+  - main_orch24_live_mechanical_geometry_proxy_context
+  - main_orch24_unified_tick_m15_path_follow
+  - main_orch24_unified_tick_m15_path_inverse_avoid
+  - main_orch24_unified_m1_spread_fill_target_follow
+  - main_orch24_unified_m1_spread_fill_stop_or_nofill_avoid
+  - main_orch24_unified_m1_fill_ordering_source_repair
+  - main_orch24_unified_m1_entry_materialized_context
+  - main_orch24_unified_branch_proxy_follow
+  - main_orch24_unified_branch_proxy_avoid
+  - main_orch24_unified_branch_proxy_source_repair
+  - main_orch24_unified_ready8_source_capture_repair_replay
+  - main_orch24_unified_split_summary_replay_attribution
+  - tick_source_recovery_path_ready_context
+  - tick_source_recovery_ordered_path_source_acquisition
+  - tick_source_recovery_quote_tick_nofill_avoid
+  - tick_source_recovery_separate_fill_path_source_acquisition
+  - tick_source_recovery_opening_drive_source_acquisition
+  - tick_source_recovery_stop_first_avoid
+  - tick_source_recovery_target_first_follow
+  - tick_source_recovery_no_entry_touch_source_acquisition
+  - tick_source_recovery_no_terminal_pending_guard
+  - tick_source_recovery_geometry_join_context
+  - tick_source_recovery_source_hash_context
+  - tick_source_recovery_partial_coverage_source_acquisition
+  - legacy_live_shadow_v2_replay_context
+  - legacy_live_shadow_v2b_forward_source_acquisition
+  - legacy_live_shadow_fvg_ob_source_acquisition
+  - legacy_live_shadow_j46_j49_policy_follow
+  - legacy_live_shadow_s79_side_aware_context
+  - legacy_live_shadow_k54_k55_same_cohort_kill
+  - legacy_live_shadow_nofill_capture_source_acquisition
+  - legacy_live_shadow_sierra_orderflow_diagnostic_context
+  - legacy_live_shadow_strategy_replay_context
+  - legacy_live_shadow_trailing_stop_shadow_context
+  - legacy_live_shadow_partial_close_expansion_avoid
+  - legacy_live_shadow_portfolio_vol_sizing_avoid
+  - legacy_live_shadow_xagusd_account_history_source_acquisition
+  - main_orch24_standalone_fvg_negative_guard
+  - scid_neutral_target_candidate_context
+  - scid_neutral_target_control_context
+  - scid_target_control_card_rank_non_discriminative
+  - scid_target_horizon_fail_closed_source_repair
+  - scid_target_horizon_neutral_only
+  - scid_target_horizon_source_field_requirement
+  - static_limit_adaptive_entry_challenger
+  - static_limit_adaptive_entry_source_requirement
+  - broker_actual_r_slippage_source_repair
+  - trade_record_execution_source_repair
+  - orderflow_pending_lifecycle_source_gap
+  - execution_source_capture_contract_context
+  - execution_replay_source_contract_context
+  - a4_fill_simulation_result_pressure
+  - accepted_candidate_classifier_validation_context
+  - accepted_candidate_distribution_result_pressure
+  - accepted_candidate_feature_ranking_pressure
+  - accepted_candidate_feature_stratification_pressure
+  - accepted_candidate_h1_h2_feature_stability_context
+  - accepted_candidate_m1_fill_support_code_context
+  - accepted_candidate_touch_bucket_result_pressure
+  - accepted_filled_candidate_result_pressure
+  - adv002_source_control_exact_requirement_guard
+  - exact_r_alias_search_context
+  - exact_r_alias_search_source_repair
+  - exact_r_bridge_kill_branch_avoid
+  - exact_r_bridge_materialized_context
+  - exact_r_bridge_missing_identifier_source_repair
+  - exact_r_bridge_redesign_source_repair
+  - exact_r_source_materialization_support_context
+  - exact_r_verification_missing_identifier_source_repair
+  - exact_r_verification_owner_reference_context
+  - m1_backfill_source_coverage_guard
+  - m1_fill_quality_result_pressure
+  - m1_micro_feature_no_signal_context
+  - missed_fill_entry_geometry_source_requirement
+  - missed_fill_to_tp_area_source_requirement
+  - non_xau_fillback_source_inventory_guard
+  - old_backfill_source_bias_guard
+  - old_backfill_source_context
+  post_l2_evaluate_route_variants: true
+  post_l2_prune_route_variants_to_artifact_scopes: true
+  post_l2_match_artifact_scopes_directly: true
+  post_l2_route_use_candidate_framework_only: true
+  post_l2_route_timeframes:
+  - M1
+  - M5
+  - M15
+  - H1
+  - H4
+  - D1
+  post_l2_route_horizons:
+  - h4
+  - h16
+  - h32
+  post_l2_route_frameworks: []
+  post_l2_route_families:
+  - moonshot_mechanical
+  - moonshot_control_screen
+  - moonshot_control_screen_route_queue
+  - moonshot_gtos_replay_blocker
+  - moonshot_accepted_builder
+  - moonshot_accepted_builder_binding
+  - moonshot_accepted_builder_branch
+  - moonshot_accepted_builder_entry_adverse
+  - moonshot_accepted_builder_family
+  - moonshot_accepted_builder_m15
+  - moonshot_accepted_builder_m1
+  - moonshot_accepted_builder_positive
+  - moonshot_accepted_builder_source
+  - moonshot_accepted_builder_rejected_repair
+  - moonshot_branch_followup_binding
+  - moonshot_branch_followup_branch
+  - moonshot_branch_followup_bucket
+  - moonshot_branch_followup_family
+  - moonshot_branch_followup_m15
+  - moonshot_branch_followup_m1
+  - moonshot_branch_followup_positive
+  - moonshot_branch_followup_source
+  - moonshot_branch_ambiguity_collapse
+  - moonshot_branch_implementation_replay
+  - main_orch24_snapshot_dependency_repair
+  - numeric_router
+  - cp281_native_rule
+  - mechanical_ai_selector
+  - nofill_mechanical
+  - source_discovery
+  post_l2_route_source_components:
+  - nofill_far_miss_avoid
+  - nofill_far_miss_retest
+  - nofill_far_miss_family
+  - nofill_far_miss_source_confidence
+  - nofill_near_miss_market_entry
+  - nofill_near_miss_offset
+  - nofill_near_miss_source_requirement
+  - source_repair_proof
+  - sl_beyond_ob_outcome_capture_gap
+  - sl_beyond_ob_pass_adverse_outcome_reference
+  - sl_beyond_ob_pass_nofill_outcome_reference
+  - sl_beyond_ob_pass_outcome_reference
+  - sl_beyond_ob_rejected_l2_counterfactual
+  - sl_beyond_ob_legacy_zero_buffer_source_repair
+  - entry_geometry_fillability_tick_path_ordering
+  - entry_geometry_fillability_tick_path_ordering_retest_control
+  - fvg_entry_geometry_and_lock_metadata
+  - fvg_ob_confluence_shared_path_scorer
+  - pending_lifecycle_fill_cancel_expiry_source_capture
+  - lifecycle_still_pending_no_fill_source_guard
+  - lifecycle_wrong_side_no_fill_source_guard
+  - trade_index_lifecycle_action_required_source_repair
+  - opportunity_lifecycle_reset_policy_source_guard
+  - prefill_delivery_adverse_reversal_path
+  - prefill_delivery_adverse_reversal_path_retest_control
+  - source_cost_spread_bar_proxy_implication
+  - structural_lock_reentry_cost_metadata
+  - structural_swing_protected_stop_geometry
+  - tick_derived_structural_source_repair
+  - target_stop_ordering
+  - entry_adverse_stop_first
+  - adverse_stop_first_execution
+  - entry_adverse_execution
+  - targetstop_na_binding_repair
+  - target_stop_path_control
+  - gbpjpy_long_adverse_avoid_reclass
+  - ohlc_challenger_frontier_action
+  - ohlc_challenger_frontier_route
+  - ohlc_control_screen
+  - ohlc_control_screen_route_queue
+  - gtos_replay_blocker
+  - gtos_accepted_builder
+  - gtos_accepted_builder_binding
+  - gtos_accepted_builder_branch
+  - gtos_accepted_builder_entry_adverse
+  - gtos_accepted_builder_family
+  - gtos_accepted_builder_m15
+  - gtos_accepted_builder_m1
+  - gtos_accepted_builder_positive
+  - gtos_accepted_builder_source
+  - gtos_accepted_builder_rejected_repair
+  - gtos_branch_followup_binding
+  - gtos_branch_followup_branch
+  - gtos_branch_followup_bucket
+  - gtos_branch_followup_family
+  - gtos_branch_followup_m15
+  - gtos_branch_followup_m1
+  - gtos_branch_followup_positive
+  - gtos_branch_followup_source
+  - gtos_branch_ambiguity_branch
+  - gtos_branch_ambiguity_bucket
+  - gtos_branch_ambiguity_cause_matrix
+  - gtos_branch_ambiguity_interval
+  - gtos_branch_ambiguity_m15_same_bar
+  - gtos_branch_ambiguity_ordering
+  - gtos_branch_ambiguity_source_repair
+  - gtos_branch_impl_action
+  - gtos_branch_impl_candidate
+  - gtos_branch_impl_cause_matrix
+  - gtos_branch_impl_code_replay
+  - gtos_branch_impl_control_source_split
+  - gtos_branch_impl_full_outcome
+  - gtos_branch_impl_guarded_scope_scorer
+  - gtos_branch_impl_m1_chronology
+  - gtos_branch_impl_m1_interval
+  - gtos_branch_impl_m1_support
+  - gtos_branch_impl_next_compute
+  - gtos_branch_impl_numeric_decision
+  - gtos_branch_impl_numeric_router
+  - gtos_branch_impl_ordering_collapse
+  - gtos_branch_impl_positive_challenger
+  - gtos_branch_impl_replay_builder
+  - gtos_branch_impl_replay_matrix
+  - gtos_branch_impl_router_scoring
+  - gtos_branch_impl_score_export
+  - gtos_branch_impl_source_spread_recompute
+  - cp280_scorer_filter_router
+  - cp280_numeric_router_system_recommendations
+  - cp280_numeric_module_router_application
+  - cp280_numeric_shadow_scorer
+  - cp280_router_application_scoring
+  - cp280_score_export_packet
+  - cp280_unified_candidate_scorer
+  - cp280_cost_fill_proxy_scorer
+  - cp280_observable_runtime_work
+  - cp280_unified_action_result
+  - observable_execution_follow_scorer
+  - observable_execution_control_guard
+  - observable_execution_denominator_guard
+  - observable_execution_source_policy_guard
+  - observable_execution_source_repair
+  - observable_execution_horizon_repair
+  - observable_execution_avoid_filter
+  - shadow_source_guard
+  - market_gap_code
+  - expanded_market_source_geometry
+  - expanded_market_ohlc_source_reachable
+  - expanded_market_source_gap
+  - ltf_path_source_blocked_guard
+  - ltf_path_source_recovered_context
+  - ltf_path_contract_complete_context
+  - ltf_path_strategy_candidate_context
+  - ltf_path_source_context
+  - instrument_expansion_route_follow
+  - instrument_expansion_route_avoid
+  - instrument_expansion_route_context
+  - instrument_expansion_market_candidate_follow
+  - instrument_expansion_market_candidate_avoid
+  - instrument_expansion_market_candidate_context
+  - instrument_expansion_h1_h2_decay_guard
+  - instrument_expansion_h1_h2_decay_context
+  - instrument_expansion_monthly_context
+  - instrument_expansion_natural_kz_window
+  - instrument_expansion_microstructure_cost_guard
+  - instrument_expansion_microstructure_context
+  - instrument_expansion_tier2_slice_follow
+  - instrument_expansion_tier2_slice_avoid
+  - instrument_expansion_tier2_slice_context
+  - instrument_expansion_tier2_source_repair_guard
+  - instrument_expansion_tier2_job_context
+  - instrument_expansion_gbpusd_observer_follow
+  - instrument_expansion_gbpusd_observer_avoid
+  - instrument_expansion_gbpusd_nofill_context
+  - instrument_expansion_hourly_session_context
+  - instrument_expansion_decay_results_context
+  - instrument_expansion_decay_cluster_context
+  - g3_geometry_source_repair_guard
+  - g3_geometry_stop_first_avoid
+  - g3_geometry_target_first_follow
+  - g3_geometry_entry_missed_nofill
+  - g3_geometry_same_m1_ambiguity_guard
+  - data_inventory
+  - sierra_scid_source_bound_m15_bar_replay
+  - sierra_depth_source_gap
+  - sierra_depth_window_sample_block
+  - sierra_depth_in_window_clear_repair
+  - sierra_depth_live_feature_status
+  - sierra_depth_source_acquisition
+  - risk_source_cost_cap
+  - risk_cost_fill_proxy
+  - risk_rstyle_proxy_outcome
+  - risk_source_stress_acquisition
+  - risk_stress_robustness
+  - risk_sizing_policy
+  - risk_ai_cost_control
+  - risk_proxy_gap_status
+  - risk_touch_count_proxy
+  - risk_proxy_stress_cost_context
+  - gate_touch_count
+  - gate_touch_count_gate
+  - gate_sl_beyond_ob
+  - gate_sl_beyond_ob_l2
+  - gate_pre_ai_poi_availability
+  - gate_pre_ai_h1_poi_availability
+  - gate_cross_instrument_correlation
+  - gate_cross_instrument_correlation_gate
+  - confidence_filter_quarantine
+  - fvg_ob_framework_repair
+  - l2_entry_in_ob_rejection_value
+  - l2_h1_poi_rejection_value
+  - l2_m15_choch_rejection_value
+  - l2_sl_beyond_ob_rejection_value
+  - rejected_candidate_blocked_limit_value
+  - rejected_candidate_c1_failed_value
+  - rejected_candidate_c2_m15_opposing_value
+  - rejected_candidate_c3_direction_mismatch_value
+  - rejected_candidate_no_qualifying_h1_poi_value
+  - rejected_candidate_no_reason_logged_value
+  - rejected_candidate_ob_proximity_value
+  - rejected_candidate_other_unknown_value
+  - rejected_candidate_parse_error_value
+  - rejected_candidate_prescreen_no_direction_value
+  - accepted_candidate_distribution_result_pressure
+  - accepted_candidate_feature_ranking_pressure
+  - accepted_candidate_feature_stratification_pressure
+  - ltf_selector_repair
+  - ltf_path_source_blocked_guard
+  - g3_geometry_source_repair_guard
+  - g3_geometry_stop_first_avoid
+  - instrument_expansion_route_avoid
+  - instrument_expansion_h1_h2_decay_guard
+  - instrument_expansion_microstructure_cost_guard
+  - instrument_expansion_tier2_slice_avoid
+  - instrument_expansion_tier2_source_repair_guard
+  - instrument_expansion_gbpusd_observer_avoid
+  - kill_scope_preservation
+  - ai_hallucination_guard
+  - legacy_v4_lira_guard
+  - ai_v3_cascade_preferred
+  - no_ai_shadow_observer
+  - ai_source_lineage_materialization_guard
+  - ai_routing_architecture_context
+  - ai_narrowing_policy_residue
+  - ai_limit_order_prompt_context
+  - framework_gate_selector
+  - selector_shadow_source_guard
+  - session_timeframe_selector
+  - expanded_market_source_expansion
+  - repaired_proxy_symbol_surface
+  - repaired_proxy_score_bridge
+  - repaired_proxy_symbol_action
+  - repaired_proxy_cost_symbol
+  - unified_candidate_market_rollup
+  - unified_candidate_default_off_scorer
+  - unified_candidate_guard
+  - unified_candidate_source_repair
+  - default_off_application
+  - default_off_scorer_application
+  - registry_scorer_module
+  - unified_candidate_action_branch_avoid_filter
+  - unified_candidate_action_fillability_redesign
+  - unified_candidate_action_market_entry_comparator
+  - unified_candidate_action_provenance_guard
+  - unified_candidate_action_market_gap_avoid_inverse
+  - unified_candidate_action_market_gap_entry_geometry
+  - unified_candidate_action_source_expansion
+  - unified_candidate_action_concentration_restress
+  - unified_candidate_action_symbol_session
+  - unified_candidate_action_scorer_spec
+  - unified_candidate_scoring_avoid_inverse_execution
+  - unified_candidate_scoring_entry_geometry_execution
+  - unified_execution_decision_avoid_redirect
+  - unified_execution_decision_fillability_retest_redesign
+  - unified_execution_decision_market_entry_challenger
+  - unified_execution_decision_market_gap_avoid_inverse
+  - unified_execution_decision_market_gap_entry_geometry
+  - unified_execution_decision_provenance_guard
+  - unified_execution_decision_source_expansion_guard
+  - unified_candidate_variant_avoid_inverse
+  - unified_candidate_variant_entry_geometry
+  - unified_candidate_variant_source_expansion
+  - unified_shadow_scorer_branch_failure_avoid_filter
+  - unified_shadow_scorer_avoid_filter
+  - unified_shadow_scorer_market_gap_avoid_filter
+  - unified_shadow_scorer_entry_geometry
+  - unified_shadow_scorer_market_gap_entry_geometry
+  - unified_shadow_scorer_market_entry_comparator
+  - unified_shadow_scorer_branch_proxy_scorer
+  - unified_shadow_scorer_source_materialization
+  - unified_source_materialization_execution
+  - scid_future_capture_baseline_control
+  - scid_future_capture_framework_setup
+  - scid_future_capture_entry_reference
+  - scid_future_capture_side_direction
+  - scid_future_capture_stop_reference
+  - scid_future_capture_target_reference
+  - scid_future_capture_lifecycle_status
+  - scid_combined_framework_setup_source_gap
+  - scid_combined_orderflow_depth_source_gap
+  - scid_combined_entry_reference_source_gap
+  - scid_combined_side_direction_source_gap
+  - scid_combined_stop_reference_source_gap
+  - scid_combined_target_reference_source_gap
+  - scid_combined_lifecycle_source_gap
+  - scid_combined_ltf_path_source_gap
+  - scid_combined_poi_bounds_source_gap
+  - pre_ai_h1_poi_bullish_source_gap
+  - pre_ai_h1_poi_bearish_source_gap
+  - shadow_action_required_source_gap
+  - shadow_candidate_poi_source_gap
+  - shadow_external_source_blocker
+  - shadow_framework_qualification_source_gap
+  - shadow_generic_source_materialization_gap
+  - shadow_join_status_source_gap
+  - shadow_missing_exact_required_fields
+  - shadow_path_contract_source_gap
+  - tick_m15_execution_friction_spread_competes
+  - tick_m15_execution_friction_movement_dominates
+  - tick_m15_execution_friction_weak_denominator
+  - tick_m15_target_control_negative_alignment
+  - tick_m15_target_control_placebo_ready_positive
+  - tick_m15_target_control_flat_or_negative_abs
+  - tick_m15_target_control_small_n_context
+  - main_orch24_tick_structural_kill_guard
+  - main_orch24_tick_redesign_source_repair
+  - main_orch24_tick_preserve_source_acquisition
+  - main_orch24_tick_negative_proxy_guard
+  - main_orch24_tick_positive_proxy_follow
+  - main_orch24_nas100_tick_order_repair_follow
+  - main_orch24_entry_offset_025r_kill_guard
+  - main_orch24_entry_offset_050r_challenger
+  - main_orch24_entry_offset_tick_source_acquisition
+  - main_orch24_structural_metadata_default_off_follow
+  - main_orch24_structural_ltf_positive_follow
+  - main_orch24_structural_pending_lifecycle_context
+  - main_orch24_structural_fvg_ob_shared_path_context
+  - main_orch24_structural_context
+  - main_orch24_structural_source_repair_requirement
+  - main_orch24_snapshot_dependency_source_repair_requirement
+  - main_orch24_structural_fvg_ob_single_family_kill_guard
+  - main_orch24_structural_standalone_fvg_kill_guard
+  - main_orch24_structural_swing_unprotected_kill_guard
+  - main_orch24_structural_duplicate_redesign_guard
+  - main_orch24_structural_ltf_adverse_redesign_guard
+  - main_orch24_structural_prefill_redesign_guard
+  - main_orch24_structural_gbpjpy_long_adverse_redesign_guard
+  - main_orch24_structural_repair_redesign_guard
+  - main_orch24_structural_repair_kill_guard
+  - main_orch24_action_completeness_default_off_follow
+  - main_orch24_action_completeness_fvg_structural_follow
+  - main_orch24_action_completeness_entry_offset_follow
+  - main_orch24_action_completeness_source_provenance_follow
+  - main_orch24_action_completeness_keep_context
+  - main_orch24_action_completeness_context
+  - main_orch24_action_completeness_source_repair_requirement
+  - main_orch24_residual_numeric_r_materialized_context
+  - main_orch24_residual_numeric_r_context
+  - main_orch24_action_completeness_fvg_ob_kill_guard
+  - main_orch24_action_completeness_nofill_far_miss_kill_guard
+  - main_orch24_action_completeness_swing_unprotected_kill_guard
+  - main_orch24_action_completeness_kill_guard
+  - main_orch24_action_completeness_redesign_guard
+  - main_orch24_action_completeness_pending_redesign_guard
+  - main_orch24_action_completeness_entry_offset_redesign_guard
+  - main_orch24_action_completeness_source_provenance_redesign_guard
+  - main_orch24_residual_numeric_r_redesign_guard
+  - main_orch24_residual_numeric_r_adverse_avoid_guard
+  - main_orch24_residual_numeric_r_distance_context
+  - main_orch24_source_accepted_m15_ordering_follow
+  - main_orch24_source_accepted_source_cost_proxy_follow
+  - main_orch24_source_accepted_degraded_redesign_source_acquisition
+  - main_orch24_swing_protected_tick_repair_follow
+  - main_orch24_swing_protected_unprotected_stop_guard
+  - main_orch24_swing_protected_negative_proxy_guard
+  - main_orch24_swing_protected_source_acquisition
+  - main_orch24_swing_protected_neutral_context
+  - main_orch24_source_m15_ordering_positive_follow
+  - main_orch24_source_m15_kill_or_no_fill_guard
+  - main_orch24_source_m15_redesign_guard
+  - main_orch24_source_m15_source_acquisition
+  - main_orch24_source_m15_default_off_context
+  - main_orch24_source_m15_neutral_context
+  - main_orch24_live_mechanical_forward_follow
+  - main_orch24_live_mechanical_stop_or_nofill_avoid
+  - main_orch24_live_mechanical_source_acquisition
+  - main_orch24_live_mechanical_ambiguous_path_guard
+  - main_orch24_live_mechanical_pending_lifecycle_guard
+  - main_orch24_live_mechanical_kill_guard
+  - main_orch24_live_mechanical_redesign_guard
+  - main_orch24_live_mechanical_context
+  - main_orch24_live_mechanical_geometry_proxy_context
+  - main_orch24_unified_tick_m15_path_follow
+  - main_orch24_unified_tick_m15_path_inverse_avoid
+  - main_orch24_unified_m1_spread_fill_target_follow
+  - main_orch24_unified_m1_spread_fill_stop_or_nofill_avoid
+  - main_orch24_unified_m1_fill_ordering_source_repair
+  - main_orch24_unified_m1_entry_materialized_context
+  - main_orch24_unified_branch_proxy_follow
+  - main_orch24_unified_branch_proxy_avoid
+  - main_orch24_unified_branch_proxy_source_repair
+  - main_orch24_unified_ready8_source_capture_repair_replay
+  - main_orch24_unified_split_summary_replay_attribution
+  - tick_source_recovery_path_ready_context
+  - tick_source_recovery_ordered_path_source_acquisition
+  - tick_source_recovery_quote_tick_nofill_avoid
+  - tick_source_recovery_separate_fill_path_source_acquisition
+  - tick_source_recovery_opening_drive_source_acquisition
+  - tick_source_recovery_stop_first_avoid
+  - tick_source_recovery_target_first_follow
+  - tick_source_recovery_no_entry_touch_source_acquisition
+  - tick_source_recovery_no_terminal_pending_guard
+  - tick_source_recovery_geometry_join_context
+  - tick_source_recovery_source_hash_context
+  - tick_source_recovery_partial_coverage_source_acquisition
+  - legacy_live_shadow_v2_replay_context
+  - legacy_live_shadow_v2b_forward_source_acquisition
+  - legacy_live_shadow_fvg_ob_source_acquisition
+  - legacy_live_shadow_j46_j49_policy_follow
+  - legacy_live_shadow_s79_side_aware_context
+  - legacy_live_shadow_k54_k55_same_cohort_kill
+  - legacy_live_shadow_nofill_capture_source_acquisition
+  - legacy_live_shadow_sierra_orderflow_diagnostic_context
+  - legacy_live_shadow_strategy_replay_context
+  - legacy_live_shadow_trailing_stop_shadow_context
+  - legacy_live_shadow_partial_close_expansion_avoid
+  - legacy_live_shadow_portfolio_vol_sizing_avoid
+  - legacy_live_shadow_xagusd_account_history_source_acquisition
+  - main_orch24_standalone_fvg_negative_guard
+  - scid_neutral_target_candidate_context
+  - scid_neutral_target_control_context
+  - scid_target_control_card_rank_non_discriminative
+  - scid_target_horizon_fail_closed_source_repair
+  - scid_target_horizon_neutral_only
+  - scid_target_horizon_source_field_requirement
+  - static_limit_adaptive_entry_challenger
+  - static_limit_adaptive_entry_source_requirement
+  - broker_actual_r_slippage_source_repair
+  - trade_record_execution_source_repair
+  - orderflow_pending_lifecycle_source_gap
+  - execution_source_capture_contract_context
+  - execution_replay_source_contract_context
+  - a4_fill_simulation_result_pressure
+  - accepted_candidate_classifier_validation_context
+  - accepted_candidate_distribution_result_pressure
+  - accepted_candidate_feature_ranking_pressure
+  - accepted_candidate_feature_stratification_pressure
+  - accepted_candidate_h1_h2_feature_stability_context
+  - accepted_candidate_m1_fill_support_code_context
+  - accepted_candidate_touch_bucket_result_pressure
+  - accepted_filled_candidate_result_pressure
+  - adv002_source_control_exact_requirement_guard
+  - exact_r_alias_search_context
+  - exact_r_alias_search_source_repair
+  - exact_r_bridge_kill_branch_avoid
+  - exact_r_bridge_materialized_context
+  - exact_r_bridge_missing_identifier_source_repair
+  - exact_r_bridge_redesign_source_repair
+  - exact_r_source_materialization_support_context
+  - exact_r_verification_missing_identifier_source_repair
+  - exact_r_verification_owner_reference_context
+  - m1_backfill_source_coverage_guard
+  - m1_fill_quality_result_pressure
+  - m1_micro_feature_no_signal_context
+  - missed_fill_entry_geometry_source_requirement
+  - missed_fill_to_tp_area_source_requirement
+  - non_xau_fillback_source_inventory_guard
+  - old_backfill_source_bias_guard
+  - old_backfill_source_context
+  conflict_resolution: evidence_weighted
+  conflict_pressure_dominance_ratio: 1.25
+  conflict_min_abs_pressure: 0.0
+  conflict_cost_adjusted_r_weight: 1.0
+  conflict_stress_r_weight: 0.25
+  conflict_proxy_score_weight: 1.0
+  positive_follow_pressure_guard_enabled: true
+  positive_follow_pressure_guard_min_effective_n: 100
+  positive_follow_pressure_guard_min_abs_pressure: 1.0
+  positive_follow_pressure_guard_dominance_ratio: 1.25
+  positive_follow_pressure_bypasses_avoid_veto: true
+  positive_follow_pressure_bypasses_target_stop_geometry: true
+  positive_follow_pressure_bypasses_negative_proxy_class: true
+  positive_follow_pressure_bypasses_source_repair: true
+  source_guarded_positive_proxy_enabled: true
+  source_guarded_positive_proxy_min_rows: 20
+  source_guarded_positive_proxy_min_guard_rows: 1
+  source_guarded_positive_proxy_dominance_ratio: 2.0
+  source_guarded_positive_proxy_source_roles:
+  - scorer_registry_surface
+  - branch_local_default_off_candidate
+  - scope_system_decision
+  source_guarded_positive_proxy_source_groups:
+  - scorer_registry_surface
+  source_guarded_positive_proxy_system_surfaces:
+  - default_off_research_scorer_registry_catalog
+  - numeric_router_default_off_scope_decision_catalog
+  - scorer_registry_surface
+  - src/research_infra/moonshot_expanded_market_reduced_surface_execution.py
+  source_guarded_positive_proxy_implementation_actions:
+  - DEFAULT_OFF_SCORER_SURFACE_READY_WITH_SOURCE_GUARDS
+  - IMPLEMENT_DEFAULT_OFF_SCORER_SCOPE_WITH_GUARDS
+  - REGISTER_DEFAULT_OFF_BRANCH_LOCAL_LEAKAGE_REDUCED_SURFACE_CANDIDATE
+  - REGISTER_DEFAULT_OFF_BRANCH_LOCAL_PRESERVED_REDUCED_SURFACE_CANDIDATE
+  source_guarded_positive_proxy_bypasses_target_stop_geometry: true
+  source_guarded_positive_proxy_bypasses_source_repair: true
+  risk_adjustment_enabled: true
+  risk_zero_blocks_execution: true
+  risk_zero_bypass_effective_n_reasons:
+  - vnext_risk_route_family_avoid_veto
+  - vnext_risk_source_component_avoid_veto
+  - vnext_risk_source_component_summary_adverse_prior
+  - vnext_risk_action_class_avoid_veto
+  - vnext_risk_evidence_family_avoid_veto
+  - vnext_risk_source_name_avoid_veto
+  - vnext_risk_source_role_avoid_veto
+  - vnext_risk_recommendation_bucket_repair_prior
+  - vnext_risk_recommendation_family_rollup_adverse_prior
+  - vnext_risk_recommendation_unified_candidate_adverse_prior
+  - vnext_risk_recommendation_scope_rollup_adverse_prior
+  - vnext_risk_target_stop_not_source_bound
+  - vnext_risk_stop_first_proxy
+  - vnext_risk_proxy_stress_cost_repair
+  - vnext_risk_source_acquisition_required
+  - vnext_risk_source_repair_required
+  - vnext_risk_strong_negative_proxy_class
+  execution_block_min_risk_multiplier: 1.0e-06
+  strong_follow_min_effective_n: 100
+  strong_follow_risk_multiplier: 1.25
+  follow_risk_multiplier: 1.0
+  follow_conflicted_risk_multiplier: 0.5
+  mixed_risk_multiplier: 0.5
+  avoid_risk_multiplier: 0.0
+  legacy_risk_multiplier: 1.0
+  min_risk_multiplier: 0.0
+  max_risk_multiplier: 1.25
+  target_stop_not_source_bound_risk_adjustment_enabled: true
+  target_stop_not_source_bound_risk_min_rows: 1
+  target_stop_not_source_bound_risk_multiplier: 0.0
+  stop_first_risk_adjustment_enabled: true
+  stop_first_risk_min_rows: 1
+  stop_first_risk_multiplier: 0.0
+  target_stop_ambiguous_risk_adjustment_enabled: true
+  target_stop_ambiguous_risk_min_rows: 1
+  target_stop_ambiguous_negative_proxy_dominance_ratio: 1.0
+  target_stop_ambiguous_risk_multiplier: 0.5
+  source_repair_risk_adjustment_enabled: true
+  source_repair_risk_min_rows: 1
+  source_repair_risk_multiplier: 0.0
+  source_acquisition_risk_adjustment_enabled: true
+  source_acquisition_risk_min_rows: 1
+  source_acquisition_risk_multiplier: 0.0
+  risk_proxy_stress_cost_repair_adjustment_enabled: true
+  risk_proxy_stress_cost_repair_min_rows: 1
+  risk_proxy_stress_cost_repair_multiplier: 0.0
+  context_guard_risk_adjustment_enabled: true
+  context_guard_risk_min_rows: 1
+  context_guard_risk_multiplier: 0.5
+  route_family_avoid_veto_enabled: true
+  route_family_avoid_veto_families:
+  - numeric_router
+  - nofill_mechanical
+  route_family_avoid_veto_min_rows: 1
+  route_family_avoid_veto_dominance_ratio: 1.0
+  route_family_avoid_veto_risk_multiplier: 0.0
+  source_component_avoid_veto_enabled: true
+  source_component_avoid_veto_components:
+  - market_gap_code
+  - nofill_far_miss_avoid
+  - nofill_far_miss_source_confidence
+  - nofill_near_miss_offset
+  - entry_adverse_stop_first
+  - adverse_stop_first_execution
+  - entry_adverse_execution
+  - gbpjpy_long_adverse_avoid_reclass
+  - gtos_branch_followup_branch
+  - gtos_branch_followup_family
+  - gtos_branch_followup_m15
+  - gtos_branch_followup_source
+  - gtos_branch_ambiguity_branch
+  - gtos_branch_ambiguity_cause_matrix
+  - gtos_branch_ambiguity_m15_same_bar
+  - gtos_branch_ambiguity_ordering
+  - branch_replay_execution_negative_or_redesign
+  - unified_candidate_action_branch_avoid_filter
+  - unified_candidate_action_market_gap_avoid_inverse
+  - unified_candidate_scoring_avoid_inverse_execution
+  - unified_execution_decision_avoid_redirect
+  - unified_execution_decision_fillability_retest_redesign
+  - unified_execution_decision_market_gap_avoid_inverse
+  - unified_execution_decision_provenance_guard
+  - unified_execution_decision_source_expansion_guard
+  - unified_candidate_variant_avoid_inverse
+  - unified_shadow_scorer_branch_failure_avoid_filter
+  - unified_shadow_scorer_avoid_filter
+  - unified_shadow_scorer_market_gap_avoid_filter
+  - tick_m15_execution_friction_spread_competes
+  - main_orch24_tick_structural_kill_guard
+  - main_orch24_tick_negative_proxy_guard
+  - main_orch24_entry_offset_025r_kill_guard
+  - main_orch24_structural_fvg_ob_single_family_kill_guard
+  - main_orch24_structural_standalone_fvg_kill_guard
+  - main_orch24_structural_swing_unprotected_kill_guard
+  - main_orch24_structural_duplicate_redesign_guard
+  - main_orch24_structural_ltf_adverse_redesign_guard
+  - main_orch24_structural_prefill_redesign_guard
+  - main_orch24_structural_gbpjpy_long_adverse_redesign_guard
+  - main_orch24_structural_repair_redesign_guard
+  - main_orch24_structural_repair_kill_guard
+  - main_orch24_action_completeness_fvg_ob_kill_guard
+  - main_orch24_action_completeness_nofill_far_miss_kill_guard
+  - main_orch24_action_completeness_swing_unprotected_kill_guard
+  - main_orch24_action_completeness_kill_guard
+  - main_orch24_action_completeness_redesign_guard
+  - main_orch24_action_completeness_pending_redesign_guard
+  - main_orch24_action_completeness_entry_offset_redesign_guard
+  - main_orch24_action_completeness_source_provenance_redesign_guard
+  - main_orch24_residual_numeric_r_redesign_guard
+  - main_orch24_residual_numeric_r_adverse_avoid_guard
+  - main_orch24_residual_numeric_r_distance_context
+  - main_orch24_swing_protected_unprotected_stop_guard
+  - main_orch24_swing_protected_negative_proxy_guard
+  - main_orch24_source_m15_kill_or_no_fill_guard
+  - main_orch24_source_m15_redesign_guard
+  - main_orch24_live_mechanical_stop_or_nofill_avoid
+  - main_orch24_live_mechanical_kill_guard
+  - main_orch24_live_mechanical_redesign_guard
+  - main_orch24_unified_tick_m15_path_inverse_avoid
+  - main_orch24_unified_m1_spread_fill_stop_or_nofill_avoid
+  - main_orch24_unified_branch_proxy_avoid
+  - tick_source_recovery_quote_tick_nofill_avoid
+  - tick_source_recovery_stop_first_avoid
+  - legacy_live_shadow_k54_k55_same_cohort_kill
+  - legacy_live_shadow_partial_close_expansion_avoid
+  - legacy_live_shadow_portfolio_vol_sizing_avoid
+  - main_orch24_standalone_fvg_negative_guard
+  - ai_hallucination_guard
+  - legacy_v4_lira_guard
+  - legacy_t7_negative_simulation
+  - shadow_source_guard
+  - observable_execution_avoid_filter
+  - gate_touch_count
+  - gate_touch_count_gate
+  - gate_sl_beyond_ob
+  - gate_sl_beyond_ob_l2
+  - gate_pre_ai_poi_availability
+  - gate_pre_ai_h1_poi_availability
+  - gate_cross_instrument_correlation
+  - gate_cross_instrument_correlation_gate
+  - confidence_filter_quarantine
+  - fvg_ob_framework_repair
+  - l2_entry_in_ob_rejection_value
+  - l2_h1_poi_rejection_value
+  - l2_m15_choch_rejection_value
+  - l2_sl_beyond_ob_rejection_value
+  - rejected_candidate_blocked_limit_value
+  - rejected_candidate_c1_failed_value
+  - rejected_candidate_c2_m15_opposing_value
+  - rejected_candidate_c3_direction_mismatch_value
+  - rejected_candidate_no_qualifying_h1_poi_value
+  - rejected_candidate_no_reason_logged_value
+  - rejected_candidate_ob_proximity_value
+  - rejected_candidate_other_unknown_value
+  - rejected_candidate_parse_error_value
+  - rejected_candidate_prescreen_no_direction_value
+  - accepted_candidate_distribution_result_pressure
+  - accepted_candidate_feature_ranking_pressure
+  - accepted_candidate_feature_stratification_pressure
+  - ltf_selector_repair
+  - ltf_path_source_blocked_guard
+  - g3_geometry_source_repair_guard
+  - g3_geometry_stop_first_avoid
+  - instrument_expansion_route_avoid
+  - instrument_expansion_h1_h2_decay_guard
+  - instrument_expansion_microstructure_cost_guard
+  - instrument_expansion_tier2_slice_avoid
+  - instrument_expansion_tier2_source_repair_guard
+  - instrument_expansion_gbpusd_observer_avoid
+  - kill_scope_preservation
+  source_component_avoid_veto_min_rows: 1
+  source_component_avoid_veto_dominance_ratio: 1.0
+  source_component_avoid_veto_risk_multiplier: 0.0
+  source_component_summary_prior_enabled: true
+  source_component_summary_prior_evidence_families:
+  - moonshot_source_component_summary
+  source_component_summary_prior_min_rollup_rows: 20
+  source_component_summary_prior_risk_enabled: true
+  source_component_summary_prior_risk_min_rollup_rows: 20
+  source_component_summary_prior_risk_dominance_ratio: 1.0
+  source_component_summary_prior_adverse_proxy_mean_max: -0.05
+  source_component_summary_prior_risk_multiplier: 0.0
+  recommendation_bucket_prior_enabled: true
+  recommendation_bucket_prior_evidence_families:
+  - moonshot_recommendation_merge_bucket
+  recommendation_bucket_prior_bucket_families:
+  - source_component
+  - source_component_decision_group
+  recommendation_bucket_prior_min_bucket_rows: 20
+  recommendation_bucket_prior_risk_enabled: true
+  recommendation_bucket_prior_risk_min_rows: 20
+  recommendation_bucket_prior_repair_groups:
+  - SOURCE_OR_CONTROL_REPAIR
+  recommendation_bucket_prior_supportive_groups:
+  - IMPLEMENT
+  - SCORE_WITH_CONTROL
+  recommendation_bucket_prior_repair_dominance_ratio: 1.0
+  recommendation_bucket_prior_risk_multiplier: 0.0
+  positive_follow_pressure_bypasses_recommendation_bucket_repair: false
+  recommendation_family_rollup_prior_enabled: true
+  recommendation_family_rollup_prior_evidence_families:
+  - moonshot_recommendation_family_rollup
+  recommendation_family_rollup_prior_rollup_types:
+  - source_component_decision_group
+  recommendation_family_rollup_prior_min_rows: 20
+  recommendation_family_rollup_prior_risk_enabled: true
+  recommendation_family_rollup_prior_risk_min_rows: 20
+  recommendation_family_rollup_prior_adverse_groups:
+  - SOURCE_OR_CONTROL_REPAIR
+  - REDESIGN
+  - GUARD
+  recommendation_family_rollup_prior_supportive_groups:
+  - IMPLEMENT
+  - SCORE_WITH_CONTROL
+  recommendation_family_rollup_prior_adverse_dominance_ratio: 1.0
+  recommendation_family_rollup_prior_risk_multiplier: 0.0
+  positive_follow_pressure_bypasses_recommendation_family_rollup_adverse: false
+  recommendation_unified_candidate_prior_enabled: true
+  recommendation_unified_candidate_prior_evidence_families:
+  - moonshot_recommendation_unified_candidate
+  recommendation_unified_candidate_prior_match_fields:
+  - symbol
+  - route_session
+  - horizon_id
+  - primitive
+  recommendation_unified_candidate_prior_min_rows: 20
+  recommendation_unified_candidate_prior_risk_enabled: true
+  recommendation_unified_candidate_prior_risk_min_rows: 20
+  recommendation_unified_candidate_prior_adverse_groups:
+  - SOURCE_OR_CONTROL_REPAIR
+  - REDESIGN
+  - GUARD
+  recommendation_unified_candidate_prior_supportive_groups:
+  - IMPLEMENT
+  - SCORE_WITH_CONTROL
+  recommendation_unified_candidate_prior_adverse_dominance_ratio: 1.0
+  recommendation_unified_candidate_prior_risk_multiplier: 0.0
+  positive_follow_pressure_bypasses_recommendation_unified_candidate_adverse: false
+  recommendation_scope_rollup_prior_enabled: true
+  recommendation_scope_rollup_prior_evidence_families:
+  - moonshot_recommendation_scope_rollup
+  recommendation_scope_rollup_prior_rollup_types:
+  - scope_component
+  recommendation_scope_rollup_prior_match_fields:
+  - symbol
+  - route_session
+  - horizon_id
+  - primitive
+  recommendation_scope_rollup_prior_min_rows: 20
+  recommendation_scope_rollup_prior_risk_enabled: true
+  recommendation_scope_rollup_prior_risk_min_rows: 20
+  recommendation_scope_rollup_prior_adverse_groups:
+  - SOURCE_OR_CONTROL_REPAIR
+  - REDESIGN
+  - GUARD
+  recommendation_scope_rollup_prior_supportive_groups:
+  - IMPLEMENT
+  - SCORE_WITH_CONTROL
+  recommendation_scope_rollup_prior_adverse_dominance_ratio: 1.0
+  recommendation_scope_rollup_prior_risk_multiplier: 0.0
+  positive_follow_pressure_bypasses_recommendation_scope_rollup_adverse: false
+  route_event_excluded_evidence_families:
+  - moonshot_source_component_summary
+  - moonshot_recommendation_merge_bucket
+  - moonshot_recommendation_family_rollup
+  - moonshot_recommendation_unified_candidate
+  - moonshot_recommendation_scope_rollup
+  action_class_avoid_veto_enabled: true
+  action_class_avoid_veto_classes:
+  - avoid_filter
+  - inverse_filter
+  - failure_filter
+  - repaired_proxy_avoid_filter
+  - unified_candidate_avoid_filter
+  - expanded_market_source_geometry_avoid_filter
+  - nofill_lifecycle_avoid_filter
+  - gate_filter_selector_avoid_filter
+  - gate_selector_avoid_filter
+  - confidence_quarantine_filter
+  - framework_gate_repair_filter
+  - adverse_stop_first_avoid_filter
+  - entry_adverse_avoid_filter
+  - gbpjpy_long_adverse_avoid_filter
+  - branch_ambiguity_stop_first_avoid_filter
+  - branch_impl_replay_avoid_filter
+  - cp280_scorer_filter_router_avoid_filter
+  - numeric_router_default_off_avoid_filter
+  - survivor_failure_avoid_filter
+  - observable_execution_avoid_filter
+  - unified_execution_action_work_order_avoid_filter
+  - target_stop_ordering_stop_first_avoid_filter
+  - branch_replay_execution_negative_avoid_filter
+  - unified_candidate_action_execution_avoid_filter
+  - unified_candidate_scoring_avoid_inverse_filter
+  - unified_execution_decision_avoid_redirect_filter
+  - unified_execution_decision_fillability_retest_avoid_filter
+  - unified_execution_decision_market_gap_avoid_inverse_filter
+  - unified_execution_decision_provenance_avoid_filter
+  - unified_execution_decision_source_expansion_avoid_filter
+  - unified_candidate_variant_avoid_inverse_filter
+  - unified_shadow_scorer_branch_failure_avoid_filter
+  - unified_shadow_scorer_avoid_filter
+  - unified_shadow_scorer_market_gap_avoid_filter
+  - tick_m15_execution_friction_spread_avoid_filter
+  - tick_m15_target_control_negative_alignment_avoid_filter
+  - live_mechanical_stop_first_avoid_filter
+  - live_mechanical_nofill_avoid_filter
+  - live_mechanical_kill_avoid_filter
+  - live_mechanical_redesign_avoid_filter
+  - pre_ai_post_l2_ai_route_failure_filter
+  - legacy_v4_lira_avoid_filter
+  - legacy_t7_simulation_avoid_filter
+  - legacy_v2_v3_paper_live_avoid_filter
+  - sl_beyond_ob_gate_support_avoid_filter
+  - fvg_trade_record_bounds_avoid_filter
+  - scid_target_control_card_rank_avoid_filter
+  action_class_avoid_veto_min_rows: 1
+  action_class_avoid_veto_dominance_ratio: 1.0
+  action_class_avoid_veto_risk_multiplier: 0.0
+  evidence_family_avoid_veto_enabled: true
+  evidence_family_avoid_veto_families:
+  - numeric_router_system_recommendations
+  - gate_filter_selector_evidence
+  - gtos_vnext_gate_selector_session_timeframe
+  - gtos_vnext_adverse_stop_first_execution
+  - gtos_vnext_branch_followup_computation
+  - gtos_vnext_branch_ambiguity_collapse
+  - gtos_vnext_branch_implementation_replay
+  - gtos_vnext_cp280_scorer_filter_router
+  - gtos_vnext_numeric_router_catalog_runtime
+  - gtos_vnext_survivor_failure_runtime
+  - gtos_vnext_observable_execution
+  - gtos_vnext_unified_execution_action_work_order
+  - gtos_vnext_target_stop_ordering_execution_scoring
+  - gtos_vnext_branch_replay_execution_repair
+  - gtos_vnext_unified_candidate_action_execution
+  - gtos_vnext_unified_candidate_scoring_execution
+  - gtos_vnext_unified_execution_decision
+  - gtos_vnext_unified_shadow_source_materialization
+  - gtos_vnext_tick_m15_execution_friction
+  - gtos_vnext_tick_m15_target_control
+  - gtos_vnext_scid_target_horizon_control
+  - gtos_vnext_rejected_candidate_l2_value_mining
+  - gtos_vnext_accepted_candidate_m1_fill_source_repair
+  - gtos_vnext_legacy_t7_simulation_friction
+  - gtos_vnext_legacy_v2_v3_paper_live_friction
+  evidence_family_avoid_veto_min_rows: 1
+  evidence_family_avoid_veto_dominance_ratio: 1.0
+  evidence_family_avoid_veto_risk_multiplier: 0.0
+  source_name_avoid_veto_enabled: true
+  source_name_avoid_veto_names:
+  - numeric_router_avoid_score
+  - gate_filter_selector_runtime_mapping
+  - gtos_vnext_gate_selector_session_timeframe_wave
+  - gtos_vnext_adverse_stop_first_execution_wave
+  - gtos_vnext_branch_followup_computation_wave
+  - gtos_vnext_branch_ambiguity_collapse_wave
+  - gtos_vnext_branch_implementation_replay_wave
+  - gtos_vnext_cp280_scorer_filter_router_wave
+  - gtos_vnext_observable_execution_wave
+  - gtos_vnext_unified_execution_action_work_order_wave
+  - gtos_vnext_target_stop_ordering_execution_scoring_wave
+  - gtos_vnext_branch_replay_execution_repair_wave
+  - gtos_vnext_unified_candidate_action_execution_wave
+  - gtos_vnext_unified_candidate_scoring_execution_wave
+  - gtos_vnext_unified_execution_decision_wave
+  - gtos_vnext_unified_shadow_source_materialization_wave
+  - gtos_vnext_legacy_t7_simulation_friction_wave
+  - gtos_vnext_legacy_v2_v3_paper_live_friction_wave
+  - gtos_vnext_rejected_candidate_l2_value_mining_wave
+  - gtos_vnext_accepted_candidate_m1_fill_source_repair_wave
+  source_name_avoid_veto_min_rows: 1
+  source_name_avoid_veto_dominance_ratio: 1.0
+  source_name_avoid_veto_risk_multiplier: 0.0
+  source_role_avoid_veto_enabled: true
+  source_role_avoid_veto_roles:
+  - historical_replay_result_table
+  - default_off_branch_decision
+  - gate_selector_avoid_guard
+  - confidence_filter_shadow_guard
+  - legacy_ai_hallucination_avoid_guard
+  - legacy_v4_lira_avoid_guard
+  - adverse_stop_first_avoid_guard
+  - gbpjpy_long_adverse_avoid_guard
+  - branch_followup_avoid_guard
+  - branch_ambiguity_stop_first_avoid_guard
+  - branch_impl_replay_avoid_guard
+  - cp280_scorer_filter_router_avoid_guard
+  - observable_execution_avoid_guard
+  - unified_execution_avoid_guard
+  - target_stop_ordering_stop_first_avoid_guard
+  - branch_replay_execution_negative_proxy
+  - unified_candidate_action_avoid_guard
+  - unified_candidate_scoring_avoid_inverse_guard
+  - unified_execution_decision_avoid_redirect_guard
+  - unified_execution_decision_fillability_retest_avoid_guard
+  - unified_execution_decision_market_gap_avoid_inverse_guard
+  - unified_execution_decision_provenance_avoid_guard
+  - unified_execution_decision_source_expansion_avoid_guard
+  - unified_candidate_variant_avoid_inverse_guard
+  - unified_shadow_scorer_avoid_guard
+  - rejected_candidate_l2_value_avoid_filter
+  - exact_r_bridge_kill_branch_avoid_kill_avoid_filter
+  - fill_sim_stop_first_avoid_avoid_filter
+  - legacy_t7_simulation_avoid_guard
+  - legacy_v2_v3_paper_live_avoid_guard
+  - sl_beyond_ob_rejected_l2_gate_support_guard
+  - fvg_trade_record_bounds_kill_guard
+  - fvg_trade_record_bounds_negative_proxy_guard
+  - fvg_trade_record_bounds_redesign_negative_guard
+  - scid_target_control_card_rank_avoid_guard
+  source_role_avoid_veto_min_rows: 1
+  source_role_avoid_veto_dominance_ratio: 1.0
+  source_role_avoid_veto_risk_multiplier: 0.0
+  strong_negative_proxy_risk_adjustment_enabled: true
+  strong_negative_proxy_risk_min_rows: 20
+  strong_negative_proxy_risk_dominance_ratio: 2.0
+  strong_negative_proxy_risk_multiplier: 0.0
+  strong_positive_proxy_risk_adjustment_enabled: true
+  strong_positive_proxy_risk_min_rows: 20
+  strong_positive_proxy_risk_dominance_ratio: 2.0
+  strong_positive_proxy_risk_multiplier: 1.25
+  confidence_override_enabled: true
+  confidence_override_risk_reasons:
+  - vnext_risk_strong_follow
+  - vnext_risk_strong_positive_proxy_class
+  pending_policy_enabled: true
+  pending_policy_apply_to_execution: true
+  pending_policy_min_component_rows: 1
+  pending_policy_market_entry_enabled: true
+  pending_policy_market_entry_min_component_rows: 1
+  pending_policy_static_limit_adaptive_entry_enabled: true
+  pending_policy_static_limit_adaptive_entry_min_component_rows: 1
+  pending_policy_offset_avoid_enabled: true
+  pending_policy_offset_min_component_rows: 1
+  pending_policy_market_entry_blocks_on_source_requirement: true
+  pending_policy_source_requirement_min_component_rows: 1
+  pending_policy_market_entry_requires_follow: true
+  pending_policy_market_entry_requires_positive_proxy: true
+  pending_policy_market_entry_positive_proxy_dominance_ratio: 1.0
+  pending_policy_offset_avoid_requires_component_avoid: true
+  pending_policy_offset_avoid_requires_negative_proxy: true
+  pending_policy_offset_avoid_negative_proxy_dominance_ratio: 1.0
+  pending_policy_use_source_component_decisions: true
+  pending_policy_nofill_avoid_requires_component_avoid: true
+  pending_policy_market_entry_requires_component_follow: true
+  pending_policy_source_requirement_requires_mixed: true
+  pending_policy_component_decision_dominance_ratio: 1.0
+  ltf_path_execution_enabled: true
+  ltf_path_execution_apply_to_execution: false
+  ltf_path_execution_min_component_rows: 1
+  ltf_path_execution_component_decision_dominance_ratio: 1.0
+  ltf_path_monitor_timeframe: M1
+  ltf_path_monitor_fetch_bars: 4
+  ltf_path_fetch_on_decision: true
+  ltf_path_monitor_pending_intent_enabled: true
+  ltf_path_near_entry_threshold_r: 0.25
+  ltf_path_market_entry_requires_path_touch: true
+  ltf_path_adjusted_entry_enabled: true
+  ltf_path_adjusted_entry_offset_r: 0.5
+  prop_safe_selector_enabled: true
+  prop_safe_selector_apply_to_execution: false
+  prop_safe_selector_initial_balance: 100000.0
+  prop_safe_selector_external_daily_loss_limit_pct: 5.0
+  prop_safe_selector_external_overall_max_loss_pct: 10.0
+  prop_safe_selector_phase1_target_pct: 8.0
+  prop_safe_selector_phase2_target_pct: 5.0
+  prop_safe_selector_daily_reset_timezone_offset_hours: 3.0
+  prop_safe_selector_malaysia_timezone_offset_hours: 8.0
+  prop_safe_selector_spread_slippage_commission_buffer_pct: 0.1
+  prop_safe_selector_min_reduced_risk_pct: 0.25
+  prop_safe_selector_reserve_simultaneous_candidates: true
+  prop_safe_selector_internal_daily_overlay_enabled: true
+  prop_safe_selector_internal_overlay_applies_to_budget: true
+  prop_safe_selector_internal_daily_overlay_pct: 4.0
+  prop_safe_selector_risk_scenarios_pct:
+  - 0.25
+  - 0.5
+  - 1.0
+  exit_management_residue_policy_enabled: true
+  exit_management_residue_apply_to_execution: false
+  exit_management_residue_required_timestamp_fields:
+  - entry_time_utc
+  - exit_time_utc
+  exit_management_residue_partial_split_change_requires_significance: true
+  exit_management_residue_session_exit_requires_timestamp_source: true
+  exit_management_residue_no_event_status_is_complete: true
+  ready8_failure_control_residue_policy_enabled: true
+  ready8_failure_control_residue_apply_to_execution: false
+  ready8_failure_control_residue_scope_selection_policy: all_matching_anchored
+  ready8_failure_control_residue_scope_required_anchor_groups:
+  - - source_component
+  ready8_failure_control_required_repairs:
+  - card_specific_predicates
+  - descriptor_contrast_and_overlap_policy
+  - denominator_rules
+  - fail_closed_policy
+  - duplicate_concentration_controls
+  - sealed_stress_partition_preregistration
+  - source_bound_exact_r_geometry
+  - source_bound_target_stop_hit_miss
+  block_min_effective_n: 3
+  avoid_blocks_execution: false
+  mixed_blocks_execution: false
+  legacy_blocks_execution: false
+  decision_log_enabled: true
+  decision_log_path: shadow_logs/gtos_vnext_runtime_decisions.jsonl
+  evidence_row_detail_limit: 250
+  evidence_id_list_limit: 2000
+  min_loaded_evidence_rows: 50000
+  scope_selection_policy: all_matching_anchored
+  scope_required_anchor_groups:
+  - - symbol
+    - source_symbol
+    - symbol_family
+    - market
+  - - route_session
+  - - side
+  scope_side_anchor_optional_evidence_families:
+  - moonshot_unified_numeric_result
+  - moonshot_exact_r_missing_proof
+  - moonshot_source_geometry_repair
+  - moonshot_control_screen
+  - moonshot_control_screen_route_queue
+  - moonshot_unified_candidate_market_rollup
+  - gtos_vnext_nofill_pending_lifecycle
+  - gtos_vnext_source_repair_missing_denominator
+  - gtos_vnext_numeric_router_catalog_runtime
+  - gtos_vnext_survivor_failure_runtime
+  - gtos_vnext_nr_source_repair_execution_identity
+  - gtos_vnext_ai_narrowing_default_off_runtime
+  - gtos_vnext_ai_decision_trace_routing_guard
+  - gtos_vnext_pre_ai_post_l2_routing_policy
+  - gtos_vnext_legacy_ai_cascade_model_runtime
+  - gtos_vnext_legacy_t7_simulation_friction
+  - gtos_vnext_legacy_v2_v3_paper_live_friction
+  - gtos_vnext_sl_beyond_ob_outcome_join_source_repair
+  - gtos_vnext_fvg_trade_record_bounds_execution_runtime
+  - gtos_vnext_exit_management_trailing_j46
+  - gtos_vnext_exit_management_residue
+  - gtos_vnext_q62_partial_close_exit_runtime
+  - gtos_vnext_ready8_failure_control_residue
+  - gtos_vnext_execution_adjacent_friction_residue
+  - gtos_vnext_lifecycle_execution_source_guard
+  - gtos_vnext_accepted_candidate_m1_fill_source_repair
+  - gtos_vnext_sierra_depth_source_acquisition
+  - gtos_vnext_risk_proxy_stress_cost
+  - gtos_vnext_gate_selector_session_timeframe
+  - gtos_vnext_adverse_stop_first_execution
+  - gtos_vnext_observable_execution
+  - gtos_vnext_unified_execution_action_work_order
+  - gtos_vnext_branch_replay_execution_repair
+  - gtos_vnext_unified_candidate_action_execution
+  - gtos_vnext_unified_candidate_scoring_execution
+  - gtos_vnext_unified_execution_decision
+  - gtos_vnext_unified_shadow_source_materialization
+  - gtos_vnext_scid_forward_source_capture
+  - gtos_vnext_scid_future_capture_source_state
+  - gtos_vnext_scid_combined_source_capture_poi_bounds
+  - gtos_vnext_scid_noapi_source_repair
+  - gtos_vnext_pre_ai_h1_poi_source_gap
+  - gtos_vnext_shadow_source_log_materialization
+  - gtos_vnext_tick_m15_execution_friction
+  - gtos_vnext_tick_m15_target_control
+  - gtos_vnext_main_orch24_tick_structural_entry_runtime
+  - gtos_vnext_main_orch24_structural_repair_action_runtime
+  - gtos_vnext_main_orch24_action_completeness_residual_r_runtime
+  - gtos_vnext_main_orch24_implementation_selection_runtime
+  - gtos_vnext_main_orch48_final_review_selector_runtime
+  - gtos_vnext_ltf_path_geometry_source_runtime
+  - gtos_vnext_instrument_expansion_market_session_runtime
+  - gtos_vnext_main_orch24_source_accepted_action_repair_runtime
+  - gtos_vnext_main_orch24_swing_protected_source_repair_runtime
+  - gtos_vnext_main_orch24_source_m15_branch_repair_runtime
+  - gtos_vnext_main_orch24_live_mechanical_geometry_outcome_runtime
+  - gtos_vnext_tick_source_recovery_quote_contract_runtime
+  - gtos_vnext_legacy_live_shadow_decision_runtime
+  - gtos_vnext_scid_target_horizon_control
+  scope_side_anchor_optional_source_components:
+  - nofill_far_miss_avoid
+  - nofill_far_miss_retest
+  - nofill_far_miss_family
+  - nofill_far_miss_source_confidence
+  - nofill_near_miss_market_entry
+  - nofill_near_miss_offset
+  - nofill_near_miss_source_requirement
+  - ohlc_control_screen
+  - ohlc_control_screen_route_queue
+  - unified_candidate_market_rollup
+  - unified_candidate_default_off_scorer
+  - unified_candidate_guard
+  - unified_candidate_source_repair
+  - source_repair_proof
+  - sl_beyond_ob_outcome_capture_gap
+  - sl_beyond_ob_pass_adverse_outcome_reference
+  - sl_beyond_ob_pass_nofill_outcome_reference
+  - sl_beyond_ob_pass_outcome_reference
+  - sl_beyond_ob_rejected_l2_counterfactual
+  - sl_beyond_ob_legacy_zero_buffer_source_repair
+  - entry_geometry_fillability_tick_path_ordering
+  - entry_geometry_fillability_tick_path_ordering_retest_control
+  - fvg_entry_geometry_and_lock_metadata
+  - fvg_ob_confluence_shared_path_scorer
+  - pending_lifecycle_fill_cancel_expiry_source_capture
+  - lifecycle_still_pending_no_fill_source_guard
+  - lifecycle_wrong_side_no_fill_source_guard
+  - trade_index_lifecycle_action_required_source_repair
+  - opportunity_lifecycle_reset_policy_source_guard
+  - prefill_delivery_adverse_reversal_path
+  - prefill_delivery_adverse_reversal_path_retest_control
+  - source_cost_spread_bar_proxy_implication
+  - structural_lock_reentry_cost_metadata
+  - structural_swing_protected_stop_geometry
+  - tick_derived_structural_source_repair
+  - market_gap_code
+  - shadow_source_guard
+  - default_off_application
+  - ai_architecture_audit
+  - ai_trace_integrity_guard
+  - ai_trace_provenance
+  - ai_trace_trade_record_backfill
+  - ai_shadow_readiness
+  - survivor_failure_proxy
+  - default_off_scorer_application
+  - registry_scorer_module
+  - registry_scorer_module_system
+  - sierra_scid_source_bound_m15_bar_replay
+  - sierra_depth_source_gap
+  - sierra_depth_window_sample_block
+  - sierra_depth_in_window_clear_repair
+  - sierra_depth_live_feature_status
+  - sierra_depth_source_acquisition
+  - risk_source_cost_cap
+  - risk_cost_fill_proxy
+  - risk_rstyle_proxy_outcome
+  - risk_source_stress_acquisition
+  - risk_stress_robustness
+  - risk_sizing_policy
+  - risk_ai_cost_control
+  - risk_proxy_gap_status
+  - risk_touch_count_proxy
+  - risk_proxy_stress_cost_context
+  - gate_touch_count
+  - gate_touch_count_gate
+  - gate_sl_beyond_ob
+  - gate_sl_beyond_ob_l2
+  - gate_pre_ai_poi_availability
+  - gate_pre_ai_h1_poi_availability
+  - gate_cross_instrument_correlation
+  - gate_cross_instrument_correlation_gate
+  - confidence_filter_quarantine
+  - fvg_ob_framework_repair
+  - ltf_selector_repair
+  - kill_scope_preservation
+  - ai_hallucination_guard
+  - legacy_v4_lira_guard
+  - ai_v3_cascade_preferred
+  - no_ai_shadow_observer
+  - ai_source_lineage_materialization_guard
+  - ai_routing_architecture_context
+  - ai_narrowing_policy_residue
+  - ai_limit_order_prompt_context
+  - legacy_ai_schema_parser_guard
+  - legacy_ai_model_context_guard
+  - legacy_ai_cascade_context_guard
+  - legacy_t7_positive_simulation
+  - legacy_t7_negative_simulation
+  - legacy_t7_context_simulation
+  - legacy_v2_v3_paper_live_follow_scorer
+  - legacy_v2_v3_paper_live_friction_guard
+  - legacy_v2_v3_paper_live_context_guard
+  - framework_gate_selector
+  - selector_shadow_source_guard
+  - session_timeframe_selector
+  - targetstop_na_binding_repair
+  - target_stop_path_control
+  - observable_execution_follow_scorer
+  - observable_execution_control_guard
+  - observable_execution_denominator_guard
+  - observable_execution_source_policy_guard
+  - observable_execution_source_repair
+  - observable_execution_horizon_repair
+  - observable_execution_avoid_filter
+  - trailing_stop_v1_shadow
+  - j46_j49_active_exit_policy
+  - j46_j49_actual_r_boundary
+  - exit_optimization_context
+  - exit_policy_legacy_batch_context
+  - exit_policy_h29_risk_context
+  - exit_partial_split_policy_guard
+  - exit_session_timestamp_source_requirement
+  - exit_no_event_status_observability
+  - q62_partial_close_scheme_result
+  - q62_variant_c_shadow_context
+  - q62_variant_d_shadow_queue_guard
+  - q62_common_trigger_runner_giveup_guard
+  - q62_partial_close_policy_guard
+  - ready8_control_only_quarantine
+  - ready8_card_rank_redundancy_kill
+  - ready8_source_control_repair_requirement
+  - ready8_denominator_overlap_requirement
+  - ready8_exact_geometry_source_requirement
+  - ready8_weak_overlap_shadow_only
+  - ready8_fail_closed_source_policy
+  - ready8_promotion_validation_block
+  - branch_replay_execution_blocker_repair_guard
+  - branch_replay_execution_source_ordering_guard
+  - branch_replay_execution_work_unit_context
+  - unified_candidate_action_market_gap_avoid_inverse
+  - unified_candidate_action_market_gap_entry_geometry
+  - unified_candidate_action_source_expansion
+  - unified_candidate_action_concentration_restress
+  - unified_candidate_action_symbol_session
+  - unified_candidate_scoring_avoid_inverse_execution
+  - unified_candidate_scoring_entry_geometry_execution
+  - unified_execution_decision_avoid_redirect
+  - unified_execution_decision_fillability_retest_redesign
+  - unified_execution_decision_market_entry_challenger
+  - unified_execution_decision_market_gap_avoid_inverse
+  - unified_execution_decision_market_gap_entry_geometry
+  - unified_execution_decision_provenance_guard
+  - unified_execution_decision_source_expansion_guard
+  - unified_candidate_variant_avoid_inverse
+  - unified_candidate_variant_entry_geometry
+  - unified_candidate_variant_source_expansion
+  - unified_shadow_scorer_branch_failure_avoid_filter
+  - unified_shadow_scorer_avoid_filter
+  - unified_shadow_scorer_market_gap_avoid_filter
+  - unified_shadow_scorer_entry_geometry
+  - unified_shadow_scorer_market_gap_entry_geometry
+  - unified_shadow_scorer_market_entry_comparator
+  - unified_shadow_scorer_branch_proxy_scorer
+  - unified_shadow_scorer_source_materialization
+  - unified_source_materialization_execution
+  - scid_forward_source_capture_lifecycle
+  - scid_future_capture_baseline_control
+  - scid_future_capture_framework_setup
+  - scid_future_capture_entry_reference
+  - scid_future_capture_side_direction
+  - scid_future_capture_stop_reference
+  - scid_future_capture_target_reference
+  - scid_future_capture_lifecycle_status
+  - scid_combined_framework_setup_source_gap
+  - scid_combined_orderflow_depth_source_gap
+  - scid_combined_entry_reference_source_gap
+  - scid_combined_side_direction_source_gap
+  - scid_combined_stop_reference_source_gap
+  - scid_combined_target_reference_source_gap
+  - scid_combined_lifecycle_source_gap
+  - scid_combined_ltf_path_source_gap
+  - scid_combined_poi_bounds_source_gap
+  - scid_noapi_forbidden_surface_guard
+  - scid_noapi_future_capture_source_acquisition
+  - scid_noapi_ltf_orderflow_source_acquisition
+  - scid_noapi_missing_source_acquisition
+  - scid_strategy_field_ltf_orderflow_source_acquisition
+  - scid_strategy_field_missing_source_acquisition
+  - scid_forward_readonly_alignment_source_acquisition
+  - pre_ai_h1_poi_bullish_source_gap
+  - pre_ai_h1_poi_bearish_source_gap
+  - shadow_action_required_source_gap
+  - shadow_candidate_poi_source_gap
+  - shadow_external_source_blocker
+  - shadow_framework_qualification_source_gap
+  - shadow_generic_source_materialization_gap
+  - shadow_join_status_source_gap
+  - shadow_missing_exact_required_fields
+  - shadow_path_contract_source_gap
+  - tick_m15_execution_friction_spread_competes
+  - tick_m15_execution_friction_movement_dominates
+  - tick_m15_execution_friction_weak_denominator
+  - tick_m15_target_control_negative_alignment
+  - tick_m15_target_control_placebo_ready_positive
+  - tick_m15_target_control_flat_or_negative_abs
+  - tick_m15_target_control_small_n_context
+  - main_orch24_tick_structural_kill_guard
+  - main_orch24_tick_redesign_source_repair
+  - main_orch24_tick_preserve_source_acquisition
+  - main_orch24_tick_negative_proxy_guard
+  - main_orch24_tick_positive_proxy_follow
+  - main_orch24_nas100_tick_order_repair_follow
+  - main_orch24_entry_offset_025r_kill_guard
+  - main_orch24_entry_offset_050r_challenger
+  - main_orch24_entry_offset_tick_source_acquisition
+  - main_orch24_structural_metadata_default_off_follow
+  - main_orch24_structural_ltf_positive_follow
+  - main_orch24_structural_pending_lifecycle_context
+  - main_orch24_structural_fvg_ob_shared_path_context
+  - main_orch24_structural_context
+  - main_orch24_structural_source_repair_requirement
+  - main_orch24_action_completeness_default_off_follow
+  - main_orch24_action_completeness_fvg_structural_follow
+  - main_orch24_action_completeness_entry_offset_follow
+  - main_orch24_action_completeness_source_provenance_follow
+  - main_orch24_action_completeness_keep_context
+  - main_orch24_action_completeness_context
+  - main_orch24_action_completeness_source_repair_requirement
+  - main_orch24_residual_numeric_r_materialized_context
+  - main_orch24_residual_numeric_r_context
+  - main_orch24_source_accepted_m15_ordering_follow
+  - main_orch24_source_accepted_source_cost_proxy_follow
+  - main_orch24_source_accepted_degraded_redesign_source_acquisition
+  - main_orch24_swing_protected_tick_repair_follow
+  - main_orch24_swing_protected_unprotected_stop_guard
+  - main_orch24_swing_protected_negative_proxy_guard
+  - main_orch24_swing_protected_source_acquisition
+  - main_orch24_swing_protected_neutral_context
+  - main_orch24_source_m15_ordering_positive_follow
+  - main_orch24_source_m15_kill_or_no_fill_guard
+  - main_orch24_source_m15_redesign_guard
+  - main_orch24_source_m15_source_acquisition
+  - main_orch24_source_m15_default_off_context
+  - main_orch24_source_m15_neutral_context
+  - main_orch24_live_mechanical_geometry_proxy_context
+  - main_orch24_live_mechanical_source_acquisition
+  - main_orch24_live_mechanical_ambiguous_path_guard
+  - main_orch24_live_mechanical_pending_lifecycle_guard
+  - main_orch24_live_mechanical_context
+  - main_orch24_unified_tick_m15_path_follow
+  - main_orch24_unified_tick_m15_path_inverse_avoid
+  - main_orch24_unified_m1_spread_fill_target_follow
+  - main_orch24_unified_m1_spread_fill_stop_or_nofill_avoid
+  - main_orch24_unified_m1_fill_ordering_source_repair
+  - main_orch24_unified_m1_entry_materialized_context
+  - main_orch24_unified_branch_proxy_follow
+  - main_orch24_unified_branch_proxy_avoid
+  - main_orch24_unified_branch_proxy_source_repair
+  - main_orch24_unified_ready8_source_capture_repair_replay
+  - main_orch24_unified_split_summary_replay_attribution
+  - tick_source_recovery_path_ready_context
+  - tick_source_recovery_ordered_path_source_acquisition
+  - tick_source_recovery_separate_fill_path_source_acquisition
+  - tick_source_recovery_opening_drive_source_acquisition
+  - tick_source_recovery_no_entry_touch_source_acquisition
+  - tick_source_recovery_no_terminal_pending_guard
+  - tick_source_recovery_geometry_join_context
+  - tick_source_recovery_source_hash_context
+  - tick_source_recovery_partial_coverage_source_acquisition
+  - legacy_live_shadow_v2_replay_context
+  - legacy_live_shadow_v2b_forward_source_acquisition
+  - legacy_live_shadow_fvg_ob_source_acquisition
+  - legacy_live_shadow_j46_j49_policy_follow
+  - legacy_live_shadow_s79_side_aware_context
+  - legacy_live_shadow_nofill_capture_source_acquisition
+  - legacy_live_shadow_sierra_orderflow_diagnostic_context
+  - legacy_live_shadow_strategy_replay_context
+  - legacy_live_shadow_trailing_stop_shadow_context
+  - legacy_live_shadow_xagusd_account_history_source_acquisition
+  - main_orch24_standalone_fvg_negative_guard
+  - scid_neutral_target_candidate_context
+  - scid_neutral_target_control_context
+  - scid_target_control_card_rank_non_discriminative
+  - scid_target_horizon_fail_closed_source_repair
+  - scid_target_horizon_neutral_only
+  - scid_target_horizon_source_field_requirement
+  - static_limit_adaptive_entry_challenger
+  - static_limit_adaptive_entry_source_requirement
+  - broker_actual_r_slippage_source_repair
+  - trade_record_execution_source_repair
+  - orderflow_pending_lifecycle_source_gap
+  - execution_source_capture_contract_context
+  - execution_replay_source_contract_context
+  - a4_fill_simulation_result_pressure
+  - accepted_candidate_classifier_validation_context
+  - accepted_candidate_distribution_result_pressure
+  - accepted_candidate_feature_ranking_pressure
+  - accepted_candidate_feature_stratification_pressure
+  - accepted_candidate_h1_h2_feature_stability_context
+  - accepted_candidate_m1_fill_support_code_context
+  - accepted_candidate_touch_bucket_result_pressure
+  - accepted_filled_candidate_result_pressure
+  - adv002_source_control_exact_requirement_guard
+  - exact_r_alias_search_context
+  - exact_r_alias_search_source_repair
+  - exact_r_bridge_kill_branch_avoid
+  - exact_r_bridge_materialized_context
+  - exact_r_bridge_missing_identifier_source_repair
+  - exact_r_bridge_redesign_source_repair
+  - exact_r_source_materialization_support_context
+  - exact_r_verification_missing_identifier_source_repair
+  - exact_r_verification_owner_reference_context
+  - m1_backfill_source_coverage_guard
+  - m1_fill_quality_result_pressure
+  - m1_micro_feature_no_signal_context
+  - missed_fill_entry_geometry_source_requirement
+  - missed_fill_to_tp_area_source_requirement
+  - non_xau_fillback_source_inventory_guard
+  - old_backfill_source_bias_guard
+  - old_backfill_source_context
+  scope_prefer_event_specific_fields_enabled: true
+  scope_prefer_event_specific_fields:
+  - route_session
+  - framework
+  - route_family
+  - market_timeframe
+  - horizon_id
+  - primitive
+  - source_component
+  - action_family
+  preserve_source_names_when_less_specific:
+  - ai_narrowing_policy
+  preserve_evidence_families_when_less_specific:
+  - ai_decision_architecture
+  min_scope_fields: 1
+  artifact_paths:
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCORER_FILTER_ROUTER_IMPLEMENTATION_LEDGER_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_EVIDENCE_TO_SYSTEM_BUILD_MATRIX_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCORER_FILTER_ROUTER_REVIEW_LEDGER_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/vnext_production_change_dossier_and_prop_safe_runtime_2026_05_25/VNEXT_PRODUCTION_CHANGE_RUNTIME_CHANGE_LEDGER_2026-05-25.jsonl
+  - research/science_program_2026_05/06_outcome_testing/vnext_production_change_dossier_and_prop_safe_runtime_2026_05_25/VNEXT_PRODUCTION_CHANGE_KILL_REDESIGN_LEDGER_2026-05-25.jsonl
+  - research/science_program_2026_05/06_outcome_testing/vnext_production_change_dossier_and_prop_safe_runtime_2026_05_25/VNEXT_PRODUCTION_CHANGE_MIXED_RESOLUTION_LEDGER_2026-05-25.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_GATE_SELECTOR_SESSION_TIMEFRAME_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_ADVERSE_STOP_FIRST_EXECUTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_BRANCH_FOLLOWUP_COMPUTATION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_BRANCH_AMBIGUITY_COLLAPSE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_BRANCH_IMPLEMENTATION_REPLAY_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_CP280_SCORER_FILTER_ROUTER_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_OBSERVABLE_EXECUTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_UNIFIED_EXECUTION_ACTION_WORK_ORDER_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_TARGET_STOP_ORDERING_EXECUTION_SCORING_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_BRANCH_REPLAY_EXECUTION_REPAIR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_UNIFIED_CANDIDATE_ACTION_EXECUTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_UNIFIED_CANDIDATE_SCORING_EXECUTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_UNIFIED_EXECUTION_DECISION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_UNIFIED_SHADOW_SOURCE_MATERIALIZATION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCID_FORWARD_SOURCE_CAPTURE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCID_FUTURE_CAPTURE_SOURCE_STATE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCID_COMBINED_SOURCE_CAPTURE_POI_BOUNDS_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCID_NOAPI_SOURCE_REPAIR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_PRE_AI_H1_POI_SOURCE_GAP_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_EXIT_MANAGEMENT_TRAILING_J46_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_EXIT_MANAGEMENT_RESIDUE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_Q62_PARTIAL_CLOSE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_READY8_FAILURE_CONTROL_RESIDUE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_REJECTED_CANDIDATE_L2_VALUE_MINING_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_ACCEPTED_CANDIDATE_M1_FILL_SOURCE_REPAIR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SHADOW_SOURCE_LOG_MATERIALIZATION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_TICK_M15_EXECUTION_FRICTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_TICK_M15_TARGET_CONTROL_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_TICK_STRUCTURAL_ENTRY_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_STRUCTURAL_REPAIR_ACTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_ACTION_COMPLETENESS_RESIDUAL_R_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_IMPLEMENTATION_SELECTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_SNAPSHOT_DEPENDENCY_REPAIR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH48_FINAL_REVIEW_SELECTOR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_LTF_PATH_GEOMETRY_SOURCE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_INSTRUMENT_EXPANSION_MARKET_SESSION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_SOURCE_ACCEPTED_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_SWING_PROTECTED_SOURCE_REPAIR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_SOURCE_M15_BRANCH_REPAIR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_LIVE_MECHANICAL_GEOMETRY_OUTCOME_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_MAIN_ORCH24_UNIFIED_CANDIDATE_PATH_PROXY_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_TICK_SOURCE_RECOVERY_QUOTE_CONTRACT_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_LEGACY_LIVE_SHADOW_DECISION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_TRADE_RECORD_EXECUTION_LIFECYCLE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_LIFECYCLE_EXECUTION_SOURCE_GUARD_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_CAUSE_IMPLEMENTATION_MATRIX_SOURCE_REPAIR_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_AMBIGUITY_COLLAPSE_ACTION_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ENTRY_ADVERSE_REDESIGN_DETAIL_ADVERSE_VARIANT_DETAIL_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_BROKER_SOURCE_REPAIR_EXPECTANCY_REPAIR_RESULT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_NUMERIC_RESULT_TABLES_NUMERIC_RESULT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_NUMERIC_RESULT_TABLES_EXACT_R_OR_MISSING_PROOF_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_NUMERIC_RESULT_TABLES_SOURCE_COMPONENT_SUMMARY_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_NUMERIC_RESULT_TABLES_SOURCE_GEOMETRY_REPAIR_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_RECOMMENDATION_MERGE_BUNDLE_BUCKET_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_RECOMMENDATION_MERGE_BUNDLE_FAMILY_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_RECOMMENDATION_MERGE_BUNDLE_UNIFIED_CANDIDATE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_RECOMMENDATION_MERGE_BUNDLE_SCOPE_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_CHALLENGER_FRONTIER_ACTION_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_CHALLENGER_FRONTIER_ROUTE_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_CONTROL_SCREEN_LEDGER_2026-05-15.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_CONTROL_SCREEN_ROUTE_QUEUE_2026-05-15.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BLOCKER_LEDGER_2026-05-15.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_ACCEPTED_BUILDER_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_BINDING_RESULT_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_BRANCH_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_ENTRY_ADVERSE_RESULT_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_FAMILY_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_M15_RESULT_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_M1_RESULT_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_POSITIVE_RESULT_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_SOURCE_RESULT_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_ACCEPTED_BUILDER_RESULT_PACKET_REJECTED_REPAIR_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_MARKET_GAP_PRIMITIVE_EXPANSION_ACTION_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_MARKET_GAP_PRIMITIVE_EXPANSION_TRANSFER_CONTEXT_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_UNIFIED_CANDIDATE_SCORING_MARKET_GAP_SCORE_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_UNIFIED_REPLAY_CODE_CANDIDATE_MARKET_GAP_CODE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_NEARMISS_MARKET_ENTRY_JOIN_BRANCH_SUMMARY_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_NEARMISS_MARKET_ENTRY_JOIN_MARKET_ENTRY_JOIN_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_NEARMISS_MARKET_ENTRY_JOIN_OFFSET_JOIN_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_SYSTEM_TRANSFER_NEARMISS_MARKET_ENTRY_JOIN_SOURCE_REQUIREMENT_JOIN_LEDGER_2026-05-16.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_CODE_CANDIDATES_ROW_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_CODE_CANDIDATE_EXECUTION_ROW_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_REDUCED_IMPLEMENTATION_CANDIDATES_ROW_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_DECONCENTRATED_SCORER_SURFACES_SURFACE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_FINAL_IMPLEMENTATION_DECISIONS_DECISION_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_SOURCE_EXPANSION_READY_ACTION_IMPLEMENTATION_CANDIDATE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_UNIFIED_IMPLEMENTATION_ACTIONS_DECISION_ACTION_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_UNIFIED_STRICT_IMPLEMENTATION_READINESS_SURFACE_READINESS_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_REPAIR_IMPLEMENTATION_HANDOFF_HANDOFF_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_EXPANDED_MARKET_REPAIR_IMPLEMENTATION_ACCEPTANCE_ACCEPTANCE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCOPE_SCORER_APPLICATION_DEFAULT_OFF_SCORE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCOPE_SCORER_APPLICATION_AVOID_REDESIGN_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCOPE_SCORER_APPLICATION_REPAIR_REQUIRED_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCOPE_SCORER_APPLICATION_REGISTRY_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SYMBOL_ACTION_PACKET_SYMBOL_PROXY_SURFACE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SYMBOL_ACTION_PACKET_SYMBOL_ACTION_PACKET_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SYMBOL_ACTION_PACKET_COMPARATOR_REGISTRATION_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_RUNTIME_REPLAY_PERFORMANCE_ROW_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_RUNTIME_CANDIDATE_BUNDLE_RUNTIME_CANDIDATE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_RUNTIME_CANDIDATE_BUNDLE_GUARD_CHECK_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_RUNTIME_CANDIDATE_REGISTRY_EVENT_PROBE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_RUNTIME_CANDIDATE_REGISTRY_REGISTRY_MODULE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_REGISTRATION_SPECS_REGISTRATION_SPEC_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_REGISTRATION_SPECS_RUNTIME_GUARD_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_REGISTRATION_SPECS_SYMBOL_REGISTRATION_SUMMARY_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCORE_BRIDGE_ACTION_PACKET_ACTION_SCOPE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCORE_BRIDGE_REBUILD_SCORE_SCOPE_SUMMARY_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCORE_BRIDGE_REBUILD_REPAIR_CONTEXT_BRIDGE_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_SCORE_BRIDGE_REBUILD_SYMBOL_SUMMARY_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_EXECUTION_REGISTRY_SYMBOL_ACTION_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_REPAIRED_PROXY_EXECUTION_SPECS_COST_SYMBOL_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_DISPATCH_BUNDLE_GUARD_DISPATCH_PLAN_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_DISPATCH_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_DISPATCH_BUNDLE_NOFILL_DISPATCH_PLAN_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_DISPATCH_BUNDLE_SCORER_DISPATCH_PLAN_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_IMPLEMENTATION_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_MATERIALIZATION_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_RUNTIME_BUNDLE_GUARD_RUNTIME_BINDING_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_RUNTIME_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_CANDIDATE_EXECUTION_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_GUARD_COMPONENT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_MARKET_COMPONENT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_NOFILL_COMPONENT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_RECHECK_COMPONENT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_SCORER_COMPONENT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_CANDIDATE_SYNTHESIS_BUNDLE_SOURCE_COMPONENT_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_EXECUTABLE_ARTIFACTS_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_IMPLEMENTATION_EXECUTION_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/weekend_mechanical_edge_factory_moonshot_2026_05_15/HISTORICAL_OHLC_GTOS_REPLAY_BRANCH_LOCAL_UNIFIED_SYSTEM_RUNTIME_SURFACES_BUNDLE_MARKET_ROLLUP_LEDGER_2026-05-17.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_EXPANDED_MARKET_SOURCE_GEOMETRY_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_NOFILL_PENDING_LIFECYCLE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_ENTRY_OFFSET_050R_CLUSTER_GUARD_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_OPENING_DRIVE_SOURCE_CONTRACT_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_NUMERIC_ROUTER_CATALOG_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SURVIVOR_FAILURE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SOURCE_REPAIR_MISSING_DENOMINATOR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_NR_SOURCE_REPAIR_EXECUTION_IDENTITY_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_AI_NARROWING_DEFAULT_OFF_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_AI_DECISION_TRACE_ROUTING_GUARD_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_PRE_AI_POST_L2_ROUTING_POLICY_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_LEGACY_AI_CASCADE_MODEL_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_LEGACY_T7_SIMULATION_FRICTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_LEGACY_V2_V3_PAPER_LIVE_FRICTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SL_BEYOND_OB_OUTCOME_JOIN_SOURCE_REPAIR_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_FVG_TRADE_RECORD_BOUNDS_EXECUTION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCID_TARGET_HORIZON_CONTROL_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_EXECUTION_ADJACENT_FRICTION_RESIDUE_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SIERRA_DEPTH_SOURCE_ACQUISITION_RUNTIME_ROWS_2026-05-18.jsonl
+  - research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_RISK_PROXY_STRESS_COST_RUNTIME_ROWS_2026-05-18.jsonl
+  review_artifact_path: research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCORER_FILTER_ROUTER_REVIEW_LEDGER_2026-05-18.jsonl
+  implementation_artifact_path: research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCORER_FILTER_ROUTER_IMPLEMENTATION_LEDGER_2026-05-18.jsonl
+  evidence_matrix_artifact_path: research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_EVIDENCE_TO_SYSTEM_BUILD_MATRIX_2026-05-18.jsonl
+  fallback_artifact_path: research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_SCORER_FILTER_ROUTER_IMPLEMENTATION_LEDGER_2026-05-18.jsonl
+session_memory_enabled: false
+confidence_filter_mode: shadow
+confidence_filter_active_policy: disabled_until_new_validated_intra_candidate_signal
+confidence_filter_active_policy_source: .context/02_session_handoffs/01_apr6_FINAL.md:33-37
+expired_poi_watch:
+  enabled: true
+  mode: shadow
+  max_watch_hours: 72
+  approach_threshold_r: 0.25
+  min_rearm_rr: 1.5
+  require_kill_zone_for_rearm: true
+  log_all_revalidations: false
+  execution_override_enabled: false
+  archive_cancel_reasons:
+  - new_day
+  - 48h clock expiry
+  - expired_48h
+cross_instrument_context_disabled_for:
+- GBPUSD
+cross_instrument_context:
+  correlation_gate_threshold: 0.4
+retrieval:
+  embedding_model: all-MiniLM-L6-v2
+  lancedb_path: knowledge_base/vectordb
+  similar_setups_top_k: 5
+  min_similarity_threshold: 0.5
+  low_similarity_action: exclude
+  max_search_candidates: 25
+data:
+  lookback:
+    D1: 30
+    H4: 80
+    H1: 168
+    M15: 672
+  swing_detection_min_bars:
+    D1: 2
+    H4: 2
+    H1: 2
+    M15: 2
+  fvg_min_gap:
+    D1: 5.0
+    H4: 3.0
+    H1: 2.0
+    M15: 1.0
+adaptation:
+  tier2_deviation_threshold: 0.15
+  tier2_min_samples: 20
+  tier3_min_samples: 50
+  tier4_min_total_trades: 200
+  tier4_max_affected_pct: 0.2
+  tier4_min_expectancy_improvement: 0.1
+  rollback_review_trades: 30
+  max_modifications_per_50_trades: 1
+m5_refinement:
+  enabled: true
+  sl_floor: 10.0
+  quality_gate:
+  - HIGH
+  - MEDIUM
+  candle_lookback: 36
+  model: claude-sonnet-4-6
+  effort: max
+  max_tokens: 500
+  timeout_seconds: 60
+verification:
+  enabled: true
+  ob_price_tolerance_pct: 0.002
+  strict_zone_check: false
+  log_warnings: true
+  sl_beyond_ob_tick_floor: 1
+  sl_beyond_ob_tolerance_enabled: true
+trade_capture:
+  enabled: true
+  base_path: knowledge_base/trade_records
+  save_mso: true
+  save_prompt: true
+  save_rejected: true
+monitoring:
+  dashboard_port: 8080
+  obsidian_export_enabled: false
+  obsidian_vault_path: ''
+  alert_email: ''
+budget:
+  monthly_cap_usd: 50.0
+  cost_warning_threshold_usd: 20.0
+  cost_critical_threshold_usd: 30.0
+prompt:
+  zone_width_max: 15.0
+  ob_buffer: 1.5
+  price_format: .2f
+confidence:
+  price_regex: \b(\d{4}\.\d{1,2})\b
+  price_range:
+  - 1500.0
+  - 6000.0
+economic_calendar:
+  enabled: true
+  calendar_file: data/economic_calendar.csv
+  block_before_minutes: 120
+  block_after_minutes: 30
+  block_impact_levels:
+  - HIGH
+  warn_on_estimated_dates: true
+  currency_map:
+    AUDJPY:
+    - AUD
+    - JPY
+    AUDUSD:
+    - AUD
+    - USD
+    BTCUSD:
+    - USD
+    CHFJPY:
+    - CHF
+    - JPY
+    ETHUSD:
+    - USD
+    EURGBP:
+    - EUR
+    - GBP
+    EURJPY:
+    - EUR
+    - JPY
+    GER40:
+    - EUR
+    XAUUSD:
+    - USD
+    GBPUSD:
+    - USD
+    - GBP
+    EURUSD:
+    - USD
+    - EUR
+    USDJPY:
+    - USD
+    - JPY
+    GBPJPY:
+    - GBP
+    - JPY
+    JP225:
+    - JPY
+    NZDUSD:
+    - USD
+    - NZD
+    SPX500:
+    - USD
+    UK100:
+    - GBP
+    UKOIL_cash:
+    - USD
+    US30_cash:
+    - USD
+    USDCAD:
+    - USD
+    - CAD
+    USDCHF:
+    - USD
+    - CHF
+    NAS100:
+    - USD
+    USOIL_cash:
+    - USD
+    XAGUSD:
+    - USD
+news_filter:
+  enabled: true
+  pre_event_block_minutes: 15
+  post_event_block_minutes: 2
+  affected_currencies:
+  - USD
+  - GBP
+  - JPY
+  - AUD
+  - CHF
+  - EUR
+  - NZD
+  - CAD
+  impact_levels:
+  - HIGH
+  calendar_source: json
+  json_calendar_file: data/news_calendar.json
+  csv_calendar_file: data/economic_calendar.csv
+correlation_groups:
+  EUR_GBP:
+    instruments:
+    - EURUSD
+    - GBPUSD
+    - EURGBP
+    max_combined_risk_pct: 1.5
+  AUD_NZD:
+    instruments:
+    - AUDUSD
+    - NZDUSD
+    max_combined_risk_pct: 1.5
+  US_INDICES:
+    instruments:
+    - US30_cash
+    - SPX500
+    - NAS100
+    max_combined_risk_pct: 1.5
+  EUROPE_INDICES:
+    instruments:
+    - GER40
+    - UK100
+    max_combined_risk_pct: 1.5
+  PRECIOUS_METALS:
+    instruments:
+    - XAUUSD
+    - XAGUSD
+    max_combined_risk_pct: 1.5
+  JPY_CROSSES:
+    instruments:
+    - USDJPY
+    - EURJPY
+    - GBPJPY
+    - AUDJPY
+    - CHFJPY
+    max_combined_risk_pct: 1.5
+  USD_PAIRS:
+    instruments:
+    - AUDUSD
+    - EURUSD
+    - GBPUSD
+    - NZDUSD
+    - USDCAD
+    - USDCHF
+    - USDJPY
+    max_combined_risk_pct: 1.5
+  CRYPTO_USD:
+    instruments:
+    - BTCUSD
+    - ETHUSD
+    max_combined_risk_pct: 1.5
+  ASIA_INDICES:
+    instruments:
+    - JP225
+    max_combined_risk_pct: 1.5
+  UK_INDICES:
+    instruments:
+    - UK100
+    max_combined_risk_pct: 1.5
+  ENERGY_USD:
+    instruments:
+    - UKOIL_cash
+    - USOIL_cash
+    max_combined_risk_pct: 1.5
+killed_instrument_policy:
+  enabled: false
+  symbols:
+    NZDUSD:
+      reason: nzdusd_ai_execution_destroyed_mechanical_ob_edge
+      source_path: .context/02_session_handoffs/05_apr7_complete.md
+      source_line_no: 60
+deployment:
+  phase: 3
+  mt5_account: demo
+  mt5_server: ''
+  mt5_login: 0
+  mt5_password: ''
+pre_ai_gates:
+  h1_poi_availability_enabled: true
+  poi_proximity_enabled: true
+  poi_proximity_apply_to_ai_call: true
+  poi_proximity_tolerance_pct: 0.01
+  poi_proximity_source_path: .context/02_session_handoffs/15_apr13_pool_type_fix_prescreen_handoff.md
+  poi_proximity_source_line_no: 139
+  poi_proximity_xauusd_actual_trade_false_negatives: 0/7
+  poi_proximity_prescreen_tolerance_pct: 1.0
+market_state:
+  detector_version: v2
+  v2_dead_zone_divisor: 8
+shadow_loggers:
+  structure_detector:
+    rotation:
+      size_mb: 50
+      retention_days: 14
+      archive_dir: research/archive/structure_detector_divergences
+  d1_bias_lag_logger:
+    enabled: false
+    alert_threshold_consecutive: 20
+  dumb_baseline_logger:
+    enabled: false
+    look_back_h1_candles: 24
+    debug_log_enabled: false
+  partial_close_shadow_logger:
+    enabled: true
+    partial_close_fraction: 0.33
+    trigger_r: 1.0
+    ftmo_pass_delta_pp: 4.9
+    q62_verdict: DEFER
+    q62_runtime_artifact_path: research/science_program_2026_05/06_outcome_testing/gtos_vnext_research_to_runtime_builder/GTOS_VNEXT_Q62_PARTIAL_CLOSE_RUNTIME_ROWS_2026-05-18.jsonl
+    q62_source_rows_represented: 1899
+    q62_valid_universe_size: 251
+    q62_triggered_trade_count: 102
+    q62_variant_c_mean_delta_r: 0.0536
+    q62_variant_c_wilcoxon_p: 0.957373
+    q62_common_subset_c_mean_delta_r: -0.0983
+    q62_variant_d_shadow_enabled: false
+    active_policy_change_allowed_now: false
+    live_triggered_events_required: 30
+    status: shadow_observation
+    source_path: research/q62_partial_close_optimization/q62_report_2026-04-18.md
+    source_line_no: 206
+  trailing_stop_v1_shadow_logger:
+    enabled: true
+    activation_r: 0.5
+    trail_distance_r: 0.5
+    expected_delta_r_per_trade: 0.3693
+    triggered_pct: 59.36
+    hurt_pct_of_triggered: 3.36
+    source_rows_represented: 2428
+    status: shadow_observation
+    source_path: research/t2_1_trailing_stop_full_pop_rerun_2026-04-19/verdict.md
+  direction_emission_logger:
+    enabled: false
+  regime_classifier_logger:
+    enabled: false
+    lookback_h4_candles: 20
+  sl_beyond_ob_decisions_logger:
+    enabled: true
+  cross_instrument_correlation_decisions_logger:
+    enabled: true
+  ai_decision_trace_logger:
+    enabled: true
+canary:
+  enabled: false
+  subprocess_timeout_s: 420
+  timeout_seconds_per_fixture: 4.5
+  timeout_headroom_s: 30
+  stagger_per_symbol_s: 30
+sprt_halt:
+  enabled: true
+  automation_enabled: true
+  trigger_n: 20
+  early_warning_n: 10
+  per_class_thresholds:
+    metals:
+      halt_wr_pct: 55.0
+      early_warning_wr_pct: 50.0
+      instruments:
+      - XAUUSD
+      - XAGUSD
+    indices:
+      halt_wr_pct: 40.0
+      early_warning_wr_pct: 35.0
+      instruments:
+      - US30
+      - US30_cash
+      - NAS100
+      - SPX500
+      - GER40
+      - UK100
+      - JP225
+    jpy_pairs:
+      halt_wr_pct: 45.0
+      early_warning_wr_pct: 40.0
+      instruments:
+      - USDJPY
+      - GBPJPY
+      - EURJPY
+      - AUDJPY
+      - CHFJPY
+    tight_fx:
+      halt_wr_pct: 40.0
+      early_warning_wr_pct: 35.0
+      instruments:
+      - EURUSD
+      - GBPUSD
+      - AUDUSD
+      - NZDUSD
+      - EURGBP
+      - USDCAD
+      - USDCHF
+    crypto:
+      halt_wr_pct: 35.0
+      early_warning_wr_pct: 30.0
+      instruments:
+      - BTCUSD
+      - ETHUSD
+    energy:
+      halt_wr_pct: 40.0
+      early_warning_wr_pct: 35.0
+      instruments:
+      - UKOIL_cash
+      - USOIL_cash
+notification_queue:
+  poll_interval_seconds: 30
+  critical_age_out_seconds: 86400
+  high_max_retries: 5
+  compact_after_markers: 100
+heartbeat:
+  flatten_enabled: false
+  write_interval_seconds: 30
+  miss_threshold: 3
+  telegram_countdown_seconds: 30
+  telegram_throttle_minutes: 60
+  canary_lenience_enabled: true
+instruments:
+  XAUUSD:
+    trading_enabled: true
+    skip_first_ny_candle: true
+    market:
+      symbol: XAUUSD
+      tick_size: 0.01
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '10:30'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '17:00'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100
+  GBPUSD:
+    trading_enabled: true
+    market:
+      symbol: GBPUSD
+      tick_size: 1.0e-05
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    cross_instrument_context:
+      enabled: false
+      reference_instrument: XAUUSD
+      reference_timeframe: D1
+      dollar_direction_map:
+        bullish: weakness
+        bearish: strength
+        unclear: mixed
+        unavailable: unknown
+    risk:
+      contract_size: 100000
+      max_spread_cents: 0.03
+      sl_buffer_dollars: 0.00015
+      sl_absolute_min: 0.0003
+    model_a:
+      equal_level_tolerance: 0.000201
+    data:
+      fvg_min_gap:
+        D1: 0.000724
+        H4: 0.000434
+        H1: 0.00029
+        M15: 0.000145
+    m5_refinement:
+      sl_floor: 0.00145
+    prompt:
+      zone_width_max: 0.0015
+      ob_buffer: 0.00015
+      price_format: .5f
+    confidence:
+      price_regex: \b(1\.\d{3,5})\b
+      price_range:
+      - 1.0
+      - 2.0
+  EURUSD:
+    trading_enabled: true
+    market:
+      symbol: EURUSD
+      tick_size: 1.0e-05
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 0.02
+      sl_buffer_dollars: 0.0001
+      sl_absolute_min: 0.0003
+    model_a:
+      equal_level_tolerance: 0.000166
+    data:
+      fvg_min_gap:
+        D1: 0.0006
+        H4: 0.00036
+        H1: 0.00024
+        M15: 0.00012
+    m5_refinement:
+      sl_floor: 0.0012
+    prompt:
+      zone_width_max: 0.0012
+      ob_buffer: 0.0001
+      price_format: .5f
+    confidence:
+      price_regex: \b(1\.\d{3,5})\b
+      price_range:
+      - 1.0
+      - 1.5
+  NAS100:
+    trading_enabled: true
+    market:
+      symbol: NAS100
+      tick_size: 0.01
+      kill_zones:
+        ny:
+          start_utc: '13:00'
+          end_utc: '17:00'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 10
+      max_spread_cents: 5000
+      sl_buffer_dollars: 15.0
+      sl_absolute_min: 30.0
+    model_a:
+      equal_level_tolerance: 7.87
+    data:
+      fvg_min_gap:
+        D1: 29.6
+        H4: 17.7
+        H1: 11.8
+        M15: 5.9
+    m5_refinement:
+      sl_floor: 59.0
+    prompt:
+      zone_width_max: 90.0
+      ob_buffer: 15.0
+      price_format: .1f
+    confidence:
+      price_regex: \b(\d{5}\.\d{1,2})\b
+      price_range:
+      - 10000.0
+      - 30000.0
+  UK100:
+    trading_enabled: true
+    market:
+      symbol: UK100
+      tick_size: 0.01
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '10:30'
+          core_end_utc: '10:30'
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 10
+      max_spread_cents: 500
+      sl_buffer_dollars: 1.3
+      sl_absolute_min: 6.0
+    model_a:
+      equal_level_tolerance: 2.71
+    data:
+      fvg_min_gap:
+        D1: 5.4
+        H4: 3.5
+        H1: 2.2
+        M15: 1.1
+    m5_refinement:
+      sl_floor: 11.0
+    prompt:
+      zone_width_max: 18.0
+      ob_buffer: 1.3
+      price_format: .1f
+    confidence:
+      price_regex: \b(\d{4,5}\.\d{1,2})\b
+      price_range:
+      - 7000.0
+      - 13000.0
+  GER40:
+    trading_enabled: true
+    market:
+      symbol: GER40
+      mt5_symbol: GER30
+      tick_size: 0.01
+      kill_zones:
+        london:
+          start_utc: 08:00
+          end_utc: '12:00'
+          core_end_utc: '10:30'
+        ny:
+          start_utc: '14:00'
+          end_utc: '19:00'
+          core_end_utc: '16:30'
+    risk:
+      contract_size: 10
+      max_spread_cents: 500
+      sl_buffer_dollars: 1.3
+      sl_absolute_min: 6.0
+    model_a:
+      equal_level_tolerance: 2.71
+    data:
+      fvg_min_gap:
+        D1: 5.4
+        H4: 3.5
+        H1: 2.2
+        M15: 1.1
+    m5_refinement:
+      sl_floor: 11.0
+    prompt:
+      zone_width_max: 18.0
+      ob_buffer: 1.3
+      price_format: .1f
+    confidence:
+      price_regex: \b(\d{4,5}\.\d{1,2})\b
+      price_range:
+      - 15000.0
+      - 25000.0
+  UKOIL_cash:
+    trading_enabled: true
+    market:
+      symbol: UKOIL_cash
+      mt5_symbol: UKOUSD
+      tick_size: 0.001
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: '10:30'
+        ny:
+          start_utc: '13:00'
+          end_utc: '17:00'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100
+      max_spread_cents: 15.0
+      sl_buffer_dollars: 0.1
+      sl_absolute_min: 0.4
+    model_a:
+      equal_level_tolerance: 0.2
+    data:
+      fvg_min_gap:
+        D1: 1.0
+        H4: 0.6
+        H1: 0.4
+        M15: 0.2
+    m5_refinement:
+      sl_floor: 1.0
+    prompt:
+      zone_width_max: 3.0
+      ob_buffer: 0.1
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{2,3}\.\d{2,3})\b
+      price_range:
+      - 40.0
+      - 200.0
+  USOIL_cash:
+    trading_enabled: true
+    market:
+      symbol: USOIL_cash
+      mt5_symbol: USOUSD
+      tick_size: 0.001
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: '10:30'
+        ny:
+          start_utc: '13:00'
+          end_utc: '17:00'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100
+      max_spread_cents: 15.0
+      sl_buffer_dollars: 0.1
+      sl_absolute_min: 0.4
+    model_a:
+      equal_level_tolerance: 0.2
+    data:
+      fvg_min_gap:
+        D1: 1.0
+        H4: 0.6
+        H1: 0.4
+        M15: 0.2
+    m5_refinement:
+      sl_floor: 1.0
+    prompt:
+      zone_width_max: 3.0
+      ob_buffer: 0.1
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{2,3}\.\d{2,3})\b
+      price_range:
+      - 40.0
+      - 200.0
+  XAGUSD:
+    trading_enabled: true
+    market:
+      symbol: XAGUSD
+      tick_size: 0.001
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '10:30'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '17:00'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 5000
+      max_spread_cents: 300
+      sl_buffer_dollars: 0.03
+      sl_absolute_min: 0.1
+    model_a:
+      equal_level_tolerance: 0.039
+    data:
+      fvg_min_gap:
+        D1: 0.145
+        H4: 0.087
+        H1: 0.058
+        M15: 0.029
+    m5_refinement:
+      sl_floor: 0.29
+    prompt:
+      zone_width_max: 0.45
+      ob_buffer: 0.03
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{2}\.\d{2,3})\b
+      price_range:
+      - 15.0
+      - 60.0
+  USDJPY:
+    trading_enabled: true
+    market:
+      symbol: USDJPY
+      tick_size: 0.001
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: 09:30
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 3.0
+      sl_buffer_dollars: 0.012
+      sl_absolute_min: 0.085
+    model_a:
+      equal_level_tolerance: 0.022
+    data:
+      fvg_min_gap:
+        D1: 0.075
+        H4: 0.045
+        H1: 0.03
+        M15: 0.015
+    m5_refinement:
+      sl_floor: 0.112
+    prompt:
+      zone_width_max: 0.354
+      ob_buffer: 0.012
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{3}\.\d{2,3})\b
+      price_range:
+      - 100.0
+      - 200.0
+  US30_cash:
+    trading_enabled: true
+    skip_first_ny_candle: false
+    market:
+      symbol: US30_cash
+      mt5_symbol: US30.cash
+      tick_size: 0.01
+      kill_zones:
+        london:
+          start_utc: 08:00
+          end_utc: '10:30'
+          core_end_utc: '10:30'
+        ny:
+          start_utc: '13:30'
+          end_utc: '16:00'
+          core_end_utc: '16:00'
+    risk:
+      contract_size: 10
+      max_spread_cents: 800
+      sl_buffer_dollars: 3.75
+      sl_absolute_min: 27.0
+    model_a:
+      equal_level_tolerance: 7.5
+    data:
+      fvg_min_gap:
+        D1: 25.0
+        H4: 15.0
+        H1: 10.0
+        M15: 5.0
+    m5_refinement:
+      sl_floor: 37.5
+    prompt:
+      zone_width_max: 116.0
+      ob_buffer: 3.75
+      price_format: .2f
+    confidence:
+      price_regex: \b(\d{5}\.\d{1,2})\b
+      price_range:
+      - 25000.0
+      - 50000.0
+  GBPJPY:
+    trading_enabled: true
+    market:
+      symbol: GBPJPY
+      tick_size: 0.001
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: 09:30
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 5.0
+      sl_buffer_dollars: 0.014
+      sl_absolute_min: 0.118
+    model_a:
+      equal_level_tolerance: 0.028
+    data:
+      fvg_min_gap:
+        D1: 0.094
+        H4: 0.057
+        H1: 0.038
+        M15: 0.019
+    m5_refinement:
+      sl_floor: 0.142
+    prompt:
+      zone_width_max: 0.482
+      ob_buffer: 0.014
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{3}\.\d{2,3})\b
+      price_range:
+      - 150.0
+      - 250.0
+  NZDUSD:
+    trading_enabled: true
+    market:
+      symbol: NZDUSD
+      tick_size: 1.0e-05
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 0.03
+      sl_buffer_dollars: 5.0e-05
+      sl_absolute_min: 0.00043
+    model_a:
+      equal_level_tolerance: 0.000102
+    data:
+      fvg_min_gap:
+        D1: 0.00034
+        H4: 0.0002
+        H1: 0.000135
+        M15: 6.7e-05
+    m5_refinement:
+      sl_floor: 0.00051
+    prompt:
+      zone_width_max: 0.00168
+      ob_buffer: 5.0e-05
+      price_format: .5f
+    confidence:
+      price_regex: \b(0\.\d{3,5})\b
+      price_range:
+      - 0.4
+      - 0.8
+  AUDJPY:
+    trading_enabled: true
+    market:
+      symbol: AUDJPY
+      tick_size: 0.001
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: 09:30
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 5.0
+      sl_buffer_dollars: 0.01
+      sl_absolute_min: 0.08
+    model_a:
+      equal_level_tolerance: 0.02
+    data:
+      fvg_min_gap:
+        D1: 0.075
+        H4: 0.045
+        H1: 0.03
+        M15: 0.015
+    m5_refinement:
+      sl_floor: 0.11
+    prompt:
+      zone_width_max: 0.35
+      ob_buffer: 0.01
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{2,3}\.\d{2,3})\b
+      price_range:
+      - 50.0
+      - 150.0
+  AUDUSD:
+    trading_enabled: true
+    market:
+      symbol: AUDUSD
+      tick_size: 1.0e-05
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 0.03
+      sl_buffer_dollars: 8.0e-05
+      sl_absolute_min: 0.0003
+    model_a:
+      equal_level_tolerance: 0.00015
+    data:
+      fvg_min_gap:
+        D1: 0.0005
+        H4: 0.0003
+        H1: 0.0002
+        M15: 0.0001
+    m5_refinement:
+      sl_floor: 0.001
+    prompt:
+      zone_width_max: 0.0012
+      ob_buffer: 8.0e-05
+      price_format: .5f
+    confidence:
+      price_regex: \b(0\.\d{3,5})\b
+      price_range:
+      - 0.4
+      - 1.2
+  BTCUSD:
+    trading_enabled: true
+    market:
+      symbol: BTCUSD
+      tick_size: 0.01
+      kill_zones:
+        off_configured_session:
+          start_utc: 00:00
+          end_utc: '23:59'
+          core_end_utc: '23:59'
+    risk:
+      contract_size: 1
+      max_spread_cents: 5000
+      sl_buffer_dollars: 50.0
+      sl_absolute_min: 250.0
+    model_a:
+      equal_level_tolerance: 100.0
+    data:
+      fvg_min_gap:
+        D1: 300.0
+        H4: 180.0
+        H1: 120.0
+        M15: 60.0
+    m5_refinement:
+      sl_floor: 300.0
+    prompt:
+      zone_width_max: 900.0
+      ob_buffer: 50.0
+      price_format: .2f
+    confidence:
+      price_regex: \b(\d{4,6}\.\d{1,2})\b
+      price_range:
+      - 10000.0
+      - 200000.0
+  CHFJPY:
+    trading_enabled: true
+    market:
+      symbol: CHFJPY
+      tick_size: 0.001
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: 09:30
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 5.0
+      sl_buffer_dollars: 0.012
+      sl_absolute_min: 0.085
+    model_a:
+      equal_level_tolerance: 0.022
+    data:
+      fvg_min_gap:
+        D1: 0.075
+        H4: 0.045
+        H1: 0.03
+        M15: 0.015
+    m5_refinement:
+      sl_floor: 0.112
+    prompt:
+      zone_width_max: 0.354
+      ob_buffer: 0.012
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{3}\.\d{2,3})\b
+      price_range:
+      - 100.0
+      - 250.0
+  ETHUSD:
+    trading_enabled: true
+    market:
+      symbol: ETHUSD
+      tick_size: 0.01
+      kill_zones:
+        off_configured_session:
+          start_utc: 00:00
+          end_utc: '23:59'
+          core_end_utc: '23:59'
+    risk:
+      contract_size: 1
+      max_spread_cents: 1000
+      sl_buffer_dollars: 5.0
+      sl_absolute_min: 25.0
+    model_a:
+      equal_level_tolerance: 10.0
+    data:
+      fvg_min_gap:
+        D1: 30.0
+        H4: 18.0
+        H1: 12.0
+        M15: 6.0
+    m5_refinement:
+      sl_floor: 30.0
+    prompt:
+      zone_width_max: 90.0
+      ob_buffer: 5.0
+      price_format: .2f
+    confidence:
+      price_regex: \b(\d{3,5}\.\d{1,2})\b
+      price_range:
+      - 500.0
+      - 10000.0
+  EURGBP:
+    trading_enabled: true
+    market:
+      symbol: EURGBP
+      tick_size: 1.0e-05
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 0.03
+      sl_buffer_dollars: 8.0e-05
+      sl_absolute_min: 0.0003
+    model_a:
+      equal_level_tolerance: 0.00015
+    data:
+      fvg_min_gap:
+        D1: 0.0005
+        H4: 0.0003
+        H1: 0.0002
+        M15: 0.0001
+    m5_refinement:
+      sl_floor: 0.001
+    prompt:
+      zone_width_max: 0.0012
+      ob_buffer: 8.0e-05
+      price_format: .5f
+    confidence:
+      price_regex: \b(0\.\d{3,5})\b
+      price_range:
+      - 0.5
+      - 1.2
+  EURJPY:
+    trading_enabled: true
+    market:
+      symbol: EURJPY
+      tick_size: 0.001
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: 09:30
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 5.0
+      sl_buffer_dollars: 0.012
+      sl_absolute_min: 0.085
+    model_a:
+      equal_level_tolerance: 0.022
+    data:
+      fvg_min_gap:
+        D1: 0.075
+        H4: 0.045
+        H1: 0.03
+        M15: 0.015
+    m5_refinement:
+      sl_floor: 0.112
+    prompt:
+      zone_width_max: 0.354
+      ob_buffer: 0.012
+      price_format: .3f
+    confidence:
+      price_regex: \b(\d{3}\.\d{2,3})\b
+      price_range:
+      - 100.0
+      - 250.0
+  JP225:
+    trading_enabled: true
+    market:
+      symbol: JP225
+      tick_size: 1.0
+      kill_zones:
+        tokyo:
+          start_utc: 00:00
+          end_utc: 03:00
+          core_end_utc: 03:00
+        london:
+          start_utc: 07:00
+          end_utc: 09:30
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 10
+      max_spread_cents: 5000
+      sl_buffer_dollars: 50.0
+      sl_absolute_min: 150.0
+    model_a:
+      equal_level_tolerance: 100.0
+    data:
+      fvg_min_gap:
+        D1: 300.0
+        H4: 180.0
+        H1: 120.0
+        M15: 60.0
+    m5_refinement:
+      sl_floor: 300.0
+    prompt:
+      zone_width_max: 900.0
+      ob_buffer: 50.0
+      price_format: .0f
+    confidence:
+      price_regex: \b(\d{4,6})\b
+      price_range:
+      - 10000.0
+      - 70000.0
+  SPX500:
+    trading_enabled: true
+    market:
+      symbol: SPX500
+      tick_size: 0.01
+      kill_zones:
+        ny:
+          start_utc: '13:00'
+          end_utc: '17:00'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 10
+      max_spread_cents: 1000
+      sl_buffer_dollars: 2.0
+      sl_absolute_min: 10.0
+    model_a:
+      equal_level_tolerance: 3.0
+    data:
+      fvg_min_gap:
+        D1: 12.0
+        H4: 7.0
+        H1: 5.0
+        M15: 2.5
+    m5_refinement:
+      sl_floor: 15.0
+    prompt:
+      zone_width_max: 45.0
+      ob_buffer: 2.0
+      price_format: .2f
+    confidence:
+      price_regex: \b(\d{4,5}\.\d{1,2})\b
+      price_range:
+      - 3000.0
+      - 8000.0
+  USDCAD:
+    trading_enabled: true
+    market:
+      symbol: USDCAD
+      tick_size: 1.0e-05
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 0.03
+      sl_buffer_dollars: 0.0001
+      sl_absolute_min: 0.0003
+    model_a:
+      equal_level_tolerance: 0.00017
+    data:
+      fvg_min_gap:
+        D1: 0.0006
+        H4: 0.00036
+        H1: 0.00024
+        M15: 0.00012
+    m5_refinement:
+      sl_floor: 0.0012
+    prompt:
+      zone_width_max: 0.0015
+      ob_buffer: 0.0001
+      price_format: .5f
+    confidence:
+      price_regex: \b(1\.\d{3,5})\b
+      price_range:
+      - 1.0
+      - 2.0
+  USDCHF:
+    trading_enabled: true
+    market:
+      symbol: USDCHF
+      tick_size: 1.0e-05
+      kill_zones:
+        london:
+          start_utc: 07:00
+          end_utc: '12:00'
+          core_end_utc: 09:30
+        ny:
+          start_utc: '13:00'
+          end_utc: '15:30'
+          core_end_utc: '15:30'
+    risk:
+      contract_size: 100000
+      max_spread_cents: 0.03
+      sl_buffer_dollars: 0.0001
+      sl_absolute_min: 0.0003
+    model_a:
+      equal_level_tolerance: 0.00017
+    data:
+      fvg_min_gap:
+        D1: 0.0006
+        H4: 0.00036
+        H1: 0.00024
+        M15: 0.00012
+    m5_refinement:
+      sl_floor: 0.0012
+    prompt:
+      zone_width_max: 0.0015
+      ob_buffer: 0.0001
+      price_format: .5f
+    confidence:
+      price_regex: \b(0\.\d{3,5})\b
+      price_range:
+      - 0.5
+      - 1.5

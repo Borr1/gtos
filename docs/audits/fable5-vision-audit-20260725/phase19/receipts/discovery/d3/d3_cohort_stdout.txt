@@ -1,0 +1,38 @@
+2025-10 19929 1.8
+2025-11 17178 3.3
+2025-12 18705 5.2
+2026-01 17878 12.3
+2026-02 16748 18.2
+2026-03 18413 24.2
+2026-04 18620 25.9
+2026-05 17254 27.4
+
+EVERY COHORT AGAINST ITS OWN TOLL.  ratio = signal_bps / toll_bps at the same horizon.
+A viable cohort needs ratio > 1 AND the sign to hold across windows.
+cohort                                              n   best_h   signal    toll    ratio  wins+
+FXS|session_open_range_break|XAUUSD               330        8    8.081   1.284    6.293   4/8
+FXS|session_open_range_break|UK100                319       24    5.249   0.847    6.197   6/8
+FXS|session_open_range_break|GER40                319        8    2.835   0.489    5.793   5/8
+FXS|displacement_continuation|NAS100             1605       24    2.888   0.591    4.886   5/8
+FXS|volatility_compression_expansion|JP225        215        2    5.409   1.685    3.210   5/7
+FXS|cross_asset_lead_lag|US30_cash               1060       24    1.342   0.434    3.090   5/8
+FXS|session_open_range_break|USDJPY               477       24    2.512   0.871    2.883   5/8
+FXS|volatility_compression_expansion|US30_cash    286        2    1.141   0.444    2.570   3/8
+FXS|displacement_continuation|SPX500             1649       24    2.305   0.924    2.494   5/8
+FXS|volatility_compression_expansion|USOIL_cas    254       72   29.206  11.831    2.469   4/8
+FXS|cross_asset_lead_lag|NAS100                  1436       24    1.350   0.593    2.276   5/8
+FXS|displacement_continuation|JP225              1678       24    3.691   1.648    2.239   6/8
+FXS|volatility_compression_expansion|BTCUSD       212        8   14.901   6.676    2.232   4/7
+FXS|volatility_compression_expansion|SPX500       259        2    1.975   0.918    2.152   5/8
+FXS|volatility_compression_expansion|GER40        275        2    2.642   1.265    2.087   4/8
+FXS|session_open_range_break|EURJPY               485       24    2.293   1.179    1.944   4/8
+FXS|displacement_continuation|GER40              1678      320    2.273   1.255    1.811   4/8
+SYM|XAUUSD                                       5808       24    2.305   1.338    1.723   6/8
+FXS|displacement_continuation|XAUUSD             1608       24    2.215   1.342    1.650   4/8
+FXS|liquidity_sweep_reclaim|XAUUSD               1775        2    1.975   1.338    1.476   5/8
+
+cohorts with best-horizon ratio > 1        : 26 of 159
+  ... and positive in >=75% of windows     : 5
+  ... and positive in EVERY window         : 0
+looks taken: 159 cohorts x 6 horizons = 954
+ALL: {'n': 144725, 'signal_bps': [0.12067531367702525, 0.22355837532708026, 0.16267354592833386, 0.173252279397303, 0.11391330095389934, 0.13715022510813535], 'toll_bps_short': np.float64(2.9373349878257256), 'toll_bps_320h': np.float64(3.4397075646356923), 'ratio_by_h': [0.04108326567353884, 0.07610925422318367, 0.055381339412277276, 0.050368316533226154, 0.03311714697059259, 0.039872641069317545], 'best_ratio': 0.07610925422318367, 'per_window': [[0.1508562734166355, 0.3135660999231032, 0.2647147953779753, 0.7075244379623153, 0.6281332821386154, 0.6743425317833162], [0.28125261831491194, 0.6776573028151367, 0.5337775620052209, 0.6700755249139224, 0.4702382243177451, 0.5923755532131211], [-0.47195597755650043, -0.12448710751475552, -0.4740921590929005, -0.29938146911630037, -0.4509393004528341, -0.35602660124769764], [-0.009220454174259955, -0.09017716192171585, 0.303765663095309, 0.5751111332093408, 0.365905743692464, 0.08218320805872993], [0.5525094667133226, 0.03659102656930756, 0.13974550743329522, -0.4619378958734882, -0.9212646252442517, -1.0688507897559], [0.3114144812239469, 0.30164853002795666, 0.552953062523846, 0.7054100478360998, 0.9758087017795737, 1.072095492309701], [0.365908761782807, 0.5928193841978315, 0.018262915593074133, -0.351277566917801, -0.0603913144046037, 0.13132454328769358], [-0.18436200731375765, 0.06954739381213208, -0.01893299286008561, -0.22778331110185054, -0.21040341922708128, -0.16576859433459828]], 'windows_positive_at_best': 6, 'best_h_index': 1, 'best_hours': 8, 'windows_evaluable': 8}
