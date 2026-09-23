@@ -482,46 +482,170 @@ def count_anchors(card: Any) -> list[tuple[str, float]]:
     return anchor_levels(pairs) or []
 
 
-_ROW_LOCK = __import__("threading").Lock()
+_ROW_LOCK = __import__("threading").Condition()
 _ROW_OFFSET = 0
 _ROW_PATH: str | None = None
-_ROWS: list[dict[str, Any]] = []
+_APPLYING = False
+_PUBLISHED = False
+# by spot, file order, latest interpreted value, folded snapshot
+_SNAP: tuple[
+    dict[str, list[dict[str, Any]]],
+    list[tuple[str, int]],
+    dict[str, float | None],
+    list[dict[str, Any]],
+] = ({}, [], {}, [])
+_BARS: list[dict[str, Any]] = []
+_BAR_AT: dict[str, int] = {}
+_SCORE_LATEST: dict[str, dict[str, Any]] = {}
+_FOLD_BARS: list[dict[str, Any]] = []
+_FOLD_SCORES: list[dict[str, Any]] = []
+_SCORE_POS: dict[str, int] = {}
 
 
-def _logged_rows() -> list[dict[str, Any]]:
-    """Outcome rows so far. New bytes are read once. A partial line waits."""
+def _blank_index() -> None:
+    """Drop the index. A path change or a shorter file reads from the start."""
+
+    global _SNAP, _BARS, _BAR_AT, _SCORE_LATEST, _FOLD_BARS, _FOLD_SCORES, _SCORE_POS, _PUBLISHED
+    _BARS = []
+    _BAR_AT = {}
+    _SCORE_LATEST = {}
+    _FOLD_BARS = []
+    _FOLD_SCORES = []
+    _SCORE_POS = {}
+    _PUBLISHED = False
+    _SNAP = ({}, [], {}, [])
+
+
+def _interpreted(raw: Any) -> float | None:
+    """The number on this row. A miss stays a miss. An older hit is not put back."""
+
+    if raw is None or raw == "":
+        return None
+    try:
+        number = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return None if number != number else number
+
+
+def _note_row(row: dict[str, Any]) -> None:
+    """One complete row joins the spot index. The folded snapshot is published after the batch."""
+
+    by_spot, order, latest, _folded = _SNAP
+    key = str(row.get("spot") or "")
+    rows = by_spot.get(key)
+    if rows is None:
+        rows = []
+        by_spot[key] = rows
+    order.append((key, len(rows)))
+    rows.append(row)
+    latest[key] = _interpreted(row.get("value"))
+    if key not in _GOLD_SPOTS:
+        slim = _slim_outcome(row)
+        _SCORE_LATEST[key] = slim
+        pos = _SCORE_POS.get(key)
+        if pos is None:
+            _SCORE_POS[key] = len(_FOLD_SCORES)
+            _FOLD_SCORES.append(slim)
+        else:
+            _FOLD_SCORES[pos] = slim
+        return
+    clock = row.get("at_utc")
+    at = "" if clock is None else str(clock)
+    slot = _BAR_AT.get(at)
+    if slot is None:
+        _BAR_AT[at] = len(_BARS)
+        _BARS.append(
+            {
+                "time": clock,
+                "distance": None,
+                "limit": None,
+                "walk": None,
+                "path": row.get("path"),
+                "after_fill": row.get("after_fill"),
+                "rows_walked": row.get("rows_walked"),
+            }
+        )
+        slot = _BAR_AT[at]
+        fresh = True
+    else:
+        fresh = False
+    record = _BARS[slot]
+    value = row.get("value")
+    current = record.get(key)
+    if value is not None or current is None:
+        record[key] = value
+    for extra in ("path", "after_fill", "rows_walked"):
+        if record.get(extra) is None and row.get(extra) is not None:
+            record[extra] = row.get(extra)
+    full = _outcome_full(record)
+    if fresh:
+        _FOLD_BARS.append(full)
+    else:
+        _FOLD_BARS[slot] = full
+
+
+def _publish() -> None:
+    """The folded read is the bars so far plus each other spot's latest return."""
+
+    global _SNAP, _PUBLISHED
+    by_spot, order, latest, _folded = _SNAP
+    folded = _FOLD_BARS + _FOLD_SCORES if order else []
+    _SNAP = (by_spot, order, latest, folded)
+    _PUBLISHED = True
+
+
+def _ingest() -> None:
+    """New bytes update the spot index. A partial line waits. The lock covers that read."""
 
     import json
 
-    global _ROW_OFFSET, _ROW_PATH, _ROWS
+    global _ROW_OFFSET, _ROW_PATH, _APPLYING
     path = _outcome_log()
-    with _ROW_LOCK:
-        key = str(path)
-        if _ROW_PATH != key:
-            _ROW_PATH = key
-            _ROW_OFFSET = 0
-            _ROWS = []
+    key = str(path)
+    if _ROW_PATH == key and not _APPLYING:
         try:
             size = path.stat().st_size
         except OSError:
-            return list(_ROWS)
-        if size < _ROW_OFFSET:
-            _ROW_OFFSET = 0
-            _ROWS = []
+            return
         if size == _ROW_OFFSET:
-            return list(_ROWS)
-        try:
-            with path.open("rb") as handle:
-                handle.seek(_ROW_OFFSET)
-                blob = handle.read()
-        except OSError:
-            return list(_ROWS)
-        if not blob.endswith(b"\n"):
-            cut = blob.rfind(b"\n")
-            if cut < 0:
-                return list(_ROWS)
-            blob = blob[: cut + 1]
-        _ROW_OFFSET += len(blob)
+            return
+    blob = b""
+    with _ROW_LOCK:
+        while True:
+            if _APPLYING:
+                if _PUBLISHED:
+                    return
+                _ROW_LOCK.wait()
+                continue
+            if _ROW_PATH != key:
+                _ROW_PATH = key
+                _ROW_OFFSET = 0
+                _blank_index()
+            try:
+                size = path.stat().st_size
+            except OSError:
+                return
+            if size < _ROW_OFFSET:
+                _ROW_OFFSET = 0
+                _blank_index()
+            if size == _ROW_OFFSET:
+                return
+            try:
+                with path.open("rb") as handle:
+                    handle.seek(_ROW_OFFSET)
+                    blob = handle.read()
+            except OSError:
+                return
+            if not blob.endswith(b"\n"):
+                cut = blob.rfind(b"\n")
+                if cut < 0:
+                    return
+                blob = blob[: cut + 1]
+            _APPLYING = True
+            break
+    noted = False
+    try:
         for line in blob.decode("utf-8", errors="replace").splitlines():
             line = line.strip()
             if not line:
@@ -531,8 +655,15 @@ def _logged_rows() -> list[dict[str, Any]]:
             except Exception:
                 continue
             if isinstance(row, dict):
-                _ROWS.append(row)
-        return list(_ROWS)
+                _note_row(row)
+                noted = True
+    finally:
+        with _ROW_LOCK:
+            if noted or not _SNAP[1]:
+                _publish()
+            _ROW_OFFSET += len(blob)
+            _APPLYING = False
+            _ROW_LOCK.notify_all()
 
 
 def last_logged_value(spot: str) -> float | None:
@@ -541,25 +672,12 @@ def last_logged_value(spot: str) -> float | None:
     The latest row wins. A miss on that row is empty. An older hit is not
     put back in its place.
     """
-    found = False
-    value: float | None = None
-    for row in _logged_rows():
-        if str(row.get("spot") or "") != str(spot):
-            continue
-        found = True
-        raw = row.get("value")
-        if raw is None or raw == "":
-            value = None
-            continue
-        try:
-            number = float(raw)
-        except (TypeError, ValueError):
-            value = None
-            continue
-        value = None if number != number else number
-    if not found:
+    _ingest()
+    latest = _SNAP[2]
+    key = str(spot)
+    if key not in latest:
         return None
-    return value
+    return latest[key]
 
 
 def priors_within(bound: Any, spots: tuple[str, ...] | None = None) -> list[dict[str, Any]]:
@@ -572,12 +690,19 @@ def priors_within(bound: Any, spots: tuple[str, ...] | None = None) -> list[dict
         return []
     if number != number:
         return []
+    _ingest()
+    by_spot, order, _latest, _folded = _SNAP
     wanted = None if spots is None else {str(name) for name in spots}
     kept: list[dict[str, Any]] = []
-    for row in _logged_rows():
-        spot = str(row.get("spot") or "")
+    index = len(order)
+    while index:
+        index -= 1
+        spot, pos = order[index]
         if wanted is not None and spot not in wanted:
             continue
+        if not (len(kept) + 1 <= number):
+            break
+        row = by_spot[spot][pos]
         kept.append(
             {
                 "spot": row.get("spot"),
@@ -585,8 +710,7 @@ def priors_within(bound: Any, spots: tuple[str, ...] | None = None) -> list[dict
                 "at_utc": row.get("at_utc"),
             }
         )
-        while kept and not (len(kept) <= number):
-            del kept[0]
+    kept.reverse()
     return kept
 
 
@@ -684,15 +808,18 @@ def prior_outcomes(
     An empty file stays empty. A null value stays null.
     """
     del limit
-    rows = _logged_rows()
+    _ingest()
+    by_spot, _order, _latest, folded = _SNAP
     if spot is not None:
         wanted = str(spot)
-        return [
-            _slim_outcome(row)
-            for row in rows
-            if str(row.get("spot") or "") == wanted
-        ]
-    return _folded_history(rows, state, questions)
+        rows = by_spot.get(wanted)
+        if not rows:
+            return []
+        count = len(rows)
+        return [_slim_outcome(row) for row in rows[:count]]
+    if not folded:
+        return []
+    return [dict(item) for item in folded]
 
 
 _GOLD_SPOTS = frozenset({"distance", "limit", "walk"})
