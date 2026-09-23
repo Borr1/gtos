@@ -3456,6 +3456,9 @@ class ExecutionEngine:
             "day_start_balance": day.get("day_start_balance"),
             "day_start_equity": day.get("day_start_equity"),
         }
+        declared = self._cfg_fact("account_rules")
+        if declared not in (None, ""):
+            facts["account_rules"] = str(declared)
         if open_risk is not None:
             facts["open_risk_usd"] = open_risk
         return facts

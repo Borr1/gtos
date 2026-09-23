@@ -13,14 +13,17 @@ snapshot that has no frame yet, and any parameter not yet returned for
 these facts, are heads on that same POST. A later ask with the same facts
 does not send them again. The deadline is the expiry already on the state:
 the seconds until the bar prints, or until the next cycle. An ask with no
-expiry has no timeout. A returned score is not that deadline. A 429, 503,
-or 529 is asked again only when Retry-After fits before that deadline.
+expiry takes that same cycle clock. A returned score is not that deadline.
+A 429, 503, or 529 is asked again only when Retry-After fits before that
+deadline.
 The same card is one in-flight post. Waiters share that receipt. Only an
 ok receipt with answers is remembered. Each asking thread has its own
-HTTP/2 connection. One connection shared by many threads aborts under the
-fan-out. A transport error or a non-JSON body closes that thread's
-connection and posts again on a fresh one until the state's expiry.
-Retry-After is the only pause.
+HTTP/2 connection and reuses it for later asks on that same thread. The
+connection closes when that thread is released. One connection shared by
+many threads aborts under the fan-out. A transport error or a non-JSON
+body closes that thread's connection and posts again on a fresh one until
+that deadline. The pause is Retry-After when the server sent one,
+otherwise the time already spent on this ask since its first attempt.
 The account pack runs on its own thread and a decision does not join it.
 A Score with no criteria does not post. No token-budget field is sent. Model
 ``jev-1.13.0``. POST https://api.typesafe.ai/v1/systemone. The return is a
@@ -39,9 +42,11 @@ import io
 import json
 import logging
 import os
+import ssl
 import threading
 import time
 import urllib.error
+import weakref
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -812,12 +817,106 @@ class _Gate:
 _FLIGHT: dict[str, _Gate] = {}
 
 
+_SSL_LOCK = threading.Lock()
+_SSL: ssl.SSLContext | None = None
+# Keeps each finalizer alive until its thread object is released. Thread-local
+# storage is cleared when the thread exits, which is too early: a finalizer
+# stored only there is discarded and its callback never runs.
+_FINALIZERS: set[Any] = set()
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """One context for the process. Loading the CA bundle is the costly part."""
+
+    global _SSL
+    ctx = _SSL
+    if ctx is not None:
+        return ctx
+    with _SSL_LOCK:
+        if _SSL is None:
+            import certifi
+
+            cafile = os.environ.get("SSL_CERT_FILE")
+            capath = os.environ.get("SSL_CERT_DIR")
+            if cafile:
+                ctx = ssl.create_default_context(cafile=cafile)
+            elif capath:
+                ctx = ssl.create_default_context(capath=capath)
+            else:
+                ctx = ssl.create_default_context(cafile=certifi.where())
+            try:
+                ctx.set_alpn_protocols(["http/1.1", "h2"])
+            except NotImplementedError:
+                pass
+            _SSL = ctx
+        return _SSL
+
+
 def _open_client() -> Any:
-    """One HTTP/2 client for this thread. No pool size and no timeout."""
+    """One HTTP/2 client for this thread. No pool size and no timeout.
+
+    ``verify`` is the process context, so a fresh connection does not load
+    the CA bundle again.
+    """
 
     import httpx
 
-    return httpx.Client(http2=True, timeout=None)
+    return httpx.Client(http2=True, timeout=None, verify=_ssl_context())
+
+
+def _close_client(client: Any) -> None:
+    """Close one client. A second call is a no-op."""
+
+    closer = getattr(client, "close", None)
+    if closer is None:
+        return
+    try:
+        closer()
+    except Exception:
+        return
+
+
+def _close_current() -> None:
+    """Close this thread's client. A second call is a no-op."""
+
+    client = getattr(_THREAD, "client", None)
+    if client is None:
+        return
+    _THREAD.client = None
+    _close_client(client)
+
+
+def _drop_finalizer() -> None:
+    """Detach this thread's finalizer. The client is closed by the caller."""
+
+    finalizer = getattr(_THREAD, "finalizer", None)
+    if finalizer is None:
+        return
+    finalizer.detach()
+    _FINALIZERS.discard(finalizer)
+    _THREAD.finalizer = None
+
+
+def _arm_thread_close(client: Any) -> None:
+    """Close this client when its thread object is released.
+
+    The finalizer is registered only for a thread that opened a client.
+    A thread that never opens one is untouched. A pool thread object stays
+    alive, so later cycles on that thread reuse the connection.
+    """
+
+    _drop_finalizer()
+    held: list[Any] = []
+
+    def _close(client: Any = client, held: list[Any] = held) -> None:
+        _close_client(client)
+        if held:
+            _FINALIZERS.discard(held[0])
+
+    finalizer = weakref.finalize(threading.current_thread(), _close)
+    held.append(finalizer)
+    _THREAD.finalizer = finalizer
+    _FINALIZERS.add(finalizer)
 
 
 def _http() -> Any:
@@ -827,6 +926,7 @@ def _http() -> Any:
     if client is None:
         client = _open_client()
         _THREAD.client = client
+        _arm_thread_close(client)
     return client
 
 
@@ -839,14 +939,8 @@ def _retire(client: Any) -> None:
 
     if getattr(_THREAD, "client", None) is not client:
         return
-    _THREAD.client = None
-    closer = getattr(client, "close", None)
-    if closer is None:
-        return
-    try:
-        closer()
-    except Exception:
-        return
+    _drop_finalizer()
+    _close_current()
 
 
 def _dead_connection(exc: BaseException) -> bool:
@@ -1148,18 +1242,66 @@ def _rewrite_anchors(answers: dict[str, Any], anchors: Mapping[str, list[tuple[s
     return out
 
 
-def _again(headers: Any, deadline: float | None) -> bool:
-    """Ask again. Wait only when Retry-After still fits the state's expiry."""
+def _cycle_seconds() -> float | None:
+    """Seconds until the next cycle, else until the next watched bar prints.
 
-    raw = _header(headers, "Retry-After")
-    if raw is None or not str(raw).strip():
-        if deadline is not None and _remaining(deadline, None) == 0:
-            return False
-        return True
-    pause = _retry_pause(headers, deadline)
-    if pause is None:
+    This does not post. An empty clock stays empty. A score is not a clock.
+    """
+
+    try:
+        from src.components.ultimate_book.launcher_facts import (
+            ask_deadline_seconds,
+            launcher_return,
+        )
+    except Exception:
+        return None
+    try:
+        returned = launcher_return("cycle_wait")
+    except Exception:
+        returned = None
+    seconds = _finite(returned)
+    if seconds is not None and seconds > 0:
+        return seconds
+    try:
+        printed = ask_deadline_seconds()
+    except Exception:
+        return None
+    seconds = _finite(printed)
+    if seconds is not None and seconds > 0:
+        return seconds
+    return None
+
+
+def _again(headers: Any, deadline: float | None, ask_started: float) -> bool:
+    """Ask again when the deadline still fits.
+
+    The pause is Retry-After when the server sent one. Otherwise it is the
+    time already spent on this ask since its first attempt, capped at the
+    time still left. A missing fact does not invent a pause.
+    """
+
+    if deadline is not None and time.time() >= deadline:
         return False
-    time.sleep(pause)
+    raw = _header(headers, "Retry-After")
+    if raw is not None and str(raw).strip():
+        pause = _retry_pause(headers, deadline)
+        if pause is None:
+            return False
+    elif deadline is None:
+        return False
+    else:
+        pause = time.perf_counter() - ask_started
+        if pause < 0:
+            pause = 0.0
+        room = deadline - time.time()
+        if room <= 0:
+            return False
+        if pause > room:
+            pause = room
+    if pause > 0:
+        time.sleep(pause)
+    if deadline is not None and time.time() >= deadline:
+        return False
     return True
 
 
@@ -1168,13 +1310,20 @@ def _transmit(key: str, payload: Mapping[str, Any], wait: float | None) -> tuple
 
     429, 503, and 529 follow Retry-After when it fits the deadline. A
     transport error or a non-JSON body posts again on a fresh connection
-    until that same deadline. No expiry means no timeout. A missing
-    Retry-After does not invent a pause.
+    until that deadline. An ask with no expiry takes the cycle clock: a
+    returned cycle wait, otherwise the seconds until the next watched bar
+    prints. The pause is Retry-After when the server sent one, otherwise
+    the time already spent on this ask since its first attempt.
     """
 
-    deadline = None if wait is None else time.time() + float(wait)
+    if wait is None:
+        seconds = _cycle_seconds()
+        deadline = None if seconds is None else time.time() + seconds
+    else:
+        deadline = time.time() + float(wait)
+    ask_started = time.perf_counter()
     while True:
-        timeout = _remaining(deadline, wait)
+        timeout = _remaining(deadline, None if wait is None else wait)
         if deadline is not None and timeout == 0:
             raise TimeoutError("deadline")
         client = _http()
@@ -1189,16 +1338,24 @@ def _transmit(key: str, payload: Mapping[str, Any], wait: float | None) -> tuple
             raise
         except _Unreadable as exc:
             _retire(client)
-            if _again(exc.headers, deadline):
+            if _again(exc.headers, deadline, ask_started):
                 continue
             raise TimeoutError("deadline")
         except Exception as exc:
             if not _dead_connection(exc):
+                # The per-attempt timeout is the time left on the clock, so a
+                # timeout means this attempt spent the deadline.
+                if deadline is not None and (
+                    time.time() >= deadline or "Timeout" in type(exc).__name__
+                ):
+                    raise TimeoutError("deadline") from None
                 raise
             _retire(client)
-            if deadline is not None and _remaining(deadline, wait) == 0:
-                raise TimeoutError("deadline")
-            continue
+            if _again(None, deadline, ask_started):
+                continue
+            if deadline is None:
+                raise
+            raise TimeoutError("deadline") from None
         if status in _OVERLOADED:
             pause = _retry_pause(headers, deadline)
             if pause is not None:
@@ -1493,7 +1650,7 @@ def evaluate(
     that post. A parameter already returned for these facts is left off the
     wire and copied onto the receipt. The same question and the same facts
     return the remembered answer. The wait is the expiry on the state. An ask
-    with no expiry has no timeout. A returned score is not that wait.
+    with no expiry takes the cycle clock. A returned score is not that wait.
     ``timeout_s``, ``include_depth``, and ``require_equity`` do not cap this
     post. This post does not send.
     """
