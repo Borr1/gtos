@@ -1,6 +1,6 @@
-"""Challenge admission KEEP/KILL integers — S28–S33 hist table.
+"""Challenge admission KEEP/KILL. The live row is the score.
 
-Never order_send. Never invent NEWS_PROTOCOL. APPLY stays 0.
+Never order_send. Never invent NEWS_PROTOCOL. An empty score stays unset.
 """
 
 from __future__ import annotations
@@ -11,7 +11,6 @@ from pathlib import Path
 import pytest
 
 from src.judgment.admission import (
-    ADMISSION_APPLY,
     APPLY_ENV,
     CEILING_REASON,
     CHOICE_ENV,
@@ -24,6 +23,7 @@ from src.judgment.admission import (
     admission_apply_int,
     admission_apply_open,
     admit_and_size,
+    candidate_block_stands,
     choice_path_open,
     env_flag_contract,
     evaluate_candidate,
@@ -70,7 +70,6 @@ def test_hist_table_is_four_keep_two_kill():
     }
     assert CEILING_REASON == "ceiling_profile_requires_smooth_ddefense"
     assert PACK1B_BEATEN is False
-    assert ADMISSION_APPLY == 0
 
 
 def test_choice_only_on_keep_challenge():
@@ -79,11 +78,12 @@ def test_choice_only_on_keep_challenge():
         row = evaluate_candidate(name, **_challenge())
         assert row["choice_wired"] is True
         assert row["choice"]["choice"] == "KEEP_INTEGER"
-        assert row["choice"]["apply"] is False
+        assert row["choice"]["apply"] is None
         assert tuple(row["choice"]["allowed"]) == KEEP_CHOICE_ANSWERS
         assert row["shadow"] is False
         assert row["status"] == KEEP
-        assert row["apply"] == 0
+        assert row["apply"] is None
+        assert row["apply_open"] is None
         assert row["integer_stays_fail_closed"] is True
     for name in KILL_NAMES:
         assert choice_path_open(name, **_challenge()) is False
@@ -96,20 +96,37 @@ def test_choice_only_on_keep_challenge():
         assert "SHADOW" not in str(row["status"])
 
 
-def test_apply_stays_zero_against_every_apply_flag(monkeypatch):
+def test_empty_score_stays_unset_and_keep_kill_are_the_row(monkeypatch):
     monkeypatch.setenv(APPLY_ENV, "1")
     monkeypatch.setenv("GTOS_JEV_APPLY_LIVE", "1")
     monkeypatch.setenv("GTOS_JEV_FLUID_GATES_APPLY", "1")
     assert apply_enabled() is True
-    assert admission_apply_open(**_challenge()) is False
-    assert admission_apply_int(**_challenge()) == 0
+    assert admission_apply_open(**_challenge()) is None
+    assert admission_apply_int(**_challenge()) is None
+    assert admission_apply_open(score=None, environ={APPLY_ENV: "1"}) is None
+    assert admission_apply_open(score="") is None
+    assert admission_apply_open(score="KEEP") == KEEP
+    assert admission_apply_int(score="KILL") == KILL
+    assert admission_apply_open(row={"verdict": "KEEP"}) == KEEP
+    assert admission_apply_open(row={"choice": True, "verdict": "KEEP", "apply": 0}) is None
     row = evaluate_candidate("circuit_breaker_open", **_challenge())
-    assert row["apply"] == 0
-    assert row["apply_open"] is False
+    assert row["apply"] is None
+    assert row["apply_open"] is None
+    kept = evaluate_candidate("circuit_breaker_open", score="KEEP", **_challenge())
+    assert kept["apply"] == KEEP
+    killed = evaluate_candidate("circuit_breaker_open", score="KILL", **_challenge())
+    assert killed["apply"] == KILL
     stamped = stamp_admission({"reason": "circuit_breaker_open"}, **_challenge())
-    assert stamped["apply"] == 0
-    assert stamped["apply_open"] is False
+    assert stamped["apply"] is None
+    assert stamped["apply_open"] is None
     assert stamped["n_shadow"] == 0
+    assert candidate_block_stands() is None
+    assert candidate_block_stands(score=None) is None
+    assert candidate_block_stands(score="") is None
+    assert candidate_block_stands(score=True) is None
+    assert candidate_block_stands(score=0) is None
+    assert candidate_block_stands(score="KILL") is False
+    assert candidate_block_stands(score="KEEP") is True
 
 
 def test_w7_and_verification_are_not_challenge():
@@ -151,7 +168,7 @@ def test_envelope_walls_stay_integers_no_choice():
     assert soft["envelope_untouched"] == "ENV-DD"
     assert soft["verdict"] == KEEP
     assert soft["choice_wired"] is True
-    assert soft["apply"] == 0
+    assert soft["apply"] is None
     assert soft["integer_stays_fail_closed"] is True
 
 
@@ -239,7 +256,8 @@ def test_receipt_has_no_shadow_and_documents_flags(tmp_path):
     assert receipt["n_shadow"] == 0
     assert receipt["n_choice_wired"] == 4
     assert receipt["pack1b_beaten"] is False
-    assert receipt["admission_apply"] == 0
+    assert receipt["admission_apply"] is None
+    assert receipt["apply_open"] is None
     assert receipt["consume_stale"] is True
     flags = env_flag_contract()
     assert flags[APPLY_ENV]["can_open_apply"] is False

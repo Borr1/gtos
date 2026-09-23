@@ -397,10 +397,14 @@ def levels_of(anchors: Any) -> list[tuple[str, float]] | None:
 def value_at(position: Any, anchors: Any) -> float | None:
     """The anchor value at this level position. The position may sit between levels.
 
-    The returned number is the value on the levels. It is not the level index.
+    The levels are the ones ``score_question`` posts, including the cap the API
+    has already stated. The returned number is that value, in the anchors' unit.
+    It is not the level index and it is not a probability.
     """
 
-    levels = levels_of(anchors)
+    from src.judgment.nineteen import _anchor_levels
+
+    levels = _anchor_levels(anchors)
     if not levels:
         return None
     number = _finite(position)

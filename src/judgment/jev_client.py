@@ -1288,10 +1288,10 @@ def _dispatch(
                     continue
                 from .nineteen import learned_score_level_cap, note_score_level_cap
 
-                known = learned_score_level_cap()
+                prior_cap = learned_score_level_cap()
                 note_score_level_cap(text)
                 learned = learned_score_level_cap()
-                if learned is not None and learned != known:
+                if learned is not None and learned != prior_cap:
                     thinned = _thin_posted_scores(wire, anchors)
                     if thinned is not None:
                         wire = thinned

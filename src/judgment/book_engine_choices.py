@@ -105,15 +105,16 @@ QUESTIONS: dict[str, dict[str, Any]] = {
     "feed_lookback": {
         "id": "be_feed_lookback",
         "instructions": (
-            "Generation question: the feed versus the lookback this generator "
-            "just named. Pick one option. The slot is skipped only when "
-            "feed_short is the single highest probability. "
-            "feed_has_the_lookback keeps the slot. An empty answer or a tie "
-            "does not skip it. Do not close an open ticket."
+            "Generation question: the bars this pull returned and the warmup "
+            "count named on this card. Pick one option. "
+            "feed_has_the_lookback means the returned bars cover that count. "
+            "feed_short means they do not. "
+            "An empty answer or a tie does not skip the slot. "
+            "Do not close an open ticket."
         ),
         "criteria": {
-            "feed_has_the_lookback": "The feed covers the lookback the generator named.",
-            "feed_short": "The feed is short of that lookback.",
+            "feed_has_the_lookback": "The returned bars cover the warmup count named on this card.",
+            "feed_short": "The returned bars are fewer than the warmup count named on this card.",
         },
     },
     "future_bar": {
@@ -281,26 +282,20 @@ QUESTIONS: dict[str, dict[str, Any]] = {
     "unit": {
         "id": "be_unit",
         "instructions": (
-            "Unit question: this closed bar reached the sleeve and the sleeve "
-            "did not fire. The closed bar is named here: open, high, low, "
-            "close, the range each side, symbol, sleeve, direction when one "
-            "is present, bid, ask, and the last bar. Pick one option. A limit "
-            "unit is produced only when unit_long or unit_short is the single "
-            "highest probability. sleeve_stays_out produces no unit. An empty "
-            "answer or a tie does not invent a direction and does not restore "
-            "a skip. Entry is the close. The stop is that bar's own range on "
-            "the chosen side. Do not close an open ticket."
+            "Unit question: this bar. The card names the forming open, the "
+            "projected move, the long limit, the short limit, the open, high, "
+            "low, close, the range each side, symbol, sleeve, whether the "
+            "sleeve fired, direction when one is present, bid, and ask. "
+            "Pick one option. unit_long is the long limit. unit_short is the "
+            "short limit. sleeve_stays_out is no move. The three options are "
+            "the same kind of answer. An empty answer or a tie does not "
+            "invent a direction and does not restore a skip. "
+            "Do not close an open ticket."
         ),
         "criteria": {
-            "unit_long": (
-                "This closed bar is a long limit. Entry is the close. "
-                "Stop is the range to the low."
-            ),
-            "unit_short": (
-                "This closed bar is a short limit. Entry is the close. "
-                "Stop is the range to the high."
-            ),
-            "sleeve_stays_out": "This closed bar does not become a unit.",
+            "unit_long": "Long. The limit is the forming open minus the projected move.",
+            "unit_short": "Short. The limit is the forming open plus the projected move.",
+            "sleeve_stays_out": "No move. This bar is not a limit.",
         },
     },
 }
@@ -484,11 +479,33 @@ def last_bar_question_text(facts: Mapping[str, Any] | None = None) -> str:
     )
 
 
+def _projected_limits(card: Mapping[str, Any]) -> tuple[float | None, float | None]:
+    """Long and short limit prices from the forming open and the projected move.
+
+    A long limit is that open minus the move. A short limit is that open plus
+    the move. A missing open or a missing move stays absent. This does not
+    pick a side.
+    """
+
+    long_named = _finite(card.get("long_limit"))
+    short_named = _finite(card.get("short_limit"))
+    if long_named is not None and short_named is not None:
+        return long_named, short_named
+    anchor = _finite(card.get("forming_open"))
+    if anchor is None:
+        anchor = _finite(card.get("open"))
+    move = _finite(card.get("projected_move"))
+    if anchor is None or move is None or not (move > 0):
+        return long_named, short_named
+    return anchor - move, anchor + move
+
+
 def unit_question_text(facts: Mapping[str, Any] | None = None) -> str:
-    """The unit question with this closed bar in the text.
+    """The unit question with this bar's two limit prices in the text.
 
     The legal answers are unit_long, unit_short, and sleeve_stays_out.
-    A missing price stays absent. This text does not pick a side.
+    A missing price stays absent. The three options are even. This text
+    does not pick a side.
     """
 
     card = dict(facts or {})
@@ -501,10 +518,16 @@ def unit_question_text(facts: Mapping[str, Any] | None = None) -> str:
         )
         if found:
             card["last_bar_choice"] = found
+    long_limit, short_limit = _projected_limits(card)
     return (
-        "Unit question: this closed bar. "
+        "Unit question: this bar. "
         f"Symbol {_shown(card.get('symbol'))}. "
         f"Sleeve {_shown(card.get('sleeve'))}. "
+        f"Sleeve fired {_shown(card.get('sleeve_fired'))}. "
+        f"Forming open {_shown(card.get('forming_open'))}. "
+        f"Projected move {_shown(card.get('projected_move'))}. "
+        f"Long limit {_shown(long_limit)}. "
+        f"Short limit {_shown(short_limit)}. "
         f"Open {_shown(card.get('open'))}. "
         f"High {_shown(card.get('high'))}. "
         f"Low {_shown(card.get('low'))}. "
@@ -516,12 +539,12 @@ def unit_question_text(facts: Mapping[str, Any] | None = None) -> str:
         f"Ask {_shown(card.get('ask'))}. "
         f"Decision bar {_shown(card.get('decision_bar_iso'))}. "
         f"Last bar {_shown(card.get('last_bar_choice'))}. "
-        "Pick one option. A limit at this close is produced only when "
-        "unit_long or unit_short is the single highest probability. "
-        "Entry is this close. The stop is this bar's own range on the "
-        "chosen side. sleeve_stays_out produces no unit. An empty answer "
-        "or a tie does not invent a direction and does not restore a skip. "
-        "Do not close an open ticket."
+        "Pick one option. "
+        "unit_long is the long limit, the forming open minus the projected move. "
+        "unit_short is the short limit, the forming open plus the projected move. "
+        "sleeve_stays_out is no move. "
+        "An empty answer or a tie does not invent a direction and does not "
+        "restore a skip. Do not close an open ticket."
     )
 
 
