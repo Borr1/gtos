@@ -529,10 +529,42 @@ class BookLauncher:
             return None
         return request
 
+    def _identity_refused(self) -> bool:
+        fn = getattr(self._mt5, "identity_refused", None)
+        if not callable(fn):
+            return False
+        try:
+            return bool(fn())
+        except Exception:
+            return False
+
+    def _identity_reconnect_only(self, now: datetime) -> dict:
+        """The connected login is not the one this process was launched for.
+
+        Reconnect, and do not generate, admit, place, manage, or read a breach.
+        A zero equity while the adapter is blocked must not become a latched day.
+        """
+        try:
+            connect = getattr(self._mt5, "connect", None)
+            if callable(connect):
+                connect()
+        except Exception:
+            log.warning("MT5 identity reconnect failed", exc_info=True)
+        cleared = not self._identity_refused()
+        self._last_link_healthy = bool(cleared)
+        self._write_heartbeat(now)
+        return {
+            "action": "identity_reconnected" if cleared else "identity_refused",
+            "cleared": cleared,
+            "ts": now.isoformat(),
+        }
+
     # ---- one iteration (testable) ----
     def tick(self, now_utc: Optional[datetime] = None) -> dict:
         """Run a cycle for any timeframe whose closed bar advanced. NEVER raises."""
         now = now_utc or datetime.now(timezone.utc)
+        if self._identity_refused():
+            return self._identity_reconnect_only(now)
         self._write_heartbeat(now)   # FIRST: a tick that then hangs in a broker call goes stale -> alertable
         killed, halted = self.killed(), self.halted()
         place = self._place_allowed(killed, halted)
@@ -577,6 +609,15 @@ class BookLauncher:
                 self._last_link_healthy = bool(healthy)   # stamped into the next heartbeat for the monitor
             except Exception:
                 pass
+            if self._identity_refused():
+                self._last_link_healthy = False
+                return {
+                    "action": "identity_refused",
+                    "cleared": False,
+                    "killed": killed,
+                    "halted": halted,
+                    "ts": now.isoformat(),
+                }
             # Management runs beside the bar clock. The join is before any new
             # order: run_cycle waits for this thread after generation, and the
             # no-bar path waits here after the clock read.

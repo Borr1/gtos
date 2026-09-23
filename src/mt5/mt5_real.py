@@ -21,6 +21,7 @@ this change because they don't compare time to UTC; the few that do are
 now correct.
 """
 
+import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -38,6 +39,12 @@ from src.safety.activation_token import (
     enforce_broker_mutation_authorized,
     strict_positions_provider,
 )
+from src.utils.broker_profile import (
+    assert_mt5_account_matches_profile,
+    expected_account_contract,
+)
+
+_LOG = logging.getLogger(__name__)
 
 # Plausible broker-server UTC offset band for the deployed props (FTMO ~UTC+2/+3 CET/EET, redacted_account
 # ~UTC+3 EET) with DST + margin. A tick-derived offset outside this band is a stale/closed-market quote
@@ -76,20 +83,100 @@ class RealMT5(MT5Interface):
         self._broker_offset_detected: bool = False
         self._broker_offset_detected_at: float = 0.0   # time.monotonic() of the last successful detection
         self._tick_symbol_select_attempted: set[str] = set()
+        # The profile the process was launched with. connect() checks it after
+        # every initialize, including a launcher reconnect.
+        self._launched_account_config: dict | None = None
+        self._identity_blocked = False
+        self._identity_error: str | None = None
+        self._identity_result: dict | None = None
+        self._proven_login: int | None = None
+
+    def bind_launched_account(self, config: dict | None) -> None:
+        """Remember the profile whose expected account this process was launched for."""
+        self._launched_account_config = config
+
+    def _identity_blocks_broker(self) -> bool:
+        return bool(getattr(self, "_identity_blocked", False))
+
+    def identity_refused(self) -> bool:
+        return self._identity_blocks_broker()
+
+    def identity_error(self) -> str:
+        return self._identity_error or ""
+
+    def launched_account_check(self) -> dict:
+        if self._identity_result is None:
+            return {"status": "not_configured", "checked": False}
+        return dict(self._identity_result)
+
+    def _connected_login(self) -> int | None:
+        try:
+            info = self._mt5.account_info() if self._mt5 is not None else None
+        except Exception:  # noqa: BLE001 — a failed read is an unverified login
+            return None
+        login = getattr(info, "login", None) if info is not None else None
+        try:
+            return int(login) if login is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    def _refuse_identity(self, exc: BaseException) -> None:
+        connected = self._connected_login()
+        launched = self._proven_login
+        if launched is None:
+            launched = expected_account_contract(self._launched_account_config).get("login_sha256")
+        _LOG.error(
+            "MT5 account identity refused: connected_login=%s launched_login=%s (%s)",
+            connected,
+            launched,
+            exc,
+        )
+        self._identity_blocked = True
+        self._identity_error = str(exc)
+        self._connected = False
+        self._account_login_sha256 = None
+        try:
+            if self._mt5 is not None:
+                self._mt5.shutdown()
+        except Exception:  # noqa: BLE001 — the refusal stands even if shutdown fails
+            pass
 
     def connect(self) -> bool:
+        path = str(self._terminal_path or "").strip()
+        if not path:
+            _LOG.error(
+                "MT5 connect refused: terminal path is empty; "
+                "initialize without a path is not allowed"
+            )
+            self._connected = False
+            return False
+
         import MetaTrader5 as mt5
         self._mt5 = mt5
 
-        kwargs = {}
-        if self._terminal_path:
-            kwargs["path"] = self._terminal_path
+        kwargs: dict = {"path": path}
         if self._portable:
             kwargs["portable"] = True
 
         if not mt5.initialize(**kwargs):
+            self._connected = False
             return False
 
+        self._account_login_sha256 = None
+        try:
+            result = assert_mt5_account_matches_profile(
+                self, self._launched_account_config
+            )
+        except RuntimeError as exc:
+            self._refuse_identity(exc)
+            return False
+
+        self._identity_blocked = False
+        self._identity_error = None
+        self._identity_result = result
+        proven = self._connected_login()
+        if proven is not None:
+            self._proven_login = proven
         self._connected = True
         return True
 
@@ -224,7 +311,7 @@ class RealMT5(MT5Interface):
             self._connected = False
 
     def is_connected(self) -> bool:
-        if not self._connected or not self._mt5:
+        if self._identity_blocks_broker() or not self._connected or not self._mt5:
             return False
         info = self._mt5.terminal_info()
         return info is not None
@@ -260,6 +347,8 @@ class RealMT5(MT5Interface):
         )
 
     def get_tick(self, symbol: str = "XAUUSD") -> Optional[TickData]:
+        if self._identity_blocks_broker():
+            return None
         tick = self._mt5.symbol_info_tick(symbol)
         if tick is None or not self._tick_has_positive_quote(tick):
             if self._attempt_symbol_select_for_tick(symbol):
@@ -285,6 +374,8 @@ class RealMT5(MT5Interface):
         )
 
     def get_candles(self, symbol: str, timeframe: int, count: int) -> list[dict]:
+        if self._identity_blocks_broker():
+            return []
         if not self._broker_offset_detected:
             # Candle epochs are broker-localized too. Warm the same offset
             # detector used by get_tick() before converting bar timestamps so
@@ -305,6 +396,8 @@ class RealMT5(MT5Interface):
         ]
 
     def get_candles_range(self, symbol: str, timeframe: int, date_from, date_to) -> list[dict]:
+        if self._identity_blocks_broker():
+            return []
         if not self._broker_offset_detected:
             self.get_tick(symbol)
         rates = self._mt5.copy_rates_range(symbol, timeframe, date_from, date_to)
@@ -321,6 +414,8 @@ class RealMT5(MT5Interface):
 
     def get_ticks_range(self, symbol: str, date_from: datetime, date_to: datetime) -> list[dict]:
         """Return historical bid/ask ticks for a UTC range using read-only MT5 APIs."""
+        if self._identity_blocks_broker():
+            return []
         if not self._broker_offset_detected:
             self.get_tick(symbol)
         query_from = date_from + timedelta(seconds=self._broker_offset_seconds)
@@ -354,6 +449,8 @@ class RealMT5(MT5Interface):
         return rows
 
     def get_positions(self, symbol: str = "XAUUSD") -> list[PositionInfo]:
+        if self._identity_blocks_broker():
+            return []
         if not self._broker_offset_detected:
             # Position open times are broker-localized epochs, same as ticks,
             # bars, and deals. Startup reconciliation can call get_positions()
@@ -378,6 +475,8 @@ class RealMT5(MT5Interface):
     def get_open_positions(self) -> list[PositionInfo]:
         """ALL open book positions across symbols (MAGIC-filtered), one round-trip. Used by the live
         gross-open-risk sum for the running 4% cap. Read-only; never places/modifies."""
+        if self._identity_blocks_broker():
+            return []
         if not self._broker_offset_detected:
             try:
                 self.get_tick("XAUUSD")
@@ -401,6 +500,8 @@ class RealMT5(MT5Interface):
     def get_symbol_value_per_point(self, symbol: str) -> "float | None":
         """Account-currency value per 1.0 price unit per 1.0 lot = trade_tick_value / trade_tick_size.
         None if unavailable. Cached (static per symbol). For the worst-case-stop open-risk sum."""
+        if self._identity_blocks_broker():
+            return None
         cache = getattr(self, "_vpp_cache", None)
         if cache is None:
             cache = self._vpp_cache = {}
@@ -421,6 +522,8 @@ class RealMT5(MT5Interface):
         return vpp
 
     def get_account_balance(self) -> float:
+        if self._identity_blocks_broker():
+            return 0.0
         info = self._mt5.account_info()
         return info.balance if info else 0.0
 
@@ -431,6 +534,8 @@ class RealMT5(MT5Interface):
         MetaTrader5 package exposes ``account_info()``; callers must not guess a nonexistent
         adapter-level ``get_account_info()`` method and silently stamp every live row with ``None``.
         """
+        if self._identity_blocks_broker():
+            return None
         try:
             info = self._mt5.account_info()
             login = getattr(info, "login", None) if info is not None else None
@@ -439,10 +544,14 @@ class RealMT5(MT5Interface):
             return None
 
     def get_account_equity(self) -> float:
+        if self._identity_blocks_broker():
+            return 0.0
         info = self._mt5.account_info()
         return info.equity if info else 0.0
 
     def get_margin_mode(self) -> str:
+        if self._identity_blocks_broker():
+            return "unknown"
         info = self._mt5.account_info()
         if info and info.margin_mode == 0:
             return "netting"
@@ -500,6 +609,8 @@ class RealMT5(MT5Interface):
         no second place for a filter to reappear.
         """
 
+        if self._identity_blocks_broker():
+            raise PositionsUnavailable("MT5 account identity refused")
         module = self._mt5
         if module is None:
             raise PositionsUnavailable("MT5 module not initialised")
@@ -516,6 +627,8 @@ class RealMT5(MT5Interface):
         profiles carry in ``broker_profile.expected_account.login_sha256``.
         Cached: the login cannot change without a reconnect."""
 
+        if self._identity_blocks_broker():
+            return None
         cached = getattr(self, "_account_login_sha256", None)
         if cached:
             return cached
@@ -534,6 +647,11 @@ class RealMT5(MT5Interface):
         return digest
 
     def order_send(self, request: dict) -> OrderResult:
+        if self._identity_blocks_broker():
+            return OrderResult(
+                retcode=ORDER_SEND_NONE_RETCODE, order=0, volume=0, price=0,
+                comment="MT5 account identity refused",
+            )
         # THE ACTIVATION CHOKE POINT.
         #
         # Every broker mutation the engine performs arrives here: execution.py's
@@ -578,6 +696,8 @@ class RealMT5(MT5Interface):
 
     def get_history_deals(self, from_date: datetime, to_date: datetime,
                           symbol: str = "XAUUSD") -> list[dict] | None:
+        if self._identity_blocks_broker():
+            return None
         if not self._broker_offset_detected:
             self.get_tick(symbol)
         query_from = from_date + timedelta(seconds=self._broker_offset_seconds)
@@ -620,6 +740,8 @@ class RealMT5(MT5Interface):
         (= current balance - realized closed P&L since the reset-window boundary) so the daily-loss
         baseline excludes floating P&L and survives a mid-day restart. Read-only; never places/modifies.
         ``time`` is UTC-aware (broker offset removed); ``entry``==1 marks a close (DEAL_ENTRY_OUT)."""
+        if self._identity_blocks_broker():
+            return None
         if not self._broker_offset_detected:
             try:
                 self.get_tick("XAUUSD")
