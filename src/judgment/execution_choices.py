@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import os
 from datetime import datetime, timezone
+from decimal import Decimal, ROUND_DOWN
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -111,17 +112,18 @@ QUESTIONS: dict[str, dict[str, Any]] = {
     "reject": {
         "id": "exec_reject",
         "instructions": (
-            "Execution question: the two sides of should_block on this order. "
-            "Pick one option. The order continues only when continue has the "
-            "single highest probability. block does not send. The block weight "
-            "is the score on the paired parameter, and that score may sit between "
-            "the levels. An empty answer, a tie, or a missing score does not "
-            "restore should_block and does not send. "
+            "Execution question: the trade was already decided by the sleeve's "
+            "unit choice and the cycle's risk weight. "
+            "This question is whether this order, as built, is fit to send now, "
+            "given these execution facts. "
+            "Pick one option. The order is sent only when continue has the "
+            "single highest probability. "
+            "An empty answer or a tie does not send. "
             "Do not flatten an open ticket from this question."
         ),
         "criteria": {
-            "block": "Block this order. Do not send it.",
-            "continue": "Do not block. Let the order continue.",
+            "block": "This order, as built, is not fit to send now.",
+            "continue": "This order, as built, is fit to send now.",
         },
     },
     "retry": {
@@ -160,19 +162,20 @@ QUESTIONS: dict[str, dict[str, Any]] = {
     "lot": {
         "id": "exec_lot",
         "instructions": (
-            "Execution question: the lot for this order. "
+            "Execution question: whether to place this order at the lot on this card. "
+            "The lot is a fact: the cash divided by the loss of one lot at the stop, "
+            "rounded to the broker volume_step so the risk does not exceed the cash. "
+            "That rounding is the broker's fact. "
+            "When that lot is below volume_min, the lot on the card is volume_min, "
+            "and the card names that lot's loss at the stop next to the cash and the room. "
             "Pick one option. place runs only when place has the single "
-            "highest probability. The lot is the score on the paired parameter. "
-            "That score is the volume sent. volume_min, volume_step, and "
-            "volume_max are facts on this state. The score may sit between "
-            "the levels. Code does not round it and does not lift it to a "
-            "minimum. refuse does not send. "
-            "An empty answer, a tie, or a missing score does not place. "
+            "highest probability. "
+            "An empty answer or a tie does not place. "
             "Do not flatten an open ticket from this question."
         ),
         "criteria": {
-            "place": "Place the calculated lot.",
-            "refuse": "Do not place a lot.",
+            "place": "Place this order at the lot on the card.",
+            "refuse": "Refuse this order.",
         },
     },
     "gate": {
@@ -646,14 +649,12 @@ _UNIT_OVERRIDE = {
     "exec_modify": ("stop", "stop_loss", "sl", "orig_sl", "stop_now", "price", "bid", "ask", "entry"),
     "exec_trail": ("stop", "stop_loss", "sl", "trail", "price", "bid", "ask"),
     "exec_partial": ("volume", "volume_min", "volume_step", "lots", "lot", "volume_current", "volume_initial"),
-    "exec_lot": ("volume", "volume_min", "volume_step", "lots", "lot", "volume_current", "volume_initial"),
     "exec_deviation": ("spread_points", "stop_level", "freeze_level", "deviation_points", "tick_points"),
     "exec_expiry": ("seconds_until_cycle", "age_s", "age_seconds", "seconds_since_bar", "seconds_since_quote", "expiry_seconds"),
     "exec_timeout": ("seconds_until_cycle", "age_s", "age_seconds", "timeout_seconds", "seconds_since_quote"),
     "exec_adopt_wait": ("seconds_until_cycle", "age_s", "age_seconds", "seconds_since_bar"),
     "exec_retry": ("seconds_until_cycle", "age_s", "age_seconds", "seconds_since_quote"),
     "exec_spread": ("spread", "spread_points"),
-    "exec_reject": "weight",
     "exec_time_stop": "count",
 }
 
@@ -663,10 +664,8 @@ _PARAMETER_NOUN = {
     "partial": "volume",
     "trail": "trail stop",
     "time_stop": "horizon",
-    "reject": "block weight",
     "retry": "pause in seconds",
     "spread": "spread",
-    "lot": "lot",
     "deviation": "deviation in points",
     "expiry": "life in seconds",
     "timeout": "wait in seconds",
@@ -679,10 +678,8 @@ _NEEDS_SCORE = {
     "partial": "partial",
     "trail": "trail",
     "time_stop": "fire_time_stop",
-    "reject": "continue",
     "retry": "retry",
     "spread": "spread_ok",
-    "lot": "place",
     "deviation": "use",
     "expiry": "use",
     "timeout": "wait",
@@ -787,11 +784,12 @@ def _question_pack(
     choice_q["type"] = "choice"
     choice_q["instructions"] = spec["instructions"]
     choice_q["criteria"] = choice_criteria
-    param_id = qid + "_parameter"
-    source = card if _is_map(card) else _bound_card(None)
-    extra = _amount_block(param_id, score_text, source)
-    if extra:
-        pack.update(extra)
+    if question in _NEEDS_SCORE:
+        param_id = qid + "_parameter"
+        source = card if _is_map(card) else _bound_card(None)
+        extra = _amount_block(param_id, score_text, source)
+        if extra:
+            pack.update(extra)
     return pack
 
 
@@ -964,6 +962,213 @@ def _base(question: str) -> dict[str, Any]:
         "activation_token": "stays",
         "error": None,
     }
+
+
+def _fact_number(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _fact_text(value: Any) -> str | None:
+    if value is None or isinstance(value, (bool, int, float)):
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    return text
+
+
+def open_trade_reject_facts(
+    *,
+    cash_usd: Any = None,
+    binding_room_usd: Any = None,
+    spread: Any = None,
+    stop_distance: Any = None,
+    entry: Any = None,
+    stop: Any = None,
+    target: Any = None,
+    side: Any = None,
+    sleeve: Any = None,
+    unit_choice: Any = None,
+    unit_probability: Any = None,
+    allocation_weight: Any = None,
+    allocation_total_usd: Any = None,
+    cash_source: Any = None,
+) -> dict[str, Any]:
+    """Facts for the open-trade reject ask. Absent numbers stay off the card.
+
+    The sleeve, the unit choice and its probability, the allocation weight
+    and total, and the cash source are the decision already made. They are
+    not a second weight.
+    """
+
+    facts: dict[str, Any] = {}
+    for key, value in (
+        ("sleeve", sleeve),
+        ("unit_choice", unit_choice),
+        ("cash_source", cash_source),
+    ):
+        text = _fact_text(value)
+        if text:
+            facts[key] = text
+    side_text = str(side or "").strip()
+    if side_text:
+        facts["side"] = side_text
+    probability = _fact_number(unit_probability)
+    if probability is not None and 0 < probability <= 1:
+        facts["unit_probability"] = probability
+    for key, value in (
+        ("allocation_weight", allocation_weight),
+        ("allocation_total_usd", allocation_total_usd),
+    ):
+        number = _fact_number(value)
+        if number is None or number <= 0:
+            continue
+        facts[key] = number
+    for key, value in (
+        ("cash_usd", cash_usd),
+        ("binding_room_usd", binding_room_usd),
+        ("spread", spread),
+        ("stop_distance", stop_distance),
+        ("entry", entry),
+        ("stop", stop),
+        ("target", target),
+    ):
+        number = _fact_number(value)
+        if number is None:
+            continue
+        if key != "spread" and number <= 0:
+            continue
+        facts[key] = number
+    stop_n = facts.get("stop_distance")
+    entry_n = facts.get("entry")
+    target_n = facts.get("target")
+    if (
+        isinstance(stop_n, float)
+        and stop_n > 0
+        and isinstance(entry_n, float)
+        and isinstance(target_n, float)
+    ):
+        facts["r"] = abs(target_n - entry_n) / stop_n
+    return facts
+
+
+def open_trade_lot_facts(
+    *,
+    lots: Any = None,
+    volume_min: Any = None,
+    volume_max: Any = None,
+    volume_step: Any = None,
+    rounded_risk_usd: Any = None,
+    binding_room_usd: Any = None,
+    stop_distance: Any = None,
+    cash_usd: Any = None,
+    min_lot_loss_usd: Any = None,
+) -> dict[str, Any]:
+    """Facts for the lot ask. Absent numbers stay off the card.
+
+    The lot is the volume calculated from this cash and this stop distance.
+    volume_min, volume_max, and volume_step are the broker's. The rounded
+    risk, the room, the cash, and the minimum lot's loss at the stop are
+    USD facts. They are not lot-score anchors.
+    """
+
+    facts: dict[str, Any] = {}
+    for key, value in (
+        ("lots", lots),
+        ("volume_min", volume_min),
+        ("volume_max", volume_max),
+        ("volume_step", volume_step),
+        ("rounded_risk_usd", rounded_risk_usd),
+        ("binding_room_usd", binding_room_usd),
+        ("risk_amount", cash_usd),
+        ("min_lot_loss_usd", min_lot_loss_usd),
+        ("sl_distance", stop_distance),
+    ):
+        number = _fact_number(value)
+        if number is None or number <= 0:
+            continue
+        facts[key] = number
+    return facts
+
+
+def floor_lot_to_step(raw: Any, volume_step: Any) -> float | None:
+    """Round the lot down onto the broker volume_step.
+
+    The lot is cash divided by the loss of one lot at the stop. The step
+    is the broker's own decimal. Rounding down keeps that cash from being
+    exceeded. A missing step, or a result that is not positive, stays unset.
+    This does not lift the lot to volume_min.
+    """
+
+    lots = _fact_number(raw)
+    step = _fact_number(volume_step)
+    if lots is None or lots <= 0 or step is None or step <= 0:
+        return None
+    step_d = Decimal(str(step))
+    lots_d = Decimal(str(lots))
+    if step_d <= 0:
+        return None
+    count = (lots_d / step_d).to_integral_value(rounding=ROUND_DOWN)
+    rounded = count * step_d
+    if rounded <= 0 or rounded > lots_d:
+        return None
+    return float(rounded)
+
+
+def below_volume_min(raw: Any, volume_min: Any) -> bool:
+    """True when the computed lot is below the broker volume_min.
+
+    Both numbers are read the way a fact is read. A missing lot or a
+    missing minimum is not below.
+    """
+
+    lots = _fact_number(raw)
+    minimum = _fact_number(volume_min)
+    if lots is None or minimum is None or minimum <= 0:
+        return False
+    return Decimal(str(lots)) < Decimal(str(minimum))
+
+
+def lot_on_card(raw: Any, volume_step: Any, volume_min: Any) -> float | None:
+    """The lot fact. Below volume_min, the fact is volume_min.
+
+    The cash lot is rounded down onto the broker step. When that computed
+    lot is below volume_min, the card carries volume_min and the lot
+    question places or refuses it. A missing step, or a lot that is not
+    a positive number and is not below a known minimum, stays unset.
+    """
+
+    if below_volume_min(raw, volume_min):
+        return _fact_number(volume_min)
+    return floor_lot_to_step(raw, volume_step)
+
+
+def lot_volume(row: Any) -> float | None:
+    """The lot already on the card when place won.
+
+    A score is not a lot. place without a positive lots fact stays unset.
+    This does not ask again and does not invent a lot.
+    """
+
+    if not isinstance(row, dict) or not row.get("decision_emitted"):
+        return None
+    if row.get("choice") != "place":
+        return None
+    facts = row.get("facts")
+    if not isinstance(facts, dict):
+        return None
+    number = _fact_number(facts.get("lots"))
+    if number is None or number <= 0:
+        return None
+    return number
 
 
 def choose(

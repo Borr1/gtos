@@ -293,16 +293,24 @@ def chosen_level(block: Any, anchors: Any) -> float | None:
     levels = whole_levels(anchors)
     if not levels:
         return None
-    probabilities = block.get("probabilities")
-    if not isinstance(probabilities, Mapping) or not probabilities:
-        return None
     by_name: dict[str, float] = {}
     for label, value in levels:
         by_name[label] = value
         by_name[label + " (" + _level_text(value) + ")"] = value
+    probabilities = block.get("probabilities")
+    if not isinstance(probabilities, Mapping) or not probabilities:
+        picked = block.get("choice")
+        if isinstance(picked, str) and picked in by_name:
+            return by_name[picked]
+        return None
     name = unique_highest(probabilities, tuple(by_name))
     if name is not None and name in by_name:
         return by_name[name]
+    matched = any(str(key) in by_name for key in probabilities)
+    if not matched:
+        picked = block.get("choice")
+        if isinstance(picked, str) and picked in by_name:
+            return by_name[picked]
     name = unique_highest(probabilities)
     if name is None:
         return None

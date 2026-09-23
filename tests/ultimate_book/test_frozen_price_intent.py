@@ -19,6 +19,7 @@ from src.components.ultimate_book.frozen_price_intent import (
     STATE_FILLED,
     STATE_PRICE_INVALIDATED,
     STATE_REFUSED_COST,
+    broker_stop_minimum,
     build_frozen_price_intent,
     chase_stop_fraction,
     classify_cost_refusal,
@@ -544,10 +545,85 @@ def test_supervisor_named_tap_is_ftmo_f5_only():
 
 
 # ---------------------------------------------------------------------------
-# tight-floor / MODEL_INPUT_INVALID (the eight August IDs)
+# broker stop level (trade_stops_level, point, tick, live spread)
 # ---------------------------------------------------------------------------
-# asia_pdl_fade stop = (close-low) + 0.10*ATR. asian_fade stop = 0.6*ATR.
-# The model emitted 2-4 pips. Not a 10x point-vs-pip rewrite.
+# The August 2-4 pip stops are placeable when the broker level is zero.
+# They are model input only when symbol_info's level puts them inside it.
+
+EURUSD_LIVE = {
+    "stops_level": 0,
+    "point": 0.00001,
+    "tick_size": 0.00001,
+    "spread": 0.00002,
+}
+
+
+def test_broker_minimum_uses_stops_level_point_tick_and_spread():
+    assert broker_stop_minimum(**EURUSD_LIVE) == pytest.approx(0.00003)
+    wider_tick = dict(EURUSD_LIVE, tick_size=0.00005)
+    assert broker_stop_minimum(**wider_tick) == pytest.approx(0.00007)
+    assert broker_stop_minimum(stops_level=None, point=0.00001, tick_size=0.00001, spread=0.00002) is None
+    assert broker_stop_minimum(stops_level=0, point=None, tick_size=0.00001, spread=0.00002) is None
+    assert broker_stop_minimum(stops_level=0, point=0.00001, tick_size=0.00001, spread=None) is None
+
+
+def test_eurusd_four_pip_stop_is_placeable_on_a_zero_broker_level():
+    assert is_market_stop(
+        0.00040125,
+        digits=5,
+        symbol="EURUSD",
+        **EURUSD_LIVE,
+    ) is True
+    assert is_market_stop(0.00040125, digits=5, point=0.00001, symbol="EURUSD") is None
+    assert is_market_stop(None, symbol="EURUSD") is None
+
+
+def test_stop_inside_symbol_info_level_is_not_placeable():
+    assert is_market_stop(
+        0.00040125,
+        digits=5,
+        point=0.00001,
+        symbol="EURUSD",
+        stops_level=50,
+        tick_size=0.00001,
+        spread=0.00002,
+    ) is False
+
+
+def test_jpy_atr_stop_is_a_market_stop():
+    assert is_market_stop(
+        0.0616,
+        digits=3,
+        point=0.001,
+        symbol="GBPJPY",
+        stops_level=0,
+        tick_size=0.001,
+        spread=0.002,
+    ) is True
+    assert is_market_stop(
+        0.0515,
+        digits=3,
+        point=0.001,
+        symbol="USDJPY",
+        stops_level=0,
+        tick_size=0.001,
+        spread=0.003,
+    ) is True
+
+
+def test_gold_and_missing_geometry_are_not_this_class():
+    assert is_market_stop(1.0, digits=2, point=0.01, symbol="XAUUSD") is None
+    assert is_market_stop(1.0, symbol="XAUUSD") is None
+    assert is_market_stop(
+        1.0,
+        digits=2,
+        point=0.01,
+        symbol="XAUUSD",
+        stops_level=0,
+        tick_size=0.01,
+        spread=0.20,
+    ) is True
+
 
 TIGHT_FLOOR_EIGHT = (
     ("W7_BOOK::liquidity_sweep::NZDUSD::2026-08-12::LONG::asia_pdl_fade", "NZDUSD", "asia_pdl_fade", 1, 0.0002),
@@ -561,24 +637,7 @@ TIGHT_FLOOR_EIGHT = (
 )
 
 
-def test_five_digit_two_to_four_pip_is_not_a_market_stop():
-    for _cid, symbol, _sleeve, _direction, stop_dist in TIGHT_FLOOR_EIGHT:
-        assert is_market_stop(stop_dist, digits=5, point=0.00001, symbol=symbol) is False
-        assert is_market_stop(stop_dist, symbol=symbol) is False
-
-
-def test_jpy_atr_stop_is_a_market_stop():
-    assert is_market_stop(0.0616, digits=3, point=0.001, symbol="GBPJPY") is True
-    assert is_market_stop(0.0515, digits=3, point=0.001, symbol="USDJPY") is True
-
-
-def test_gold_and_missing_geometry_are_not_this_class():
-    assert is_market_stop(1.0, digits=2, point=0.01, symbol="XAUUSD") is True
-    assert is_market_stop(1.0, symbol="XAUUSD") is True
-    assert is_market_stop(None, symbol="EURUSD") is True
-
-
-def test_tight_floor_reason_is_model_input_not_quote_dependent():
+def test_tight_floor_reason_is_model_input_only_inside_the_broker_level():
     for _cid, symbol, sleeve, _direction, stop_dist in TIGHT_FLOOR_EIGHT:
         reason = (
             f"cost_screen_spread_r:0.200>0.100 "
@@ -590,6 +649,19 @@ def test_tight_floor_reason_is_model_input_not_quote_dependent():
             digits=5,
             point=0.00001,
             symbol=symbol,
+            stops_level=0,
+            tick_size=0.00001,
+            spread=0.00002,
+        ) == PACKET_CLASS_QUOTE_DEPENDENT
+        assert classify_cost_refusal(
+            screen_reason=reason,
+            stop_dist=stop_dist,
+            digits=5,
+            point=0.00001,
+            symbol=symbol,
+            stops_level=50,
+            tick_size=0.00001,
+            spread=0.00002,
         ) == PACKET_CLASS_MODEL_INPUT
 
 
@@ -608,11 +680,185 @@ def test_existing_xau_spread_skip_stays_quote_dependent():
     ) == PACKET_CLASS_QUOTE_DEPENDENT
 
 
+def test_eurusd_live_stop_is_not_an_invalid_stop(tmp_path):
+    """The 10:01Z EURUSD cards. Spread 0.2 pip, stop 4.01 pip, broker level 0."""
+    cases = (
+        ("dsp_spring_close_on_20low_through_the_box", 0.00040125, 1.14070, 1.14072),
+        ("dsp_three_fresh_lower_lows", 0.00040125, 1.14072, 1.14073),
+    )
+    for sleeve, stop_dist, bid, ask in cases:
+        engine = _RecordingEngine()
+        mt5 = _MT5(spread=ask - bid)
+        mt5.bid = bid
+        mt5.symbol_info = lambda _symbol: SimpleNamespace(
+            digits=5,
+            point=0.00001,
+            trade_stops_level=0,
+            trade_tick_size=0.00001,
+        )
+        intent = TradeIntent(
+            sleeve=sleeve,
+            symbol="EURUSD",
+            direction=1,
+            decision_day="2026-09-23",
+            stop_dist=stop_dist,
+            target_dist=3.0 * stop_dist,
+        )
+        owner = _f5_owner(
+            tmp_path, mt5, engine, flag=True, intent=intent, unit=_unit([sleeve]),
+        )
+        tick = mt5.get_tick("EURUSD")
+        reason = owner._spread_cost_screen(intent, tick)
+        assert reason is None, (sleeve, reason)
+
+
+# Census rows since 06:05Z. Dollar pairs share a zero level and a 1e-5 point
+# and tick. USDJPY's point and tick are 0.001, so its indent is one yen tick.
+CENSUS_BROKER_STOPS = (
+    ("EURUSD", "dsp_spring_close_on_20low_through_the_box", 0.00040125, 1.14070, 1.14072, 5, 0.00001, 0.00001, 0),
+    ("EURUSD", "dsp_accepted_20low_then_second_flush", 0.00020250, 1.14229, 1.14229, 5, 0.00001, 0.00001, 0),
+    ("GBPUSD", "dsp_close_on_20low_not_a_cascade_then_up", 0.00034357, 1.33086, 1.33089, 5, 0.00001, 0.00001, 0),
+    ("USDJPY", "dsp_three_bar_squeeze_into_high", 0.03808929, 157.704, 157.710, 3, 0.001, 0.001, 0),
+)
+
+
+def test_census_symbols_keep_their_own_point_and_tick():
+    """USDJPY is not the EURUSD tick. A 5-digit tick would call a sub-tick yen stop placeable."""
+    specs = {
+        "EURUSD": dict(stops_level=0, point=0.00001, tick_size=0.00001, spread=0.00002),
+        "GBPUSD": dict(stops_level=0, point=0.00001, tick_size=0.00001, spread=0.00003),
+        "USDJPY": dict(stops_level=0, point=0.001, tick_size=0.001, spread=0.006),
+    }
+    assert broker_stop_minimum(**specs["EURUSD"]) == pytest.approx(0.00003)
+    assert broker_stop_minimum(**specs["GBPUSD"]) == pytest.approx(0.00004)
+    assert broker_stop_minimum(**specs["USDJPY"]) == pytest.approx(0.007)
+    dollar_tick_on_yen = dict(specs["USDJPY"], point=0.00001, tick_size=0.00001)
+    assert broker_stop_minimum(**dollar_tick_on_yen) == pytest.approx(0.00601)
+    assert is_market_stop(
+        0.0065, digits=3, symbol="USDJPY", **specs["USDJPY"],
+    ) is False
+    assert is_market_stop(
+        0.0065, digits=3, symbol="USDJPY", **dollar_tick_on_yen,
+    ) is True
+
+
+@pytest.mark.parametrize(
+    ("symbol", "sleeve", "stop_dist", "bid", "ask", "digits", "point", "tick_size", "stops_level"),
+    CENSUS_BROKER_STOPS,
+)
+def test_census_stops_are_placeable_on_their_own_symbol(
+    tmp_path, monkeypatch, symbol, sleeve, stop_dist, bid, ask, digits, point, tick_size, stops_level,
+):
+    spread = ask - bid
+    assert is_market_stop(
+        stop_dist,
+        digits=digits,
+        point=point,
+        symbol=symbol,
+        stops_level=stops_level,
+        tick_size=tick_size,
+        spread=spread,
+    ) is True
+    monkeypatch.setattr(
+        "src.components.ultimate_book.book_owner._spot_choice",
+        lambda *_args, **_kwargs: False,
+    )
+    engine = _RecordingEngine()
+    mt5 = _MT5(spread=spread)
+    mt5.bid = bid
+    mt5.symbol_info = lambda _symbol: SimpleNamespace(
+        digits=digits,
+        point=point,
+        trade_stops_level=stops_level,
+        trade_tick_size=tick_size,
+    )
+    intent = TradeIntent(
+        sleeve=sleeve,
+        symbol=symbol,
+        direction=1,
+        decision_day="2026-09-23",
+        stop_dist=stop_dist,
+        target_dist=3.0 * stop_dist,
+    )
+    owner = _f5_owner(
+        tmp_path, mt5, engine, flag=True, intent=intent, unit=_unit([sleeve]),
+    )
+    reason = owner._spread_cost_screen(intent, mt5.get_tick(symbol))
+    assert reason is None, (symbol, sleeve, reason)
+
+
+def test_stop_inside_broker_level_names_symbol_info(tmp_path):
+    engine = _RecordingEngine()
+    mt5 = _MT5(spread=0.00002)
+    mt5.bid = 1.14070
+    mt5.symbol_info = lambda _symbol: SimpleNamespace(
+        digits=5,
+        point=0.00001,
+        trade_stops_level=50,
+        trade_tick_size=0.00001,
+    )
+    intent = TradeIntent(
+        sleeve="dsp_spring_close_on_20low_through_the_box",
+        symbol="EURUSD",
+        direction=1,
+        decision_day="2026-09-23",
+        stop_dist=0.00040125,
+        target_dist=0.0012,
+    )
+    owner = _f5_owner(
+        tmp_path, mt5, engine, flag=True, intent=intent,
+        unit=_unit(["dsp_spring_close_on_20low_through_the_box"]),
+    )
+    cards = []
+    owner._send_card = cards.append
+    owner._notify_cost_skip = lambda intent, reason: UltimateBookOwner._notify_cost_skip(
+        owner, intent, reason,
+    )
+    reason = owner._spread_cost_screen(intent, mt5.get_tick("EURUSD"))
+    assert reason.startswith("model_input_invalid_stop:0.00040125"), reason
+    assert "trade_stops_level 50" in reason
+    assert "point 0.00001000" in reason
+    assert "trade_tick_size 0.00001000" in reason
+    assert "spread too wide" not in reason
+    assert "not a market" not in reason
+    owner._notify_cost_skip(intent, reason)
+    assert cards and "trade_stops_level 50" in cards[0]
+    assert "spread too wide" not in cards[0]
+    skipped_row = {
+        "symbol": "EURUSD",
+        "sleeve": intent.sleeve,
+        "decision_bar_iso": BAR,
+        "reason": reason,
+    }
+    enqueued = owner._maybe_enqueue_frozen_price_intent(
+        now=START,
+        intent=intent,
+        unit=_unit([intent.sleeve]),
+        tick=mt5.get_tick("EURUSD"),
+        dbar=BAR,
+        dday="2026-09-23",
+        ee=engine,
+        account_state=None,
+        reason=reason,
+        packet=None,
+        skipped_row=skipped_row,
+        summary={"skipped": [], "bar_consumable": True},
+    )
+    assert enqueued is False
+    assert skipped_row["frozen_price_intent_class"] == PACKET_CLASS_MODEL_INPUT
+
+
 def test_tight_floor_eight_never_enqueue(tmp_path):
     for cid, symbol, sleeve, direction, stop_dist in TIGHT_FLOOR_EIGHT:
         engine = _RecordingEngine()
         mt5 = _MT5(spread=0.00004)
         mt5.bid = 1.17000
+        mt5.symbol_info = lambda _symbol: SimpleNamespace(
+            digits=5,
+            point=0.00001,
+            trade_stops_level=50,
+            trade_tick_size=0.00001,
+        )
         intent = TradeIntent(
             sleeve=sleeve,
             symbol=symbol,

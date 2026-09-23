@@ -235,35 +235,119 @@ def test_print_wake_uses_the_scheduled_instant_and_an_early_wake_does_not():
     assert early_remain is not None and abs(early_remain - 79.547481) < 1e-3
 
 
+def _reset_cycle_wait(facts) -> None:
+    facts._CYCLE_WAIT = None
+    facts._CYCLE_WAIT_PRINT = None
+    facts._AIMED_PRINT = None
+    facts._SERVED_PRINT = None
+    facts._DISPATCHED_PRINT = None
+    facts._WAKE_BEFORE_PRINT = False
+    facts._LAST_CYCLE_SECONDS = None
+
+
 def test_the_wait_and_its_end_are_one_instant(monkeypatch):
-    """The print fallback ends on that print. Jev's score ends when the score says."""
+    """The print fallback ends on that print. Jev's score is the lead before it.
+
+    A cycle takes minutes, so the score is how long before the print the cycle
+    starts. The same number is not used for a later print.
+    """
     import src.components.ultimate_book.launcher_facts as facts
 
     monkeypatch.setattr(facts, "ensure_ask", lambda *_a, **_k: None)
+    _reset_cycle_wait(facts)
+    cards = []
+    answered = {"n": 0, "score": None}
+
+    def fake_score(state, question_id, instructions, anchors=None, ask=None):
+        cards.append(dict(state or {}))
+        answered["n"] += 1
+        assert question_id == "cycle_wait"
+        return answered["score"]
+
+    monkeypatch.setattr("src.judgment.nineteen.score", fake_score)
 
     class _Book:
         _tf_tags = {15: "M15"}
 
     boundary = 1_800_000_000
     monkeypatch.setattr(facts.time, "time", lambda: boundary - 0.000803)
-    monkeypatch.setattr(facts, "launcher_return", lambda _name: None)
     wait, target = facts.next_cycle_wake(_Book())
     assert wait is not None and abs(wait - 0.000803) < 1e-6
     assert target is not None and abs(target.timestamp() - boundary) < 1e-6
+    assert facts.wake_is_before_print() is False
+    assert "seconds_until_print_15" in cards[-1]
 
     scored_at = dt.datetime(2026, 9, 23, 6, 34, 54, tzinfo=UTC)
-
-    class _Clock(dt.datetime):
-        @classmethod
-        def now(cls, tz=None):
-            return scored_at
-
-    monkeypatch.setattr(facts, "datetime", _Clock)
-    monkeypatch.setattr(facts, "launcher_return", lambda _name: 526.37)
+    print_at = dt.datetime(2026, 9, 23, 6, 45, tzinfo=UTC)
+    answered["score"] = 526.37
+    _reset_cycle_wait(facts)
+    monkeypatch.setattr(facts.time, "time", lambda: scored_at.timestamp())
+    before = answered["n"]
     wait, target = facts.next_cycle_wake(_Book())
-    assert wait == 526.37
-    assert target == scored_at + dt.timedelta(seconds=526.37)
-    assert target < dt.datetime(2026, 9, 23, 6, 45, tzinfo=UTC)
+    lead_end = print_at - dt.timedelta(seconds=526.37)
+    assert wait == pytest.approx((lead_end - scored_at).total_seconds())
+    assert target == lead_end
+    assert target < print_at
+    assert facts.wake_is_before_print() is True
+    assert "seconds_until_print_15" in cards[-1]
+    assert answered["n"] == before + 1
+
+    facts.note_cycle_served()
+    later = dt.datetime(2026, 9, 23, 6, 54, 54, tzinfo=UTC)
+    next_print = dt.datetime(2026, 9, 23, 7, 0, tzinfo=UTC)
+    monkeypatch.setattr(facts.time, "time", lambda: later.timestamp())
+    wait, target = facts.next_cycle_wake(_Book())
+    assert answered["n"] == before + 2
+    assert facts._AIMED_PRINT == pytest.approx(next_print.timestamp())
+    assert wait == 0.0
+    assert facts.wake_is_before_print() is True
+    assert target is not None and abs(target.timestamp() - later.timestamp()) < 1e-6
+
+
+def test_a_wake_that_lands_on_the_print_is_that_print(monkeypatch):
+    """Now equal to the print is that print. A lead that has already passed is too.
+
+    The clock and the print formula are the same numbers, so equality is the
+    boundary. A second call for a print already dispatched, and not served,
+    aims at the next print.
+    """
+    import src.components.ultimate_book.launcher_facts as facts
+
+    monkeypatch.setattr(facts, "ensure_ask", lambda *_a, **_k: None)
+    answered = {"score": None}
+
+    def fake_score(state, question_id, instructions, anchors=None, ask=None):
+        assert question_id == "cycle_wait"
+        return answered["score"]
+
+    monkeypatch.setattr("src.judgment.nineteen.score", fake_score)
+
+    class _Book:
+        _tf_tags = {15: "M15"}
+
+    boundary = 1_800_000_000
+    assert boundary % 900 == 0
+    monkeypatch.setattr(facts.time, "time", lambda: float(boundary))
+
+    _reset_cycle_wait(facts)
+    wait, target = facts.next_cycle_wake(_Book())
+    assert wait == 0.0
+    assert target is not None and target.timestamp() == float(boundary)
+    assert facts.wake_is_before_print() is False
+    assert facts._DISPATCHED_PRINT is None
+
+    _reset_cycle_wait(facts)
+    answered["score"] = 120.0
+    wait, target = facts.next_cycle_wake(_Book())
+    assert wait == 0.0
+    assert target is not None and target.timestamp() == float(boundary)
+    assert facts.wake_is_before_print() is False
+    assert facts._DISPATCHED_PRINT == float(boundary)
+
+    wait, target = facts.next_cycle_wake(_Book())
+    assert wait == 900.0
+    assert target is not None and target.timestamp() == float(boundary + 900)
+    assert facts.wake_is_before_print() is False
 
 
 def test_a_later_question_still_ends_on_the_cycles_print(monkeypatch):

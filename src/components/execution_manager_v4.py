@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from src.components.dynamic_target_stop_geometry_v4 import (
+    _geometry_on_challenge,
     build_target_stop_geometry_v4_contract,
 )
 from src.components.broker_order_lifecycle_capture_v4 import (
@@ -961,15 +962,26 @@ def _prop_firm_headroom_context(
         config=config,
         now_utc=now_utc,
     )
-    return {
-        "status": (
+    # The Challenge book compares this trade's cash with binding_room_usd.
+    # The percent snapshot is not that room, so it is not a fatal here.
+    challenge_room = _geometry_on_challenge()
+    if challenge_room:
+        blocking_reason = None
+        status = "binding_room_on_the_reject_card"
+    else:
+        blocking_reason = (
+            None
+            if evaluation.allowed
+            else f"prop_firm_headroom_v4_{evaluation.reason}"
+        )
+        status = (
             "source_bound_broker_real_headroom_ready"
             if evaluation.allowed
             else "source_gap_or_invalid_headroom"
-        ),
-        "blocking_reason": None
-        if evaluation.allowed
-        else f"prop_firm_headroom_v4_{evaluation.reason}",
+        )
+    return {
+        "status": status,
+        "blocking_reason": blocking_reason,
         "missing_fields": list(evaluation.missing_fields),
         "requested_risk_pct": evaluation.requested_risk_pct,
         "max_allowed_new_trade_risk_pct": evaluation.max_allowed_new_trade_risk_pct,

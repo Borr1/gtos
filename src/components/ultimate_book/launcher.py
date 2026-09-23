@@ -564,6 +564,12 @@ class BookLauncher:
         """The instant the wait now in progress was computed to end."""
 
         self._wake_target = target
+        self._pre_print_armed = False
+
+    def arm_pre_print_wake(self) -> None:
+        """This wake calculates the forming bar. Its print has not happened."""
+
+        self._pre_print_armed = True
 
     def _wake_clock(self, wall: datetime) -> datetime:
         """max(the wall at wake, the scheduled instant). One use, then it is gone.
@@ -575,6 +581,8 @@ class BookLauncher:
 
         target = getattr(self, "_wake_target", None)
         self._wake_target = None
+        self._pre_print_wake = bool(getattr(self, "_pre_print_armed", False))
+        self._pre_print_armed = False
         wall_utc = wall if wall.tzinfo else wall.replace(tzinfo=timezone.utc)
         wall_utc = wall_utc.astimezone(timezone.utc)
         if not isinstance(target, datetime):
@@ -674,6 +682,10 @@ class BookLauncher:
                 latest[tf] = iso
                 if iso is not None and iso != self._last_bar_by_tf.get(tf):
                     advanced.append(tf)
+            # A lead wake is before the print, so the closed bar has not moved.
+            # The cycle still runs: the forming bar is the move being calculated.
+            if not advanced and getattr(self, "_pre_print_wake", False):
+                advanced = [tf for tf, iso in latest.items() if iso is not None]
             if not advanced:
                 mres = self._end_manage()
             else:

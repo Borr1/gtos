@@ -310,6 +310,21 @@ def _read_jev_return(kind, block, criteria):
     return str(picked)
 
 
+def _unset_label(kind, block, value):
+    """Why a hop is unset. A present non-bool noul is not a missing noul."""
+
+    if value is not None:
+        return None
+    if kind == "score":
+        return "score_missing"
+    if kind == "noul":
+        raw = block.get("noul") if isinstance(block, dict) else None
+        if raw is not None and not isinstance(raw, bool):
+            return "noul_not_bool"
+        return "noul_missing"
+    return "tie_or_empty"
+
+
 _ASK_SLOT: dict = {}
 
 
@@ -407,12 +422,7 @@ def _ask_jev(question_id, state, *, kind, instructions, criteria=None):
             value = None
             error = type(exc).__name__
         if value is None and error is None:
-            if kind == "score":
-                error = "score_missing"
-            elif kind == "noul":
-                error = "noul_missing"
-            else:
-                error = "tie_or_empty"
+            error = _unset_label(kind, block, value)
     try:
         append_outcome(qid, value, facts, error=error)
     except Exception:
@@ -485,12 +495,7 @@ def _ask_pack(cache_name, state, specs):
                 value = None
                 row_error = type(exc).__name__
             if value is None and row_error is None:
-                if kind == "score":
-                    row_error = "score_missing"
-                elif kind == "noul":
-                    row_error = "noul_missing"
-                else:
-                    row_error = "tie_or_empty"
+                row_error = _unset_label(kind, block, value)
         out[qid] = value
         try:
             append_outcome(qid, value, facts, error=row_error)
@@ -818,7 +823,11 @@ def _carry_hop_returns(source, dest):
         try:
             setattr(dest, name, value)
         except Exception:
-            continue
+            if name == "details" and isinstance(value, dict):
+                try:
+                    object.__setattr__(dest, name, dict(value))
+                except Exception:
+                    pass
     return dest
 
 
@@ -898,6 +907,48 @@ def _hop_notes(intent, flow_dec, hops=None):
     elif isinstance(hops.get("admission"), str) and hops.get("admission"):
         notes["admission"] = hops["admission"]
     return notes
+
+
+def _stamp_unit_chain(notes, intent) -> None:
+    """Sleeve and the unit probability already recorded. This does not ask again."""
+
+    if not isinstance(notes, dict):
+        return
+    sleeve = getattr(intent, "sleeve", None)
+    if sleeve not in (None, "") and notes.get("sleeve") in (None, ""):
+        notes["sleeve"] = sleeve
+    unit = getattr(intent, "unit_choice", None)
+    if isinstance(unit, str) and unit and notes.get("unit") in (None, ""):
+        notes["unit"] = unit
+    if notes.get("unit_probability") not in (None, ""):
+        return
+    try:
+        from src.judgment.book_engine_choices import latest_recorded_probability
+
+        probability = latest_recorded_probability(
+            "unit",
+            symbol=getattr(intent, "symbol", None),
+            sleeve=sleeve,
+        )
+    except Exception:
+        probability = None
+    if probability not in (None, ""):
+        notes["unit_probability"] = probability
+
+
+def _stamp_decision_chain(notes, details) -> None:
+    """Copy the allocation already decided. Absent stays off the notes."""
+
+    if not isinstance(notes, dict) or not isinstance(details, dict):
+        return
+    for key in (
+        "unit_probability",
+        "allocation_weight",
+        "allocation_total_usd",
+        "cash_source",
+    ):
+        if details.get(key) not in (None, ""):
+            notes[key] = details.get(key)
 
 
 def _stamp_recorded_hops(intents, terminals, meta, bucket=None) -> None:
@@ -6439,8 +6490,10 @@ class UltimateBookOwner:
                                 hop_notes["allocation_cash_usd"] = _share_details.get("allocation_cash_usd")
                                 hop_notes["symbol"] = getattr(intent, "symbol", None)
                                 hop_notes["sleeve"] = getattr(intent, "sleeve", None)
+                            _stamp_decision_chain(hop_notes, _share_details)
                             if _share_details.get("min_lot_risk_usd") not in (None, ""):
                                 hop_notes["min_lot_risk_usd"] = _share_details.get("min_lot_risk_usd")
+                        _stamp_unit_chain(hop_notes, intent)
                         if isinstance(_pending_facts, dict):
                             if _pending_facts.get("pending_stop_risk_usd") not in (None, ""):
                                 hop_notes["pending_stop_risk_usd"] = _pending_facts.get("pending_stop_risk_usd")
@@ -12138,6 +12191,8 @@ class UltimateBookOwner:
                 annotations["allocation_cash_usd"] = _share_details.get("allocation_cash_usd")
                 annotations["symbol"] = getattr(intent, "symbol", None)
                 annotations["sleeve"] = getattr(intent, "sleeve", None)
+            _stamp_decision_chain(annotations, _share_details)
+            _stamp_unit_chain(annotations, intent)
             if _share_details.get("min_lot_risk_usd") not in (None, ""):
                 annotations["min_lot_risk_usd"] = _share_details.get("min_lot_risk_usd")
             try:
@@ -12537,6 +12592,60 @@ class UltimateBookOwner:
             return None
 
     @staticmethod
+    def _spec_value(info, name: str):
+        if info is None:
+            return None
+        value = info.get(name) if isinstance(info, dict) else getattr(info, name, None)
+        if value in (None, ""):
+            return None
+        return value
+
+    def _invalid_stop_reason(
+        self,
+        *,
+        symbol,
+        stop_dist: float,
+        digits: int | None,
+        bid: float,
+        ask: float,
+        stops_level,
+        point,
+        tick_size,
+        spread: float,
+        minimum: float | None,
+        broker_facts_unset: bool,
+    ) -> str:
+        """The card text. Broker numbers come from symbol_info. Unset stays unset."""
+
+        def shown(value) -> str:
+            if value is None:
+                return "unset"
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                return str(value)
+            if number.is_integer():
+                return str(int(number))
+            return f"{number:.8f}"
+
+        if broker_facts_unset or minimum is None:
+            head = (
+                f"broker facts unset, stop {self._price_text(stop_dist, digits)}"
+            )
+        else:
+            head = (
+                f"stop {self._price_text(stop_dist, digits)} inside broker minimum "
+                f"{self._price_text(float(minimum), digits)}"
+            )
+        return (
+            f"model_input_invalid_stop:{stop_dist:.8f} "
+            f"({head} from trade_stops_level {shown(stops_level)} "
+            f"point {shown(point)} trade_tick_size {shown(tick_size)} "
+            f"spread {self._price_text(spread, digits)} on {symbol} "
+            f"bid {self._price_text(bid, digits)} ask {self._price_text(ask, digits)})"
+        )
+
+    @staticmethod
     def _price_text(value: float, digits: int | None) -> str:
         if digits is not None and digits >= 0:
             return f"{value:.{int(digits)}f}"
@@ -12591,15 +12700,17 @@ class UltimateBookOwner:
         attempting a futile order that open_trade's ExecMgr-V4 cost gate would block. Returns None when the
         leg passes OR the screen cannot be evaluated (fail OPEN -> defer to the authoritative gate).
 
-        The quoted book is the spread in pips. One point on a 5-digit quote
-        is 0.1 pip. That measurement is not the stop divided into a 1.30 pip
-        label. A constant floor does not return before the choice.
+        A stop is placeable when it reaches trade_stops_level * point, raised
+        to the tick when the tick is wider, plus the live spread. Those are
+        symbol_info and the quote. A pip minimum is not a level. Missing
+        broker facts are Jev's decision on the facts present, and an empty
+        answer does not withhold.
 
         Sample is min-over-N-ms (1000ms) on a would-be refuse only. A first tick
         already inside does not wait. Cap numbers are unchanged.
         """
         try:
-            from .frozen_price_intent import is_market_stop
+            from .frozen_price_intent import broker_stop_minimum, is_market_stop
 
             rd = float(getattr(intent, "stop_dist", 0.0) or 0.0)
             bid = float(getattr(tick, "bid", 0.0) or 0.0)
@@ -12627,56 +12738,96 @@ class UltimateBookOwner:
             sample_ms = self._spread_sample_min_over_ms()
             sample_ticks = 1
             spread_r = (ask - bid) / rd
+            spread_px = ask - bid
             self._remember_spread_screen_tick(intent, tick, stop_dist=rd)
-            if not is_market_stop(rd, digits=digits, point=point, symbol=symbol):
+            info = self._symbol_info_obj(symbol)
+            stops_level = self._spec_value(info, "trade_stops_level")
+            tick_size = self._spec_value(info, "trade_tick_size")
+            placeable = is_market_stop(
+                rd,
+                digits=digits,
+                point=point,
+                symbol=symbol,
+                stops_level=stops_level,
+                tick_size=tick_size,
+                spread=spread_px,
+            )
+            if placeable is not True:
                 self._record_spread_observation(
-                    intent, spread_r=spread_r, spread_price=ask - bid,
+                    intent, spread_r=spread_r, spread_price=spread_px,
                     max_spread_r=max_spread_r, stop_dist=rd,
                     bid=bid, ask=ask, digits=digits,
                     sample_kind=self.SPREAD_SAMPLE_KIND,
                     sample_min_over_ms=sample_ms,
                     sample_ticks=1,
                 )
-                from .frozen_price_intent import quoted_book_pips
-                quoted = quoted_book_pips(
-                    bid=bid, ask=ask, digits=digits, point=point, symbol=symbol,
+            if placeable is False:
+                minimum = broker_stop_minimum(
+                    stops_level=stops_level,
+                    point=point,
+                    tick_size=tick_size,
+                    spread=spread_px,
                 )
-                spread_px = ask - bid
+                return self._invalid_stop_reason(
+                    symbol=symbol,
+                    stop_dist=rd,
+                    digits=digits,
+                    bid=bid,
+                    ask=ask,
+                    stops_level=stops_level,
+                    point=point,
+                    tick_size=tick_size,
+                    spread=spread_px,
+                    minimum=minimum,
+                    broker_facts_unset=False,
+                )
+            if placeable is None:
+                facts = {
+                    "symbol": str(symbol),
+                    "sleeve": str(getattr(intent, "sleeve", "") or ""),
+                    "stop_dist": rd,
+                    "spread": spread_px,
+                    "bid": bid,
+                    "ask": ask,
+                    "namespace": str(getattr(self, "_namespace", "") or ""),
+                }
+                if stops_level is not None:
+                    facts["trade_stops_level"] = stops_level
+                if point is not None:
+                    facts["point"] = point
+                if tick_size is not None:
+                    facts["trade_tick_size"] = tick_size
                 _block_invalid = False
-                if quoted is not None:
-                    try:
-                        _block_invalid = bool(_spot_choice(
-                            "model_input_invalid_stop",
-                            {
-                                "symbol": str(symbol),
-                                "sleeve": str(getattr(intent, "sleeve", "") or ""),
-                                "stop_dist": rd,
-                                "quoted_book_pips": quoted,
-                                "spread_price": spread_px,
-                                "bid": bid,
-                                "ask": ask,
-                                "namespace": str(getattr(self, "_namespace", "") or ""),
-                            },
-                            {
-                                "stop_is_constructible": "The quoted book is the spread in pips. This stop can be the plan.",
-                                "stop_not_a_market": "The quoted book says this stop is not a market. Do not send.",
-                            },
-                            "stop_not_a_market",
-                            f"model_input_invalid_stop|{symbol}|{spread_px:.8f}|quoted",
-                            "The quoted book pip is the spread divided by the symbol pip. "
-                            "One point on a 5-digit quote is 0.1 pip. "
-                            "Do not relabel that book as 1.30 pip. "
-                            "Is the stop constructible, or not a market? "
-                            "An empty answer or a tie does not withhold. "
-                            "Do not close an open ticket.",
-                        ))
-                    except Exception:
-                        _block_invalid = False
+                try:
+                    _block_invalid = bool(_spot_choice(
+                        "model_input_invalid_stop",
+                        facts,
+                        {
+                            "stop_is_placeable": "The broker facts on this card leave this stop placeable.",
+                            "stop_inside_broker_level": "These broker facts say the stop is inside the level. Do not send.",
+                        },
+                        "stop_inside_broker_level",
+                        f"model_input_invalid_stop|{symbol}|{rd:.8f}|facts",
+                        "trade_stops_level, point, tick size, and the live spread decide "
+                        "whether this stop is placeable. A pip minimum is not a broker fact. "
+                        "An empty answer or a tie does not withhold. "
+                        "Do not close an open ticket.",
+                    ))
+                except Exception:
+                    _block_invalid = False
                 if _block_invalid:
-                    return (
-                        f"model_input_invalid_stop:{spread_px:.8f} "
-                        f"({quoted:.2f} pip quoted book on {symbol} "
-                        f"bid {self._price_text(bid, digits)} ask {self._price_text(ask, digits)})"
+                    return self._invalid_stop_reason(
+                        symbol=symbol,
+                        stop_dist=rd,
+                        digits=digits,
+                        bid=bid,
+                        ask=ask,
+                        stops_level=stops_level,
+                        point=point,
+                        tick_size=tick_size,
+                        spread=spread_px,
+                        minimum=None,
+                        broker_facts_unset=True,
                     )
             if spread_r > max_spread_r:
                 best_bid, best_ask = bid, ask
@@ -12944,12 +13095,21 @@ class UltimateBookOwner:
             return False   # accounting must never decide anything on an error
 
     def _notify_cost_skip(self, intent, reason) -> None:
-        """EXPECTED cost decline (spread structurally too wide for the sleeve's stop) -> inform the owner
-        once per decision bar as an ℹ️ note, NOT the ⚠️ 'Trade NOT placed' failure card."""
+        """Inform the owner once per decision bar. The card states the reason.
+
+        A spread-cell refusal keeps the spread wording. A broker stop refusal
+        states the symbol_info numbers. It is not a spread-too-wide card.
+        """
         try:
             label = self._SLEEVE_LABEL.get(getattr(intent, "sleeve", ""), getattr(intent, "sleeve", "?"))
-            self._send_card(f"[{self._account_label()}] ℹ️ Skipped {getattr(intent,'symbol','?')} ({label}) — "
-                            f"spread too wide for stop · {reason}")
+            text = str(reason or "")
+            if text.startswith("cost_screen_spread_r"):
+                detail = f"spread too wide for stop · {text}"
+            else:
+                detail = text
+            self._send_card(
+                f"[{self._account_label()}] ℹ️ Skipped {getattr(intent,'symbol','?')} ({label}) — {detail}"
+            )
         except Exception:
             pass
 

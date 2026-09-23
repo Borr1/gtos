@@ -124,6 +124,7 @@ def _key(facts: dict) -> tuple:
         _finite(facts.get("high")),
         _finite(facts.get("low")),
         facts.get("hour"),
+        facts.get("clocked"),
     )
 
 
@@ -195,12 +196,17 @@ def _post(facts: dict, bars=None, i: int | None = None, bar_times=None) -> dict[
     raw = receipt.get("answers")
     answers = raw if isinstance(raw, dict) else {}
     for spot in _SCORE_SPOTS:
-        from .spot_choice import answered_amount
+        from .spot_choice import amount_outcome
 
-        number = answered_amount(spot, answers.get(spot), _questions.anchors.get(spot))
+        number, miss = amount_outcome(
+            spot,
+            answers.get(spot),
+            _questions.anchors.get(spot),
+            posted=spot in questions,
+        )
         out[spot] = number
         try:
-            append_outcome(spot, number, state, error=None if number is not None else "empty")
+            append_outcome(spot, number, state, error=miss)
         except Exception:
             pass
     out["direction_side"] = _side(answers.get(_DIRECTION))
@@ -316,6 +322,7 @@ def compute_state(
     sleeve: str | None = None,
     symbol: str | None = None,
     decision_day: str | None = None,
+    bar_times=None,
 ) -> Optional[dict]:
     """Leak-free features at bar i. Missing bounds leave the state unset."""
 
@@ -332,7 +339,9 @@ def compute_state(
         facts["close"] = getattr(bar, "c", None)
         facts["high"] = getattr(bar, "h", None)
         facts["low"] = getattr(bar, "l", None)
-    bounds = _ask(facts, bars, i)
+    if bar_times is not None:
+        facts["clocked"] = True
+    bounds = _ask(facts, bars, i, bar_times)
     windows = {spot: _window(bounds, spot) for spot in _WINDOW_SPOTS}
     if any(value is None for value in windows.values()):
         return None

@@ -595,3 +595,109 @@ def test_risk_units_drop_planted_caps(monkeypatch):
     assert facts["recorded_hard_daily_limit_pct"] == 0.05
     for key in _PLANTED_GOVERNOR_FACTS:
         assert key not in facts
+
+
+def test_risk_unit_weight_and_total_parse_before_compare():
+    from src.components.ultimate_book.admission import _shares_from_scores
+
+    rows = [
+        {"weight": "0.5", "min_lot_risk_usd": "10", "cash_usd": None, "rounded_usd": None},
+        {"weight": None, "min_lot_risk_usd": 10, "cash_usd": None, "rounded_usd": None},
+        {"weight": "nope", "min_lot_risk_usd": 10, "cash_usd": None, "rounded_usd": None},
+    ]
+    reason = _shares_from_scores(
+        rows,
+        total="100",
+        room="500",
+        equity="1000",
+        facts={"currency_digits": 2},
+    )
+    assert reason is None
+    assert rows[0]["cash_usd"] == 100.0
+    assert rows[0]["rounded_usd"] == 100.0
+    assert rows[1]["cash_usd"] is None
+    assert rows[2]["cash_usd"] is None
+
+    empty = [
+        {"weight": None, "min_lot_risk_usd": 10, "cash_usd": None, "rounded_usd": None},
+    ]
+    assert _shares_from_scores(
+        empty, total=None, room=500, equity=1000, facts={"currency_digits": 2},
+    ) == "risk_unset"
+
+
+def test_challenge_risk_units_string_weight_and_total_do_not_raise(monkeypatch):
+    import src.judgment.nineteen as nineteen
+
+    from src.components.ultimate_book.admission import _challenge_risk_units
+    from src.judgment.apply_size import binding_room_usd
+
+    card = {
+        "account_equity": 93522.57,
+        "max_dd_reference_equity": 100000.0,
+        "recorded_max_dd_limit_pct": 0.10,
+        "recorded_hard_daily_limit_pct": 0.05,
+        "realized_today_pct": 0.0,
+        "open_risk_pct": 0.0,
+        "cycle_risk_pct": 0.0,
+        "launcher_usd": 150.0,
+        "equity": 93522.57,
+        "initial_balance": 100000.0,
+        "overall_loss_pct": 10.0,
+        "daily_percent_external": 5.0,
+        "day_start_equity": 93678.44,
+        "day_start_balance": 93670.92,
+        "positions_total": 0,
+        "open_risk_usd": 0.0,
+        "currency_digits": 2,
+    }
+    room = binding_room_usd(card)[0]
+    assert room is not None and room > 0
+
+    class Intent:
+        sleeve = "crypto"
+        symbol = "BTCUSD"
+        direction = -1
+        stop_dist = 1.0
+        intra_size = 1.0
+        ll_impulse = None
+        decision_hour = None
+        vr = None
+        entry_price = 86000.0
+        details = {"min_lot_risk_usd": 10.0, "min_lot_risk_pct": 10.0 / 93522.57}
+
+    intent = Intent()
+
+    def score_many(_state, specs):
+        out = {}
+        for qid, _text, _anchors in specs:
+            out[qid] = "1000" if qid == "unit_usd|cycle" else "0.4"
+        return out
+
+    monkeypatch.setattr(
+        "src.components.ultimate_book.admission._spot",
+        lambda _name: None,
+    )
+    monkeypatch.setattr(nineteen, "score_many", score_many)
+    units = _challenge_risk_units(
+        [("2026-09-23", "crypto", [intent], ("crypto",), 1)],
+        registry={},
+        base_risk=0.02,
+        equity_card=card,
+        room=None,
+        sqrt_n_pooling=False,
+        kelly_lite=False,
+        kelly_conservative=False,
+        n_active_by_day={},
+        stress_derisk=False,
+        stress_state=None,
+        overlays=False,
+        cycle_taken=0.0,
+    )
+    assert len(units) == 1
+    assert units[0].sized is True
+    assert units[0].reason == "sized"
+    assert intent.details["allocation_weight"] == 0.4
+    assert intent.details["allocation_total_usd"] == 1000.0
+    assert isinstance(intent.details["allocation_weight"], float)
+    assert isinstance(intent.details["allocation_total_usd"], float)
