@@ -13,6 +13,10 @@ admission, and pre-send refusal sequence has completed.
 No mode is inferred from a non-empty sleeve list.  A worker must name both a mode and its
 effective launched sleeves, and every numeric option must be finite.  That keeps a stale or
 misspelled supervisor row from reading as a healthy floor that is not actually running.
+
+An empty score leaves that sleeve's multiples unset.  It does not raise, and it does not
+restore a planted multiple.  A mode string other than off, shadow, or apply stays the
+string that was passed.
 """
 
 from __future__ import annotations
@@ -24,6 +28,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_FLOOR
 from typing import Any, Callable, Mapping, Optional, Sequence
 
+# book_engine imports LOOKBACK_BARS for books that are not the Challenge.
+# An empty score in this module does not read these names.
 DEFAULT_BAR_MULTIPLE = 1.0
 DEFAULT_COST_MULTIPLE = 5.0
 LOOKBACK_BARS = 24
@@ -92,8 +98,8 @@ class RiskUnitFloorError(ValueError):
 
 @dataclasses.dataclass(frozen=True)
 class FloorParams:
-    bar_multiple: float = DEFAULT_BAR_MULTIPLE
-    cost_multiple: float = DEFAULT_COST_MULTIPLE
+    bar_multiple: Optional[float] = None
+    cost_multiple: Optional[float] = None
     cap_widen: Optional[float] = None
     # Preserve literal targets (notably vp_euidx_pocgrav's POC) unless the operator
     # explicitly asks to weld the target to the widened R-unit.
@@ -199,7 +205,7 @@ def parse_risk_unit_floor(
 
         bar_raw: Optional[str] = None
         cost_raw: Optional[str] = None
-        cap: Optional[float] = None
+        cap_offered: Optional[float] = None
         target = "preserve"
         seen: set[str] = set()
         for option in parts[1:]:
@@ -224,11 +230,7 @@ def parse_risk_unit_floor(
             elif key == "cost":
                 cost_raw = value
             elif key == "cap":
-                cap = _finite_positive("cap", sleeve, value, maximum=100.0)
-                if cap <= 1.0:
-                    raise RiskUnitFloorError(
-                        f"--risk-unit-floor cap for {sleeve!r} must be > 1.0"
-                    )
+                cap_offered = _finite_positive("cap", sleeve, value, maximum=100.0)
             elif key == "target":
                 target = value.lower()
                 if target not in TARGET_POLICIES:
@@ -261,8 +263,14 @@ def parse_risk_unit_floor(
                 "The score you return is the highest cost multiple this sleeve still accepts. "
                 "An empty score leaves that cap unset. Do not send."
             )
+        if cap_offered is not None:
+            questions["cap_widen"] = (
+                "The score you return is this sleeve's widening cap multiple. "
+                "An empty score leaves that cap unset. Do not send."
+            )
         bar_levels = []
         cost_levels = []
+        cap_levels = []
         if bar_raw is not None:
             offered_bar = _finite(bar_raw)
             if offered_bar is not None:
@@ -271,6 +279,8 @@ def parse_risk_unit_floor(
             offered_cost = _finite(cost_raw)
             if offered_cost is not None:
                 cost_levels.append(("the offered cost multiple on this sleeve", offered_cost))
+        if cap_offered is not None and cap_offered > 0.0:
+            cap_levels.append(("the offered widening cap on this sleeve", cap_offered))
         scores = _scores(
             ("risk_unit_floor", sleeve, tuple(sorted(seen))),
             {"sleeve": sleeve, "options": sorted(seen)},
@@ -280,6 +290,7 @@ def parse_risk_unit_floor(
                 "max_plausible_bar_multiple": bar_levels,
                 "cost_multiple": [],
                 "max_plausible_cost_multiple": cost_levels,
+                "cap_widen": cap_levels,
             },
         )
         # An unanswered multiple leaves this sleeve's floor unset. It does not
@@ -302,6 +313,13 @@ def parse_risk_unit_floor(
             if cost_cap is None or not (cost_cap > 0.0):
                 cost_cap = None
             cost = _finite_positive("cost", sleeve, cost_raw, maximum=cost_cap)
+        cap: Optional[float] = None
+        if cap_offered is not None:
+            scored_cap = scores.get("cap_widen")
+            if scored_cap is not None and scored_cap > 0.0:
+                cap = float(scored_cap)
+            else:
+                cap = cap_offered
         out[sleeve] = FloorParams(float(bar), float(cost), cap, target)
     return out
 
@@ -314,11 +332,14 @@ def policy_from_args(
     effective_sleeves: Any,
 ) -> RiskUnitFloorPolicy:
     """Build the complete launch policy and refuse inconsistent mode/selection pairs."""
-    normalized_mode = str(mode or "off").strip().lower()
+    if mode is None or str(mode).strip() == "":
+        normalized_mode = "off"
+    else:
+        normalized_mode = str(mode).strip().lower()
     if normalized_mode not in MODES:
-        raise RiskUnitFloorError(
-            f"--risk-unit-floor-mode must be one of {list(MODES)}, got {mode!r}"
-        )
+        # The mode stays the string that was passed. It does not raise into a
+        # launch refuse and it does not become off, shadow, or apply.
+        return RiskUnitFloorPolicy(normalized_mode, {})
     if normalized_mode == "off":
         if raw is not None:
             raise RiskUnitFloorError(
@@ -347,9 +368,24 @@ def policy_from_args(
 
 
 def _bar_range_median(
-    bars: Sequence[Any], *, lookback: int = LOOKBACK_BARS, minimum: int = MIN_LOOKBACK_BARS
+    bars: Sequence[Any], *, lookback: int | None = None, minimum: int | None = None
 ) -> tuple[Optional[float], dict[str, Any]]:
-    detail: dict[str, Any] = {"lookback": int(lookback), "minimum": int(minimum)}
+    """Median of the last ``lookback`` ranges. A missing window stays unset."""
+    detail: dict[str, Any] = {"lookback": lookback, "minimum": minimum}
+    if lookback is None or minimum is None:
+        detail["reason"] = "lookback_unanswered"
+        return None, detail
+    try:
+        lookback = int(lookback)
+        minimum = int(minimum)
+    except (TypeError, ValueError):
+        detail["reason"] = "lookback_unanswered"
+        return None, detail
+    if lookback <= 0 or minimum <= 0:
+        detail["reason"] = "lookback_unanswered"
+        return None, detail
+    detail["lookback"] = lookback
+    detail["minimum"] = minimum
     try:
         window = list(bars)[-int(lookback) :]
     except TypeError:
@@ -589,6 +625,9 @@ def apply_floor(
 ) -> tuple[Any, dict[str, Any]]:
     """Return the proposed intent and a complete observation; never raise into a cycle."""
     observation: dict[str, Any] = {"applied": False, **params.as_dict()}
+    if params.bar_multiple is None or params.cost_multiple is None:
+        observation["reason"] = "floor_multiples_unset"
+        return intent, observation
     try:
         risk0 = float(getattr(intent, "stop_dist"))
     except (AttributeError, TypeError, ValueError):

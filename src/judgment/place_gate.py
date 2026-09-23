@@ -5,6 +5,8 @@ One hop: ``jev_client.evaluate`` with model ``jev-1.13.0`` and
 Questions are only Noul, Choice, or Score. Prior outcomes are attached
 on every ask, and the return is stored for the next ask. An empty answer,
 a tie, a missing score, or an error leaves that return unset.
+It does not restore a block. ``GTOS_JEV_PLACE_FLUID_APPLY`` is not a refuse
+and not a send. A missing flag leaves the choice unset.
 A floor and a baseline are not a question.
 This module does not send and does not flatten.
 """
@@ -694,6 +696,7 @@ def _blank(error: str | None) -> dict[str, Any]:
         "owner_unlock": None,
         "receipt_legal": None,
         "broker_effect": None,
+        "order_send": None,
         "threshold": None,
         "loop_bound": None,
         "parameter": None,
@@ -888,6 +891,17 @@ def _build_state(
     return scrubbed if isinstance(scrubbed, dict) else {"schema": SCHEMA, "model": MODEL}
 
 
+def _score_receipt(score: Mapping[str, Any]) -> dict[str, Any]:
+    """A supplied score is the return. It is not a second post."""
+
+    body = dict(score)
+    if "answers" in body or "error" in body or "skipped" in body:
+        return body
+    if not body:
+        return {"answers": {}, "error": "empty"}
+    return {"answers": body}
+
+
 def evaluate_place_gate(
     *,
     environ: Mapping[str, str] | None = None,
@@ -895,9 +909,18 @@ def evaluate_place_gate(
     place_authorized: bool | None = None,
     facts: Mapping[str, Any] | None = None,
     ask: Callable[..., Any] | None = None,
+    score: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """One System One ask. Each field is that return, or unset."""
+    """The place-gate choice for this state, or unset.
 
+    An empty score does not post, does not send, and does not become a block.
+    A missing apply flag is not that choice.
+    """
+
+    if score is not None:
+        row = _read(_score_receipt(score))
+        row["order_send"] = None
+        return row
     state = _build_state(
         environ=environ,
         receipt=receipt,
@@ -916,6 +939,7 @@ def evaluate_place_gate(
         _remember(state, row)
         return row
     row = _read(receipt_body)
+    row["order_send"] = None
     _remember(state, row)
     return row
 

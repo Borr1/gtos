@@ -120,6 +120,95 @@ def _apply_challenge_launcher(launcher) -> None:
     if weekend is not None:
         clocks.F5_WEEKEND_FLAT_UTC_HHMM = weekend
 
+def _poll_argument_default():
+    """The Challenge poll argument is empty until a score. It is not 60."""
+    return None
+
+
+def _poll_for(namespace, poll_seconds):
+    """A passed poll stays that fact. Challenge does not restore 60.
+
+    A friend book that omits the flag keeps 60 so its loop still has a wait.
+    """
+    if poll_seconds is not None:
+        return float(poll_seconds)
+    if _challenge_writer(namespace):
+        return None
+    return 60.0
+
+
+def _minimal_size_config(size_usd, notional_usd):
+    """Empty size stays unset. It does not become 0.0."""
+    from src.components.ultimate_book.minimal_size import MinimalSizeConfig
+
+    if size_usd is None:
+        notional = None if notional_usd is None else float(notional_usd)
+        return MinimalSizeConfig(
+            enabled=False,
+            target_risk_usd=None,
+            notional_initial_usd=notional,
+        )
+    return MinimalSizeConfig(
+        enabled=True,
+        target_risk_usd=float(size_usd),
+        notional_initial_usd=float(notional_usd),
+    )
+
+
+def _size_launch(namespace, size_usd, notional_usd, build_contract):
+    """Return ``(cfg, contract, refused)``.
+
+    An empty Challenge size does not raise and does not refuse the launch.
+    A size that is present still builds the contract the token hashes.
+    ``refused`` is the error, or ``None`` when the launch continues.
+    """
+    cfg = _minimal_size_config(size_usd, notional_usd)
+    try:
+        cfg.validate()
+    except ValueError as exc:
+        return cfg, None, exc
+    empty = size_usd is None and _challenge_writer(namespace)
+    try:
+        contract = build_contract(cfg)
+    except ValueError as exc:
+        if empty:
+            return cfg, None, None
+        return cfg, None, exc
+    return cfg, contract, None
+
+
+def _retry_cap_argument(namespace, argv_cap):
+    """Challenge does not plant 0 ahead of the score."""
+    if _challenge_writer(namespace):
+        return None
+    try:
+        return int(argv_cap or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _leave_retry_unset(owner, namespace) -> None:
+    """The owner stores 0 for a missing cap. Challenge leaves it unset until the score."""
+    if owner is not None and _challenge_writer(namespace):
+        owner._transient_retry_cap = None
+
+
+def _open_launcher(owner, mt5, broker_symbol, tags, namespace, poll_seconds, kill_flag):
+    """An empty Challenge poll is stored unset. The launcher constructor needs a float."""
+    poll = _poll_for(namespace, poll_seconds)
+    if poll is None:
+        launcher = BookLauncher(
+            owner, mt5, broker_symbol, repo_root=".", tags=tags,
+            poll_seconds=0.0, kill_flag=kill_flag,
+        )
+        launcher.poll_seconds = None
+        return launcher
+    return BookLauncher(
+        owner, mt5, broker_symbol, repo_root=".", tags=tags,
+        poll_seconds=poll, kill_flag=kill_flag,
+    )
+
+
 
 def run_loop(launcher, max_ticks=None) -> None:
     """Wait, then run one cycle.
@@ -183,7 +272,7 @@ def main():
                    help="MT5 terminal64.exe path; falls back to GTOS_MT5_TERMINAL_PATH / profile mt5.terminal_path")
     p.add_argument("--namespace", default="operator_profile",
                    help="State/ledger/log namespace under pipeline_state/ultimate_book/")
-    p.add_argument("--poll-seconds", type=float, default=60.0)
+    p.add_argument("--poll-seconds", type=float, default=_poll_argument_default())
     p.add_argument("--tags", default=None, help="Comma-separated sleeve tags to run (default: all BUILT)")
     p.add_argument("--lane-weights", default=None,
                    help="Path to a signed gtos.lane_weights.v1 sleeve-weight file. Requires "
@@ -641,22 +730,14 @@ def main():
     # to see its positions cannot disagree. The banner prints it because a book whose identity
     # you cannot read in the log is a book you cannot reconcile against the terminal.
     _magic = magic_for_namespace(args.namespace)
-    # Build the F5 authorization contract before opening a terminal. In particular, a
-    # *_f5_minimal namespace with a missing size flag is an accidental FULL-SIZE worker,
-    # not a valid default, and must never reach a broker connection. Non-F5 returns None
-    # and keeps the historical config digest and token behavior byte-for-byte unchanged.
-    from src.components.ultimate_book.minimal_size import MinimalSizeConfig
-    minimal_size_cfg = MinimalSizeConfig(
-        enabled=args.f5_minimal_size_usd is not None,
-        target_risk_usd=float(args.f5_minimal_size_usd or 0.0),
-        notional_initial_usd=float(args.f5_notional_initial_usd),
-    )
-    try:
-        minimal_size_cfg.validate()
-        _f5_launch_contract = normalized_f5_launch_contract(
-            f5_enabled=minimal_size_cfg.enabled,
-            target_risk_usd=minimal_size_cfg.target_risk_usd,
-            notional_initial_usd=minimal_size_cfg.notional_initial_usd,
+    # Empty Challenge size stays unset. It does not become 0.0 and it does not
+    # refuse the launch. A size still on the command line keeps the contract
+    # the token hashes. Non-F5 with no size flag still returns no contract.
+    def _build_f5_contract(cfg):
+        return normalized_f5_launch_contract(
+            f5_enabled=cfg.enabled,
+            target_risk_usd=cfg.target_risk_usd,
+            notional_initial_usd=cfg.notional_initial_usd,
             tags=tags,
             namespace=args.namespace,
             magic=_magic,
@@ -665,8 +746,15 @@ def main():
             q1_selection=args.risk_unit_floor,
             q2_enabled=args.event_clock_shadow,
         )
-    except ValueError as exc:
-        logging.error("F5 launch contract refused: %s", exc)
+
+    minimal_size_cfg, _f5_launch_contract, _size_refused = _size_launch(
+        args.namespace,
+        args.f5_minimal_size_usd,
+        args.f5_notional_initial_usd,
+        _build_f5_contract,
+    )
+    if _size_refused:
+        logging.error("F5 launch contract refused: %s", _size_refused)
         return 6
     _cfg_digest = config_digest_for(
         args.config,
@@ -907,11 +995,10 @@ def main():
                               risk_unit_floor_policy=risk_unit_floor_policy,
                               frozen_intent_reprice=bool(args.frozen_intent_reprice),
                               judgment_rescue=bool(args.judgment_rescue),
-                              transient_retry_cap=(
-                                  0
-                                  if _challenge_writer(args.namespace)
-                                  else int(args.transient_retry_cap or 0)
+                              transient_retry_cap=_retry_cap_argument(
+                                  args.namespace, args.transient_retry_cap,
                               ))
+    _leave_retry_unset(owner, args.namespace)
     wpf = owner.weekend_policy_preflight()
     if not wpf.get("ok"):
         logging.error("WEEKEND POLICY PREFLIGHT FAILED (%s): %s — refusing to start. A funded "
@@ -1024,8 +1111,10 @@ def main():
             "TELEMETRY ONLY -- admission, sizing, placement and broker state are unchanged."
         )
     broker_symbol = build_broker_symbol_resolver(merged)
-    launcher = BookLauncher(owner, mt5, broker_symbol, repo_root=".", tags=tags,
-                            poll_seconds=args.poll_seconds, kill_flag=args.kill_flag)
+    launcher = _open_launcher(
+        owner, mt5, broker_symbol, tags, args.namespace,
+        args.poll_seconds, args.kill_flag,
+    )
 
     rt = merged.get("gtos_vnext_runtime", merged)
     gated_on = (

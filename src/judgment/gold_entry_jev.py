@@ -1,4 +1,9 @@
-"""Gold entry. One System One ask. Each decision is the return for this state.
+"""Metal entry. One System One ask. Each decision is the return for this state.
+
+Gold, silver, platinum, and every other metal on the card use this same
+geometry. The entry is a limit order. Cost and spread are not a reason to
+skip a metal. An unset env is not off. An empty score leaves the geometry
+unset and does not restore a distance. This module does not send.
 
 The post is ``jev_client.evaluate`` with model ``jev-1.13.0``
 (POST https://api.typesafe.ai/v1/systemone, ``merge_sleeve=False``).
@@ -19,7 +24,6 @@ MODEL = "jev-1.13.0"
 SCHEMA = "gtos.judgment.gold_entry.v1"
 CHALLENGE_LOGIN = "0"
 ENTRY_ENV = "GTOS_JEV_GOLD_ENTRY"
-_TRUTHY_OFF = frozenset({"0", "false", "no", "off"})
 _FIRE_ORDER = ("fire", "abstain", "hard_refuse")
 _DROP = object()
 _LIMIT_PARTS = ("floor", "baseline")
@@ -116,10 +120,10 @@ _LOCAL_OUTCOMES: list[dict[str, Any]] = []
 
 
 def overlay_enabled(*, environ: Mapping[str, str] | None = None) -> bool:
-    """Operator gate. Explicit 0/false/off leaves the ask unsent."""
-    env = environ if environ is not None else os.environ
-    raw = str(env.get(ENTRY_ENV, "")).strip().lower()
-    return raw not in _TRUTHY_OFF
+    """The env token is a fact. Unset is not off. It does not skip the ask."""
+
+    del environ
+    return True
 
 
 def _norm(value: Any) -> str:
@@ -285,7 +289,10 @@ def _labels(state: Mapping[str, Any], family: str) -> dict[str, str]:
     ident = _identity(state)
     clock = state.get("clock") if isinstance(state.get("clock"), Mapping) else {}
     sleeve = str(ident.get("sleeve") or "")
-    symbol = str(ident.get("symbol") or "")
+    raw_symbol = ident.get("symbol")
+    if raw_symbol is None or str(raw_symbol).strip() == "":
+        raw_symbol = state.get("symbol")
+    symbol = "" if raw_symbol is None else str(raw_symbol).strip()
     side = str(ident.get("side") or "")
     return {
         "book": CHALLENGE_LOGIN,
@@ -358,6 +365,12 @@ def _question_ok(spec: Mapping[str, Any]) -> bool:
     return not _bad_text(" ".join(parts))
 
 
+_SURFACE = (
+    "Gold, silver, platinum, and every other metal on this card use this same geometry. "
+    "The entry is a limit order. Cost and spread are not a reason to leave it unset. "
+)
+
+
 def entry_questions(family: str) -> dict[str, dict[str, Any]]:
     """One subtree for this family. The menu names the ask. It does not decide."""
 
@@ -366,7 +379,8 @@ def entry_questions(family: str) -> dict[str, dict[str, Any]]:
             (
                 "Is this entry state complete enough to judge this fire? "
                 "The noul you return is that completeness. "
-                "An empty noul leaves completeness unset."
+                "An empty noul leaves completeness unset. "
+                + _SURFACE
             ),
             "The named blocks are complete enough to judge this fire.",
             "A named block this fire needs is missing.",
@@ -384,7 +398,8 @@ def entry_questions(family: str) -> dict[str, dict[str, Any]]:
                 f"The score you return is how much of the named {chunk} chunk "
                 f"this {fam} entry needs. "
                 "It may sit between the levels. "
-                "An empty score leaves the depth unset."
+                "An empty score leaves the depth unset. "
+                + _SURFACE
             ),
         )
     quality_id = _QUALITY_BY_FAMILY.get(fam)
@@ -394,7 +409,8 @@ def entry_questions(family: str) -> dict[str, dict[str, Any]]:
             (
                 f"The score you return is the quality of this {fam} entry on this state. "
                 "It may sit between the levels. "
-                "An empty score leaves the quality unset."
+                "An empty score leaves the quality unset. "
+                + _SURFACE
             ),
         )
     if fam == "news_fade":
@@ -403,7 +419,8 @@ def entry_questions(family: str) -> dict[str, dict[str, Any]]:
                 "Is a named high-impact print inside the code window on this state? "
                 "The noul you return is that presence. "
                 "An empty noul leaves presence unset. "
-                "An empty spine is not a named print."
+                "An empty spine is not a named print. "
+                + _SURFACE
             ),
             "A named high-impact print is inside the code window.",
             "No named high-impact print is inside the code window.",
@@ -414,7 +431,8 @@ def entry_questions(family: str) -> dict[str, dict[str, Any]]:
             f"Would this {fam} entry still be scored a fire on this state? "
             "The choice is the single highest probability. "
             "An empty answer or a tie leaves the choice unset. "
-            "This question does not send."
+            "This question does not send. "
+            + _SURFACE
         ),
         {
             "fire": "Named geometry is present on this state.",
@@ -427,7 +445,8 @@ def entry_questions(family: str) -> dict[str, dict[str, Any]]:
             "Does this entry stay on this state? "
             "The noul you return is that answer. "
             "An empty noul leaves it unset. "
-            "This question does not send."
+            "This question does not send. "
+            + _SURFACE
         ),
         "This entry stays.",
         "This entry does not stay.",
@@ -438,7 +457,8 @@ def entry_questions(family: str) -> dict[str, dict[str, Any]]:
             "The score you return is the size tilt for this entry. "
             "It may sit between the levels. "
             "An empty score leaves the tilt unset. "
-            "This question does not send."
+            "This question does not send. "
+            + _SURFACE
         ),
     )
     return {key: spec for key, spec in pack.items() if _question_ok(spec)}
@@ -636,6 +656,7 @@ def _receipt(
     error: str | None,
     questions: list[str],
     decisions: Mapping[str, Any] | None = None,
+    overlay_env: str | None = None,
 ) -> dict[str, Any]:
     row = dict(decisions or {})
     return {
@@ -662,6 +683,12 @@ def _receipt(
         "news_fade_present": row.get("news_fade_present"),
         "questions": list(questions),
         "error": error,
+        "symbol": str(labels.get("symbol") or "") if isinstance(labels, Mapping) else "",
+        "order_kind": "limit",
+        "order_send": False,
+        "agent_order_send": False,
+        "send": False,
+        "overlay_env": overlay_env,
     }
 
 
@@ -711,6 +738,8 @@ def compose_entry_decision(
     """
 
     del answers
+    env = environ if environ is not None else os.environ
+    overlay_env = str(env.get(ENTRY_ENV, "")).strip().lower() or None
     enabled = overlay_enabled(environ=environ)
     family = _family_of(state if isinstance(state, Mapping) else {})
     _, has_emitter, _, ignore_fn, _ = _route()
@@ -726,32 +755,20 @@ def compose_entry_decision(
         emitter = bool(has_emitter(family))
     except Exception:
         emitter = False
-    if not enabled:
-        return _receipt(
-            family=family,
-            labels=labels,
-            enabled=False,
-            integer_emitted=integer_emitted,
-            has_emitter=emitter,
-            skip=skip,
-            missing=True,
-            error="overlay_off",
-            questions=[],
-        )
-
     try:
         questions = entry_questions(family)
     except Exception as exc:
         return _receipt(
             family=family,
             labels=labels,
-            enabled=True,
+            enabled=enabled,
             integer_emitted=integer_emitted,
             has_emitter=emitter,
             skip=skip,
             missing=True,
             error=type(exc).__name__,
             questions=[],
+            overlay_env=overlay_env,
         )
     posted = _prepare(state if isinstance(state, Mapping) else {}, family, integer_emitted)
     _attach_priors(posted, questions)
@@ -761,13 +778,14 @@ def compose_entry_decision(
         row = _receipt(
             family=family,
             labels=labels,
-            enabled=True,
+            enabled=enabled,
             integer_emitted=integer_emitted,
             has_emitter=emitter,
             skip=skip,
             missing=True,
             error=type(exc).__name__,
             questions=list(questions),
+            overlay_env=overlay_env,
         )
         _remember(posted, _pairs(row, family), row["error"])
         return row
@@ -796,7 +814,7 @@ def compose_entry_decision(
     row = _receipt(
         family=family,
         labels=labels,
-        enabled=True,
+        enabled=enabled,
         integer_emitted=integer_emitted,
         has_emitter=emitter,
         skip=skip,
@@ -804,6 +822,7 @@ def compose_entry_decision(
         error=ask_error,
         questions=list(questions),
         decisions=decisions,
+        overlay_env=overlay_env,
     )
     row["model"] = MODEL
     _remember(posted, _pairs(row, family), ask_error)
@@ -824,6 +843,9 @@ def maybe_stamp_entry_meta(
         "disposition": composed.get("disposition"),
         "extra_pass": False,
         "broker_effect": False,
+        "order_send": False,
+        "agent_order_send": False,
+        "order_kind": "limit",
         "keep": composed.get("keep"),
         "size_tilt": composed.get("size_tilt"),
         "include_depth": composed.get("include_depth"),

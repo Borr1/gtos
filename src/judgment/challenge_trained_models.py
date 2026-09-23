@@ -14,6 +14,7 @@ A floor and a baseline are not a question.
 
 Measured cell counts stay the label arithmetic. This module does not place,
 flatten, remint, or send. Judge code stays unable to send.
+The score ask reads rows the feature store has already accepted.
 
 Book: Challenge 0 / ns operator / magic 0.
 When the key is absent, the client does not post. A miss leaves the field unset.
@@ -1915,38 +1916,156 @@ def chair_label(feat: Mapping[str, Any]) -> str | None:
     return parsed["choices"].get(Q_CHAIR)
 
 
-def maybe_jev_score(rows: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
-    """Jev score for this rung. The flag is a gate. A miss stays missing."""
+_READ_FACTS = ("exit_class", "close_reason", "R", "broker_net", "hold_min")
 
-    del rows
-    base = {
+
+def _view_label(row: Mapping[str, Any]) -> dict[str, Any] | None:
+    """One accepted label. A row the store refused is not a score input."""
+
+    if row.get("accepted") is False:
+        return None
+    lab = row.get("label") if isinstance(row.get("label"), Mapping) else None
+    if lab is not None:
+        feat = row.get("feature") if isinstance(row.get("feature"), Mapping) else {}
+        ident = feat.get("identity") if isinstance(feat.get("identity"), Mapping) else {}
+        ticket = lab.get("ticket")
+        if ticket in (None, ""):
+            ticket = ident.get("candidate_id")
+        view = {
+            "ticket": ticket,
+            "symbol": lab.get("symbol") or ident.get("symbol"),
+            "exit_class": lab.get("exit_class"),
+            "close_reason": lab.get("close_reason"),
+            "R": lab.get("R"),
+            "broker_net": lab.get("broker_net"),
+            "hold_min": lab.get("hold_min"),
+        }
+    else:
+        view = {
+            "ticket": row.get("ticket"),
+            "symbol": row.get("symbol"),
+            "exit_class": row.get("exit_class"),
+            "close_reason": row.get("close_reason"),
+            "R": row.get("R"),
+            "broker_net": row.get("broker_net"),
+            "hold_min": row.get("hold_min"),
+        }
+    if view.get("ticket") in (None, ""):
+        return None
+    if not any(view.get(key) not in (None, "") for key in _READ_FACTS):
+        return None
+    return view
+
+
+def _store_views() -> list[dict[str, Any]]:
+    """Rows already accepted by the feature store. A missing file is no rows."""
+
+    try:
+        from . import challenge_feature_label_store as store
+    except Exception:
+        try:
+            from src.judgment import challenge_feature_label_store as store
+        except Exception:
+            return []
+    try:
+        rows = store.load_jsonl(store.default_store_path())
+    except Exception:
+        return []
+    views: list[dict[str, Any]] = []
+    for row in rows:
+        if isinstance(row, Mapping):
+            view = _view_label(row)
+            if view is not None:
+                views.append(view)
+    return views
+
+
+def _rows_for_ask(rows: Iterable[Mapping[str, Any]] | None) -> list[dict[str, Any]]:
+    """Supplied accepted rows, otherwise the store. Empty does not invent."""
+
+    supplied: list[dict[str, Any]] = []
+    if rows is not None:
+        for row in rows:
+            if isinstance(row, Mapping):
+                view = _view_label(row)
+                if view is not None:
+                    supplied.append(view)
+    if supplied:
+        return supplied
+    return _store_views()
+
+
+def _score_shell(*, n_rows: int, read: bool, asked: bool) -> dict[str, Any]:
+    return {
+        "schema": SCORE_SCHEMA,
         "jev_scored": None,
         "reason": None,
         "posts": None,
         "trainer_mode": None,
         "model": MODEL,
         "api_url": API_URL,
+        "n_rows": n_rows,
+        "read": read,
+        "asked": asked,
+        "ticket": None,
+        "read_r": None,
+        "exit_class": None,
+        "order_send": False,
+        "agent_order_send": False,
+        "never_place": True,
+        "never_flatten": True,
+        "never_remint": True,
+        "skipped": None,
+        "invented": False,
     }
-    if not jev_score_flag_on():
-        return {**base, "reason": f"{JEV_SCORE_ENV}_off"}
+
+
+def maybe_jev_score(rows: Iterable[Mapping[str, Any]] | None = None) -> dict[str, Any]:
+    """Read accepted store rows, then ask. No accepted row means no score."""
+
+    try:
+        read = _rows_for_ask(rows)
+    except Exception:
+        read = []
+    shell = _score_shell(n_rows=len(read), read=bool(read), asked=False)
+    if not read:
+        return shell
+    shell["asked"] = True
+    shell["ticket"] = read[0].get("ticket")
+    shell["read_r"] = read[0].get("R")
+    shell["exit_class"] = read[0].get("exit_class")
     facts = {
-        "typesafe_key_present": typesafe_key_present(),
-        "n_rows": None,
+        "n_rows": len(read),
+        "tickets": [row.get("ticket") for row in read],
+        "symbols": [row.get("symbol") for row in read],
+        "exit_class": [row.get("exit_class") for row in read],
+        "close_reason": [row.get("close_reason") for row in read],
+        "R": [row.get("R") for row in read],
+        "broker_net": [row.get("broker_net") for row in read],
+        "hold_min": [row.get("hold_min") for row in read],
     }
-    parsed = _ask_parsed(
-        facts,
-        _jev_questions(_levels(facts)),
-        {Q_MODE: _TRAINER_ORDER},
-        (Q_JEV,),
-        (Q_POSTS,),
-    )
-    return {
-        **base,
-        "jev_scored": parsed["nouls"].get(Q_JEV),
-        "reason": parsed.get("error"),
-        "posts": parsed["scores"].get(Q_POSTS),
-        "trainer_mode": parsed["choices"].get(Q_MODE),
-    }
+    try:
+        parsed = _ask_parsed(
+            facts,
+            _jev_questions(_levels(facts)),
+            {Q_MODE: _TRAINER_ORDER},
+            (Q_JEV,),
+            (Q_POSTS,),
+        )
+    except Exception as exc:
+        shell["reason"] = type(exc).__name__
+        shell["order_send"] = False
+        shell["never_place"] = True
+        return shell
+    shell["jev_scored"] = parsed["nouls"].get(Q_JEV)
+    shell["reason"] = parsed.get("error")
+    shell["posts"] = parsed["scores"].get(Q_POSTS)
+    shell["trainer_mode"] = parsed["choices"].get(Q_MODE)
+    shell["order_send"] = False
+    shell["agent_order_send"] = False
+    shell["never_place"] = True
+    shell["invented"] = False
+    return shell
 
 
 def load_store_rows(

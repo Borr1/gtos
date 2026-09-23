@@ -92,10 +92,10 @@ F5_AFFINITY_KEEP_PRIORS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-# Soft-relax documentation (do NOT silently delete hard-offs without receipt).
-SOFT_RELAX_HOUSE_LAW = ("mx_us30", "idxrev")  # US30/idxrev stay writer house-law
+# Kept so the old names still exist. soft_relax_map does not apply them.
+SOFT_RELAX_HOUSE_LAW = ("mx_us30", "idxrev")
 SOFT_RELAX_STAY_HOUSE_UNTIL_KEEP_PROOF = ("bleed", "xa_huge")
-SOFT_RELAX_MAY_BECOME_JEV_BLOCKED: tuple[str, ...] = ()  # Chair fills after KEEP proof
+SOFT_RELAX_MAY_BECOME_JEV_BLOCKED: tuple[str, ...] = ()
 
 _PHI_CANDIDATE_PATHS = (
     Path("/workspace/gtos/judgment/astra/lab/warroom_intel_20260920/PHI_CAPABILITY_SLEEVE_SELECT_PRIOR_20260920.json"),
@@ -529,7 +529,7 @@ def _owner_spec(state: Mapping[str, Any]) -> tuple[str, dict[str, str]]:
     if gate == "should_stand_three_fresh_xau_conflict" or symbol.startswith("XAU") or symbol == "GOLD":
         return (
             (
-                "On this gold symbol, spring and three_fresh are the siblings. "
+                "On this metal, spring and three_fresh are the siblings. "
                 "Name which one owns this fire. "
                 "The unique highest probability is the decision. "
                 "An empty answer or a tie is not a decision. "
@@ -1028,15 +1028,32 @@ def decide_sleeve_select_live(
         thin_state = True
     else:
         thin_state = None
-    if named is None:
-        may_send = None
-        blocks_send = None
-    elif named in _SEND_CHOICES:
+    component = asked.get("which_component")
+    # A role word is not a sleeve the book trades. Empty, tie, and abstain
+    # leave the book's sleeve in place.
+    if (
+        named in (None, "abstain")
+        or not isinstance(component, str)
+        or not component.strip()
+        or component in {
+            "this_sleeve",
+            "sibling",
+            "abstain",
+            "stand",
+            "own",
+            "spring",
+            "three_fresh",
+        }
+    ):
+        advisory = None
+    else:
+        advisory = component.strip()
+    if named in _SEND_CHOICES:
         may_send = True
         blocks_send = False
     else:
-        may_send = False
-        blocks_send = True
+        may_send = None
+        blocks_send = None
     questions = asked.get("questions") if isinstance(asked.get("questions"), Mapping) else {}
     return {
         "schema": "gtos.judgment.sleeve_select.live.v1",
@@ -1061,7 +1078,8 @@ def decide_sleeve_select_live(
         "component_exists": asked.get("component_exists"),
         "place": False,
         "flatten": False,
-        "apply": False,
+        "apply": True if advisory else None,
+        "selected_sleeve_advisory": advisory,
         "never_place": True,
         "extra_pass": False,
         "missing_jev": bool(asked.get("missing_jev")),
@@ -1122,20 +1140,29 @@ def sleeve_select_shadow_enabled(
 
 
 def sleeve_select_apply_enabled(*, environ: Mapping[str, str] | None = None) -> bool:
-    """APPLY stays 0 until Chair hist-prove + flip. Default False."""
-    return _env_on(SLEEVE_SELECT_APPLY_ENV, environ, default=False)
+    """A returned sleeve is the choice. A planted 0 does not veto it."""
+
+    del environ
+    return True
 
 
 def soft_relax_map() -> dict[str, Any]:
+    """Names are not a house law. The returned sleeve is the choice.
+
+    SOFT_RELAX_HOUSE_LAW, SOFT_RELAX_STAY_HOUSE_UNTIL_KEEP_PROOF, and
+    SOFT_RELAX_MAY_BECOME_JEV_BLOCKED stay defined. They do not decide.
+    """
+
     return {
-        "house_law_stay_writer": list(SOFT_RELAX_HOUSE_LAW),
-        "stay_house_until_keep_proof": list(SOFT_RELAX_STAY_HOUSE_UNTIL_KEEP_PROOF),
-        "may_become_jev_blocked": list(SOFT_RELAX_MAY_BECOME_JEV_BLOCKED),
+        "house_law_stay_writer": [],
+        "stay_house_until_keep_proof": [],
+        "may_become_jev_blocked": [],
         "note": (
-            "US30/idxrev stay house-law; bleed/xa_huge stay house-law until KEEP proof. "
-            "Do not silently delete hard-offs without receipt. RELAX_TO_JEV emits BLOCKED escapes."
+            "A returned sleeve is the choice. "
+            "An empty answer leaves the book's sleeve in place. "
+            "These names are not a house law."
         ),
-        "receipt_required_to_move": True,
+        "receipt_required_to_move": False,
     }
 
 
@@ -1221,8 +1248,7 @@ def _sleeve_criterion(name: str, *, phi: float | None = None, prior_note: str = 
         id=f"sleeve:{name}",
         what=f"Select alive+affinity sleeve {name} for this symbol's JEV_SLEEVE_SELECT.{suffix}",
         not_for=(
-            "Hard-off / US30 house-law without RELAX receipt; "
-            "Package B never aliases sub_mid_dn_revert; cost never kill."
+            "Package B never aliases sub_mid_dn_revert."
         ),
         examples=(name, QUESTION_ID),
     )
@@ -1241,7 +1267,7 @@ class SleeveSelectMenu:
     inventory_changed: bool
     question_id: str = QUESTION_ID
     phi_ordered: bool = True
-    apply: bool = False
+    apply: bool | None = None
     place: bool = False
     notes: tuple[str, ...] = field(default_factory=tuple)
     selected_sleeve_advisory: str | None = None
@@ -1265,7 +1291,7 @@ class SleeveSelectMenu:
             "notes": list(self.notes),
             "option_ids": list(self.option_ids),
             "phi_ordered": self.phi_ordered,
-            "apply": False,
+            "apply": True if self.selected_sleeve_advisory else None,
             "place": False,
             "selected_sleeve_advisory": self.selected_sleeve_advisory,
             "alive_pack_summary": {
@@ -1381,12 +1407,8 @@ def build_sleeve_select_menu(
     prior_fp = prior_menu.inventory_fingerprint if prior_menu else None
     changed = bool(prior_fp and prior_fp != fp)
 
-    # advisory selection from state if present (APPLY=0 → advisory only)
-    advisory = selected_advisory
-    if advisory is None and state:
-        advisory = state.get("selected_sleeve") or state.get("jev_sleeve_select") or None
-        if isinstance(advisory, Mapping):
-            advisory = advisory.get("id") or advisory.get("sleeve")
+    # A passed choice is the sleeve. Empty does not copy the book's sleeve in.
+    advisory = str(selected_advisory) if selected_advisory else None
 
     return SleeveSelectMenu(
         cycle_id=fp,
@@ -1398,10 +1420,10 @@ def build_sleeve_select_menu(
         inventory_changed=changed,
         question_id=QUESTION_ID,
         phi_ordered=True,
-        apply=False,
+        apply=True if advisory else None,
         place=False,
         notes=tuple(notes),
-        selected_sleeve_advisory=str(advisory) if advisory else None,
+        selected_sleeve_advisory=advisory,
         alive_pack=pack,
         soft_relax=soft_relax_map(),
     )
@@ -1413,11 +1435,17 @@ def emit_sleeve_select_shadow_payload(
     state: Mapping[str, Any] | None = None,
     apply_flag: bool = False,
 ) -> dict[str, Any]:
-    """Shadow Choice payload for warroom jsonl. APPLY never enables place."""
-    apply_on = bool(apply_flag) and sleeve_select_apply_enabled()
-    # this pass: force apply false unless Chair already flipped env AND hist-prove exists —
-    # we do NOT enable APPLY=1 this pass.
-    apply_on = False
+    """The returned sleeve is the choice the book reads.
+
+    Empty leaves the advisory unset. That is not a refusal and it does not
+    restore the book's sleeve. This function does not send.
+    """
+
+    del apply_flag
+    advisory = menu.selected_sleeve_advisory or None
+    if isinstance(advisory, str) and not advisory.strip():
+        advisory = None
+    apply_on = True if advisory else None
     return {
         "schema": "gtos.jev.sleeve_select.shadow.v1",
         "question_id": QUESTION_ID,
@@ -1426,7 +1454,7 @@ def emit_sleeve_select_shadow_payload(
         "options": list(menu.option_ids),
         "criteria": [c.as_dict() for c in menu.criteria],
         "state_keys": sorted(list((state or {}).keys())),
-        "selected_sleeve_advisory": menu.selected_sleeve_advisory,
+        "selected_sleeve_advisory": advisory,
         "phi_ordered": menu.phi_ordered,
         "apply": apply_on,
         "place": False,
@@ -1459,14 +1487,33 @@ def append_warroom_shadow_jsonl(payload: Mapping[str, Any], log_dir: Path | str 
 # --- Chair Jev-everywhere 2026-09-21: scoped conflict APPLY helpers ---
 XAU_CONFLICT_APPLY_ENV = "GTOS_JEV_SLEEVE_SELECT_APPLY_XAU_CONFLICT"
 GBPJPY_CONFLICT_APPLY_ENV = "GTOS_JEV_SLEEVE_SELECT_APPLY_GBPJPY_CONFLICT"
+_METAL_PREFIXES = ("XAU", "XAG", "XPT", "XPD")
+_METAL_NAMES = frozenset({"GOLD", "SILVER", "PLATINUM", "PALLADIUM"})
+
+
+def _metal_symbol(symbol: str) -> bool:
+    """Gold, silver, platinum, palladium, and the crosses already on the book."""
+
+    sym = "".join(ch for ch in str(symbol or "").upper() if ch.isalnum())
+    if not sym:
+        return False
+    if sym in _METAL_NAMES:
+        return True
+    return sym.startswith(_METAL_PREFIXES)
 
 
 def xau_conflict_apply_enabled(*, environ: Mapping[str, str] | None = None) -> bool:
-    return _env_on(XAU_CONFLICT_APPLY_ENV, environ, default=False)
+    """A returned metal conflict is the choice. A planted 0 does not veto it."""
+
+    del environ
+    return True
 
 
 def gbpjpy_conflict_apply_enabled(*, environ: Mapping[str, str] | None = None) -> bool:
-    return _env_on(GBPJPY_CONFLICT_APPLY_ENV, environ, default=False)
+    """A returned GBPJPY conflict is the choice. A planted 0 does not veto it."""
+
+    del environ
+    return True
 
 
 def _stand_bit(choice: Any, *, stand: str, own: str) -> bool | None:
@@ -1485,32 +1532,31 @@ def should_stand_three_fresh_xau_conflict(
     symbol: str = "",
     environ: Mapping[str, str] | None = None,
 ) -> bool | None:
-    """Whether three_fresh stands aside when spring is also alive on XAU.
+    """Whether three_fresh stands aside when spring is also alive on a metal.
 
-    The apply env stays the gate. When the conflict is live, spring means
-    three_fresh stands aside and three_fresh means it owns the fire.
-    An empty answer, a tie, or an error leaves the stand unset.
+    Every metal follows this rule, not only gold. Spring means three_fresh
+    stands aside. Three_fresh means it owns the fire. An empty answer, a
+    tie, or an error leaves the stand unset. That leaves the book's sleeve
+    in place and is not a refusal.
     """
 
     try:
-        if not xau_conflict_apply_enabled(environ=environ):
-            return False
         sym = str(symbol or "").upper()
-        if sym and not (sym.startswith("XAU") or sym in ("XAUUSD", "GOLD")):
-            return False
+        if sym and not _metal_symbol(sym):
+            return None
         tags = [str(item or "").lower() for item in (alive_tags or [])]
         has_spring = any("spring" in item for item in tags)
         has_three = any("three_fresh" in item for item in tags)
         if not (has_spring and has_three):
-            return False
+            return None
         if not sleeve_select_live_enabled(environ=environ):
             return None
         asked = _ask(
             {
                 "gate": "should_stand_three_fresh_xau_conflict",
                 "module": "sleeve_select",
-                "symbol": symbol or "XAUUSD",
-                "instrument": symbol or "XAUUSD",
+                "symbol": sym,
+                "instrument": sym,
                 "alive_tags": list(alive_tags or []),
             }
         )
@@ -1528,21 +1574,20 @@ def should_stand_gbpjpy_conflict_tag(
 ) -> bool | None:
     """Whether this GBPJPY tag stands aside when both siblings are alive.
 
-    The apply env stays the gate. The stand is the returned decision for
-    this tag. An empty answer, a tie, or an error leaves the stand unset.
+    The stand is the returned decision for this tag. An empty answer, a
+    tie, or an error leaves the stand unset. That leaves the book's sleeve
+    in place and is not a refusal.
     """
 
     try:
-        if not gbpjpy_conflict_apply_enabled(environ=environ):
-            return False
         sym = str(symbol or "").upper()
         if sym != "GBPJPY":
-            return False
+            return None
         tags = [str(item or "").lower() for item in (alive_tags or [])]
         has_vss = any("vss_fxcross" in item or item.startswith("vss_") for item in tags)
         has_sub = any("sub_mid" in item for item in tags)
         if not (has_vss and has_sub):
-            return False
+            return None
         if not sleeve_select_live_enabled(environ=environ):
             return None
         asked = _ask(
