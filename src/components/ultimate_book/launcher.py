@@ -24,7 +24,7 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
@@ -560,11 +560,56 @@ class BookLauncher:
         }
 
     # ---- one iteration (testable) ----
+    def note_wake_target(self, target: Optional[datetime]) -> None:
+        """The instant the wait now in progress was computed to end."""
+
+        self._wake_target = target
+
+    def _wake_clock(self, wall: datetime) -> datetime:
+        """max(the wall at wake, the scheduled instant). One use, then it is gone.
+
+        A print-aligned wait's instant is the print, so a wake a fraction of a
+        millisecond early is still on that print. A wait Jev ended earlier stays
+        on that earlier instant.
+        """
+
+        target = getattr(self, "_wake_target", None)
+        self._wake_target = None
+        wall_utc = wall if wall.tzinfo else wall.replace(tzinfo=timezone.utc)
+        wall_utc = wall_utc.astimezone(timezone.utc)
+        if not isinstance(target, datetime):
+            return wall_utc
+        if target.tzinfo is None:
+            target = target.replace(tzinfo=timezone.utc)
+        else:
+            target = target.astimezone(timezone.utc)
+        if wall_utc >= target:
+            return wall_utc
+        return target
+
     def tick(self, now_utc: Optional[datetime] = None) -> dict:
         """Run a cycle for any timeframe whose closed bar advanced. NEVER raises."""
-        now = now_utc or datetime.now(timezone.utc)
+        wall = now_utc or datetime.now(timezone.utc)
         if self._identity_refused():
-            return self._identity_reconnect_only(now)
+            return self._identity_reconnect_only(wall)
+        now = self._wake_clock(wall)
+        try:
+            from src.components.ultimate_book.launcher_facts import note_cycle_clock
+
+            note_cycle_clock(now)
+        except Exception:
+            pass
+        try:
+            return self._tick_body(now)
+        finally:
+            try:
+                from src.components.ultimate_book.launcher_facts import note_cycle_clock
+
+                note_cycle_clock(None)
+            except Exception:
+                pass
+
+    def _tick_body(self, now: datetime) -> dict:
         self._write_heartbeat(now)   # FIRST: a tick that then hangs in a broker call goes stale -> alertable
         killed, halted = self.killed(), self.halted()
         place = self._place_allowed(killed, halted)
@@ -725,4 +770,9 @@ class BookLauncher:
                 break
             wait = self.wait_seconds()
             if wait is not None and wait > 0:
+                self.note_wake_target(
+                    datetime.now(timezone.utc) + timedelta(seconds=float(wait))
+                )
                 time.sleep(wait)
+            else:
+                self.note_wake_target(None)

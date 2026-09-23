@@ -70,7 +70,7 @@ def _key(symbol, bars, decision_day, bar_time) -> tuple:
     return (str(symbol), str(decision_day), len(bars) if bars else 0, str(bar_time))
 
 
-def _facts(symbol, bars, decision_day, bar_time, bar_times) -> dict:
+def _facts(symbol, bars, decision_day, bar_time, bar_times, now=None) -> dict:
     n = len(bars) if bars else 0
     i = n - 1 if n else -1
     times_ok = bool(bar_times) and n > 0 and len(bar_times) == n
@@ -91,7 +91,7 @@ def _facts(symbol, bars, decision_day, bar_time, bar_times) -> dict:
         named_surface=list(ON_SURFACE),
         times_aligned=times_ok,
     )
-    remain = fx_spot.seconds_until_next_print(latest, previous)
+    remain = fx_spot.seconds_until_next_print(latest, previous, now=now)
     if remain is not None:
         state["seconds_from_clock"] = remain
     return state
@@ -112,10 +112,10 @@ def _choices(symbol) -> dict:
     }
 
 
-def spot_pack(symbol, bars, decision_day, *, bar_time=None, bar_times=None, aux_bars=None, aux_times=None, **_):
+def spot_pack(symbol, bars, decision_day, *, bar_time=None, bar_times=None, aux_bars=None, aux_times=None, runtime_now=None, **_):
     """One post. Scores are the bounds. The surface is a choice on the same post."""
     del aux_bars, aux_times
-    facts = _facts(symbol, bars, decision_day, bar_time, bar_times)
+    facts = _facts(symbol, bars, decision_day, bar_time, bar_times, now=runtime_now)
     i = len(bars) - 1 if bars else None
     return fx_spot.ask_pack(
         _SCORES, facts, choices=_choices(symbol), bars=bars, index=i, bar_times=bar_times,
@@ -166,7 +166,7 @@ def _first_break(bars, bar_times, i, day, scores):
 
 
 def generate(symbol, bars, decision_day, *, bar_time=None, bar_times=None,
-             aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
+             aux_bars=None, aux_times=None, runtime_now=None, **_) -> Optional[TradeIntent]:
     """Emit when every bound came back and this bar is the first rejection break."""
     if not bars or not bar_times or len(bar_times) != len(bars):
         return None
@@ -174,6 +174,7 @@ def generate(symbol, bars, decision_day, *, bar_time=None, bar_times=None,
         symbol, bars, decision_day,
         bar_time=bar_time, bar_times=bar_times,
         aux_bars=aux_bars, aux_times=aux_times,
+        runtime_now=runtime_now,
     )
     if packed.get("sides", {}).get("surface") != "on_surface":
         return None

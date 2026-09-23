@@ -220,11 +220,11 @@ def run_loop(launcher, max_ticks=None) -> None:
 
     import time
 
-    from src.components.ultimate_book.launcher_facts import next_cycle_wait
+    from src.components.ultimate_book.launcher_facts import next_cycle_wake
 
     n = 0
     while max_ticks is None or n < max_ticks:
-        wait = next_cycle_wait(launcher)
+        wait, target = next_cycle_wake(launcher)
         _apply_challenge_launcher(launcher)
         if wait is not None:
             try:
@@ -232,10 +232,18 @@ def run_loop(launcher, max_ticks=None) -> None:
             except Exception:
                 pass
             logging.info("cycle_wait seconds=%s", wait)
+            try:
+                launcher.note_wake_target(target)
+            except Exception:
+                pass
             if wait > 0:
                 time.sleep(wait)
         else:
             logging.info("cycle_wait unset")
+            try:
+                launcher.note_wake_target(None)
+            except Exception:
+                pass
         launcher.tick()
         n += 1
         if max_ticks is not None and n >= max_ticks:

@@ -11,6 +11,7 @@ bars emits NO intent (never a wrong one).
 """
 from __future__ import annotations
 
+from collections.abc import Mapping
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -232,10 +233,15 @@ def candles_to_bars(candles: list[dict], *, drop_forming: bool = True,
         keep_last = (last_t + timedelta(minutes=int(interval_minutes))) <= ref
     if not drop_forming:
         rows = list(candles)
+    elif now is not None and interval_minutes:
+        # This `now` is the card's clock. A candle whose close is after it
+        # is forming. A later wall read is a different clock and does not
+        # put that candle in the closed series, and it does not ask.
+        rows = list(candles) if keep_last else candles[:-1]
     elif _challenge(namespace):
-        # Ask even when the last time will not parse. The candle stays out
-        # only when that side is the unique highest. An empty answer, a tie,
-        # or an error does not drop it and does not restore a skip.
+        # No cycle clock was passed. Ask even when the last time will not
+        # parse. The candle stays out only when that side is the unique
+        # highest. An empty answer, a tie, or an error does not drop it.
         bar_s = last_t.isoformat() if last_t else ""
         winner = _ask(
             "last_bar",
@@ -276,6 +282,7 @@ def get_closed_bars(mt5, symbol: str, timeframe: int, count: int,
                     now: Optional[datetime] = None,
                     interval_minutes: Optional[int] = None,
                     namespace: Optional[str] = None,
+                    forming_sink: list | None = None,
                     ) -> tuple[list[Bar], list[datetime]]:
     """Fetch `count` recent candles for symbol via the live mt5 interface and return closed Bars.
     Returns ([],[]) on any feed failure (caller treats as 'no data' -> emits no intent).
@@ -305,7 +312,7 @@ def get_closed_bars(mt5, symbol: str, timeframe: int, count: int,
             candles = _read_candles(mt5, symbol, timeframe, count)
     if not candles:
         return [], []
-    return candles_to_bars(
+    bars, times = candles_to_bars(
         candles,
         drop_forming=drop_forming,
         now=now,
@@ -314,6 +321,14 @@ def get_closed_bars(mt5, symbol: str, timeframe: int, count: int,
         symbol=symbol,
         timeframe=timeframe,
     )
+    if forming_sink is not None:
+        last = candles[-1]
+        if isinstance(last, Mapping):
+            last_t = _parse_time(last.get("time"))
+            kept = times[-1] if times else None
+            if last_t is not None and last_t != kept:
+                forming_sink.append(last)
+    return bars, times
 
 
 def decision_day_of(dt: datetime) -> str:

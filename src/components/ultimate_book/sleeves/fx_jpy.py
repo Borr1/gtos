@@ -168,7 +168,7 @@ def _parse(bar_times):
     return parsed
 
 
-def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, ny: bool):
+def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, ny: bool, now=None):
     """One post. The multiples are scores. The entry is a choice on the session facts."""
     n = len(bars) if bars else 0
     i = n - 1 if n else -1
@@ -196,7 +196,7 @@ def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, n
         state["hour_position"] = entry["hour_position"]
         state["session_range"] = entry["session_range"]
         state["time_left"] = entry["time_left"]
-    remain = fx_spot.seconds_until_next_print(latest, previous)
+    remain = fx_spot.seconds_until_next_print(latest, previous, now=now)
     if remain is not None:
         state["seconds_from_clock"] = remain
     choices = {
@@ -282,13 +282,13 @@ def _geometry(bars, parsed, i, scores, entry, *, ny: bool):
     return direction, stop_dist, target_dist
 
 
-def _generate(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, ny: bool) -> Optional[TradeIntent]:
+def _generate(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, ny: bool, now=None) -> Optional[TradeIntent]:
     if not bars or bar_times is None or len(bar_times) != len(bars):
         return None
     parsed = _parse(bar_times)
     if parsed is None:
         return None
-    packed = spot_pack(sleeve, symbol, bars, decision_day, bar_times, ny=ny)
+    packed = spot_pack(sleeve, symbol, bars, decision_day, bar_times, ny=ny, now=now)
     if packed.get("sides", {}).get("surface") != "on_surface":
         return None
     if packed.get("sides", {}).get("session_entry") != "this_bar":
@@ -310,14 +310,14 @@ def _generate(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, n
 
 
 def generate_fx_jpy(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
-                    aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
+                    aux_bars=None, aux_times=None, runtime_now=None, **_) -> Optional[TradeIntent]:
     """London session. This bar is the entry only when that Choice says so."""
     del bar_time, aux_bars, aux_times
-    return _generate("fx_jpy", symbol, bars, decision_day, bar_times, ny=False)
+    return _generate("fx_jpy", symbol, bars, decision_day, bar_times, ny=False, now=runtime_now)
 
 
 def generate_fx_jpy_ny(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
-                       aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
+                       aux_bars=None, aux_times=None, runtime_now=None, **_) -> Optional[TradeIntent]:
     """New York session open. Impulse and trend lookback are scores on the same post."""
     del bar_time, aux_bars, aux_times
-    return _generate("fx_jpy_ny", symbol, bars, decision_day, bar_times, ny=True)
+    return _generate("fx_jpy_ny", symbol, bars, decision_day, bar_times, ny=True, now=runtime_now)

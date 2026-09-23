@@ -171,7 +171,12 @@ def test_right_login_proceeds(monkeypatch):
 def test_launcher_reconnect_calls_connect():
     from src.components.ultimate_book.launcher import BookLauncher
 
-    assert "self._mt5.connect()" in inspect.getsource(BookLauncher.tick)
+    tick = inspect.getsource(BookLauncher.tick)
+    refused = tick.find("_identity_refused")
+    wake = tick.find("_wake_clock")
+    body = tick.find("_tick_body")
+    assert 0 <= refused < wake < body
+    assert "self._mt5.connect()" in inspect.getsource(BookLauncher._tick_body)
 
 
 class _Book:

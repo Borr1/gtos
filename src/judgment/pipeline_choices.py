@@ -340,7 +340,16 @@ def bar_deadline_s(
     if opened is None or minutes is None or minutes <= 0:
         return None
     span = timedelta(seconds=minutes * _MINUTE_SECONDS)
-    clock = now or datetime.now(timezone.utc)
+    clock = now
+    if clock is None:
+        try:
+            from src.components.ultimate_book.launcher_facts import cycle_clock
+
+            clock = cycle_clock()
+        except Exception:
+            clock = None
+    if clock is None:
+        clock = datetime.now(timezone.utc)
     if clock.tzinfo is None:
         clock = clock.replace(tzinfo=timezone.utc)
     else:

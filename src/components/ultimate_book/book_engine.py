@@ -1866,7 +1866,14 @@ class UltimateBookLiveEngine:
         if ivl and times and now is not None:
             try:
                 bar_close = times[-1] + timedelta(minutes=ivl)
-                facts["seconds_from_clock"] = (bar_close - now).total_seconds()
+                remainder = (bar_close - now).total_seconds()
+                # The same clock that kept this bar. A positive remainder
+                # means it has not closed, so it is not the ask's expiry.
+                if remainder > 0:
+                    facts["seconds_to_close"] = remainder
+                    facts["seconds_from_clock"] = None
+                else:
+                    facts["seconds_from_clock"] = remainder
             except Exception:
                 facts["seconds_from_clock"] = None
         self._attach_forming_move(facts, spec, symbol, ivl, now, bars, times)
@@ -2043,6 +2050,37 @@ class UltimateBookLiveEngine:
             self._last_bar_cards = memo
         memo.update(updates)
 
+    @staticmethod
+    def _longer_series(bar_cache, key):
+        """A series already read for this symbol and timeframe, at least this long.
+
+        The tail is what a shorter pull would have ended on. The cache keeps
+        the long series. The caller gets its own lists.
+        """
+
+        if not isinstance(key, tuple) or len(key) != 3:
+            return None
+        symbol, timeframe, count = key
+        if not isinstance(count, int):
+            return None
+        best = None
+        best_n = None
+        for cached_key, series in bar_cache.items():
+            if not isinstance(cached_key, tuple) or len(cached_key) != 3:
+                continue
+            sym, tf, n = cached_key
+            if sym != symbol or tf != timeframe or not isinstance(n, int) or n < count:
+                continue
+            if best_n is None or n < best_n:
+                best = series
+                best_n = n
+        if not best:
+            return None
+        bars, times = best
+        if len(bars) <= count:
+            return (list(bars), list(times))
+        return (list(bars[-count:]), list(times[-count:]))
+
     def _raw_closed_bars(self, bar_cache, key, fetch):
         """One raw fetch for this key. The caller slices the lists it is given."""
 
@@ -2050,6 +2088,8 @@ class UltimateBookLiveEngine:
         inflight = self._bar_inflight
         with lock:
             found = bar_cache.get(key)
+            if found is None:
+                found = self._longer_series(bar_cache, key)
             if found is not None:
                 return list(found[0]), list(found[1])
             gate = inflight.get(key)
@@ -2086,6 +2126,132 @@ class UltimateBookLiveEngine:
         if error is not None:
             raise error
         return list(stored[0]), list(stored[1])
+
+    def _slot_fetch_count(self, spec) -> int:
+        primary_count = max(int(self._bar_count), int(getattr(spec, "bar_count", 0) or 0))
+        if str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS:
+            return primary_count
+        named = _named_bar_count(self._warmup_required(spec))
+        if named is not None and named > primary_count:
+            return named
+        return primary_count
+
+    def _closed_series(
+        self, spec, symbol, fetch_count, now, bar_cache, broker_sym, *, with_clock,
+    ):
+        """One closed series for this symbol and timeframe.
+
+        ``with_clock`` passes this cycle's ``now`` into the closed-bar filter.
+        The card's seconds use that same ``now``. A friend book passes it for
+        H4, and for the other timeframes only when the pre-gap flag is on.
+        """
+
+        minutes = _TF_MINUTES.get(spec.timeframe)
+        key = (symbol, spec.timeframe, fetch_count)
+        namespace = getattr(self, "_namespace", None)
+        sunk: list = []
+        if with_clock and minutes:
+            def fetch(
+                mt5=self._mt5,
+                broker=broker_sym,
+                tf=spec.timeframe,
+                count=fetch_count,
+                clock=now,
+                interval=minutes,
+                ns=namespace,
+                sink=sunk,
+            ):
+                return get_closed_bars(
+                    mt5,
+                    broker,
+                    tf,
+                    count,
+                    now=clock,
+                    interval_minutes=interval,
+                    namespace=ns,
+                    forming_sink=sink,
+                )
+        else:
+            def fetch(
+                mt5=self._mt5,
+                broker=broker_sym,
+                tf=spec.timeframe,
+                count=fetch_count,
+                ns=namespace,
+            ):
+                return get_closed_bars(mt5, broker, tf, count, namespace=ns)
+        bars, times = self._raw_closed_bars(bar_cache, key, fetch)
+        if sunk and minutes and now is not None:
+            self._remember_forming(symbol, spec.timeframe, minutes, sunk[-1], now)
+        return bars, times
+
+    def _remember_forming(self, symbol, timeframe, ivl, candle, now) -> None:
+        """The forming candle already pulled with the closed series. No second read."""
+
+        if symbol is None or timeframe is None or not ivl or now is None:
+            return
+        cache = getattr(self, "_forming_reads", None)
+        if not isinstance(cache, dict):
+            cache = {}
+            self._forming_reads = cache
+        key = (str(symbol), str(timeframe), int(ivl))
+        if key in cache:
+            return
+        cache[key] = self._forming_from_candle(candle, int(ivl), now)
+
+    def _cycle_tick(self, symbol: str):
+        """The cycle's quote for this symbol. A later ask does not read the terminal again."""
+
+        bid, ask = self._unit_quote(symbol)
+        if bid is None and ask is None:
+            return None
+
+        class _Tick:
+            pass
+
+        tick = _Tick()
+        tick.bid = bid
+        tick.ask = ask
+        return tick
+
+    def _prime_challenge_reads(self, slots, now, bar_cache) -> None:
+        """One closed series per symbol and timeframe, the longest a slot will read.
+
+        A symbol the slot returns before the fetch is not read here. The forming
+        candle is the last candle of that series. The quote is read when a slot
+        asks. A friend book does not come through here.
+        """
+
+        if str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS:
+            return
+        supports = getattr(self._broker_symbol, "supports", None)
+        longest: dict[tuple, tuple] = {}
+        for spec, symbol in slots:
+            if callable(supports) and not supports(symbol):
+                continue
+            try:
+                fetch_count = self._slot_fetch_count(spec)
+            except Exception:
+                continue
+            pair = (symbol, spec.timeframe)
+            held = longest.get(pair)
+            if held is None or fetch_count > held[0]:
+                longest[pair] = (fetch_count, spec)
+        for symbol, (fetch_count, spec) in (
+            (pair[0], held) for pair, held in longest.items()
+        ):
+            try:
+                self._closed_series(
+                    spec,
+                    symbol,
+                    fetch_count,
+                    now,
+                    bar_cache,
+                    self._broker_symbol(symbol),
+                    with_clock=True,
+                )
+            except Exception:
+                continue
 
     def _generate_one_slot(
         self,
@@ -2145,10 +2311,8 @@ class UltimateBookLiveEngine:
         generation["profile_supported_symbol_slot_count"] += 1
         broker_sym = self._broker_symbol(symbol)   # canonical -> broker for ALL fetches
         on_challenge = str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS
+        fetch_count = self._slot_fetch_count(spec)
         named = _named_bar_count(self._warmup_required(spec)) if on_challenge else None
-        fetch_count = primary_count
-        if named is not None and named > fetch_count:
-            fetch_count = named
         key = (symbol, spec.timeframe, fetch_count)
         # fetch under the BROKER name; meta + intent.symbol stay canonical for placement
         #
@@ -2167,23 +2331,14 @@ class UltimateBookLiveEngine:
         keep_last_closed = bool(self._recover_pre_gap_bar) or spec.timeframe in (
             16388, "H4", TF_H4,
         )
-        if keep_last_closed:
-            bars, times = self._raw_closed_bars(
-                bar_cache,
-                key,
-                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=fetch_count, clock=now, minutes=interval_minutes, ns=getattr(self, "_namespace", None): get_closed_bars(
-                    mt5, broker, tf, count,
-                    now=clock, interval_minutes=minutes, namespace=ns,
-                ),
-            )
-        else:
-            bars, times = self._raw_closed_bars(
-                bar_cache,
-                key,
-                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=fetch_count, ns=getattr(self, "_namespace", None): get_closed_bars(
-                    mt5, broker, tf, count, namespace=ns,
-                ),
-            )
+        # Challenge passes the cycle clock on every timeframe. The closed
+        # series and the card's seconds are that clock, including a wake
+        # Jev placed before the print. A friend book still passes it for
+        # H4, and for the others only when the pre-gap flag is on.
+        with_clock = bool(on_challenge or keep_last_closed)
+        bars, times = self._closed_series(
+            spec, symbol, fetch_count, now, bar_cache, broker_sym, with_clock=with_clock,
+        )
         if not bars:
             # No series to index. This keeps the cycle alive. On Challenge
             # the unit Choice is asked before this slot returns.
@@ -2661,31 +2816,42 @@ class UltimateBookLiveEngine:
 
         results = []
         if slots and task_count:
+            self._prime_challenge_reads(slots, now, bar_cache)
             from concurrent.futures import ThreadPoolExecutor
 
-            with ThreadPoolExecutor(max_workers=task_count) as pool:
-                futures = [
-                    pool.submit(_run_slot, spec, symbol) for spec, symbol in slots
-                ]
-                for future, (spec, symbol) in zip(futures, slots):
-                    try:
-                        results.append(future.result())
-                    except Exception as exc:
-                        results.append({
-                            "intents": [],
-                            "meta": [],
-                            "skips": [],
-                            "terminals": [{
-                                "sleeve": getattr(spec, "tag", None),
-                                "symbol": symbol,
-                                "timeframe": getattr(spec, "timeframe", None),
-                                "terminal_status": "slot_exception",
-                                "error": type(exc).__name__,
-                            }],
-                            "generation": self._slot_generation(),
-                            "unsupported": set(),
-                            "last_bar": {},
-                        })
+            try:
+                from src.judgment.equity_frame import begin_fanout_read, end_fanout_read
+
+                begin_fanout_read()
+            except Exception:
+                end_fanout_read = None
+            try:
+                with ThreadPoolExecutor(max_workers=task_count) as pool:
+                    futures = [
+                        pool.submit(_run_slot, spec, symbol) for spec, symbol in slots
+                    ]
+                    for future, (spec, symbol) in zip(futures, slots):
+                        try:
+                            results.append(future.result())
+                        except Exception as exc:
+                            results.append({
+                                "intents": [],
+                                "meta": [],
+                                "skips": [],
+                                "terminals": [{
+                                    "sleeve": getattr(spec, "tag", None),
+                                    "symbol": symbol,
+                                    "timeframe": getattr(spec, "timeframe", None),
+                                    "terminal_status": "slot_exception",
+                                    "error": type(exc).__name__,
+                                }],
+                                "generation": self._slot_generation(),
+                                "unsupported": set(),
+                                "last_bar": {},
+                            })
+            finally:
+                if end_fanout_read is not None:
+                    end_fanout_read()
         for result in results:
             intents.extend(result["intents"])
             meta.extend(result["meta"])
@@ -2858,10 +3024,7 @@ class UltimateBookLiveEngine:
                 m15_times,
                 decision_cutoff=cutoff,
             )
-            try:
-                tick = self._mt5.get_tick(broker_sym)
-            except Exception:
-                tick = None
+            tick = self._cycle_tick(symbol)
             server = (
                 self._broker_server()
                 if callable(self._broker_server)
@@ -2939,11 +3102,7 @@ class UltimateBookLiveEngine:
             limit = resolve_floor_limit(self.config, spec.tag, self._spread_geometry_floor)
             if limit is None:
                 return None
-            tick = None
-            try:
-                tick = self._mt5.get_tick(self._broker_symbol(symbol))
-            except Exception:   # noqa: BLE001 -- an unreadable quote is a REFUSAL, below
-                tick = None
+            tick = self._cycle_tick(symbol)
             reason, obs = evaluate_intent(intent, tick, limit)
             counts = generation.setdefault("spread_geometry_floor", {
                 "evaluated": 0, "refused": 0, "sleeves": []})
@@ -3218,49 +3377,17 @@ class UltimateBookLiveEngine:
     def _joint_daily_limits(self, base, gs):
         """Gross cap for this state.
 
-        Challenge reads the score. An empty score leaves the cap unset.
+        The Challenge does not read this cap, so it does not ask for one.
         Other books still tighten the recorded cap as the day's loss grows.
         """
 
         from dataclasses import replace
-        challenge = str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS
+        if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+            return replace(base, gross_open_risk_cap_pct=None)
         try:
             realized_loss = max(0.0, -float(getattr(gs, "realized_today_pct", 0.0) or 0.0))
         except Exception:
-            if challenge:
-                return replace(base, gross_open_risk_cap_pct=None)
             return base
-        if challenge:
-            hard = getattr(base, "hard_daily_limit_pct", None)
-            try:
-                hard_n = None if hard is None else float(hard)
-            except (TypeError, ValueError):
-                hard_n = None
-            open_risk = getattr(gs, "open_risk_pct", None)
-            try:
-                open_n = None if open_risk is None else float(open_risk)
-            except (TypeError, ValueError):
-                open_n = None
-            anchors = _fraction_levels((
-                ("realized loss today, as a fraction of equity", realized_loss),
-                ("the account's daily loss limit, as a fraction of the initial balance", hard_n),
-                ("open risk already on the book, as a fraction of equity", open_n),
-            ))
-            number = _fraction_score(
-                "joint_gross_cap",
-                "The score you return is the gross open-risk cap for this state, "
-                "a fraction of equity. The account's daily loss limit is a fact, not the cap. "
-                "An empty score leaves the cap unset. Do not send.",
-                {
-                    "realized_loss_pct": realized_loss,
-                    "hard_daily_limit_pct": hard_n,
-                    "open_risk_pct": open_n,
-                },
-                anchors,
-            )
-            if number is None:
-                return replace(base, gross_open_risk_cap_pct=None)
-            return replace(base, gross_open_risk_cap_pct=float(number))
         try:
             gross = float(base.gross_open_risk_cap_pct)
             hard = float(getattr(base, "hard_daily_limit_pct", 0.05) or 0.05)

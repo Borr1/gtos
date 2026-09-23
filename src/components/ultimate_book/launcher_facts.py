@@ -17,6 +17,7 @@ _RETURNED: dict[str, float] = {}
 _RETURNED_KEY: dict[str, str] = {}
 _ASK_KEY = ""
 _LOCK = threading.Lock()
+_CYCLE_CLOCK: datetime | None = None
 _INFLIGHT = False
 _PACK_KEY: str | None = None
 _ATTEMPT: tuple[str, str | None] | None = None
@@ -648,6 +649,22 @@ def _fastest_period(launcher: object) -> float | None:
     return min(periods)
 
 
+def note_cycle_clock(now: datetime | None) -> None:
+    """The clock of the cycle now running. None outside that cycle."""
+
+    global _CYCLE_CLOCK
+    if now is None:
+        _CYCLE_CLOCK = None
+        return
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    _CYCLE_CLOCK = now.astimezone(timezone.utc)
+
+
+def cycle_clock() -> datetime | None:
+    return _CYCLE_CLOCK
+
+
 def seconds_until_fastest_print(launcher: object = None, now: float | None = None) -> float | None:
     """Seconds from the clock until the next print of the fastest watched bar.
 
@@ -666,9 +683,49 @@ def seconds_until_fastest_print(launcher: object = None, now: float | None = Non
 
 
 def ask_deadline_seconds() -> float | None:
-    """Seconds until the bar this process is waiting on prints. None when it has no bar."""
+    """Seconds from this call until the bar this process is waiting on prints.
 
+    During a cycle the print is taken from that cycle's clock, and these
+    seconds are that instant minus the wall clock now. A question asked
+    later in the same cycle still ends on that print. Outside a cycle the
+    clock is the wall. None when it has no bar.
+    """
+
+    stamped = cycle_clock()
+    if stamped is not None:
+        until = seconds_until_fastest_print(_WATCHED, now=stamped.timestamp())
+        if until is None:
+            return None
+        return stamped.timestamp() + float(until) - time.time()
     return seconds_until_fastest_print(_WATCHED)
+
+
+def next_cycle_wake(launcher: object = None) -> tuple[float | None, datetime | None]:
+    """The wait, and the instant that wait was computed to end.
+
+    A returned cycle_wait ends at this instant plus that score. Until one
+    returns, the instant is the next print of the fastest watched bar, from
+    the same sample as the wait.
+    """
+
+    global _WATCHED
+    if launcher is not None:
+        _WATCHED = launcher
+    watched = launcher if launcher is not None else _WATCHED
+    ensure_ask(watched)
+    number = launcher_return("cycle_wait")
+    if number is not None and number >= 0:
+        seconds = float(number)
+        return seconds, datetime.now(timezone.utc) + timedelta(seconds=seconds)
+    fastest = _fastest_period(watched)
+    if fastest is None:
+        return None, None
+    clock = time.time()
+    remainder = clock % fastest
+    if remainder == 0.0:
+        return 0.0, datetime.fromtimestamp(clock, tz=timezone.utc)
+    remain = fastest - remainder
+    return remain, datetime.fromtimestamp(clock + remain, tz=timezone.utc)
 
 
 def _score_block(block: object) -> float | None:
@@ -848,12 +905,5 @@ def next_cycle_wait(launcher: object = None) -> float | None:
     answer, a tie, or an error does not restore a poll flag or any other number.
     """
 
-    global _WATCHED
-    if launcher is not None:
-        _WATCHED = launcher
-    watched = launcher if launcher is not None else _WATCHED
-    ensure_ask(watched)
-    number = launcher_return("cycle_wait")
-    if number is not None and number >= 0:
-        return float(number)
-    return seconds_until_fastest_print(watched)
+    seconds, _when = next_cycle_wake(launcher)
+    return seconds

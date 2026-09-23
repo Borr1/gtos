@@ -1245,12 +1245,15 @@ def _rewrite_anchors(answers: dict[str, Any], anchors: Mapping[str, list[tuple[s
 def _cycle_seconds() -> float | None:
     """Seconds until the next cycle, else until the next watched bar prints.
 
-    This does not post. An empty clock stays empty. A score is not a clock.
+    A returned cycle_wait is that wait. Otherwise, during a cycle, the print
+    read from the cycle clock still ends the ask when that print is already
+    here. This does not post. An empty clock stays empty. A score is not a clock.
     """
 
     try:
         from src.components.ultimate_book.launcher_facts import (
             ask_deadline_seconds,
+            cycle_clock,
             launcher_return,
         )
     except Exception:
@@ -1267,7 +1270,15 @@ def _cycle_seconds() -> float | None:
     except Exception:
         return None
     seconds = _finite(printed)
-    if seconds is not None and seconds > 0:
+    if seconds is None:
+        return None
+    if seconds > 0:
+        return seconds
+    try:
+        in_cycle = cycle_clock() is not None
+    except Exception:
+        in_cycle = False
+    if in_cycle:
         return seconds
     return None
 
@@ -1403,31 +1414,111 @@ def _filled(sent: str, source: str | None, key: str | None, answers: dict[str, A
 
 
 def _thin_posted_scores(wire: Mapping[str, Any], anchors: dict[str, list[tuple[str, float]]]) -> dict[str, Any] | None:
-    """Drop Score levels to the maximum a refusal just named. One pass."""
+    """Drop Score levels and Choice criteria to the maximum a refusal just named. One pass."""
 
     from .nineteen import kept_indexes
 
     rebuilt: dict[str, Any] = {}
     changed = False
     for qid, block in wire.items():
-        if not isinstance(block, dict) or str(block.get("type") or "").lower() != "score":
+        if not isinstance(block, dict):
             rebuilt[str(qid)] = block
             continue
+        kind = str(block.get("type") or "").lower()
         criteria = block.get("criteria")
-        if not isinstance(criteria, list):
+        if kind == "score" and isinstance(criteria, list):
+            ranks = kept_indexes(len(criteria))
+            if not ranks or len(ranks) == len(criteria):
+                rebuilt[str(qid)] = block
+                continue
+            body = dict(block)
+            body["criteria"] = [criteria[index] for index in ranks]
+            levels = anchors.get(str(qid))
+            if isinstance(levels, list) and len(levels) == len(criteria):
+                anchors[str(qid)] = [levels[index] for index in ranks]
+            changed = True
+            rebuilt[str(qid)] = body
+            continue
+        if kind == "choice" and isinstance(criteria, dict):
+            items = list(criteria.items())
+            ranks = kept_indexes(len(items))
+            if not ranks or len(ranks) == len(items):
+                rebuilt[str(qid)] = block
+                continue
+            body = dict(block)
+            body["criteria"] = {items[index][0]: items[index][1] for index in ranks}
+            changed = True
+            rebuilt[str(qid)] = body
+            continue
+        rebuilt[str(qid)] = block
+    if not changed:
+        return None
+    return rebuilt
+
+
+def _thin_posted_tokens(
+    wire: Mapping[str, Any],
+    anchors: dict[str, list[tuple[str, float]]],
+) -> dict[str, Any] | None:
+    """After a token refusal, each Choice and Score keeps an even subsample across its whole range.
+
+    The width of that subsample is half the list, the same half the history
+    shrink already uses. No token count is planted. A Score's anchors are
+    thinned with the same ranks as its criteria.
+    """
+
+    def ranks(count: int) -> list[int] | None:
+        if not isinstance(count, int) or isinstance(count, bool) or count <= 2:
+            return None
+        width = count // 2
+        if width < 2:
+            return None
+        last = count - 1
+        slots = width - 1
+        picked: list[int] = []
+        step = 0
+        while step < width:
+            rank = (step * last) // slots
+            if not picked or picked[-1] != rank:
+                picked.append(rank)
+            step += 1
+        if len(picked) >= count:
+            return None
+        return picked
+
+    rebuilt: dict[str, Any] = {}
+    changed = False
+    for qid, block in wire.items():
+        if not isinstance(block, dict):
             rebuilt[str(qid)] = block
             continue
-        ranks = kept_indexes(len(criteria))
-        if not ranks or len(ranks) == len(criteria):
-            rebuilt[str(qid)] = block
+        kind = str(block.get("type") or "").lower()
+        criteria = block.get("criteria")
+        if kind == "choice" and isinstance(criteria, dict):
+            items = list(criteria.items())
+            kept = ranks(len(items))
+            if not kept:
+                rebuilt[str(qid)] = block
+                continue
+            body = dict(block)
+            body["criteria"] = {items[index][0]: items[index][1] for index in kept}
+            changed = True
+            rebuilt[str(qid)] = body
             continue
-        body = dict(block)
-        body["criteria"] = [criteria[index] for index in ranks]
-        levels = anchors.get(str(qid))
-        if isinstance(levels, list) and len(levels) == len(criteria):
-            anchors[str(qid)] = [levels[index] for index in ranks]
-        changed = True
-        rebuilt[str(qid)] = body
+        if kind == "score" and isinstance(criteria, list):
+            kept = ranks(len(criteria))
+            if not kept:
+                rebuilt[str(qid)] = block
+                continue
+            body = dict(block)
+            body["criteria"] = [criteria[index] for index in kept]
+            levels = anchors.get(str(qid))
+            if isinstance(levels, list) and len(levels) == len(criteria):
+                anchors[str(qid)] = [levels[index] for index in kept]
+            changed = True
+            rebuilt[str(qid)] = body
+            continue
+        rebuilt[str(qid)] = block
     if not changed:
         return None
     return rebuilt
@@ -1497,12 +1588,19 @@ def _dispatch(
                 refused = code == 400 and b"max_tokens_exceeded" in detail
                 if refused and isinstance(body_state, dict) and _shrink_prior(body_state):
                     continue
-                from .nineteen import learned_score_level_cap, note_score_level_cap
+                if refused:
+                    thinned = _thin_posted_tokens(wire, anchors)
+                    if thinned is not None:
+                        wire = thinned
+                        payload["questions"] = wire
+                        continue
+                from .nineteen import _cap_from_detail, learned_score_level_cap, note_score_level_cap
 
                 prior_cap = learned_score_level_cap()
                 note_score_level_cap(text)
                 learned = learned_score_level_cap()
-                if learned is not None and learned != prior_cap:
+                named = _cap_from_detail(text)
+                if learned is not None and (learned != prior_cap or named is not None):
                     thinned = _thin_posted_scores(wire, anchors)
                     if thinned is not None:
                         wire = thinned

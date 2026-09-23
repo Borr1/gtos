@@ -430,34 +430,78 @@ def test_typed_overlay_is_not_the_budget(monkeypatch):
     )
 
 
-def test_empty_joint_score_leaves_the_gross_cap_unset(monkeypatch):
+def _governor_state(**overrides):
+    from src.components.ultimate_book.admission import GovernorState
+
+    fields = dict(
+        equity=93522.57,
+        high_water=100000.0,
+        realized_today_pct=-0.01,
+        open_risk_pct=0.0,
+        max_dd_reference_equity=100000.0,
+    )
+    fields.update(overrides)
+    return GovernorState(**fields)
+
+
+def test_challenge_skips_the_unused_joint_gross_cap_ask(monkeypatch):
+    asked = []
+
+    def spy(*args, **_kwargs):
+        asked.append(args[0] if args else None)
+        return 0.00384
+
     monkeypatch.setattr(
         "src.components.ultimate_book.book_engine._fraction_score",
-        lambda *_args, **_kwargs: None,
+        spy,
     )
-    from src.components.ultimate_book.admission import GovernorLimits, GovernorState
+    from src.components.ultimate_book.admission import GovernorLimits
     from src.components.ultimate_book.book_engine import UltimateBookLiveEngine
 
     class Book:
         _namespace = "operator"
 
     base = GovernorLimits()
-    got = UltimateBookLiveEngine._joint_daily_limits(
-        Book(),
-        base,
-        GovernorState(
-            equity=93522.57,
-            high_water=100000.0,
-            realized_today_pct=-0.01,
-            open_risk_pct=0.0,
-            max_dd_reference_equity=100000.0,
-        ),
-    )
+    got = UltimateBookLiveEngine._joint_daily_limits(Book(), base, _governor_state())
+    assert asked == []
     assert base.gross_open_risk_cap_pct == 0.04
     assert got.gross_open_risk_cap_pct is None
     assert got.hard_daily_limit_pct == 0.05
     assert got.max_dd_limit_pct == 0.10
     assert got.profit_target_pct == base.profit_target_pct
+
+
+def test_other_books_still_tighten_the_recorded_gross_cap(monkeypatch):
+    asked = []
+
+    def spy(*args, **_kwargs):
+        asked.append(args[0] if args else None)
+        return 0.00384
+
+    monkeypatch.setattr(
+        "src.components.ultimate_book.book_engine._fraction_score",
+        spy,
+    )
+    from src.components.ultimate_book.admission import GovernorLimits
+    from src.components.ultimate_book.book_engine import UltimateBookLiveEngine
+
+    class Book:
+        _namespace = "research_book"
+
+    base = GovernorLimits()
+    flat = UltimateBookLiveEngine._joint_daily_limits(
+        Book(), base, _governor_state(realized_today_pct=0.0),
+    )
+    got = UltimateBookLiveEngine._joint_daily_limits(
+        Book(), base, _governor_state(realized_today_pct=-0.029),
+    )
+    hard = float(base.hard_daily_limit_pct)
+    expected = min(base.gross_open_risk_cap_pct, max(0.0, hard - 0.029 - 0.005))
+    assert asked == []
+    assert flat.gross_open_risk_cap_pct == base.gross_open_risk_cap_pct
+    assert abs(got.gross_open_risk_cap_pct - expected) < 1e-9
+    assert got.hard_daily_limit_pct == 0.05
+    assert got.max_dd_limit_pct == 0.10
 
 
 def test_admit_and_size_does_not_copy_planted_caps(monkeypatch):

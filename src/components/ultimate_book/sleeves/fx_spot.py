@@ -76,11 +76,39 @@ def q(side_a: str, text_a: str, side_b: str, text_b: str, instructions: str) -> 
     }
 
 
-def seconds_until_next_print(latest: Any, previous: Any, now: float | None = None) -> float | None:
+def _clock_seconds(now: Any) -> float:
+    """Epoch seconds for the clock this remainder uses.
+
+    A passed clock wins. During a cycle the cycle clock wins over a fresh
+    wall read. Outside a cycle the wall is the clock.
+    """
+
+    if now is None:
+        try:
+            from src.components.ultimate_book.launcher_facts import cycle_clock
+
+            stamped = cycle_clock()
+        except Exception:
+            stamped = None
+        if stamped is not None:
+            now = stamped
+    if isinstance(now, datetime):
+        stamp = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+        try:
+            return float(stamp.timestamp())
+        except (OSError, OverflowError, ValueError):
+            return time.time()
+    if now is None:
+        return time.time()
+    return float(now)
+
+
+def seconds_until_next_print(latest: Any, previous: Any, now: Any = None) -> float | None:
     """Seconds until the next bar of this spacing prints.
 
     The spacing is the gap between the last two bars. No gap leaves the
-    deadline unset, and an unset deadline is not a timeout.
+    deadline unset, and an unset deadline is not a timeout. The clock is
+    the cycle's when one is running.
     """
 
     latest_s = _epoch(latest)
@@ -90,7 +118,7 @@ def seconds_until_next_print(latest: Any, previous: Any, now: float | None = Non
     period = latest_s - previous_s
     if period <= 0:
         return None
-    clock = time.time() if now is None else float(now)
+    clock = _clock_seconds(now)
     remain = period - (clock - latest_s)
     if remain <= 0:
         return None
