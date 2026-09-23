@@ -19,6 +19,7 @@ import sys
 import threading
 import urllib.error
 import urllib.request
+from datetime import timedelta
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -467,14 +468,20 @@ _WARMUP = frozenset({
     "sma_bars", "atr_bars", "horizon_bars", "maxbars", "persist_bars",
     "persist_min_bars", "sma_fast", "sma_slow", "atr_mean_bars",
 })
-_BAR_INDEX = frozenset({"scan_floor", "scan_oldest"})
+_BAR_INDEX = frozenset()
 _LOOKBACK = frozenset({
-    "trend_lb", "ob_lookback", "range_bars", "scan_span", "scan_from",
-    "gap_shift", "ac_lag", "slope_bars", "mom_bars", "trend_lookback",
+    "trend_lb", "range_bars", "slope_bars", "mom_bars", "trend_lookback",
     "reg_lb", "don_lb", "break_lb", "hist_lb", "atr_lb", "range_window",
     "slope_short_bars", "slope_mid_bars", "slope_long_bars",
     "comp_short_bars", "comp_long_bars",
 })
+_GAP_FROM = frozenset({"scan_from"})
+_GAP_SPAN = frozenset({"scan_span"})
+_GAP_SHIFT = frozenset({"gap_shift"})
+_GAP_FLOOR = frozenset({"scan_oldest"})
+_OB_LOOK = frozenset({"ob_lookback"})
+_OB_FLOOR = frozenset({"scan_floor"})
+_AC_LAG = frozenset({"ac_lag"})
 _BOX = frozenset({"n_box"})
 _PRIOR_BARS = frozenset({"pct_win"})
 _RATIO_COUNT = frozenset({"squeeze_min_count"})
@@ -545,6 +552,20 @@ def _count_family(spot: str) -> str:
         return "atr_count"
     if name in _BIN_COUNT:
         return "bin_count"
+    if name in _GAP_FROM:
+        return "gap_from"
+    if name in _GAP_SPAN:
+        return "gap_span"
+    if name in _GAP_SHIFT:
+        return "gap_shift"
+    if name in _GAP_FLOOR:
+        return "gap_floor"
+    if name in _OB_LOOK:
+        return "ob_look"
+    if name in _OB_FLOOR:
+        return "ob_floor"
+    if name in _AC_LAG:
+        return "ac_lag"
     if name in _LOOKBACK:
         return "lookback"
     return "lookback"
@@ -743,6 +764,404 @@ def _session_span(bars: Any, i: int, bar_times: Any) -> tuple[int, int] | None:
     return start, i - start + 1
 
 
+def _span_steps(low: float, high: float, label: str) -> list[tuple[str, float]]:
+    """Whole amounts from low through high. One value is not a choice."""
+
+    levels: list[tuple[str, float]] = []
+    if low != low or high != high or high < low:
+        return levels
+    step = low
+    while step <= high:
+        _push(levels, label + "_" + format(step, "g"), step)
+        step += 1.0
+    return levels
+
+
+def _range_levels(bounds: Mapping[str, Any] | None, key: str, label: str) -> list[tuple[str, float]]:
+    if not isinstance(bounds, Mapping) or key not in bounds:
+        return []
+    pair = bounds[key]
+    return _span_steps(pair[0], pair[1], label)
+
+
+def _adjacent_gap_indexes(bars: Any, i: int) -> list[float]:
+    """Right-bar indexes of adjacent non-overlapping ranges, strictly before i."""
+
+    found: list[float] = []
+    if bars is None or i < 2:
+        return found
+    k = 0
+    while k < i - 1:
+        left_high = _bar_high(bars[k])
+        left_low = _bar_low(bars[k])
+        right_high = _bar_high(bars[k + 1])
+        right_low = _bar_low(bars[k + 1])
+        if (
+            left_high is not None
+            and left_low is not None
+            and right_high is not None
+            and right_low is not None
+            and (right_low > left_high or right_high < left_low)
+        ):
+            found.append(float(k + 1))
+        k += 1
+    return found
+
+
+def _gap_bounds(bars: Any, i: int | None) -> dict[str, Any] | None:
+    """Scan lengths that leave a window, and cover the adjacent gaps when the card has them.
+
+    begin = i - scan_from, stop = max(i - scan_span, scan_oldest). The empty scan is
+    begin < stop. The lengths are distances and indexes already on this series.
+    """
+
+    if bars is None or i is None or i < 1:
+        return None
+    gaps = _adjacent_gap_indexes(bars, i)
+    if gaps:
+        g_far = min(gaps)
+        d_far = float(i) - g_far
+        if d_far >= 2.0 and g_far >= 2.0:
+            return {
+                "from": (1.0, d_far),
+                "span": (d_far + 1.0, float(i)),
+                "oldest": (0.0, g_far - 1.0),
+                "mode": "inside",
+                "gaps": gaps,
+            }
+        if d_far >= 2.0 and g_far >= 1.0 and (float(i) - d_far + 1.0) >= 2.0:
+            return {
+                "from": (1.0, d_far),
+                "span": (d_far, float(i)),
+                "oldest": (0.0, g_far),
+                "mode": "window",
+                "gaps": gaps,
+            }
+        if d_far == 1.0 and i >= 3:
+            return {
+                "from": (0.0, 1.0),
+                "span": (2.0, float(i)),
+                "oldest": (0.0, float(i - 2)),
+                "mode": "near",
+                "gaps": gaps,
+            }
+        return None
+    if i >= 3:
+        return {
+            "from": (1.0, float(i - 1)),
+            "span": (float(i - 1), float(i)),
+            "oldest": (0.0, 1.0),
+            "mode": "open",
+            "gaps": [],
+        }
+    return None
+
+
+def _gap_shifts(bars: Any, i: int | None) -> list[tuple[str, float]]:
+    """Nearest and farthest shifts where two bars up to i do not overlap."""
+
+    levels: list[tuple[str, float]] = []
+    if bars is None or i is None or i < 1:
+        return levels
+    k = 1
+    while k <= i:
+        right_high = _bar_high(bars[k])
+        right_low = _bar_low(bars[k])
+        if right_high is None or right_low is None:
+            k += 1
+            continue
+        nearest = None
+        farthest = None
+        shift = 1
+        while shift <= k:
+            left_high = _bar_high(bars[k - shift])
+            left_low = _bar_low(bars[k - shift])
+            if (
+                left_high is not None
+                and left_low is not None
+                and (right_low > left_high or right_high < left_low)
+            ):
+                if nearest is None:
+                    nearest = float(shift)
+                farthest = float(shift)
+            shift += 1
+        if nearest is not None:
+            _push(levels, "near_shift_" + str(k), nearest, positive=True)
+        if farthest is not None:
+            _push(levels, "far_shift_" + str(k), farthest, positive=True)
+        k += 1
+    return levels
+
+
+def _scannable_order_blocks(bars: Any, i: int) -> list[float]:
+    found: list[tuple[str, float]] = []
+    if bars is None or i < 2:
+        return []
+    for label, at in _structure(bars, i)["indexes"]:
+        if str(label).startswith("order_block_") and at >= 1.0 and at <= float(i - 2):
+            _push(found, str(label), at)
+    return [value for _, value in found]
+
+
+def _ob_bounds(bars: Any, i: int | None) -> dict[str, Any] | None:
+    """Lookback and floor pairs whose scan still steps, and reach an order block when one is scannable.
+
+    start = max(i - ob_lookback, scan_floor). The loop is empty when start >= i - 2.
+    """
+
+    if bars is None or i is None or i < 0:
+        return None
+    blocks = _scannable_order_blocks(bars, i)
+    if blocks:
+        oldest = min(blocks)
+        if oldest >= 2.0:
+            return {
+                "look": (float(i) - oldest + 1.0, float(i)),
+                "floor": (0.0, oldest - 1.0),
+                "mode": "inside",
+                "oldest": oldest,
+            }
+    if i >= 4:
+        return {
+            "look": (3.0, float(i)),
+            "floor": (0.0, float(i - 3)),
+            "mode": "open",
+            "oldest": None,
+        }
+    return None
+
+
+def filtered_session_facts(bars: Any, i: int | None, bar_times: Any) -> dict[str, Any] | None:
+    """Hours on this server day, through this bar, with a filtered session of bars.
+
+    The session for an hour is the bars on the decision bar's server day with
+    server hour at least that hour. Hours with fewer than three bars are not
+    offered as an hour. Fewer than two such hours leaves the hour question unset.
+    The entry itself is not one of these hours.
+    """
+
+    if not _clock_matches(bars, bar_times) or i is None or i < 0:
+        return None
+    try:
+        count = len(bar_times)
+    except TypeError:
+        return None
+    if i >= count:
+        return None
+    hour_i, _, day = _server_parts(bar_times[i])
+    if day is None or hour_i is None:
+        return None
+    if i + 1 < count:
+        _, _, later_day = _server_parts(bar_times[i + 1])
+        if later_day == day:
+            return None
+    day_hours: list[float] = []
+    seen: list[float] = []
+    k = 0
+    while k <= i:
+        hour, _, k_day = _server_parts(bar_times[k])
+        if k_day == day and hour is not None:
+            day_hours.append(float(hour))
+            if hour not in seen and hour <= hour_i:
+                seen.append(float(hour))
+        k += 1
+    sessions: list[tuple[float, float]] = []
+    for hour in seen:
+        length = 0.0
+        for sample in day_hours:
+            if sample >= hour:
+                length += 1.0
+        if length >= 3.0:
+            sessions.append((hour, length))
+    if len(sessions) < 2:
+        return None
+    ordered = sorted(sessions, key=lambda pair: pair[0])
+    return {"sessions": ordered}
+
+
+def session_entry_facts(bars: Any, i: int | None, bar_times: Any) -> dict[str, Any] | None:
+    """Facts for this bar inside the session on the card. A missing clock stays unset.
+
+    The session is the bars on this server day through this bar. The hour is this
+    bar's server hour. The position counts those bars from the day's first bar.
+    The range is the session high minus the session low. Time left is the seconds
+    from this bar until the next server hour.
+    """
+
+    if not _clock_matches(bars, bar_times) or i is None or i < 0:
+        return None
+    try:
+        count = len(bar_times)
+    except TypeError:
+        return None
+    if i >= count or i >= len(bars):
+        return None
+    start = _day_start(bars, i, bar_times)
+    if start is None:
+        return None
+    hour_i, minute_i, day = _server_parts(bar_times[i])
+    if hour_i is None or minute_i is None or day is None:
+        return None
+    open_hour, _, open_day = _server_parts(bar_times[start])
+    if open_hour is None or open_day != day:
+        return None
+    from ._server_clock import to_server_local
+
+    local = to_server_local(bar_times[i])
+    if local is None:
+        return None
+    boundary = local.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    time_left = (boundary - local).total_seconds()
+    if time_left != time_left or time_left < 0:
+        return None
+    high = None
+    low = None
+    indexes: list[int] = []
+    position = 0.0
+    k = start
+    while k <= i:
+        bar_high = _bar_high(bars[k])
+        bar_low = _bar_low(bars[k])
+        if bar_high is None or bar_low is None or bar_high < bar_low:
+            return None
+        high = bar_high if high is None or bar_high > high else high
+        low = bar_low if low is None or bar_low < low else low
+        indexes.append(k)
+        position += 1.0
+        k += 1
+    if not indexes or indexes[-1] != i or high is None or low is None:
+        return None
+    hour_position = 0.0
+    k = i
+    while k >= start:
+        hour, _, k_day = _server_parts(bar_times[k])
+        if hour != hour_i or k_day != day:
+            break
+        hour_position += 1.0
+        k -= 1
+    if not (hour_position >= 1.0) or not (position >= 1.0):
+        return None
+    return {
+        "session_hour": float(hour_i),
+        "open_hour": float(open_hour),
+        "minute": float(minute_i),
+        "position": position,
+        "hour_position": hour_position,
+        "session_range": high - low,
+        "time_left": time_left,
+        "indexes": indexes,
+    }
+
+
+def entry_choice(facts: Mapping[str, Any]) -> dict[str, Any]:
+    """The entry question. The two sides are this bar and not this bar."""
+
+    told = (
+        "Session hour "
+        + format(facts["session_hour"], "g")
+        + ". The session opened at server hour "
+        + format(facts["open_hour"], "g")
+        + ". This bar is position "
+        + format(facts["position"], "g")
+        + " of the session so far, and position "
+        + format(facts["hour_position"], "g")
+        + " of server hour "
+        + format(facts["session_hour"], "g")
+        + " (server minute "
+        + format(facts["minute"], "g")
+        + "). Session range "
+        + format(facts["session_range"], "g")
+        + ". Time left "
+        + format(facts["time_left"], "g")
+        + " seconds until the next server hour."
+    )
+    return {
+        "instructions": (
+            "Is this bar the sleeve's entry in this session? "
+            + told
+            + " An empty answer, a tie, or an error is not an entry."
+        ),
+        "criteria": {
+            "this_bar": "This bar is the sleeve's entry in this session. " + told,
+            "not_this_bar": "This bar is not the sleeve's entry in this session. " + told,
+        },
+    }
+
+
+def structure_notes(bars: Any, i: int | None) -> dict[str, str]:
+    """What the scan and the lag are measured from, for the question text."""
+
+    notes = {
+        "gap": "The scan lengths are the ones this card can cover.",
+        "shift": "The shift is a measured distance between two non-overlapping bars on this card.",
+        "lag": "The lag is a count of returns this series can form.",
+        "ob": "The lookback and the floor leave the order-block scan a window on this card.",
+    }
+    if bars is None or i is None or i < 0:
+        return notes
+    bounds = _gap_bounds(bars, i)
+    mode = bounds.get("mode") if isinstance(bounds, dict) else None
+    gaps = bounds.get("gaps") if isinstance(bounds, dict) else None
+    if mode == "inside" and gaps:
+        notes["gap"] = (
+            "The scan walks back across the adjacent gaps on this card, from bar "
+            + format(min(gaps), "g")
+            + " through bar "
+            + format(max(gaps), "g")
+            + ". Every offered start, reach, and floor keeps the oldest of those gaps inside the window."
+        )
+    elif mode == "window" and gaps:
+        notes["gap"] = (
+            "The adjacent gaps on this card run from bar "
+            + format(min(gaps), "g")
+            + " through bar "
+            + format(max(gaps), "g")
+            + ". Every offered start, reach, and floor leaves the scan a window, and the reach includes the distance back to the oldest gap."
+        )
+    elif mode == "near":
+        notes["gap"] = (
+            "The only adjacent gap on this card is one bar back. "
+            "The offered starts are this bar and that gap, and every combination keeps the gap inside the window."
+        )
+    elif mode == "open":
+        notes["gap"] = (
+            "This card has no adjacent gap through this bar. "
+            "The offered lengths are distances on the series that still leave the scan a window."
+        )
+    else:
+        notes["gap"] = "This card does not have two scan lengths that cover a gap through this bar."
+    shifts = _gap_shifts(bars, i)
+    if len(shifts) >= 2:
+        amounts = [value for _, value in shifts]
+        notes["shift"] = (
+            "The distances are the measured shifts between non-overlapping bars on this card, from "
+            + format(min(amounts), "g")
+            + " through "
+            + format(max(amounts), "g")
+            + "."
+        )
+    else:
+        notes["shift"] = "A shift is posted only when this card has at least two measured gap distances."
+    if i >= 2:
+        notes["lag"] = (
+            "The lag is a count of returns this series can form. "
+            "Every offered lag is short enough to be defined on this bar."
+        )
+    else:
+        notes["lag"] = "This series does not have two returns through this bar."
+    blocks = _ob_bounds(bars, i)
+    if isinstance(blocks, dict) and blocks.get("mode") == "inside":
+        notes["ob"] = (
+            "The lookback reaches the order blocks on this card and the floor stays behind them. "
+            "The oldest scanned block is bar " + format(blocks.get("oldest"), "g") + "."
+        )
+    elif isinstance(blocks, dict) and blocks.get("mode") == "open":
+        notes["ob"] = "The offered lookback and floor leave a window on this series that still steps through a bar."
+    else:
+        notes["ob"] = "This series does not have an order-block window through this bar."
+    return notes
+
+
 def _indexed(bars: Any, index: Any, facts: Mapping[str, Any] | None) -> int | None:
     if isinstance(index, int) and not isinstance(index, bool) and index >= 0:
         return index
@@ -868,24 +1287,8 @@ def anchors_for(
             return levels
         structure = _structure(bars, i)
         span = _session_span(bars, i, bar_times)
-        if family == "session_index":
-            if span is None:
-                return levels
-            count = span[1]
-            step = 1
-            while step <= count:
-                _push(levels, f"session_bar_{step}", step, positive=True)
-                step += 1
-            return levels
-        if family == "session_after":
-            if span is None:
-                return levels
-            count = span[1]
-            step = 1
-            while step <= count:
-                _push(levels, f"bars_after_{step}", count - step)
-                step += 1
-            return levels
+        if family == "session_index" or family == "session_after":
+            return []
         if family == "box":
             return _box_widths(structure, i)
         if family == "prior_bars":
@@ -916,9 +1319,36 @@ def anchors_for(
                 _push(levels, f"bars_present_{step}", step, positive=True)
                 step += 1
             return levels
+        if family == "gap_from":
+            return _range_levels(_gap_bounds(bars, i), "from", "gap_start")
+        if family == "gap_span":
+            return _range_levels(_gap_bounds(bars, i), "span", "gap_reach")
+        if family == "gap_floor":
+            return _range_levels(_gap_bounds(bars, i), "oldest", "gap_floor")
+        if family == "gap_shift":
+            return _gap_shifts(bars, i)
+        if family == "ob_look":
+            return _range_levels(_ob_bounds(bars, i), "look", "order_block_reach")
+        if family == "ob_floor":
+            return _range_levels(_ob_bounds(bars, i), "floor", "order_block_floor")
+        if family == "ac_lag":
+            if i < 2:
+                return levels
+            return _count_steps(float(i - 1), "return_lag")
         for label, dist in structure["distances"]:
             if dist <= i:
                 _push(levels, label, dist, positive=True)
+        return levels
+    if unit == "hour" and str(spot) == "session_hour":
+        facts_s = filtered_session_facts(bars, i, bar_times)
+        if facts_s is None:
+            return []
+        for hour, length in facts_s["sessions"]:
+            _push(
+                levels,
+                "session_hour_" + format(hour, "g") + "_bars_" + format(length, "g"),
+                hour,
+            )
         return levels
     if unit in {"hour", "minute"} and bar_times is not None and i is not None:
         try:

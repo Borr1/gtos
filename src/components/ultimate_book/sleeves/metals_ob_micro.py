@@ -48,11 +48,20 @@ _SCORES = {
     "trend_lb": "The score you return is how many bars the higher-timeframe trend looks back.",
     "stop_buf": "The score you return is the ATR multiple added beyond the order-block stop.",
     "atr_floor": "The score you return is the ATR multiple that floors the stop.",
-    "ob_lookback": "The score you return is how many bars back the order-block scan reaches.",
+    "ob_lookback": (
+        "The score you return is how many bars back the order-block scan reaches. "
+        "The reach includes the order blocks on this card."
+    ),
     "gate_k": "The score you return is the multiple of the ATR average that opens the vol gate.",
     "vol_window": "The score you return is how many ATR values that average uses.",
-    "scan_floor": "The score you return is the oldest bar index the order-block scan may reach.",
-    "ac_lag": "The score you return is the autocorrelation lag.",
+    "scan_floor": (
+        "The score you return is the oldest bar index the order-block scan may reach. "
+        "The floor stays behind the order blocks on this card."
+    ),
+    "ac_lag": (
+        "The score you return is the autocorrelation lag. "
+        "The lag is a count of returns this series can form."
+    ),
     "ac_thr": "The score you return is the autocorrelation level this sleeve requires.",
     "warmup_bars": "The score you return is how many closed bars this scan needs.",
 }
@@ -213,7 +222,14 @@ def generate(symbol: str, bars, decision_day: str, **_) -> Optional[TradeIntent]
             },
         }
     }
-    packed = fx_spot.ask_pack(_SCORES, state, choices=choices, bars=bars, index=i)
+    scores = dict(_SCORES)
+    from .spot_choice import structure_notes
+
+    notes = structure_notes(bars, i)
+    scores["ob_lookback"] = _SCORES["ob_lookback"] + " " + notes["ob"]
+    scores["scan_floor"] = _SCORES["scan_floor"] + " " + notes["ob"]
+    scores["ac_lag"] = _SCORES["ac_lag"] + " " + notes["lag"]
+    packed = fx_spot.ask_pack(scores, state, choices=choices, bars=bars, index=i)
     if packed.get("sides", {}).get("surface") != "on_surface":
         return None
     bounds = _bounds(packed.get("scores") or {})
