@@ -371,3 +371,5 @@ judgment/**/*.csv
 /_*.json
 /chair_orig_sl.json
 **/._*
+# macOS AppleDouble sidecars are metadata, not code.
+._*

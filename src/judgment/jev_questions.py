@@ -71,10 +71,13 @@ def unique_highest(
 
 
 def returned_number(block: Any) -> float | None:
-    """The parameter is the number this hop returned.
+    """The level position this hop returned.
 
+    A set score is that position. Otherwise the unique highest key is the
+    criterion index, and the number is that index. It is not the probability.
     An empty answer, a tie, or an error is not a number. Nothing here
-    puts a printed constant back.
+    puts a printed constant back. The amount in the anchors' unit is
+    ``value_at`` of this position.
     """
     if not isinstance(block, Mapping):
         return None
@@ -102,12 +105,12 @@ def returned_number(block: Any) -> float | None:
         if name is None:
             return None
         try:
-            number = float(probabilities.get(name))
+            index = float(name)
         except (TypeError, ValueError):
             return None
-        if number != number:
+        if index != index:
             return None
-        return number
+        return index
     return None
 
 

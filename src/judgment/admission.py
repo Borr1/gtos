@@ -1,18 +1,19 @@
-"""Challenge 0 admission KEEP/KILL integers after hist S28–S33.
+"""Challenge 0 admission. The live row's KEEP or KILL is the score.
 
-Dig B STATIC remaining board is authority and supersedes the earlier
+Dig B STATIC remaining board is history and supersedes the earlier
 CHAIR_CONSUME_STale S29 KILL. Consume stays stale — do not re-score it.
 Do not invent NEWS.
 
-KEEP (APPLY_CANDIDATE_KEEP): house static integer stays fail-closed.
-Choice is wired for LABEL only. ``ADMISSION_APPLY`` stays 0 even when
-``GTOS_JEV_ADMISSION_APPLY=1``, ``GTOS_JEV_APPLY_LIVE=1``, or
-``GTOS_JEV_FLUID_GATES_APPLY=1``.
+The hist table stays history text. It is not the apply branch.
+``admission_apply_open`` returns the KEEP or KILL on the live row.
+An empty score stays unset. It does not become False, 0, or KEEP.
+``GTOS_JEV_ADMISSION_APPLY``, ``GTOS_JEV_APPLY_LIVE``, and
+``GTOS_JEV_FLUID_GATES_APPLY`` are not that choice.
 
-KILL: dead Jev / soft path. No Choice. No resting SHADOW.
+KILL on the live row is that score. It is not a resting SHADOW.
 
 Envelope walls (ENV-DD / ENV-KILL / token / H8 / 2-stop COUNT / US30 /
-occupancy / dead window) stay integers. This module never places,
+occupancy / dead window) stay as named facts. This module never places,
 remints, flattens, or broker-sends. ``pack1b_beaten`` is always False.
 
 Challenge-only: login ``0`` / ns ``operator``.
@@ -35,9 +36,7 @@ SCHEMA = "gtos.judgment.admission_keep_integers.v1"
 STEAL = "ADMISSION_KEEP_INTEGERS_S28_S33"
 PACK1B_BEATEN = False
 
-# Hardcoded. Env cannot open APPLY. KEEP is the static integer + Choice.
-ADMISSION_APPLY = 0
-
+# The apply choice is the KEEP or KILL on the live row. No planted integer.
 APPLY_ENV = "GTOS_JEV_ADMISSION_APPLY"
 CHOICE_ENV = "GTOS_JEV_ADMISSION_CHOICE"
 KEEP_ENV = "GTOS_JEV_ADMISSION_KEEP"
@@ -178,16 +177,53 @@ def _env_flag(name: str, *, default: bool, environ: Mapping[str, str] | None = N
     return default
 
 
+_NO_SCORE: Any = object()
+
+
+def _choice_from_score(score: Any) -> str | None:
+    """KEEP or KILL written on a live row. Empty stays unset.
+
+    A bool, a number, or a hist ``choice: True`` flag is not the score.
+    The first present key wins, so a hist row does not fall through to
+    its verdict.
+    """
+
+    if score is None or isinstance(score, (bool, int, float)):
+        return None
+    if isinstance(score, str):
+        text = score.strip().upper()
+        if text == KEEP or text == KILL:
+            return text
+        return None
+    if isinstance(score, Mapping):
+        for key in ("score", "choice", "verdict", "admission"):
+            if key in score:
+                return _choice_from_score(score.get(key))
+        return None
+    return None
+
+
 def admission_apply_open(
     *,
     login: Any = None,
     ns: Any = None,
     environ: Mapping[str, str] | None = None,
-) -> bool:
-    """Always False. Reserved env and sibling APPLY flags cannot open this."""
+    score: Any = _NO_SCORE,
+    row: Any = None,
+) -> str | None:
+    """The KEEP or KILL on the live row. Empty stays unset. Does not place.
+
+    ``GTOS_JEV_ADMISSION_APPLY`` is not this choice. A missing score does
+    not become False, 0, or KEEP. A score that was passed, including an
+    empty one, is the whole answer and is not replaced from ``row``.
+    """
 
     del login, ns, environ
-    return False
+    if score is not _NO_SCORE:
+        return _choice_from_score(score)
+    if row is not None:
+        return _choice_from_score(row)
+    return None
 
 
 def admission_apply_int(
@@ -195,9 +231,46 @@ def admission_apply_int(
     login: Any = None,
     ns: Any = None,
     environ: Mapping[str, str] | None = None,
-) -> int:
-    del login, ns, environ
-    return ADMISSION_APPLY
+    score: Any = _NO_SCORE,
+    row: Any = None,
+) -> str | None:
+    """Same choice as ``admission_apply_open``. Does not restore 0."""
+
+    return admission_apply_open(
+        login=login,
+        ns=ns,
+        environ=environ,
+        score=score,
+        row=row,
+    )
+
+
+def candidate_block_stands(
+    *,
+    login: Any = None,
+    ns: Any = None,
+    environ: Mapping[str, str] | None = None,
+    score: Any = _NO_SCORE,
+    row: Any = None,
+) -> bool | None:
+    """True only when the live row is KEEP.
+
+    An empty answer is neither KEEP nor KILL, so it stays unset (None).
+    None is no decision. KILL is False. Does not return 0. Does not place.
+    """
+
+    choice = admission_apply_open(
+        login=login,
+        ns=ns,
+        environ=environ,
+        score=score,
+        row=row,
+    )
+    if choice == KEEP:
+        return True
+    if choice == KILL:
+        return False
+    return None
 
 
 def admission_keep_stamp_enabled(*, environ: Mapping[str, str] | None = None) -> bool:
@@ -213,12 +286,12 @@ def admission_choice_enabled(*, environ: Mapping[str, str] | None = None) -> boo
 
 
 def env_flag_contract() -> dict[str, Any]:
-    """Documented flags. APPLY stays 0 regardless of these values."""
+    """Documented flags. None of them is the admission choice."""
 
     return {
         APPLY_ENV: {
-            "default": "unset / ignored",
-            "effect": "reserved; ADMISSION_APPLY stays 0",
+            "default": "unset",
+            "effect": "not the choice; the live row's KEEP or KILL is",
             "can_open_apply": False,
         },
         CHOICE_ENV: {
@@ -241,11 +314,11 @@ def env_flag_contract() -> dict[str, Any]:
             "effect": "fluid LABEL drafts only; does not open admission APPLY",
             "can_open_apply": False,
         },
-        "ADMISSION_APPLY": ADMISSION_APPLY,
         "pack1b_beaten": PACK1B_BEATEN,
         "note": (
-            "Sibling APPLY flags cannot open admission APPLY. "
-            "Envelope walls stay integers. Dig never broker-sends."
+            "The apply choice is the score on the live row. "
+            "Empty stays unset. Sibling flags are not that score. "
+            "Envelope walls stay named facts. This module never places."
         ),
     }
 
@@ -293,9 +366,14 @@ def choice_path_open(
     ns: Any = None,
     environ: Mapping[str, str] | None = None,
 ) -> bool:
-    """Choice only where hist proved KEEP, on Challenge, flag default-on."""
+    """Choice only where hist proved KEEP, on Challenge, flag default-on.
 
-    if admission_apply_open(login=login, ns=ns, environ=environ):
+    The apply choice is not a boolean gate. Empty, KEEP, and KILL do not
+    close this label path. Only the old planted False or 0 would have.
+    """
+
+    opened = admission_apply_open(login=login, ns=ns, environ=environ)
+    if opened is False or opened == 0:
         return False
     if envelope_wall_name(name):
         return False
@@ -306,13 +384,13 @@ def choice_path_open(
     return is_keep(name)
 
 
-def _choice_payload(name: str) -> dict[str, Any]:
+def _choice_payload(name: str, *, apply: Any = None) -> dict[str, Any]:
     return {
         "id": f"ADMISSION_{name}",
         "role": "Choice",
         "choice": "KEEP_INTEGER",
         "allowed": list(KEEP_CHOICE_ANSWERS),
-        "apply": False,
+        "apply": apply,
         "integer_stays_fail_closed": True,
         "note": "LABEL only. Cannot lift, widen, place, remint, or flatten.",
     }
@@ -324,8 +402,13 @@ def evaluate_candidate(
     login: Any = None,
     ns: Any = None,
     environ: Mapping[str, str] | None = None,
+    score: Any = _NO_SCORE,
 ) -> dict[str, Any]:
-    """One named hist path. Unknown names are not SHADOW."""
+    """One named hist path. Unknown names are not SHADOW.
+
+    ``score`` is the apply choice. Empty stays unset on ``apply``.
+    The hist verdict stays history text on ``verdict``.
+    """
 
     refuse_invented_news_protocol((name,) if name else None)
     if name and str(name).strip().lower() in {"place", "order_send", "flatten", "remint"}:
@@ -333,14 +416,15 @@ def evaluate_candidate(
 
     raw = str(name or "").strip()
     challenge = is_challenge_account(login=login, ns=ns)
+    opened = admission_apply_open(login=login, ns=ns, environ=environ, score=score)
     base = {
         "name": raw or None,
         "login": CHALLENGE_LOGIN if challenge else (None if login is None else str(login)),
         "ns": CHALLENGE_NS if challenge else (None if ns is None else str(ns)),
         "challenge_only": True,
         "challenge": challenge,
-        "apply": ADMISSION_APPLY,
-        "apply_open": False,
+        "apply": opened,
+        "apply_open": opened,
         "status": None,
         "shadow": False,
         "pack1b_beaten": PACK1B_BEATEN,
@@ -389,7 +473,7 @@ def evaluate_candidate(
 
     verdict = str(row["verdict"])
     wired = choice_path_open(raw, login=login, ns=ns, environ=environ)
-    choice = _choice_payload(raw) if wired else None
+    choice = _choice_payload(raw, apply=opened) if wired else None
     status = verdict  # KEEP or KILL — never SHADOW
     return {
         **base,
@@ -445,8 +529,12 @@ def stamp_admission(
     login: Any = None,
     ns: Any = None,
     environ: Mapping[str, str] | None = None,
+    score: Any = _NO_SCORE,
 ) -> dict[str, Any]:
-    """Chair stamp for host_occupancy_governor. Never mutates the book."""
+    """Chair stamp for host_occupancy_governor. Never mutates the book.
+
+    ``score`` is the apply choice for this stamp. Empty stays unset.
+    """
 
     gov = dict(governor) if isinstance(governor, Mapping) else {}
     reason_here = reason if reason is not None else gov.get("reason")
@@ -457,8 +545,10 @@ def stamp_admission(
     )
     challenge = is_challenge_account(login=login, ns=ns)
     keep_on = admission_keep_stamp_enabled(environ=environ)
+    opened = admission_apply_open(login=login, ns=ns, environ=environ, score=score)
     rows = [
-        evaluate_candidate(name, login=login, ns=ns, environ=environ) for name in names
+        evaluate_candidate(name, login=login, ns=ns, environ=environ, score=score)
+        for name in names
     ]
     if not keep_on:
         for row in rows:
@@ -477,8 +567,8 @@ def stamp_admission(
         "login": CHALLENGE_LOGIN if challenge else None,
         "ns": CHALLENGE_NS if challenge else (str(ns) if ns is not None else None),
         "verification_quarantined": VERIFICATION_QUARANTINED,
-        "apply": ADMISSION_APPLY,
-        "apply_open": False,
+        "apply": opened,
+        "apply_open": opened,
         "pack1b_beaten": PACK1B_BEATEN,
         "hist_source": HIST_SOURCE,
         "n_keep": n_keep,
@@ -503,6 +593,7 @@ def receipt_payload(*, environ: Mapping[str, str] | None = None) -> dict[str, An
 
     login = CHALLENGE_LOGIN
     ns = CHALLENGE_NS
+    opened = admission_apply_open(login=login, ns=ns, environ=environ)
     rows = [
         evaluate_candidate(row["name"], login=login, ns=ns, environ=environ) for row in HIST_ROWS
     ]
@@ -519,8 +610,8 @@ def receipt_payload(*, environ: Mapping[str, str] | None = None) -> dict[str, An
         "consume_stale": True,
         "do_not_rescore_consume": True,
         "pack1b_beaten": PACK1B_BEATEN,
-        "admission_apply": ADMISSION_APPLY,
-        "apply_open": False,
+        "admission_apply": opened,
+        "apply_open": opened,
         "n_keep": sum(1 for row in rows if row["verdict"] == KEEP),
         "n_kill": sum(1 for row in rows if row["verdict"] == KILL),
         "n_shadow": 0,
@@ -541,9 +632,9 @@ def receipt_payload(*, environ: Mapping[str, str] | None = None) -> dict[str, An
         "do_not_edit_ultimate_book_admission": True,
         "hook": "src.judgment.host_occupancy.host_occupancy_governor → admission stamp",
         "note": (
-            "KEEP = house integer + Choice LABEL. APPLY stays 0. "
-            "KILL = dead soft/Jev path, no Choice, no SHADOW. "
-            "ENV-DD stays the hard floor. Dig never order_send."
+            "The apply choice is the KEEP or KILL on the live row. "
+            "Empty stays unset. Hist S28–S33 stays history text. "
+            "ENV-DD stays the hard floor. This module never order_send."
         ),
     }
 
@@ -577,7 +668,7 @@ def _markdown(receipt: Mapping[str, Any]) -> str:
         "(supersedes CHAIR_CONSUME_STale S29 KILL; consume is stale; do not re-score).",
         "",
         f"- login `{receipt.get('login')}` / ns `{receipt.get('ns')}`",
-        f"- `ADMISSION_APPLY={receipt.get('admission_apply')}` (hardcoded 0)",
+        f"- admission choice `{receipt.get('admission_apply')}`",
         f"- `pack1b_beaten={receipt.get('pack1b_beaten')}`",
         f"- Choice wired: `{receipt.get('n_choice_wired')}` KEEP rows",
         f"- resting SHADOW: `{receipt.get('n_shadow')}`",
@@ -600,7 +691,7 @@ def _markdown(receipt: Mapping[str, Any]) -> str:
             "",
             "See [`judgment/ADMISSION_KEEP_INTEGERS.md`](../../ADMISSION_KEEP_INTEGERS.md).",
             "",
-            "- `GTOS_JEV_ADMISSION_APPLY` — reserved; ignored; APPLY stays 0",
+            "- `GTOS_JEV_ADMISSION_APPLY` — not the choice; the live row's KEEP or KILL is",
             "- `GTOS_JEV_ADMISSION_CHOICE` — default on; KEEP-only Choice",
             "- `GTOS_JEV_ADMISSION_KEEP` — default on; Challenge stamp",
             "- `GTOS_JEV_APPLY_LIVE` / `GTOS_JEV_FLUID_GATES_APPLY` do **not** open admission APPLY",
@@ -620,7 +711,8 @@ def _env_markdown(receipt: Mapping[str, Any]) -> str:
         "Challenge `0` / `operator` only. "
         "These flags cannot open broker send, remint, flatten, or envelope walls.",
         "",
-        f"`ADMISSION_APPLY` is hardcoded `{ADMISSION_APPLY}`. "
+        "The apply choice is the KEEP or KILL on the live row. "
+        "An empty score stays unset. "
         f"`pack1b_beaten` is `{PACK1B_BEATEN}`.",
         "",
         "| flag | default | effect | opens APPLY? |",
