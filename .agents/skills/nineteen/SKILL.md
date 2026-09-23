@@ -9,6 +9,11 @@ Borhen, 2026-09-22, later than zero-static: [19miracle.org](https://www.19miracl
 
 - The only static decision numbers in the system are **19** and **11**.
 - Every other number is a hop. Score returns the value for that state. Empty, tie, and error do not restore an old constant. No PRNG.
+- Every other number is dynamic.
+
+everything must be dynamic yes, EVERYTHING, literally nothing is static, the whole system is dynamic, it's the whole art of it. only 2 numbers decide everything, 11 and 19, the rest is up to destiny unfolding itself to people.
+
+buffers, overlays, bands, thresholds and numbers typed into config are included (the 4% internal daily overlay was one); a number we chose becomes Jev's decision on live facts; a rule of the account, such as the firm's loss limits, is read as a live fact of that account.
 - Plumbing (`if path`, `if err`, an empty container, HTTP codes, login `0`, magic) stays code. A trading distance, size, stop, target, bar count, cash amount, or loop bound is not plumbing.
 - 19-code lives in one spine (`src/judgment/nineteen.py`). Other modules do not plant a third integer. They ask, or they call the spine.
 - Do not plant the site’s demonstration products (114, 6346, 76, 342, 304). Those prove the denominator. They are not GTOS constants.

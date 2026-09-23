@@ -685,19 +685,42 @@ def binding_room_usd(
     params: Mapping[str, Any] | None,
     equity: Any = None,
 ) -> tuple[float | None, str]:
-    """Smaller of the floor room and the daily room, net of open risk."""
+    """Smaller of the floor room and the daily room, net of open risk.
+
+    An account whose owner declares no firm rules (``account_rules: none``)
+    has no daily rule and its floor is zero, so its room is its own equity
+    less the stop risk already open. An account that declares nothing still
+    needs its rules read; missing rules leave the room unset.
+    """
 
     facts = params if isinstance(params, Mapping) else {}
     equity_n = equity if equity is not None else facts.get("equity")
+    open_risk, _risk_read = open_risk_read(facts)
+    if no_firm_rules(facts):
+        own = _positive_usd(equity_n)
+        if own is None or open_risk is None:
+            return None, "unset"
+        room = own - open_risk
+        if room <= 0:
+            return None, "empty"
+        return room, "own_equity"
     floor_room = floor_room_usd(facts, equity_n)
     daily_room, _daily_read = daily_room_read(facts, equity_n)
-    open_risk, _risk_read = open_risk_read(facts)
     if floor_room is None or daily_room is None or open_risk is None:
         return None, "unset"
     room = min(floor_room, daily_room) - open_risk
     if room <= 0:
         return None, "empty"
     return room, "bound"
+
+
+def no_firm_rules(facts: Mapping[str, Any] | None) -> bool:
+    """True only when the account's owner declared that no firm's rules apply."""
+
+    if not isinstance(facts, Mapping):
+        return False
+    value = facts.get("account_rules")
+    return isinstance(value, str) and value.strip().lower() in {"none", "no_firm", "own"}
 
 
 def cash_anchor_levels(

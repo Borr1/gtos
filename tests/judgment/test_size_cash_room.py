@@ -94,6 +94,25 @@ def test_daily_room_needs_the_initial_balance():
     assert daily_room_read(facts) == (None, "unset")
 
 
+def test_an_account_with_no_firm_uses_its_own_equity():
+    personal = {"equity": 250.0, "positions_total": 0, "account_rules": "none"}
+    room, read = binding_room_usd(personal)
+    assert read == "own_equity"
+    assert room == 250.0
+    with_open = {**personal, "positions_total": 1, "open_risk_usd": 40.0}
+    assert binding_room_usd(with_open) == (210.0, "own_equity")
+
+
+def test_an_account_that_declares_nothing_still_needs_its_rules():
+    undeclared = {"equity": 250.0, "positions_total": 0}
+    assert binding_room_usd(undeclared) == (None, "unset")
+
+
+def test_no_firm_still_needs_readable_open_risk():
+    unreadable = {"equity": 250.0, "positions_total": 2, "account_rules": "none"}
+    assert binding_room_usd(unreadable) == (None, "unset")
+
+
 def test_equity_scale_cash_is_replaced_by_a_score_inside_the_room(monkeypatch):
     honored, stamp, posts = _honor(monkeypatch, LIVE, EQUITY_SCALE_CASH)
     room = stamp["binding_room_usd"]
