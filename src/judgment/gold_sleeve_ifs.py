@@ -651,7 +651,7 @@ def _local_unique(probabilities: Mapping[str, Any] | None, order: tuple[str, ...
     winners = [
         name
         for name in order
-        if name in numeric and abs(numeric[name] - best) <= 1e-12
+        if name in numeric and numeric[name] == best
     ]
     if len(winners) != 1:
         return None

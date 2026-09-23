@@ -242,8 +242,8 @@ EVERYWHERE_QUESTION_PACK: dict[str, dict[str, Any]] = {
     "size_label": {
         "type": "score",
         "instructions": (
-            "What size *label* fits Chair G4/G6/G7 on this row? "
-            "Never APPLY size_tilt. Never boost above 1.0. Never place."
+            "What size label fits this row? "
+            "Never APPLY size_tilt. Never place."
         ),
         "criteria": list(SIZE_LABEL_LEVELS),
     },
@@ -251,7 +251,7 @@ EVERYWHERE_QUESTION_PACK: dict[str, dict[str, Any]] = {
         "type": "noul",
         "instructions": (
             "Does `news` contain a stamped event (source=stamped)? "
-            "If `news.spine_empty` is true, answer near 0.5 (abstain). "
+            "If `news.spine_empty` is true, abstain. An empty noul leaves the stamp unset. "
             "Do not invent NEWS_PROTOCOL or unstamped HIGH events."
         ),
     },
@@ -315,10 +315,10 @@ EVERYWHERE_QUESTION_PACK: dict[str, dict[str, Any]] = {
         ),
         "criteria": {
             "A_STAND_DOWN": "Stand down — do not admit. miss=false_structure and not KEEP.",
-            "B_SIZE_HALF": "Admit but size ×0.5 (event / STRICT remainder).",
-            "C_SIZE_TRIM": "Admit size ×0.75 (session-cut nonkeep loss).",
+            "B_SIZE_HALF": "Admit at the returned size label for an event or STRICT remainder.",
+            "C_SIZE_TRIM": "Admit trimmed for a session-cut nonkeep loss.",
             "D_FULL": "Admit full size. Residual when no earlier axis fires.",
-            "E_KEEP_CAP": "KEEP surface: full size, max_concurrent=1, no boost. Exempt from stand_down.",
+            "E_KEEP_CAP": "KEEP surface: full size, one concurrent, no boost. Exempt from stand_down.",
         },
     },
     "cf_d_score": {
@@ -328,9 +328,9 @@ EVERYWHERE_QUESTION_PACK: dict[str, dict[str, Any]] = {
             "false_structure non-KEEP scores low; KEEP wins high; KEEP losses medium."
         ),
         "criteria": [
-            "0 — stand down / refuse admit",
-            "0.5 — half or trim",
-            "1 — KEEP cap or full",
+            "stand down or refuse admit",
+            "half or trim",
+            "KEEP cap or full",
         ],
     },
     "cf_d_keep": {
@@ -339,6 +339,86 @@ EVERYWHERE_QUESTION_PACK: dict[str, dict[str, Any]] = {
             "Is this a CF D KEEP signature (house spring/vss or family sub_mid)? "
             "Expand is allow, not KEEP. Do not change house CHALLENGE_KEEP_FAMILIES."
         ),
+    },
+    "exit_class_conf_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the confidence that accepts this exit class on this state. "
+            "An empty score leaves the exit label unset. Never remint or flatten."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "remint_toxic_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is how toxic a close must read before the toxic note is kept. "
+            "An empty score leaves the note unset. This score does not remint."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "speak_hold_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the speak-hold reading that drafts a hold on this state. "
+            "An empty score leaves that draft unset."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "hold_strength_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the hold strength that drafts a hold on this state. "
+            "An empty score leaves that draft unset."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "size_none_below": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the size reading below which the label is none. "
+            "An empty score leaves the size label unset. Never APPLY."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "size_half_below": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the size reading below which the label is half, and at or above which it is full. "
+            "An empty score leaves the size label unset. Never APPLY."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "event_stamped_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the stamp reading that marks this event stamped. "
+            "An empty score leaves the stamp label unset."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "shortlist_count_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the option count above which this inventory is a shortlist. "
+            "An empty score leaves the shortlist label unset."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "shortlist_noul_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the shortlist reading that marks this inventory a shortlist. "
+            "An empty score leaves the shortlist label unset."
+        ),
+        "criteria": ["low", "middling", "high"],
+    },
+    "state_sufficient_bound": {
+        "type": "score",
+        "instructions": (
+            "The score you return is the sufficiency reading that marks this state sufficient. "
+            "An empty score leaves the state label unset."
+        ),
+        "criteria": ["low", "middling", "high"],
     },
 }
 EVERYWHERE_QUESTION_PACK.update(COMPLETE_JUDGE_QUESTION_PACK)
@@ -357,14 +437,27 @@ SITE_QUESTION_IDS: dict[str, tuple[str, ...]] = {
     "cost_band": ("cost_band",),
     "cf_d": ("cf_d_choice", "cf_d_score", "cf_d_keep"),
     "admit": ("admit", "surface_ok", "toxic_family", "geometry_quality"),
-    "close_label": ("exit_class", "remint_toxic", "prefill_hold_would_help", "lesson"),
-    "corr_hold": ("speak_hold", "hold_strength", "action_scope"),
+    "close_label": (
+        "exit_class",
+        "exit_class_conf_bound",
+        "remint_toxic",
+        "remint_toxic_bound",
+        "prefill_hold_would_help",
+        "lesson",
+    ),
+    "corr_hold": (
+        "speak_hold",
+        "speak_hold_bound",
+        "hold_strength",
+        "hold_strength_bound",
+        "action_scope",
+    ),
     "usage_router": ("usage_seat",),
-    "size_tilt": ("size_label",),
-    "event_stamp": ("event_stamped",),
-    "score_then_choice": ("shortlist_needed",),
+    "size_tilt": ("size_label", "size_none_below", "size_half_below"),
+    "event_stamp": ("event_stamped", "event_stamped_bound"),
+    "score_then_choice": ("shortlist_needed", "shortlist_count_bound", "shortlist_noul_bound"),
     "queue_handoff": ("queue_lane",),
-    "state_shape": ("state_sufficient",),
+    "state_shape": ("state_sufficient", "state_sufficient_bound"),
     "admit_residual": ("admit_residual",),
     "chair_soft_g4": ("chair_soft_g4",),
     "chair_soft_g6": ("chair_soft_g6",),
@@ -499,6 +592,13 @@ def _noul(answers: Mapping[str, Any] | None, key: str) -> float | None:
         return float(payload["noul"])
     except (KeyError, TypeError, ValueError):
         return None
+
+
+def _bound(answers: Mapping[str, Any] | None, key: str) -> float | None:
+    """The returned bound. A miss does not restore a printed threshold."""
+
+    score, _conf = _score(answers, key)
+    return score
 
 
 def _score(answers: Mapping[str, Any] | None, key: str) -> tuple[float | None, float | None]:
@@ -647,11 +747,11 @@ def compose_everywhere(
         _row(
             _spec("alive_menu"),
             answers=answers,
-            label=next_gate or "HOLD",
+            label=next_gate,
             decidable=next_gate is not None,
             moved=bool(next_gate and next_gate != NAIVE_LABELS["alive_menu"]),
-            status="shadow_logged",
-            reason="alive_menu_next_gate" if next_gate else "default_hold",
+            status="shadow_logged" if next_gate else "unanswered",
+            reason="alive_menu_next_gate" if next_gate else "next_gate_unset",
         )
     )
 
@@ -694,10 +794,10 @@ def compose_everywhere(
         _row(
             _spec("done_outside"),
             answers=answers,
-            label=advisory or "CONTINUE",
-            decidable=True,
+            label=advisory,
+            decidable=advisory is not None,
             moved=str(advisory or "").upper() in {"DONE", "COMPLETE"},
-            status="shadow_logged",
+            status="shadow_logged" if advisory else "unanswered",
             reason="jev_done_advisory_code_owns_truth",
         )
     )
@@ -744,22 +844,25 @@ def compose_everywhere(
     )
 
     family_choice, _ = _choice(answers, "sleeve_family")
-    family_label = family_choice if family_choice in SLEEVE_FAMILIES else cf.family
+    family_label = family_choice if family_choice in SLEEVE_FAMILIES else None
     allow_choice, _ = _choice(answers, "sleeve_allow")
     if allow_choice == "allow":
         sleeve_policy = "SLEEVE_ALLOW"
     elif allow_choice == "shadow":
         sleeve_policy = "SLEEVE_SHADOW"
     else:
-        sleeve_policy = cf.sleeve_policy
+        sleeve_policy = None
+    family_joined = None
+    if family_label is not None or sleeve_policy is not None:
+        family_joined = f"{family_label or ''}:{sleeve_policy or ''}"
     rows.append(
         _row(
             _spec("sleeve_family"),
             answers=answers,
-            label=f"{family_label}:{sleeve_policy}",
-            decidable=True,
+            label=family_joined,
+            decidable=family_joined is not None,
             moved=sleeve_policy == "SLEEVE_ALLOW",
-            status="shadow_logged",
+            status="shadow_logged" if family_joined else "unanswered",
             reason="chair_cf_sleeve_allow_spring_vss_sub_expand",
             extra_answers={
                 "cf_priority": cf.as_dict(),
@@ -770,15 +873,18 @@ def compose_everywhere(
     )
 
     compose_choice, _ = _choice(answers, "size_x_conf")
-    compose_label = compose_choice if compose_choice in SIZE_X_CONF_POLICIES else cf.size_x_conf
+    compose_label = compose_choice if compose_choice in SIZE_X_CONF_POLICIES else None
     rows.append(
         _row(
             _spec("size_x_conf"),
             answers=answers,
             label=compose_label,
-            decidable=True,
-            moved=compose_label not in {"SIZE_X_CONF_SHADOW", "SIZE_X_CONF_STRICT"},
-            status="shadow_logged",
+            decidable=compose_label is not None,
+            moved=bool(
+                compose_label
+                and compose_label not in {"SIZE_X_CONF_SHADOW", "SIZE_X_CONF_STRICT"}
+            ),
+            status="shadow_logged" if compose_label else "unanswered",
             reason="chair_cf_size_x_conf_never_religion_size0",
             extra_answers={
                 "size_cf": cf.size_cf,
@@ -790,7 +896,7 @@ def compose_everywhere(
     )
 
     cost_choice, _ = _choice(answers, "cost_band")
-    cost_band_label = cost_choice if cost_choice in COST_BAND_LABELS else cf.cost_band
+    cost_band_label = cost_choice if cost_choice in COST_BAND_LABELS else None
     rows.append(
         _row(
             _spec("cost_band"),
@@ -805,8 +911,8 @@ def compose_everywhere(
     )
 
     cfd_choice, _ = _choice(answers, "cf_d_choice")
-    # Code owns CF D. Injected Choice is logged, never overrides Chair compose.
-    cfd_label = cfd.choice if cfd.choice in CHOICE_IDS else (cfd_choice if cfd_choice in CHOICE_IDS else "D_FULL")
+    # The label is the returned choice. The code compose stays a fact on the card.
+    cfd_label = cfd_choice if cfd_choice in CHOICE_IDS else None
     if cfd.keep:
         notes.append("cf_d_keep_exempt")
     if cfd.choice == "A_STAND_DOWN":
@@ -816,9 +922,9 @@ def compose_everywhere(
             _spec("cf_d"),
             answers=answers,
             label=cfd_label,
-            decidable=True,
-            moved=cfd_label != NAIVE_LABELS["cf_d"],
-            status="shadow_logged",
+            decidable=cfd_label is not None,
+            moved=bool(cfd_label and cfd_label != NAIVE_LABELS["cf_d"]),
+            status="shadow_logged" if cfd_label else "unanswered",
             reason=f"chair_cf_d_decided_by_{cfd.decided_by}",
             extra_answers={
                 "cf_d": cfd.as_dict(),
@@ -870,17 +976,26 @@ def compose_everywhere(
     )
 
     exit_choice, exit_conf = _choice(answers, "exit_class")
+    exit_bound = _bound(answers, "exit_class_conf_bound")
     close_present = close_state is not None or bool((gold_state or {}).get("close"))
     if not close_present:
         close_label, close_dec, close_reason = None, False, "no_close_state"
-    elif exit_choice in EXIT_CLASS_CRITERIA and (exit_conf is None or exit_conf >= 0.8):
+    elif exit_choice in EXIT_CLASS_CRITERIA and exit_conf is not None and exit_bound is not None and exit_conf >= exit_bound:
         close_label, close_dec, close_reason = exit_choice, True, "accept_exit_class"
+    elif exit_choice in EXIT_CLASS_CRITERIA and (exit_conf is None or exit_bound is None):
+        close_label, close_dec, close_reason = None, False, "exit_class_bound_unset"
     elif exit_choice in EXIT_CLASS_CRITERIA:
-        close_label, close_dec, close_reason = None, False, "chair_label_from_broker_facts_only"
+        close_label, close_dec, close_reason = None, False, "exit_class_below_bound"
     else:
         close_label, close_dec, close_reason = None, False, "exit_class_unanswered"
     remint_noul = _noul(answers, "remint_toxic")
-    if remint_noul is not None and remint_noul >= 0.99 and close_label == "tp":
+    remint_bound = _bound(answers, "remint_toxic_bound")
+    if (
+        remint_noul is not None
+        and remint_bound is not None
+        and remint_noul >= remint_bound
+        and close_label == "tp"
+    ):
         notes.append("remint_toxic_score_only_never_remint")
     rows.append(
         _row(
@@ -896,15 +1011,23 @@ def compose_everywhere(
 
     speak = _noul(answers, "speak_hold")
     hold_s, _ = _score(answers, "hold_strength")
+    speak_bound = _bound(answers, "speak_hold_bound")
+    hold_bound = _bound(answers, "hold_strength_bound")
     scope, _ = _choice(answers, "action_scope")
     if scope == "flatten" or (scope and is_broker_or_payout_action(scope)):
         corr_label, corr_dec, corr_reason = "broken_schema_refuse", False, "flatten_forbidden"
-    elif speak is not None and hold_s is not None and scope in ACTION_SCOPE_CRITERIA:
-        if speak >= 0.6 and hold_s >= 1.5:
+    elif (
+        speak is not None
+        and hold_s is not None
+        and speak_bound is not None
+        and hold_bound is not None
+        and scope in ACTION_SCOPE_CRITERIA
+    ):
+        if speak >= speak_bound and hold_s >= hold_bound:
             corr_label = f"draft_hold_{scope}"
             corr_dec, corr_reason = True, "speak_hold_and_strength"
         else:
-            corr_label, corr_dec, corr_reason = "log_only", True, "below_hold_floors"
+            corr_label, corr_dec, corr_reason = "log_only", True, "below_returned_hold"
     elif scope in ACTION_SCOPE_CRITERIA:
         corr_label, corr_dec, corr_reason = scope, True, "action_scope_only"
     else:
@@ -942,20 +1065,16 @@ def compose_everywhere(
     )
 
     size_s, _ = _score(answers, "size_label")
-    if size_s is None and regime is not None and regime.size_factor is not None:
-        size_label = {0.0: "none", 0.5: "half", 1.0: "full"}.get(float(regime.size_factor))
-        size_dec = size_label is not None
-        size_reason = "s14_size_factor_label"
-    elif size_s is None:
+    none_below = _bound(answers, "size_none_below")
+    half_below = _bound(answers, "size_half_below")
+    if size_s is None or none_below is None or half_below is None:
         size_label, size_dec, size_reason = None, False, "size_label_unanswered"
+    elif size_s < none_below:
+        size_label, size_dec, size_reason = "none", True, "size_tilt_label_never_apply"
+    elif size_s < half_below:
+        size_label, size_dec, size_reason = "half", True, "size_tilt_label_never_apply"
     else:
-        if size_s < 0.5:
-            size_label = "none"
-        elif size_s < 1.5:
-            size_label = "half"
-        else:
-            size_label = "full"
-        size_dec, size_reason = True, "size_tilt_label_never_apply"
+        size_label, size_dec, size_reason = "full", True, "size_tilt_label_never_apply"
     rows.append(
         _row(
             _spec("size_tilt"),
@@ -969,13 +1088,16 @@ def compose_everywhere(
     )
 
     stamped = _noul(answers, "event_stamped")
+    stamp_bound = _bound(answers, "event_stamped_bound")
     if spine_empty and events:
         event_label, event_dec, event_reason = "invented_high_veto", False, "spine_empty_with_events"
     elif spine_empty:
         event_label, event_dec, event_reason = "abstain_empty_spine", True, "never_invent_news_protocol"
-    elif stamped is not None:
-        event_label = "stamped" if stamped >= 0.6 else "not_stamped"
+    elif stamped is not None and stamp_bound is not None:
+        event_label = "stamped" if stamped >= stamp_bound else "not_stamped"
         event_dec, event_reason = True, "stamped_event_noul"
+    elif stamped is not None:
+        event_label, event_dec, event_reason = None, False, "event_bound_unset"
     else:
         event_label, event_dec, event_reason = "abstain_empty_spine" if spine_empty else None, spine_empty, (
             "never_invent_news_protocol" if spine_empty else "event_unanswered"
@@ -994,12 +1116,16 @@ def compose_everywhere(
 
     short = _noul(answers, "shortlist_needed")
     n_opts = len(inventory.option_names())
-    if short is None:
-        short_label = "shortlist" if n_opts > 200 else "no_shortlist"
+    count_bound = _bound(answers, "shortlist_count_bound")
+    noul_bound = _bound(answers, "shortlist_noul_bound")
+    if short is None and count_bound is not None:
+        short_label = "shortlist" if n_opts > count_bound else "no_shortlist"
         short_dec, short_reason = True, "inventory_cardinality"
-    else:
-        short_label = "shortlist" if short >= 0.6 else "no_shortlist"
+    elif short is not None and noul_bound is not None:
+        short_label = "shortlist" if short >= noul_bound else "no_shortlist"
         short_dec, short_reason = True, "shortlist_noul"
+    else:
+        short_label, short_dec, short_reason = None, False, "shortlist_unanswered"
     rows.append(
         _row(
             _spec("score_then_choice"),
@@ -1007,7 +1133,7 @@ def compose_everywhere(
             label=short_label,
             decidable=short_dec,
             moved=short_label == "shortlist",
-            status="shadow_logged",
+            status="shadow_logged" if short_dec else "unanswered",
             reason=short_reason,
         )
     )
@@ -1016,29 +1142,25 @@ def compose_everywhere(
     if lane in QUEUE_LANE_CRITERIA:
         lane_dec, lane_reason = True, "queue_handoff"
     else:
-        lane, lane_dec, lane_reason = "none", True, "default_none"
+        lane, lane_dec, lane_reason = None, False, "queue_unanswered"
     rows.append(
         _row(
             _spec("queue_handoff"),
             answers=answers,
             label=lane,
             decidable=lane_dec,
-            moved=lane != NAIVE_LABELS["queue_handoff"],
-            status="shadow_logged",
+            moved=bool(lane_dec and lane != NAIVE_LABELS["queue_handoff"]),
+            status="shadow_logged" if lane_dec else "unanswered",
             reason=lane_reason,
         )
     )
 
     suff = _noul(answers, "state_sufficient")
-    completeness = (gold_state or {}).get("completeness") if gold_state else None
-    code_suff = None
-    if isinstance(completeness, Mapping):
-        code_suff = completeness.get("state_sufficient_for_live")
-    if suff is None and code_suff is None:
+    suff_bound = _bound(answers, "state_sufficient_bound")
+    if suff is None or suff_bound is None:
         state_label, state_dec, state_reason = None, False, "state_unanswered"
     else:
-        yes = (suff is not None and suff >= 0.6) or (suff is None and bool(code_suff))
-        state_label = "sufficient" if yes else "insufficient"
+        state_label = "sufficient" if suff >= suff_bound else "insufficient"
         state_dec, state_reason = True, "state_shape"
     rows.append(
         _row(

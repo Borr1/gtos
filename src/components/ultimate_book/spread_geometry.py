@@ -78,7 +78,13 @@ def _finite(value: Any) -> float | None:
     return number
 
 
-def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[str, float | None]:
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post. Never raises."""
     if cache_key in _HOP:
         return dict(_HOP[cache_key])
     payload = {
@@ -86,26 +92,26 @@ def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[st
         for key, value in dict(facts or {}).items()
         if str(key) not in {"denominator", "other"}
     }
-    packed = {str(qid): {"type": "score", "instructions": str(text)} for qid, text in questions.items()}
-    answers: dict = {}
-    returned = None
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
     try:
-        from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number
-
-        returned = returned_number
-        receipt = evaluate(payload, questions=packed, merge_sleeve=False)
+        from src.judgment.nineteen import score as ask
     except Exception:
-        receipt = None
-    if (
-        isinstance(receipt, dict)
-        and receipt.get("ok") is not False
-        and not receipt.get("error")
-        and receipt.get("tie") is not True
-        and isinstance(receipt.get("answers"), dict)
-    ):
-        answers = receipt["answers"]
-    out = {qid: None if returned is None else _finite(returned(answers.get(qid))) for qid in packed}
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
     _HOP[cache_key] = dict(out)
     return out
 
@@ -217,12 +223,15 @@ def parse_spread_geometry_floor(raw: Any, *, known_sleeves: Any = None) -> dict[
                     "floor stops being protection. An empty score leaves that cap unset. Do not send."
                 ),
             },
+            {
+                "max_plausible_limit": [
+                    ("the offered spread_r limit on this sleeve", limit),
+                ],
+            },
         ).get("max_plausible_limit")
-        if cap is None:
-            raise SpreadGeometryFloorError(
-                f"--spread-geometry-floor limit for {name!r} has no plausible cap. "
-                "Refused rather than compared with a planted cap."
-            )
+        if cap is None or not (cap > 0.0):
+            out[name] = limit
+            continue
         if limit >= cap:
             raise SpreadGeometryFloorError(
                 f"--spread-geometry-floor limit for {name!r} is {limit}, at or above "
@@ -244,7 +253,7 @@ def resolve_floor_limit(
       1. not in the selection -> None. The floor is per-sleeve opt-in; nothing else.
       2. an explicit limit in the selection -> that.
       3. the send gate's own per-sleeve override for this sleeve, then its global limit.
-      4. the spread-floor score for this sleeve. An empty score returns 0.0, which refuses the leg.
+      4. the spread-floor score for this sleeve. An empty score leaves the floor unset.
 
     Steps 3 and 4 are what make the two layers agree without a copied constant.
     """
@@ -277,7 +286,7 @@ def resolve_floor_limit(
         },
     ).get("spread_floor_limit")
     if asked is None or not (asked > 0.0):
-        return 0.0
+        return None
     return float(asked)
 
 

@@ -9,7 +9,11 @@ if [ "$1" != "--apply" ]; then
   exit 2
 fi
 dest="${SOT_DEST:-/Users/borr/GTOSActive/gtos}"
-url="${SOT_URL:-https://github.com/Borr1/ai-trading-agent.git}"
+url="${SOT_URL:-}"
+if [ -z "$url" ]; then
+  echo "refusing: set SOT_URL to the Origin clone URL"
+  exit 2
+fi
 if [ -e "$dest" ]; then
   echo "refusing: $dest already exists"
   exit 2

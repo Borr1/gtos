@@ -80,6 +80,27 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
 
+_HELD_ANCHORS: dict[str, float] = {}
+
+
+def held_anchor_facts() -> dict[str, float]:
+    """Account numbers this module already holds. Empty until a ledger has loaded."""
+
+    return dict(_HELD_ANCHORS)
+
+
+def _hold_anchor_facts(facts: Mapping[str, Any]) -> None:
+    for key, value in facts.items():
+        if isinstance(value, bool) or value is None:
+            continue
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            continue
+        if number != number or number in (float("inf"), float("-inf")):
+            continue
+        _HELD_ANCHORS[str(key)] = number
+
 
 def _returned(qid: str) -> float | None:
     """Score for this state. None when it has not returned. Does not restore a number."""
@@ -104,8 +125,9 @@ def _returned(qid: str) -> float | None:
 class _Score:
     """A name other modules float. Unset until the score for this state returns."""
 
-    def __init__(self, qid: str):
+    def __init__(self, qid: str, unit: str):
         self.qid = qid
+        self.unit = unit
 
     def value(self) -> float | None:
         return _returned(self.qid)
@@ -220,7 +242,7 @@ LEDGER_FILENAME = "f5_notional_ledger.json"
 #: was sized ($74.93 intended, $184 actual on LTCUSD: fill 1.48R through the intended entry,
 #: 2.46x intended risk, net -4.10R). Median |entry slippage| across 52 joined fills is 0.002R
 #: and the max normal is 0.138R, so 0.5R tags only the pathological tail.
-F5_MAX_FILL_DEVIATION_R = _Score("fill_deviation_r")
+F5_MAX_FILL_DEVIATION_R = _Score("fill_deviation_r", "r")
 
 #: THIN-HOUR PLACEMENT: sleeves routed through limit-at-level placement instead of a market
 #: order (all symbols). `asia_pdl_fade` decides during broker hours 0..6 (the thin Asian
@@ -232,16 +254,16 @@ THIN_HOUR_LIMIT_SLEEVES = frozenset({"asia_pdl_fade"})
 #: How many decision-timeframe bars a thin-hour resting limit may live before the existing
 #: native-pending expiry machinery cancels it. Short deliberately: the level was decided on
 #: one closed bar; half an hour later the setup is a different market.
-F5_THIN_HOUR_LIMIT_EXPIRY_BARS = _Score("thin_hour_limit_expiry_bars")
+F5_THIN_HOUR_LIMIT_EXPIRY_BARS = _Score("thin_hour_limit_expiry_bars", "bars")
 
 #: CONTRACT V2 (Fable 5.1, 2026-09-02): every F5 limit-at-level intent rests at most this many
 #: closed M15 bars. Measured on the 77 limit fills of 24 Aug -> 2 Sep: fills inside 60 min were
 #: +50.9R held to orig (n=70); fills later than 60 min were -5.7R actual and -4.6R even held to
 #: orig (n=7). Stale GTC limits also kept the symbol 'occupied' and refused 31 flat-symbol
 #: re-fires worth +18.0R held to orig. Broker-side sweep: book_owner._f5_sweep_stale_pending_orders.
-F5_LIMIT_EXPIRY_BARS = _Score("limit_expiry_bars")
+F5_LIMIT_EXPIRY_BARS = _Score("limit_expiry_bars", "bars")
 #: Broker ORDER_TIME_SPECIFIED. The seconds are the score. Unset leaves the limit without a planted life.
-F5_LIMIT_EXPIRY_SECONDS = _Score("limit_expiry_seconds")
+F5_LIMIT_EXPIRY_SECONDS = _Score("limit_expiry_seconds", "seconds")
 #: MetaTrader5 SYMBOL_EXPIRATION_SPECIFIED bit. Honour expiration_mode & 4 or stay GTC.
 SYMBOL_EXPIRATION_SPECIFIED = 4
 
@@ -307,17 +329,17 @@ F5_ALWAYS_OPEN_SYMBOLS = frozenset({
 
 #: DEAD WINDOW (WEEK-STUDY-2): 21:00-00:00 UTC is post-NY-cash / pre-Tokyo.
 #: 16 fills, 1 win, -$2,124, -1.09R. Writer refuses NEW risk. Occupied stays.
-F5_DEAD_WINDOW_UTC_HOUR_START = _Score("dead_window_start_hour")
+F5_DEAD_WINDOW_UTC_HOUR_START = _Score("dead_window_start_hour", "hour_of_day")
 F5_DEAD_WINDOW_UTC_HOUR_END = None
 
 #: Named HIGH window around Fed/CPI/NFP/rates/Warsh-class prints.
 #: WEEK-STUDY-2: sit NEW fills T-15 / T+60 of named Fed speakers. Occupied
 #: thesis that has already paid may stay. Gate by candidate SYMBOL, not occupancy.
-F5_HIGH_PRE_MINUTES = _Score("high_pre_minutes")
-F5_HIGH_POST_MINUTES = _Score("high_post_minutes")
+F5_HIGH_PRE_MINUTES = _Score("high_pre_minutes", "minutes")
+F5_HIGH_POST_MINUTES = _Score("high_post_minutes", "minutes")
 #: Calendar PRIME amplifier T−45..T−0. NOT a gate. NOT the 23 cal_* stubs.
 #: HIGH block stays T−15..T+60. Size-2 hook stays dark until J4 PRIMED_V1.md.
-F5_CAL_AMPLIFIER_PRE_MINUTES = _Score("calendar_prime_pre_minutes")
+F5_CAL_AMPLIFIER_PRE_MINUTES = _Score("calendar_prime_pre_minutes", "minutes")
 F5_CAL_PRIME_SIZE_MULT = None
 
 #: WEEKEND-FLAT TAX: flatten is Friday 20:30 UTC. Overlap (the paid window)
@@ -378,9 +400,9 @@ _F5_WARSH_NEEDLES = (
 #: A returned min and max are the actionable band. Unset does not restore a band.
 #: Consume cursor persist: judgment/state/manage_consume_cursor.json so a book
 #: restart does not re-emit expired (178427810 class).
-F5_MANAGE_TTL_MIN_S = _Score("manage_ttl_min_s")
-F5_MANAGE_TTL_MAX_S = _Score("manage_ttl_max_s")
-F5_MANAGE_TTL_DEFAULT_S = _Score("manage_ttl_default_s")
+F5_MANAGE_TTL_MIN_S = _Score("manage_ttl_min_s", "seconds")
+F5_MANAGE_TTL_MAX_S = _Score("manage_ttl_max_s", "seconds")
+F5_MANAGE_TTL_DEFAULT_S = _Score("manage_ttl_default_s", "seconds")
 F5_MANAGE_SCHEMA = "gtos.judgment.manage.v1"
 F5_MANAGE_CONSUME_CURSOR_SCHEMA = "gtos.judgment.manage_consume_cursor.v1"
 
@@ -391,9 +413,9 @@ F5_MANAGE_CONSUME_CURSOR_SCHEMA = "gtos.judgment.manage_consume_cursor.v1"
 # dead-ticket cache stop the hammer. Disk closed is the positions_get sit door
 # (broker_closed_absent_on_reconcile). Do not flatten live positions to "fix" it.
 F5_CLOSE_SEND_NONE_RETCODE = 10011
-F5_CLOSE_SEND_NONE_MAX_RETRIES = _Score("close_none_max_retries")
-F5_CLOSE_SEND_NONE_BACKOFF_S = _Score("close_none_backoff_s")
-F5_CLOSE_SEND_NONE_CACHE_MAX = _Score("close_none_cache_max")
+F5_CLOSE_SEND_NONE_MAX_RETRIES = _Score("close_none_max_retries", "count")
+F5_CLOSE_SEND_NONE_BACKOFF_S = _Score("close_none_backoff_s", "seconds")
+F5_CLOSE_SEND_NONE_CACHE_MAX = _Score("close_none_cache_max", "count")
 
 _CLOSE_SEND_NONE_LOCK = threading.Lock()
 _CLOSE_SEND_NONE: dict[int, dict[str, Any]] = {}
@@ -585,10 +607,10 @@ F5_AUTO_BE_ENABLED = False
 F5_AUTO_BE_TRIGGER_R = None
 #: Floor / cap of the lock past entry, in R of the original stop. Floor so a 1-tick
 #: "BE" still loses fees to slippage; cap so this stays a one-shot lock, not a trail.
-F5_AUTO_BE_MIN_LOCK_R = _Score("auto_be_min_lock_r")
-F5_AUTO_BE_MAX_LOCK_R = _Score("auto_be_max_lock_r")
+F5_AUTO_BE_MIN_LOCK_R = _Score("auto_be_min_lock_r", "r")
+F5_AUTO_BE_MAX_LOCK_R = _Score("auto_be_max_lock_r", "r")
 #: Extra spread of room on top of the known round-trip cost.
-F5_AUTO_BE_EXTRA_SPREADS = _Score("auto_be_extra_spreads")
+F5_AUTO_BE_EXTRA_SPREADS = _Score("auto_be_extra_spreads", "spreads")
 
 #: NULL-RULE sleeves (MANAGE_FRONTIER_VERIFY, CONFIRMED): long-target runner sleeves whose
 #: only live-measured management EV is NEGATIVE (-0.23..-0.31 R/day scale-out cost, n=67 live
@@ -700,15 +722,15 @@ F5_FRIDAY_NEW_RISK_CUTOFF_UTC = None
 
 #: After an SL-class close: FX DSP majors wait 4h (26 Aug GBP/USDJPY stacks). Metals/index
 #: keep the 15-minute microstructure sibling only (gold/US30 isolated re-entry paid).
-F5_FX_SL_COOLDOWN_HOURS = _Score("fx_sl_cooldown_hours")
-F5_METAL_INDEX_SIBLING_MINUTES = _Score("sibling_window_minutes")
+F5_FX_SL_COOLDOWN_HOURS = _Score("fx_sl_cooldown_hours", "hours")
+F5_METAL_INDEX_SIBLING_MINUTES = _Score("sibling_window_minutes", "minutes")
 #: The week-repair pick, not every FX major. AUD/NZD crosses stay on the 15-minute sibling.
 F5_FX_DSP_SL_COOLDOWN_SYMBOLS = frozenset({
     "USDJPY", "GBPUSD", "EURUSD", "USDCHF", "USDCAD", "EURGBP", "GBPJPY", "EURJPY",
 })
 
 #: 5-pip preorder floor still fired. 58 FX tickets with stop <=8 pip = -$4,387.
-F5_FX_DSP_MIN_STOP_PIPS = _Score("fx_min_stop_pips")
+F5_FX_DSP_MIN_STOP_PIPS = _Score("fx_min_stop_pips", "pips")
 
 #: J6 2026-09-02: EUR/GBP/USDJPY dsp at 8-pip floor, 2y, spread-adjusted mean R < 0.
 #: Drop those three from dsp. Live EURUSD/GBPUSD tickets are xa_*, not dsp — do not flatten.
@@ -731,7 +753,7 @@ F5_PAID_CLUSTER_SLEEVES = frozenset({
     "dsp_close_on_20low_not_a_cascade_then_up",
     "dsp_london_two_up_into_20high_reverses",
 })
-F5_MIN_STOP_TICKS = _Score("min_stop_ticks")
+F5_MIN_STOP_TICKS = _Score("min_stop_ticks", "ticks")
 
 F5_FX_MAJOR_SYMBOLS = frozenset({
     "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "USDCAD", "EURGBP",
@@ -1637,9 +1659,10 @@ def f5_fx_dsp_tight_stop_reason(
         "namespace": "operator",
     }
     floor = _returned("fx_min_stop_pips")
-    if floor is not None:
-        stop_state["returned_min_stop_pips"] = float(floor)
-        stop_state["at_or_under_returned"] = float(pips) <= float(floor)
+    if floor is None:
+        return None
+    stop_state["returned_min_stop_pips"] = float(floor)
+    stop_state["at_or_under_returned"] = float(pips) <= float(floor)
     if fear_withholds(
         "fx_dsp_stop_le_8pip",
         stop_state,
@@ -1718,9 +1741,10 @@ def f5_lots_or_ticks_refuse_reason(
         "namespace": F5_NAMESPACE,
     }
     floor = _returned("min_stop_ticks")
-    if floor is not None:
-        tick_state["returned_min_stop_ticks"] = float(floor)
-        tick_state["at_or_under_returned"] = float(ticks) <= float(floor)
+    if floor is None:
+        return None
+    tick_state["returned_min_stop_ticks"] = float(floor)
+    tick_state["at_or_under_returned"] = float(ticks) <= float(floor)
     if _spot_withholds(
         "f5_stop_ticks_le_8",
         tick_state,
@@ -2823,6 +2847,20 @@ class NotionalLedger:
         self._reconciliation_status = "broker_positions_not_reconciled"
         self._floating_notional_pnl_usd = 0.0
         self._state = self._load()
+        self._publish_held()
+
+    def _publish_held(self) -> None:
+        """Loaded ledger numbers are account facts. A blank start is not."""
+
+        if self._load_status != "loaded":
+            return
+        _hold_anchor_facts({
+            "notional_equity": self._state.get("notional_equity"),
+            "notional_initial": self._state.get("notional_initial"),
+            "day_start_notional": self._state.get("day_start_notional"),
+            "notional_high_water": self._state.get("notional_high_water"),
+            "floating_notional_pnl_usd": self._floating_notional_pnl_usd,
+        })
 
     # ---- persistence -----------------------------------------------------------------------
     def _blank(self) -> dict:
@@ -2896,6 +2934,7 @@ class NotionalLedger:
     # ---- the three notional surfaces the governor reads -------------------------------------
     def equity(self) -> float:
         """Realized notional balance (immutable basis for close accounting and sizing)."""
+        self._publish_held()
         return float(self._state["notional_equity"])
 
     def governor_equity(self) -> "float | None":
@@ -3581,14 +3620,17 @@ def _fear_execute(question, state, criteria, withhold, cache_key, instructions):
     tied = False
     for name in order:
         try:
-            p = float(probs.get(name, 0.0) or 0.0)
+            raw = probs.get(name)
+            if raw is None:
+                continue
+            p = float(raw)
         except (TypeError, ValueError):
-            p = 0.0
-        if best is None or p > best_p + 1e-12:
+            continue
+        if best is None or p > best_p:
             best = name
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     alternative = None if tied or best is None else best
     row.update({
@@ -3668,7 +3710,7 @@ def _cap_boot_stamp():
         argv = " ".join(sys.argv).replace("\\", "/").lower()
         if "--namespace operator" not in argv or "run_book" not in argv:
             return
-        if any(tok in argv for tok in ("redacted_account", "redacted_account", "redacted_account", "redacted_account", "run_book_supervisor")):
+        if any(tok in argv for tok in ("friend_a", "redacted_account", "redacted_account", "redacted_account", "run_book_supervisor")):
             return
         from datetime import datetime, timezone
         from pathlib import Path

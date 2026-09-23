@@ -273,11 +273,11 @@ def _unique(probs: Mapping[str, float], order: tuple[str, ...]) -> str | None:
         if name not in probs:
             continue
         p = probs[name]
-        if best_p is None or p > best_p + 1e-12:
+        if best_p is None or p > best_p:
             best = name
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     if tied or best is None:
         return None

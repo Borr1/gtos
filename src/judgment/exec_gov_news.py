@@ -329,7 +329,7 @@ def _unique(probabilities: Mapping[str, float], order: tuple[str, ...]) -> str |
     winners = [
         name
         for name in order
-        if name in probabilities and abs(probabilities[name] - best) <= 1e-12
+        if name in probabilities and probabilities[name] == best
     ]
     if len(winners) != 1:
         return None
@@ -407,8 +407,16 @@ def _noul_of(block: Any) -> bool | float | None:
 
 
 def include_depth_name(score: float | None) -> float | None:
-    """Include-depth is the returned score. A miss stays unset."""
-    return _number(score)
+    """Ordinal place of hide / short / long / full. Not an amount."""
+
+    number = _number(score)
+    if number is None or number != int(number):
+        return None
+    whole = int(number)
+    depth = ("hide", "short", "long", "full")
+    if whole < 0 or whole >= len(depth):
+        return None
+    return float(whole)
 
 
 def completeness_noul(answers: Mapping[str, Any] | None) -> bool | float | None:
@@ -439,19 +447,35 @@ def _choice_of(answers: Mapping[str, Any] | None, key: str) -> str | None:
 def _read_answers(answers: Mapping[str, Any] | None) -> dict[str, Any]:
     payload = answers if isinstance(answers, Mapping) else {}
     choices = {key: _choice_of(payload, key) for key in _CHOICE_ORDER}
-    scores = {key: _score_of(payload.get(key)) for key in _SCORE_IDS}
+    scores = {}
+    for key in _SCORE_IDS:
+        block = payload.get(key)
+        if key in _ORDINAL_IDS:
+            try:
+                from .jev_questions import ordinal_index
+
+                scores[key] = ordinal_index(block, len(_FIT_LEVELS))
+            except Exception:
+                scores[key] = None
+        else:
+            scores[key] = _score_of(block)
     nouls = {key: _noul_of(payload.get(key)) for key in _NOUL_IDS}
     include: dict[str, float] = {}
     for key, block in payload.items():
         name = str(key)
         if not name.startswith("include_") or _banned(name):
             continue
-        number = _score_of(block)
+        try:
+            from .jev_questions import ordinal_index
+
+            number = ordinal_index(block, 4)
+        except Exception:
+            number = None
         if number is None:
             continue
         chunk = name[len("include_") :]
         if chunk and not _banned(chunk):
-            include[chunk] = number
+            include[chunk] = float(number)
     news = unique_news_alternative(payload.get("news_cycle"))
     return {
         "choices": choices,
@@ -484,24 +508,56 @@ def _choice_question(qid: str, instructions: str, criteria: Mapping[str, str]) -
     return body
 
 
-def _score_question(qid: str, instructions: str) -> dict[str, Any]:
-    body: dict[str, Any] = {"type": "score", "instructions": instructions}
-    try:
-        from .jev_questions import parameter_question
+_FIT_LEVELS = (
+    "poor fitness on this state",
+    "ordinary fitness on this state",
+    "clean fitness on this state",
+)
+_MINUTE_IDS = frozenset({"window_pre_min", "window_post_min"})
+_MULT_IDS = frozenset({"cap_mult_overlay"})
+_TILT_IDS = frozenset({"derisk_tilt"})
+_ORDINAL_IDS = frozenset(
+    {
+        "wall_pressure",
+        "fire_window",
+        "limit_expiry",
+        "frozen_reprice",
+        "thin_asia",
+        "minstop_fit",
+        "pip8_fit",
+        "sl_fresh_fitness",
+        "pretrade_mgr_quality",
+        "j46_tp_fit",
+        "harvest_observe",
+        "never_widen_pressure",
+        "fill_deviation_observe",
+        "pending_still_same_setup",
+        "opposite_lock",
+        "eurgbp_stack",
+    }
+)
 
-        built = parameter_question(qid, instructions)
-        row = built.get(qid) if isinstance(built, dict) else None
-        if isinstance(row, dict):
-            body = dict(row)
+
+def _score_question(qid: str, instructions: str, state: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Amount Scores use the card. Fitness and include-depth stay an order."""
+
+    try:
+        from .jev_questions import amount_question, minute_anchors, mult_anchors, ordinal_question
     except Exception:
-        pass
-    body["type"] = "score"
-    body["instructions"] = instructions
-    criteria = body.get("criteria")
-    if isinstance(criteria, list):
-        kept = [item for item in criteria if not _banned(str(item))]
-        body["criteria"] = kept
-    return body
+        return {}
+    name = str(qid)
+    if name in _MINUTE_IDS:
+        built = amount_question(name, instructions, minute_anchors(state))
+    elif name in _MULT_IDS:
+        built = amount_question(name, instructions, mult_anchors(state))
+    elif name in _TILT_IDS:
+        built = amount_question(name, instructions, [])
+    elif name.startswith("include_"):
+        built = ordinal_question(name, instructions, ("hide", "short", "long", "full"))
+    else:
+        built = ordinal_question(name, instructions, _FIT_LEVELS)
+    row = built.get(name) if isinstance(built, dict) else None
+    return dict(row) if isinstance(row, dict) else {}
 
 
 def _noul_question(instructions: str, true_line: str, false_line: str) -> dict[str, Any]:
@@ -529,7 +585,7 @@ def exec_gov_news_questions(
     seats: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     """The menu for one ask. The menu does not decide."""
-    del state, seat, branch, seats
+    del seat, branch, seats
     unset = "An empty answer leaves it unset. This question does not send an order and does not flatten."
     pack: dict[str, Any] = {
         "exec_state_sufficient": _noul_question(
@@ -674,12 +730,17 @@ def exec_gov_news_questions(
         "eurgbp_stack": "same-currency stack",
     }
     for qid, what in score_lines.items():
-        pack[qid] = _score_question(qid, _between(what))
+        block = _score_question(qid, _between(what), state)
+        if block:
+            pack[qid] = block
     for chunk in _CHUNKS:
-        pack[f"include_{chunk}"] = _score_question(
+        block = _score_question(
             f"include_{chunk}",
             _between(f"include-depth of the named {chunk} chunk"),
+            state,
         )
+        if block:
+            pack[f"include_{chunk}"] = block
     return _clean_questions(pack)
 
 
@@ -713,14 +774,20 @@ def _clean_questions(questions: Mapping[str, Any]) -> dict[str, Any]:
     return out
 
 
-def _scrub(value: Any, depth: int = 0) -> Any:
-    if depth > 6:
-        return None
+def _scrub(value: Any, seen: set[int] | None = None) -> Any:
+    """Drop banned keys. A repeated container is a cycle and stops. No depth cap."""
+
+    if seen is None:
+        seen = set()
     if value is None or isinstance(value, (str, bool)):
         return value
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return _number(value) if isinstance(value, float) else value
     if isinstance(value, Mapping):
+        ident = id(value)
+        if ident in seen:
+            return None
+        seen.add(ident)
         out: dict[str, Any] = {}
         for key, item in value.items():
             name = str(key)
@@ -728,10 +795,14 @@ def _scrub(value: Any, depth: int = 0) -> Any:
                 continue
             if name.startswith("include_"):
                 continue
-            out[name] = _scrub(item, depth + 1)
+            out[name] = _scrub(item, seen)
         return out
     if isinstance(value, (list, tuple)) and not isinstance(value, (str, bytes)):
-        return [_scrub(item, depth + 1) for item in value]
+        ident = id(value)
+        if ident in seen:
+            return None
+        seen.add(ident)
+        return [_scrub(item, seen) for item in value]
     return None
 
 
@@ -1032,7 +1103,7 @@ class ExecGovNewsDecision:
             "flatten": False,
             "place": False,
             "apply": False,
-            "persist_weight": 0.00,
+            "persist_weight": None,
             "extra_pass": False,
             "sends": False,
             "may_send": self.may_send,

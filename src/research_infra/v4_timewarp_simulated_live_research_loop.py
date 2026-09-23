@@ -593,7 +593,7 @@ def m1_symbol_day_source_authority(
             else "selected_day_source_meets_absolute_floor"
         )
         session_status = (
-            "redacted_accountortened_or_partial_session_reference"
+            "friend_aortened_or_partial_session_reference"
             if session_scaled
             else "ftmo_regular_session_reference"
         )
@@ -604,7 +604,7 @@ def m1_symbol_day_source_authority(
     else:
         status = "selected_day_source_below_session_scaled_floor"
         session_status = (
-            "redacted_accountortened_or_partial_session_reference"
+            "friend_aortened_or_partial_session_reference"
             if effective_floor < absolute_floor
             else "ftmo_regular_session_reference"
         )

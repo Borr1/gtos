@@ -27,9 +27,47 @@ from __future__ import annotations
 import json
 import os
 import uuid
-from typing import Mapping
+from typing import Any, Mapping
 
-_KEEP_DAYS = 2   # today + yesterday is enough; bound the file
+_HOP: dict[tuple, dict[str, float | None]] = {}
+
+
+def _finite(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _keep_days(day_names: list[str]) -> float | None:
+    key = tuple(sorted(str(day) for day in day_names))
+    if key in _HOP:
+        return _HOP[key].get("keep_days")
+    payload = {"days": list(key), "n_days": len(key)}
+    number = None
+    try:
+        from src.judgment.nineteen import score as ask
+
+        number = _finite(
+            ask(
+                payload,
+                question_id="keep_days",
+                instructions=(
+                    "The score you return is how many recent decision days this conviction file still keeps. "
+                    "An empty score does not drop a day. Do not send."
+                ),
+                anchors=[("decision days named on this state", float(len(key)))],
+            )
+        )
+    except Exception:
+        number = None
+    _HOP[key] = {"keep_days": number}
+    return number
 
 
 class RunningConvictionLedger:
@@ -74,9 +112,9 @@ class RunningConvictionLedger:
                 cur = set(days.get(day) or [])
                 cur.update(s for s in (sleeves or set()) if s)
                 days[day] = sorted(cur)
-            # prune to the most-recent _KEEP_DAYS calendar dates (lexical sort == date order)
-            if len(days) > _KEEP_DAYS:
-                for stale in sorted(days.keys())[:-_KEEP_DAYS]:
+            keep = _keep_days(list(days.keys()))
+            if keep is not None and keep > 0 and len(days) > int(keep):
+                for stale in sorted(days.keys())[:-int(keep)]:
                     days.pop(stale, None)
             self._write({"days": days})
             return {day: len(set(days.get(day) or [])) for day in (firing_by_day or {})}

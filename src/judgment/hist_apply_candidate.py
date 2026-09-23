@@ -644,11 +644,11 @@ def _local_unique(probabilities: Mapping[str, Any] | None, order: tuple[str, ...
         if number is None:
             continue
         seen = True
-        if best_p is None or number > best_p + 1e-12:
+        if best_p is None or number > best_p:
             best = name
             best_p = number
             tied = False
-        elif abs(number - best_p) <= 1e-12:
+        elif number == best_p:
             tied = True
     if not seen or tied or best is None:
         return None
@@ -739,7 +739,7 @@ def _tied(block: Any, order: tuple[str, ...] | None) -> bool:
     if len(numeric) < 2:
         return False
     best = max(numeric.values())
-    winners = [name for name, number in numeric.items() if abs(number - best) <= 1e-12]
+    winners = [name for name, number in numeric.items() if number == best]
     return len(winners) != 1
 
 

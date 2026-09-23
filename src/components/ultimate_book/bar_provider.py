@@ -64,7 +64,7 @@ def _challenge_writer() -> bool:
     argv = " ".join(sys.argv).replace("\\", "/").lower()
     if "run_book" not in argv:
         return False
-    if any(token in argv for token in ("redacted_account", "redacted_account", "redacted_account", "redacted_account", "run_book_supervisor")):
+    if any(token in argv for token in ("friend_a", "redacted_account", "redacted_account", "redacted_account", "run_book_supervisor")):
         return False
     return _CHALLENGE_NS in argv
 
@@ -321,17 +321,28 @@ def decision_day_of(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).strftime("%Y-%m-%d")
 
 
-def enough(bars: list[Bar], cluster: str) -> bool:
+def enough(
+    bars: list[Bar],
+    cluster: str,
+    symbol: object = None,
+    timeframe: object = None,
+    bar: object = None,
+) -> bool:
     """Closed bars reach this cluster.
 
+    The series is the symbol, timeframe, bar, and cluster passed in.
     The Challenge writer asks closed_series. False only when
     closed_series_short is the unique highest. An empty answer does not
     restore the old warmup refusal. Any other process keeps the friend map.
     """
     if not _challenge_writer():
         return len(bars) >= WARMUP.get(cluster, 200)
-    symbol_s, tf_s = _resolved_names(None, None)
-    bar_s = _resolved_bar()
+    symbol_s = _text(symbol)
+    tf_s = _text(timeframe)
+    if hasattr(bar, "isoformat"):
+        bar_s = bar.isoformat()
+    else:
+        bar_s = _text(bar)
     winner = _ask(
         "closed_series",
         _spot_id(symbol_s, tf_s, bar_s),
@@ -358,7 +369,7 @@ def _last_bar_boot() -> None:
         argv = " ".join(sys.argv).replace("\\", "/").lower()
         if "--namespace operator" not in argv or "run_book" not in argv:
             return
-        if any(tok in argv for tok in ("redacted_account", "redacted_account", "redacted_account", "redacted_account", "run_book_supervisor")):
+        if any(tok in argv for tok in ("friend_a", "redacted_account", "redacted_account", "redacted_account", "run_book_supervisor")):
             return
         path = (
             Path(__file__).resolve().parents[3]

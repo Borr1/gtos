@@ -41,12 +41,53 @@ from src.costs.model import (
     VerifiedQuoteGeometryReceipt,
 )
 
-from src.research_infra import (
-    replay_acceleration_attempt5_typed_sparse_runner as attempt5,
-)
-from src.research_infra import replay_acceleration_integrated_source as integrated
-from src.research_infra import replay_prepared_day_pack
-from src.research_infra import v4_timewarp_simulated_live_research_loop as timewarp
+class _LazyModule:
+    """Import a research module on the first attribute read or write."""
+
+    def __init__(self, loader):
+        object.__setattr__(self, "_loader", loader)
+        object.__setattr__(self, "_module", None)
+
+    def _load(self):
+        module = object.__getattribute__(self, "_module")
+        if module is None:
+            module = object.__getattribute__(self, "_loader")()
+            object.__setattr__(self, "_module", module)
+        return module
+
+    def __getattr__(self, name):
+        return getattr(self._load(), name)
+
+    def __setattr__(self, name, value):
+        setattr(self._load(), name, value)
+
+
+def _load_attempt5():
+    from src.research_infra import (
+        replay_acceleration_attempt5_typed_sparse_runner as mod,
+    )
+    return mod
+
+
+def _load_integrated():
+    from src.research_infra import replay_acceleration_integrated_source as mod
+    return mod
+
+
+def _load_timewarp():
+    from src.research_infra import v4_timewarp_simulated_live_research_loop as mod
+    return mod
+
+
+def _load_replay_prepared_day_pack():
+    from src.research_infra import replay_prepared_day_pack as mod
+    return mod
+
+
+attempt5 = _LazyModule(_load_attempt5)
+integrated = _LazyModule(_load_integrated)
+timewarp = _LazyModule(_load_timewarp)
+replay_prepared_day_pack = _LazyModule(_load_replay_prepared_day_pack)
 from src.research_infra.completed_bar_witness import (
     observed_successor_closed_bar_rows_until,
 )
@@ -130,7 +171,33 @@ PACK_CONFIG_IDENTITY_ROUTE = (
 )
 
 TICK_SYMBOLS = ("EURUSD", "USDJPY", "XAGUSD", "XAUUSD")
-RAW_CAMPAIGN_SYMBOLS = tuple(timewarp.GTOS_24_SYMBOL_SURFACE)
+class _LazyCampaignSymbols:
+    """Tuple of campaign symbols, loaded with the timewarp module on first use."""
+
+    def _value(self):
+        cached = object.__getattribute__(self, "__dict__").get("_cached")
+        if cached is None:
+            cached = tuple(timewarp.GTOS_24_SYMBOL_SURFACE)
+            object.__setattr__(self, "_cached", cached)
+        return cached
+
+    def __iter__(self):
+        return iter(self._value())
+
+    def __len__(self):
+        return len(self._value())
+
+    def __eq__(self, other):
+        return self._value() == other
+
+    def __hash__(self):
+        return hash(self._value())
+
+    def __getitem__(self, item):
+        return self._value()[item]
+
+
+RAW_CAMPAIGN_SYMBOLS = _LazyCampaignSymbols()
 RAW_CAMPAIGN_DECISION_TIMEFRAMES = ("D1", "H4", "H1", "M15")
 RAW_CAMPAIGN_REQUIRED_TIMEFRAMES = (
     *RAW_CAMPAIGN_DECISION_TIMEFRAMES,
@@ -2116,106 +2183,120 @@ def _rebind_complete_broker_day_fragments(
     )
 
 
-class LaneBroadSourceResolver(attempt5.BroadSourceResolver):
-    """Unsealed resolver with a true-UTC/broker-day completeness rebind."""
+def _lane_broad_source_resolver_class():
+    cached = globals().get("_LANE_BROAD_SOURCE_RESOLVER_CLASS")
+    if cached is not None:
+        return cached
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        # A LANE manifest is an exhaustive authority declaration, including
-        # when its tick set is empty.  The upstream default interprets an empty
-        # bound mapping as permission to scan retired repo tick estates.  That
-        # would silently add undeclared path data and make runtime disagree with
-        # the read-only canonical-plan inspector.
-        if kwargs.get("bound_tick_source_specs") is not None:
-            kwargs["sealed_tick_full_component_set"] = True
-        super().__init__(*args, **kwargs)
+    class LaneBroadSourceResolver(attempt5.BroadSourceResolver):
+        """Unsealed resolver with a true-UTC/broker-day completeness rebind."""
 
-    def build_sources_for_days(
-        self,
-        days: tuple[str, ...],
-        *,
-        symbols: tuple[str, ...] | None = None,
-        source_authority_days: tuple[str, ...] | None = None,
-    ) -> dict[str, dict[str, timewarp.ResolvedSource]]:
-        execution_days = tuple(sorted(set(days)))
-        authority_days = tuple(
-            sorted(set(source_authority_days or execution_days))
-        )
-        # The historical chunk resolver projects M1 to the execution UTC day.
-        # A corrected window-edge fragment needs its adjacent UTC day to prove
-        # the enclosing broker day, and the engine subsequently checks that the
-        # chunk authority hash equals the full-window canonical hash.  Resolve
-        # the complete authority scope here; static_source_authority_plan still
-        # projects its comparison back to `execution_days`, while path queries
-        # remain bounded by their explicit as-of/until timestamps.
-        resolved_days = (
-            authority_days if execution_days != authority_days else execution_days
-        )
-        return super().build_sources_for_days(
-            resolved_days,
-            symbols=symbols,
-            source_authority_days=authority_days,
-        )
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            # A LANE manifest is an exhaustive authority declaration, including
+            # when its tick set is empty.  The upstream default interprets an empty
+            # bound mapping as permission to scan retired repo tick estates.  That
+            # would silently add undeclared path data and make runtime disagree with
+            # the read-only canonical-plan inspector.
+            if kwargs.get("bound_tick_source_specs") is not None:
+                kwargs["sealed_tick_full_component_set"] = True
+            super().__init__(*args, **kwargs)
 
-    def resolve_m1_for_days(
-        self,
-        *,
-        symbol: str,
-        days: tuple[str, ...],
-        m15_source: timewarp.ResolvedSource,
-    ) -> timewarp.ResolvedSource | None:
-        source = super().resolve_m1_for_days(
-            symbol=symbol,
-            days=days,
-            m15_source=m15_source,
-        )
-        if source is None:
-            return None
-        rebound, rebinds = _rebind_complete_broker_day_fragments(
-            source,
-            m15_source=m15_source,
-        )
-        if not rebinds:
-            return rebound
-        by_day = {str(row["utc_fragment_day"]): row for row in rebinds}
-        for index, row in enumerate(self.source_rows):
-            if (
-                row.get("row_type") == "m1_symbol_day_source"
-                and row.get("symbol") == symbol
-                and str(row.get("trading_day")) in by_day
-            ):
-                authority = rebound.day_source_authority[
-                    str(row["trading_day"])
-                ]
-                self.source_rows[index] = {
-                    **dict(row),
-                    **{
-                        key: authority.get(key)
-                        for key in (
-                            "status",
-                            "source_session_status",
-                            "diagnostic_fallback_only",
-                            "source_gaps",
-                            "path_replay_allowed",
-                            "terminal_lifecycle_close_allowed",
-                            "source_day_authority_id",
-                            "source_day_authority_hash_sha256",
-                        )
-                    },
-                    "lane_authority_rebind": True,
-                }
-        for row in rebinds:
-            self.emit_source_row(
-                {
-                    "row_type": "lane_m1_utc_fragment_authority_rebind",
-                    **row,
-                    "clock_rule": NEW_YORK_PLUS_7.name,
-                    "campaign_sealed": False,
-                    "live_broker_authority": False,
-                    "broker_mutation_enabled": False,
-                    "evidence_class": LANE_EVIDENCE,
-                }
+        def build_sources_for_days(
+            self,
+            days: tuple[str, ...],
+            *,
+            symbols: tuple[str, ...] | None = None,
+            source_authority_days: tuple[str, ...] | None = None,
+        ) -> dict[str, dict[str, timewarp.ResolvedSource]]:
+            execution_days = tuple(sorted(set(days)))
+            authority_days = tuple(
+                sorted(set(source_authority_days or execution_days))
             )
-        return rebound
+            # The historical chunk resolver projects M1 to the execution UTC day.
+            # A corrected window-edge fragment needs its adjacent UTC day to prove
+            # the enclosing broker day, and the engine subsequently checks that the
+            # chunk authority hash equals the full-window canonical hash.  Resolve
+            # the complete authority scope here; static_source_authority_plan still
+            # projects its comparison back to `execution_days`, while path queries
+            # remain bounded by their explicit as-of/until timestamps.
+            resolved_days = (
+                authority_days if execution_days != authority_days else execution_days
+            )
+            return super().build_sources_for_days(
+                resolved_days,
+                symbols=symbols,
+                source_authority_days=authority_days,
+            )
+
+        def resolve_m1_for_days(
+            self,
+            *,
+            symbol: str,
+            days: tuple[str, ...],
+            m15_source: timewarp.ResolvedSource,
+        ) -> timewarp.ResolvedSource | None:
+            source = super().resolve_m1_for_days(
+                symbol=symbol,
+                days=days,
+                m15_source=m15_source,
+            )
+            if source is None:
+                return None
+            rebound, rebinds = _rebind_complete_broker_day_fragments(
+                source,
+                m15_source=m15_source,
+            )
+            if not rebinds:
+                return rebound
+            by_day = {str(row["utc_fragment_day"]): row for row in rebinds}
+            for index, row in enumerate(self.source_rows):
+                if (
+                    row.get("row_type") == "m1_symbol_day_source"
+                    and row.get("symbol") == symbol
+                    and str(row.get("trading_day")) in by_day
+                ):
+                    authority = rebound.day_source_authority[
+                        str(row["trading_day"])
+                    ]
+                    self.source_rows[index] = {
+                        **dict(row),
+                        **{
+                            key: authority.get(key)
+                            for key in (
+                                "status",
+                                "source_session_status",
+                                "diagnostic_fallback_only",
+                                "source_gaps",
+                                "path_replay_allowed",
+                                "terminal_lifecycle_close_allowed",
+                                "source_day_authority_id",
+                                "source_day_authority_hash_sha256",
+                            )
+                        },
+                        "lane_authority_rebind": True,
+                    }
+            for row in rebinds:
+                self.emit_source_row(
+                    {
+                        "row_type": "lane_m1_utc_fragment_authority_rebind",
+                        **row,
+                        "clock_rule": NEW_YORK_PLUS_7.name,
+                        "campaign_sealed": False,
+                        "live_broker_authority": False,
+                        "broker_mutation_enabled": False,
+                        "evidence_class": LANE_EVIDENCE,
+                    }
+                )
+            return rebound
+
+    globals()["_LANE_BROAD_SOURCE_RESOLVER_CLASS"] = LaneBroadSourceResolver
+    return LaneBroadSourceResolver
+
+
+def __getattr__(name):
+    if name == "LaneBroadSourceResolver":
+        return _lane_broad_source_resolver_class()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def _prefix_pack_binding_rebind_allowed(
@@ -2765,7 +2846,7 @@ class LaneWindowInputs:
 
         setattr(real_class, "from_accepted_bundle", classmethod(factory))
         attempt5.bound_tick_source_authority = tick_loader
-        attempt5.BroadSourceResolver = LaneBroadSourceResolver
+        attempt5.BroadSourceResolver = _lane_broad_source_resolver_class()
         attempt5.SPLIT_RANGES = (
             (
                 window_inputs.window.split,
@@ -3035,7 +3116,7 @@ def _resolver_for(inputs: LaneWindowInputs) -> LaneBroadSourceResolver:
         manifest=inputs.source_manifest,
         manifest_path=inputs.source_manifest_path,
     )
-    return LaneBroadSourceResolver(
+    return _lane_broad_source_resolver_class()(
         use_native_h1=False,
         skip_tick_source=False,
         verbose=False,

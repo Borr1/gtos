@@ -30,8 +30,8 @@ TARGET_R = "target_r"
 _MODEL = "jev-1.13.0"
 
 
-def _decision_questions(spots):
-    from src.judgment.jev_questions import parameter_question
+def _decision_questions(spots, facts, bars, i):
+    from .spot_choice import amount_question, anchors_for
 
     text = {
         VR_GATE: (
@@ -56,12 +56,15 @@ def _decision_questions(spots):
         ),
     }
     packed = {}
+    built = {}
     for spot in spots:
-        packed.update(parameter_question(spot, text[spot]))
-    return packed
+        anchors = anchors_for(spot, facts, bars=bars, index=i)
+        built[spot] = anchors
+        packed.update(amount_question(spot, text[spot], anchors))
+    return packed, built
 
 
-def _ask(spots, facts):
+def _ask(spots, bars, i, facts):
     """One System One post. The returned Noul, Choice, or Score is the value.
 
     An empty answer, a tie, or an error stays empty. Nothing here puts a
@@ -70,8 +73,8 @@ def _ask(spots, facts):
     from src.judgment.jev_client import evaluate
     from src.judgment.jev_questions import append_outcome, prior_outcomes, returned_number
 
-    questions = _decision_questions(spots)
     state = dict(facts or {})
+    questions, anchors = _decision_questions(spots, state, bars, i)
     try:
         state["prior_outcomes"] = prior_outcomes(state=state, questions=questions)
     except Exception:
@@ -82,7 +85,6 @@ def _ask(spots, facts):
         receipt = evaluate(
             state,
             questions=questions,
-            timeout_s=8.0,
             model=_MODEL,
             merge_sleeve=False,
             require_equity=False,
@@ -99,7 +101,9 @@ def _ask(spots, facts):
             error = receipt.get("error") or receipt.get("skipped") or "post_failed"
     out = {}
     for spot in spots:
-        number = returned_number(answers.get(spot))
+        from .spot_choice import value_at
+
+        number = value_at(returned_number(answers.get(spot)), anchors.get(spot))
         out[spot] = number
         try:
             append_outcome(
@@ -132,22 +136,22 @@ def trend_slope(B, i, lb) -> Optional[float]:
     ``lb`` is the asked lookback. An empty lookback is not a slope.
     """
     window = _lookback_bars(lb)
-    if window is None:
+    if window is None or i < window:
         return None
-    if i < window:
-        return 0.0
     ys = [B[k].c for k in range(i - window + 1, i + 1)]
     n = len(ys)
     xs = list(range(n))
-    mx = (n - 1) / 2
+    mx = (n - 1) / 2.0
     my = sum(ys) / n
     num = sum((xs[k] - mx) * (ys[k] - my) for k in range(n))
     den = sum((xs[k] - mx) ** 2 for k in range(n))
     if den == 0:
-        return 0.0
+        return None
     slope = num / den
     a = atr14(B, i)
-    return slope / a if a > 0 else 0.0
+    if not (a > 0):
+        return None
+    return slope / a
 
 
 def energy_gate(vr: float, slope, vr_gate, slope_thr) -> bool:
@@ -178,6 +182,8 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, **_) -> Opt
     b = bars[i]
     decided = _ask(
         (VR_GATE, SLOPE_THR, TREND_LB, TARGET_R),
+        bars,
+        i,
         {
             "symbol": symbol,
             "sleeve": SLEEVE,

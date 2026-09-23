@@ -36,7 +36,6 @@ See the parity test + the build report for the exact one-line engine wiring.
 from __future__ import annotations
 from typing import Optional
 
-from ..primitives import atr14
 from ..admission import TradeIntent, CLEAN3_REGISTRY, ENERGY_DROPPED_SYMBOLS
 from . import substrate_engine as se
 # Imported in the `from ._server_clock import ...` form ON PURPOSE:
@@ -67,6 +66,10 @@ MIDDN_ON_SURFACE = _filtered_on_surface("sub_mid_dn_revert")
 # --------------------------------------------------------------------------------------------- #
 # KB5_fold_new_sleeves.py:47
 XVOL_CELL = "g1.0_3.0|dir=1|depth4|vol=xhi|persist=rand|trend=up|mtf=conflict"
+# Names stay so a research import still binds. The stop, the target, and the side
+# are the engine's one score pack for this bar. They are not a printed geometry.
+# Bound by research_infra/regime_spine/conditions.py at import (XVOL_GEOM[0], XVOL_DIR).
+# The live generator does not read these. The score pack is the stop, the target, and the side.
 XVOL_GEOM = (1.0, 3.0)
 XVOL_DIR = 1
 XVOL_CONDS = {"vol": "xhi", "persist": "rand", "trend": "up", "mtf": "conflict"}
@@ -80,103 +83,19 @@ MIDDN_CONDS = {"vol": "mid", "trend": "dn", "mtf": "neutral", "rngpos": "mid",
 
 XVOL_SLEEVE = "sub_xvol_pullback"
 MIDDN_SLEEVE = "sub_mid_dn_revert"
-XVOL_STOP_ATR = "xvol_stop_atr"
-XVOL_TARGET_R = "xvol_target_r"
-_MODEL = "jev-1.13.0"
+_BOOK_SIDE = {"long": 1, "short": -1}
 
 
-def _xvol_questions():
-    from src.judgment.jev_questions import parameter_question
-
-    return {
-        **parameter_question(
-            XVOL_STOP_ATR,
-            "Given the facts and prior_outcomes on this state, what multiple of "
-            "ATR is the stop on this xvol pullback? The score you return is that "
-            "stop. An empty card does not supply a multiple.",
-        ),
-        **parameter_question(
-            XVOL_TARGET_R,
-            "Given the facts and prior_outcomes on this state, what reward "
-            "multiple is the target on this xvol pullback? The score you return "
-            "is that multiple. An empty card does not supply a multiple.",
-        ),
-    }
-
-
-def _ask(spots, facts):
-    """One System One post. The returned Noul, Choice, or Score is the value.
-
-    An empty answer, a tie, or an error stays empty. Nothing here puts a
-    printed constant back.
-    """
-    from src.judgment.jev_client import evaluate
-    from src.judgment.jev_questions import append_outcome, prior_outcomes, returned_number
-
-    questions = _xvol_questions()
-    state = dict(facts or {})
-    try:
-        state["prior_outcomes"] = prior_outcomes(state=state, questions=questions)
-    except Exception:
-        state["prior_outcomes"] = []
-    answers = {}
-    error = None
-    try:
-        receipt = evaluate(
-            state,
-            questions=questions,
-            timeout_s=8.0,
-            model=_MODEL,
-            merge_sleeve=False,
-            require_equity=False,
-        )
-    except Exception as exc:
-        receipt = None
-        error = type(exc).__name__
-    if isinstance(receipt, dict):
-        if receipt.get("ok"):
-            raw = receipt.get("answers")
-            if isinstance(raw, dict):
-                answers = raw
-        else:
-            error = receipt.get("error") or receipt.get("skipped") or "post_failed"
-    out = {}
-    for spot in spots:
-        number = returned_number(answers.get(spot))
-        out[spot] = number
-        try:
-            append_outcome(
-                spot,
-                number,
-                state,
-                error=None if number is not None else (error or "empty"),
-            )
-        except Exception:
-            pass
-    return out
-
-
-def _xvol_geom(*, sleeve, symbol, decision_day, st, atr, **_):
-    """Ask the two XVOL_GEOM hops. Empty, tie, or error is not (1.0, 3.0)."""
-    facts = {
-        "sleeve": sleeve,
-        "symbol": symbol,
-        "decision_day": decision_day,
-        "direction": XVOL_DIR,
-        "atr": atr,
-        "stop_in": "atr",
-        "target_in": "R",
-    }
-    if isinstance(st, dict):
-        for key in ("vr", "slope50", "ac60", "mtf_align", "rng_pos", "compression"):
-            if key in st:
-                facts[key] = st[key]
-    asked = _ask((XVOL_STOP_ATR, XVOL_TARGET_R), facts)
-    stop_atr = asked.get(XVOL_STOP_ATR)
-    target_R = asked.get(XVOL_TARGET_R)
-    if stop_atr is None or target_R is None:
+def _finite(value):
+    if isinstance(value, bool) or value is None:
         return None
-    return stop_atr, target_R
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
 
 
 def _session_hour(bar_time) -> Optional[int]:
@@ -210,44 +129,40 @@ def _session_hour(bar_time) -> Optional[int]:
 
 def _generate(sleeve, on_surface, conds, geom, direction, *, need_hour, symbol, bars, decision_day,
               bar_time) -> Optional[TradeIntent]:
-    """Shared substrate-cell generator. Evaluate the latest closed bar i; emit a TradeIntent iff the
-    leak-free state lands in `conds`. stop=geom[0]*ATR, target=geom[1]*stop (substrate.outcome)."""
+    """Latest closed bar. The engine's one pack is the warmup, the edges, the side, and the geometry.
+
+    An empty score, a tie, or an error does not emit. This function does not ask again.
+    """
+    del geom, direction
     if symbol not in on_surface or not bars:
         return None
-    if len(bars) < se.WARMUP:                      # 210-bar substrate warmup (fail-closed)
-        return None
     i = len(bars) - 1
-    a = atr14(bars, i)
-    if a <= 0:
-        return None
     hour = None
     if need_hour:
         hour = _session_hour(bar_time)
-        if hour is None:                           # session=ny cell needs the hour -> fail closed
+        if hour is None:
             return None
-    st = se.compute_state(bars, i, hour)
+    st = se.compute_state(
+        bars,
+        i,
+        hour,
+        sleeve=sleeve,
+        symbol=symbol,
+        decision_day=decision_day,
+    )
     if st is None:
+        return None
+    a = _finite(st.get("_atr"))
+    if a is None or a <= 0:
         return None
     coords = se.cell_coords(st)
     if not se.cell_matches(coords, conds):
         return None
-    resolved = geom
-    if callable(resolved):
-        resolved = resolved(
-            sleeve=sleeve,
-            symbol=symbol,
-            bars=bars,
-            decision_day=decision_day,
-            st=st,
-            atr=a,
-        )
-        if resolved is None:
-            return None
-    try:
-        stop_atr, target_R = resolved
-    except (TypeError, ValueError):
-        return None
-    if stop_atr is None or target_R is None:
+    bounds = st.get("_bounds") if isinstance(st.get("_bounds"), dict) else {}
+    side = _BOOK_SIDE.get(bounds.get("direction_side"))
+    stop_atr = _finite(bounds.get("stop_atr"))
+    target_R = _finite(bounds.get("target_r"))
+    if side is None or stop_atr is None or target_R is None or stop_atr <= 0 or target_R <= 0:
         return None
     sd, td = se.stop_target(a, stop_atr, target_R)
     # `vr` rides along for the WAVE-11 vol-LEVEL sizing tilt (Session AR). It is the SAME value
@@ -256,7 +171,7 @@ def _generate(sleeve, on_surface, conds, geom, direction, *, need_hour, symbol, 
     # (index <= i by construction). The tilt that consumes it is DEFAULT-OFF and scoped to
     # `admission.VOL_LEVEL_TILT_SLEEVES`; populating the field changes no sizing on its own,
     # which `test_ar_vol_level_tilt.py` asserts.
-    return TradeIntent(sleeve=sleeve, symbol=symbol, direction=direction,
+    return TradeIntent(sleeve=sleeve, symbol=symbol, direction=side,
                        decision_day=decision_day, stop_dist=sd, target_dist=td,
                        vr=st.get("vr"))
 
@@ -264,7 +179,7 @@ def _generate(sleeve, on_surface, conds, geom, direction, *, need_hour, symbol, 
 def generate_sub_xvol_pullback(symbol: str, bars, decision_day: str,
                                *, bar_time=None, **_) -> Optional[TradeIntent]:
     """sub_xvol_pullback (conf 0.45). Depth-4 cell — no session, ignores bar_time."""
-    return _generate(XVOL_SLEEVE, XVOL_ON_SURFACE, XVOL_CONDS, _xvol_geom, XVOL_DIR,
+    return _generate(XVOL_SLEEVE, XVOL_ON_SURFACE, XVOL_CONDS, XVOL_GEOM, XVOL_DIR,
                      need_hour=False, symbol=symbol, bars=bars, decision_day=decision_day,
                      bar_time=bar_time)
 

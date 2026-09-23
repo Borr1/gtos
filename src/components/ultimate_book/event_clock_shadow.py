@@ -16,7 +16,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Callable
 
-from src.research_infra.event_clock_gate import EventClockGate
 from src.utils.broker_clock import UnknownBrokerClockError, utc_to_broker_naive
 
 TF_H4 = 16388
@@ -62,6 +61,8 @@ class ExactH4CloseClassifier:
     def for_server(cls, server: str | None) -> "ExactH4CloseClassifier":
         # EventClockGate.for_server is intentionally allowed to raise
         # UnknownBrokerClockError.  A guessed server clock cannot emit an admit.
+        from src.research_infra.event_clock_gate import EventClockGate
+
         gate = EventClockGate.for_server(server)
         return cls(server=str(server), gate=gate)
 

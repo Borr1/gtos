@@ -63,9 +63,71 @@ VERDICT_ABSENT = "ABSENT"
 CODE_ACTION_ALLOW = "allow"
 CODE_ACTION_BLOCK = "block"
 
-DEFAULT_LATENCY_BUDGET_S = 300.0
-DEFAULT_TTL_S = 600.0
 VERDICT_DIR_NAME = "judgment"
+_MS_PER_S = 1000.0
+
+_HOP: dict[tuple, dict[str, float | None]] = {}
+
+
+def _finite(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _consume_bounds(now: Optional[datetime], namespace: Any) -> dict[str, float | None]:
+    """Latency budget, fallback ttl, and scan age for this consume day. One post."""
+    day = ""
+    if isinstance(now, datetime):
+        day = now.astimezone(timezone.utc).date().isoformat()
+    key = ("consume", str(namespace or ""), day)
+    if key in _HOP:
+        return dict(_HOP[key])
+    payload = {
+        "namespace": None if namespace is None else str(namespace),
+        "consume_day": day,
+    }
+    questions = {
+        "latency_budget_s": (
+            "The score you return is the latency budget in seconds for a judgment row on this day. "
+            "An empty score leaves that budget unset. Do not send."
+        ),
+        "consume_ttl_s": (
+            "The score you return is how many seconds a judgment row with no ttl of its own stays current. "
+            "An empty score leaves that ttl unset. Do not send."
+        ),
+        "row_scan_max_age_s": (
+            "The score you return is the oldest row file, in seconds, this consume will open. "
+            "An empty score leaves that age unset. Do not send."
+        ),
+    }
+    out = {qid: None for qid in questions}
+    ask = None
+    try:
+        from src.judgment.nineteen import score as ask
+    except Exception:
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[qid] = _finite(
+                    ask(
+                        payload,
+                        question_id=qid,
+                        instructions=text,
+                        anchors=None,
+                    )
+                )
+            except Exception:
+                out[qid] = None
+    _HOP[key] = dict(out)
+    return out
 
 ROW_ENVELOPE_FIELDS = (
     "schema_version",
@@ -275,10 +337,10 @@ def _iter_rows(row_paths: Iterable[Any]) -> Iterable[tuple[Optional[dict], str]]
             yield row, f"{path}:{lineno}"
 
 
-def row_ineligibility(row: Mapping[str, Any], *, latency_budget_s: float) -> Optional[str]:
+def row_ineligibility(row: Mapping[str, Any], *, latency_budget_s: float | None) -> Optional[str]:
     """The task-locked eligibility rule. None == eligible.
 
-    Eligible iff: join_key present, latency_ms <= budget, why_code non-empty,
+    Eligible iff: join_key present, latency_ms inside the returned budget, why_code non-empty,
     verdict in the enum. A row whose written_at_utc cannot be parsed is also
     ineligible — "latest" needs an order and the TTL law needs a timestamp, so an
     unordered row could never be consumed anyway.
@@ -290,7 +352,8 @@ def row_ineligibility(row: Mapping[str, Any], *, latency_budget_s: float) -> Opt
         latency_f = float(latency)
     except (TypeError, ValueError):
         return "latency_ms_unparseable"
-    if latency_f > float(latency_budget_s) * 1000.0:
+    budget = _finite(latency_budget_s)
+    if budget is not None and latency_f > budget * _MS_PER_S:
         return "latency_over_budget"
     if not str(row.get("why_code") or "").strip():
         return "missing_why_code"
@@ -306,8 +369,8 @@ def reduce_verdicts(
     *,
     out_dir: Any,
     day: Any,
-    latency_budget_s: float = DEFAULT_LATENCY_BUDGET_S,
-    ttl_s: float = DEFAULT_TTL_S,
+    latency_budget_s: float | None = None,
+    ttl_s: float | None = None,
     write: bool = True,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     """Fold role JSONL rows into the one daily verdict mapping. Deterministic.
@@ -323,6 +386,11 @@ def reduce_verdicts(
     nothing yet. UNJUDGEABLE folds like any latest row and maps to no entry: a
     role's current word "cannot judge" displaces its own earlier verdict.
     """
+    bounds = _consume_bounds(datetime.now(timezone.utc), None)
+    if latency_budget_s is None:
+        latency_budget_s = bounds.get("latency_budget_s")
+    if ttl_s is None:
+        ttl_s = bounds.get("consume_ttl_s")
     stats: dict[str, Any] = {
         "rows_total": 0,
         "rows_parse_failed": 0,
@@ -362,7 +430,7 @@ def reduce_verdicts(
             "role": role,
             "why_code": str(row.get("why_code") or ""),
             "written_at_utc": written.isoformat(),
-            "ttl_s": float(ttl_s),
+            "ttl_s": _finite(ttl_s),
             "namespace": str(row.get("namespace") or ""),
             "symbol": str(row.get("symbol") or ""),
             "sleeve": row.get("sleeve"),
@@ -420,7 +488,7 @@ def judgment_verdict(
     *,
     verdict_dir: Any = None,
     namespace: Any = None,
-    default_ttl_s: float = DEFAULT_TTL_S,
+    default_ttl_s: float | None = None,
 ) -> str:
     """``RESCUE | VETO | ABSENT`` for one candidate at one instant. NEVER raises.
 
@@ -483,16 +551,19 @@ def judgment_verdict(
                 cid, entry.get("written_at_utc"),
             )
             return VERDICT_ABSENT
+        if default_ttl_s is None:
+            default_ttl_s = _consume_bounds(now, namespace).get("consume_ttl_s")
         try:
             ttl = float(entry.get("ttl_s"))
         except (TypeError, ValueError):
-            ttl = float(default_ttl_s)
+            ttl = _finite(default_ttl_s)
         from math import isfinite
         age_s = (now - written).total_seconds()
-        if not isfinite(ttl) or ttl <= 0 or not (0 <= age_s <= ttl):
+        fresh = ttl is not None and isfinite(ttl) and ttl > 0 and 0 <= age_s <= ttl
+        if not fresh:
             _log.info(
-                "judgment[%s]: %s stale (age %.1fs > ttl %.1fs) -> ABSENT",
-                cid, verdict, age_s, ttl,
+                "judgment[%s]: %s stale (age %.1fs ttl %s) -> ABSENT",
+                cid, verdict, age_s, "unset" if ttl is None else f"{ttl:.1f}",
             )
             return VERDICT_ABSENT
         return verdict
@@ -559,7 +630,7 @@ def _is_hedge_fund_row(row: Mapping[str, Any]) -> bool:
     return verdict in HEDGE_FUND_VERDICTS and role in ("", ROLE_JUDGMENT)
 
 
-def _hedge_row_ineligible(row: Mapping[str, Any]) -> Optional[str]:
+def _hedge_row_ineligible(row: Mapping[str, Any], budget_s: float | None = None) -> Optional[str]:
     if not isinstance(row, Mapping):
         return "not_mapping"
     if not str(row.get("join_key") or row.get("candidate_id") or "").strip():
@@ -575,10 +646,12 @@ def _hedge_row_ineligible(row: Mapping[str, Any]) -> Optional[str]:
     latency = row.get("latency_ms")
     if latency not in (None, ""):
         try:
-            if float(latency) > DEFAULT_LATENCY_BUDGET_S * 1000.0:
-                return "latency_over_budget"
+            latency_f = float(latency)
         except (TypeError, ValueError):
             return "latency_ms_unparseable"
+        budget = _finite(budget_s)
+        if budget is not None and latency_f > budget * _MS_PER_S:
+            return "latency_over_budget"
     return None
 
 
@@ -596,7 +669,7 @@ def _flow_action_from_verdict(verdict: Any, size_mult: Optional[float]) -> str:
     return FLOW_PASS
 
 
-def _entry_fresh(entry: Mapping[str, Any], now: datetime, default_ttl_s: float) -> bool:
+def _entry_fresh(entry: Mapping[str, Any], now: datetime, default_ttl_s: float | None) -> bool:
     """False unless the entry carries a parseable timestamp inside a positive TTL.
 
     FAIL-CLOSED ON MALFORMED TIME, deliberately (2026-08-25 seam fix): the previous
@@ -612,9 +685,9 @@ def _entry_fresh(entry: Mapping[str, Any], now: datetime, default_ttl_s: float) 
     try:
         ttl = float(entry.get("ttl_s"))
     except (TypeError, ValueError):
-        ttl = float(default_ttl_s)
+        ttl = _finite(default_ttl_s)
     from math import isfinite
-    if not isfinite(ttl) or ttl <= 0:
+    if ttl is None or not isfinite(ttl) or ttl <= 0:
         return False
     return 0 <= (now - written).total_seconds() <= ttl
 
@@ -648,7 +721,7 @@ def _sidecar_decision(
     now: datetime,
     directory: Path,
     namespace: Any,
-    default_ttl_s: float,
+    default_ttl_s: float | None,
 ) -> Optional[dict[str, Any]]:
     paths = [
         directory / name.format(day=day)
@@ -694,18 +767,15 @@ def _sidecar_decision(
     return None
 
 
-#: `_latest_hedge_row` scan bound: a row file untouched for longer than this cannot hold a
-#: row inside any legal TTL (the manage/flow TTL ceiling is 4 h; 48 h is generous slack for
-#: clock skew and copied files) -- so the scan never walks an unbounded archive of dead jsonl.
-_ROW_SCAN_MAX_AGE_S = 48 * 3600.0
-
-
 def _latest_hedge_row(
     candidate_ids: list[str],
     row_dirs: list[Path],
     now: Optional[datetime] = None,
+    budget_s: float | None = None,
+    max_age_s: float | None = None,
 ) -> Optional[dict[str, Any]]:
     wanted = {str(x) for x in candidate_ids if str(x).strip()}
+    age_bound = _finite(max_age_s)
     if not wanted:
         return None
     best: Optional[tuple[datetime, int, dict[str, Any], str]] = None
@@ -727,8 +797,14 @@ def _latest_hedge_row(
             # consumed, and PASS is code-only behavior.
             if now is not None:
                 try:
-                    if (now.timestamp() - path.stat().st_mtime) > _ROW_SCAN_MAX_AGE_S:
-                        continue
+                    mtime = path.stat().st_mtime
+                    if age_bound is not None:
+                        if (now.timestamp() - mtime) > age_bound:
+                            continue
+                    else:
+                        stamped = datetime.fromtimestamp(mtime, timezone.utc)
+                        if stamped.date() != now.astimezone(timezone.utc).date():
+                            continue
                 except OSError:
                     continue
             try:
@@ -745,7 +821,7 @@ def _latest_hedge_row(
                     continue
                 if not isinstance(row, dict):
                     continue
-                if _hedge_row_ineligible(row) is not None:
+                if _hedge_row_ineligible(row, budget_s) is not None:
                     continue
                 key = str(row.get("join_key") or row.get("candidate_id") or "").strip()
                 if key not in wanted:
@@ -787,7 +863,7 @@ def judgment_flow(
     namespace: Any = None,
     extra_ids: Optional[Iterable[Any]] = None,
     extra_row_dirs: Optional[Iterable[Any]] = None,
-    default_ttl_s: float = DEFAULT_TTL_S,
+    default_ttl_s: float | None = None,
 ) -> dict[str, Any]:
     """LIVE consume for the $75 fire path. NEVER raises. NEVER applies size_mult.
 
@@ -824,6 +900,9 @@ def judgment_flow(
             absent["reason"] = "unparseable_now"
             return dict(absent)
         directory = Path(verdict_dir) if verdict_dir is not None else _default_verdict_dir()
+        bounds = _consume_bounds(now, namespace)
+        if default_ttl_s is None:
+            default_ttl_s = bounds.get("consume_ttl_s")
         sidecar = _sidecar_decision(ids, now, directory, namespace, default_ttl_s)
         if sidecar is not None:
             return sidecar
@@ -834,7 +913,9 @@ def judgment_flow(
             if extra is None:
                 continue
             row_dirs.append(Path(extra))
-        row = _latest_hedge_row(ids, row_dirs, now)
+        row = _latest_hedge_row(
+            ids, row_dirs, now, bounds.get("latency_budget_s"), bounds.get("row_scan_max_age_s"),
+        )
         if row is None:
             _log.info("judgment_flow[%s]: no eligible row -> PASS", ids[0])
             absent["join_key"] = ids[0]
@@ -870,8 +951,8 @@ def main(argv: Optional[list[str]] = None) -> int:
                         help="Directory for verdicts_<date>.json (default: judgment/).")
     parser.add_argument("--date", default=None,
                         help="YYYY-MM-DD verdict day (default: today UTC).")
-    parser.add_argument("--latency-budget-s", type=float, default=DEFAULT_LATENCY_BUDGET_S)
-    parser.add_argument("--ttl-s", type=float, default=DEFAULT_TTL_S)
+    parser.add_argument("--latency-budget-s", type=float, default=None)
+    parser.add_argument("--ttl-s", type=float, default=None)
     args = parser.parse_args(argv)
 
     paths: list[Path] = []

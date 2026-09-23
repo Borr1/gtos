@@ -360,11 +360,11 @@ def _local_unique(numeric: Mapping[str, float], order: tuple[str, ...]) -> str |
         if name not in numeric:
             continue
         prob = numeric[name]
-        if best_p is None or prob > best_p + 1e-12:
+        if best_p is None or prob > best_p:
             best = name
             best_p = prob
             tied = False
-        elif abs(prob - best_p) <= 1e-12:
+        elif prob == best_p:
             tied = True
     if tied or best is None:
         return None

@@ -14,8 +14,57 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-STOPS = (0.75, 1.0, 1.5, 2.0, 3.0)
-TGTS = (1.0, 2.0, 3.0, 4.0, 6.0)
+_HOP: dict[tuple, dict[str, float | None]] = {}
+
+
+def _finite(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post."""
+    if cache_key in _HOP:
+        return dict(_HOP[cache_key])
+    payload = {
+        str(key): value
+        for key, value in dict(facts or {}).items()
+        if str(key) not in {"denominator", "other"}
+    }
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
+    try:
+        from src.judgment.nineteen import score as ask
+    except Exception:
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
+    _HOP[cache_key] = dict(out)
+    return out
 
 CLASS_FX = "fx_majors"
 CLASS_METAL = "xau_xag"
@@ -91,9 +140,31 @@ def lookup(tag: str, cls: str | None, *, table: Mapping[str, Any] | None = None)
 def resolved_stop_target(tag: str, cls: str | None, row: Mapping[str, Any]) -> tuple[float, float]:
     stop = float(row["stop_atr"])
     target = float(row["target_atr"])
-    # FX 0.75 ATR is the 5–8 pip bleed. Keep 1.0 unless the FX class itself chose ≥1.0.
-    if cls == CLASS_FX and stop < 1.0:
-        stop = 1.0
+    if cls == CLASS_FX:
+        # One ATR is the unit. The cell stop is the other fact. The cell target
+        # is a different distance and is not a level of this stop.
+        one_atr = 1.0
+        levels: list[tuple[str, float]] = [("one ATR", one_atr)]
+        if math.isfinite(stop) and stop > 0 and stop != one_atr:
+            levels.append(("this cell's stop in ATR", stop))
+        floor = _scores(
+            ("fx_stop_floor", str(tag), str(cls), round(stop, 6)),
+            {
+                "tag": tag,
+                "class": cls,
+                "stop_atr": stop,
+                "one_atr": one_atr,
+            },
+            {
+                "fx_stop_floor_atr": (
+                    "The score you return is the lowest stop in ATR this FX state still uses. "
+                    "An empty score leaves the cell's own stop. Do not send."
+                ),
+            },
+            {"fx_stop_floor_atr": levels},
+        ).get("fx_stop_floor_atr")
+        if floor is not None and stop < floor:
+            stop = floor
     return stop, target
 
 

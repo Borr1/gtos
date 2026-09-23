@@ -616,7 +616,7 @@ config/profiles/operator_profile.yaml.bak-acctswitch-20260821T015954Z	58294	vps-
 config/profiles/operator_profile.yaml.bak-verification-20260821T045818Z	58294	vps-f5-live	unknown-small	1786523802.0840528
 config/profiles/operator_profile.yaml.bak_pre_0_20260909T040034Z	58500	vps-f5-live	unknown-small	1787317263.9441774
 config/profiles/operator_profile.yaml.bak_pre_server_fix_20260909T040248Z	60443	vps-f5-live	unknown-small	1788926435.2332463
-config/profiles/redacted_account_f5_minimal.yaml	60258	vps-f5-live	text	1789985406.9714327
+config/profiles/friend_a_f5_minimal.yaml	60258	vps-f5-live	text	1789985406.9714327
 config/profiles/redacted_account.yaml	33482	vps-f5-live	text	1786523802.1153486
 config/shadow_observer_registry.yaml	5541	vps-f5-live	text	1786495913.976144
 config/wave21_forward_shadow.yaml	2421	vps-f5-live	text	1786495913.976144

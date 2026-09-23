@@ -125,6 +125,17 @@ def _score_block(raw: Any) -> float | None:
     return _number(block.get("score"))
 
 
+def _ordinal_block(raw: Any) -> int | None:
+    """Nearest word level. The index is not dollars."""
+
+    try:
+        from .jev_questions import ordinal_index
+
+        return ordinal_index(raw, 6)
+    except Exception:
+        return None
+
+
 def _noul_value(raw: Any) -> bool | float | None:
     """A noul stays a bool or a probability. It is not coerced to a threshold."""
 
@@ -160,10 +171,14 @@ def _strip_secrets(value: Any) -> Any:
     return value
 
 
-def apply_questions() -> dict[str, Any]:
-    """Tilt and cash card. One ask. Choice, score, and noul only."""
+def apply_questions(state: Mapping[str, Any] | None = None) -> dict[str, Any]:
+    """Tilt and cash card. One ask. Choice, score, and noul only.
 
-    from .jev_questions import parameter_question, spot_question
+    Cash and the splice bound are amounts on this card's own facts. A tilt
+    has no amount unit here, so it is an ordinal and is not a dollar figure.
+    """
+
+    from .jev_questions import amount_question, count_anchors, ordinal_question, spot_question
 
     pack: dict[str, Any] = {}
     pack.update(spot_question(
@@ -188,25 +203,40 @@ def apply_questions() -> dict[str, Any]:
             "skip": "Do not take the branch. The tilts and the cash stay unset.",
         },
     ))
-    pack.update(parameter_question(
+    tilt_levels = (
+        "none",
+        "trace",
+        "small",
+        "modest",
+        "notable",
+        "heavy",
+    )
+    pack.update(ordinal_question(
         "apply_flow",
         "What flow tilt does this state return? "
-        "The score you return is that tilt. It may sit between the levels. Never place.",
+        "The score you return is that tilt's place in the order. "
+        "It is not an amount. It may sit between the levels. Never place.",
+        tilt_levels,
     ))
-    pack.update(parameter_question(
+    pack.update(ordinal_question(
         "apply_cost",
         "What cost tilt does this state return? "
-        "The score you return is that tilt. It may sit between the levels. Never place.",
+        "The score you return is that tilt's place in the order. "
+        "It is not an amount. It may sit between the levels. Never place.",
+        tilt_levels,
     ))
-    pack.update(parameter_question(
+    pack.update(ordinal_question(
         "apply_ca",
         "What ca tilt does this state return? "
-        "The score you return is that tilt. It may sit between the levels. Never place.",
+        "The score you return is that tilt's place in the order. "
+        "It is not an amount. It may sit between the levels. Never place.",
+        tilt_levels,
     ))
-    pack.update(parameter_question(
+    pack.update(amount_question(
         "apply_splice",
         "How many posted answers may sit on this state before the catalog is leftover? "
         "The score you return is that bound. Never place.",
+        count_anchors(state),
     ))
     pack["cost_hurtful"] = {
         "type": "noul",
@@ -242,14 +272,14 @@ def _applied_tilts(answers: Mapping[str, Any] | None) -> dict[str, Any]:
     if function_name == "withhold" or branch == "skip":
         pass
     elif function_name == "last_outcome" and branch == "take":
-        flow = _last_logged("apply_flow")
-        cost = _last_logged("apply_cost")
-        ca = _last_logged("apply_ca")
+        flow = _ordinal_block({"score": _last_logged("apply_flow")})
+        cost = _ordinal_block({"score": _last_logged("apply_cost")})
+        ca = _ordinal_block({"score": _last_logged("apply_ca")})
         cash = _returned_unit(payload)
     elif function_name == "returned_score" and branch == "take":
-        flow = _score_block(payload.get("apply_flow"))
-        cost = _score_block(payload.get("apply_cost"))
-        ca = _score_block(payload.get("apply_ca"))
+        flow = _ordinal_block(payload.get("apply_flow"))
+        cost = _ordinal_block(payload.get("apply_cost"))
+        ca = _ordinal_block(payload.get("apply_ca"))
         cash = _returned_unit(payload)
     else:
         # Empty function or branch. Tilts stay unset. The returned unit still stands.
@@ -363,7 +393,7 @@ def _ask_apply(state: Mapping[str, Any] | None) -> dict[str, Any]:
     packed["model"] = MODEL
     packed["gate"] = "apply_size"
     try:
-        questions = apply_questions()
+        questions = apply_questions(packed)
     except Exception as exc:
         return {
             "ok": False,
@@ -780,10 +810,9 @@ def apply_named_tilts(
     )
     ca, ca_missing = _clamp_open(card.get("ca"), CA_TILT_MIN, CA_TILT_MAX, open_wire=apply_ca)
     size_cash = card.get("size_cash")
-    if flow_missing or cost_missing or ca_missing:
-        combined: float | None = None
-    else:
-        combined = float(flow) * float(cost) * float(ca)
+    # The tilt is an ordinal place. It is not a size and not dollars.
+    combined: float | None = None
+    del flow_missing, cost_missing, ca_missing
     return {
         **stamp_lock(),
         "ticket": ticket,
@@ -804,8 +833,8 @@ def apply_named_tilts(
         "ca_ignored": not apply_ca,
         "apply_this_row": need,
         "cannot_refuse": True,
-        "physical_size_stays_flow_x_cost": not apply_ca,
-        "physical_size_stays_flow_x_cost_x_ca": True,
+        "physical_size_stays_flow_x_cost": False,
+        "physical_size_stays_flow_x_cost_x_ca": False,
         WIRE_CA_SIZE: {"apply": apply_ca, "live": ca},
     }
 

@@ -198,15 +198,18 @@ def _post(
     numeric: dict[str, float] = {}
     for name in order:
         try:
-            p = float(probs.get(name, 0.0) or 0.0)
+            raw = probs.get(name)
+            if raw is None:
+                continue
+            p = float(raw)
         except (TypeError, ValueError):
-            p = 0.0
+            continue
         numeric[name] = p
-        if best is None or p > best_p + 1e-12:
+        if best is None or p > best_p:
             best = name
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     alternative = None if tied or best is None else best
     side = None

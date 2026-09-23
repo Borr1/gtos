@@ -97,9 +97,9 @@ class GovernorStateBuilder:
         FTMO was still counting losses against the previous day.
 
         When ``reset_rule`` names a calendar it wins, because it is the firm's stated rule.
-        Otherwise the live-detected server offset is preferred (rounded, and band-guarded to
-        [+1,+4] so a transient mis-detection cannot shift the window), then the static config
-        offset. The offset is stable within a server-day -- both DST flips happen at ~02:00-03:00
+        Otherwise the live-detected server offset is the clock fact and is used as returned.
+        The static config offset is used only when detection is absent. The offset is stable
+        within a server-day -- both DST flips happen at ~02:00-03:00
         local, far from the ~21:00-23:00 UTC day boundary -- so the reset DATE never advances
         spuriously mid-flip.
         """
@@ -121,9 +121,9 @@ class GovernorStateBuilder:
             try:
                 h = prov()
                 if h is not None:
-                    hr = round(float(h))
-                    if 1 <= hr <= 4:
-                        return float(hr)
+                    detected = float(h)
+                    if detected == detected and detected not in (float("inf"), float("-inf")):
+                        return detected
             except Exception:
                 pass
         return self._reset_offset_h

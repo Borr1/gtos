@@ -1,20 +1,22 @@
-"""Load unique gold APPLY files into the Challenge writer PID.
+"""Load the live import closure into the Challenge writer PID.
 
-Imported from ``src.judgment.__init__``. Never leftover-ships ``book_owner``.
-The place decision is the place Choice. redacted_account idle.
-Verification quarantined. Agents do not place friend tickets.
+The module list is the import closure of ``run_book.py``, lazy imports
+included. Each module is imported. The stamp records what loaded and what
+failed. One stamp is written for the Challenge writer. An empty persist
+stays empty. This module does not send an order.
 
+redacted_account idle. Verification quarantined. Agents do not place friend tickets.
 Canonical stamp is written only by Challenge ``run_book``
 (``operator``). Side tests set ``GTOS_UNIQUE_LOADER_SIDE_TEST=1``.
 """
 
 from __future__ import annotations
 
+import ast
 import importlib
 import json
 import os
 import sys
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
@@ -24,94 +26,8 @@ CHALLENGE_LOGIN = "0"
 CHALLENGE_NS = "operator"
 SIDE_TEST_ENV = "GTOS_UNIQUE_LOADER_SIDE_TEST"
 
-# Unique APPLY + default-off observers. Never leftover-ship book_owner.
-# #87 does not rewrite live news_spine.py. #77 persist 0.10 never copied.
-# Friend copy files never order_send from this agent.
-# equity_frame is the Challenge 0 card (equity / to_pass / floor_room).
-UNIQUE_MODULES: tuple[str, ...] = (
-    "gold_priors",
-    "equity_frame",
-    "admission_place",
-    "size_exit",
-    "remaining_seats",
-    "sleeve_jev",
-    "sleeve_ifs",
-    "gold_sleeve_ifs",
-    "gold_entry",
-    "gold_entry_jev",
-    "gold_exit_geometries",
-    "exec_gov_news",
-    "exec_gov_news_ifs",
-    "followthrough",
-    "followthrough_ifs",
-    "jev_client",
-    "jev_questions",
-    "compose",
-    "fluid_local",
-    "host_sites",
-    "manage_choices",
-    "rung_choice",
-    "learn_loop",
-    "learning_choices",
-    "isolated_15m_reentry",
-    "two_stop",
-    "occupancy",
-    "news_frozen_loader",
-    "event_proximity",
-    "event_registry_next14d",
-    "news_tape_join",
-    "news_challenge_stub_sync",
-    "news_calendar_sync",
-    "chair_shadow",
-    "challenge_daily_loop",
-    "jev_history_probe",
-    "x_dig",
-    "x_dig_judge",
-    "x_dig_order",
-    "challenge_feature_label_store",
-    "challenge_command_center",
-    "challenge_trained_models",
-    "hist_apply_candidate",
-    "remaining_ifs",
-    "remaining_ifs_tree",
-    "friend_copy",
-    "friend_copy_bind",
-    "friend_copy_contract",
-    "friend_feedback_loop",
-    "complete_judge",
-    "dig_b_static",
-    "fluid_gates",
-    "fluid_pipeline",
-    "apply_size",
-    "writer_compose_place",
-    "harvest_patterns",
-    "train_row_harvest",
-    "chair_enforce",
-    "chair_static_close",
-    "two_stop_day_circuit",
-    "everywhere_tape",
-    "sleeve_from_tape",
-    "hold_from_tape",
-    "a1_observe_every_candidate",
-    "sleeve_select",
-    "jev_sleeve_select_shadow",
-    "sleeve_on_surface_loader",
-    "place_choice",
-    "place_choice_ensemble",
-    "place_gate",
-    "conf_gate_consume",
-    "cycle_evaluate_post",
-    "host_occupancy",
-    "host_events",
-    "policy_c_admit",
-    "od13_ensemble",
-    "cross_asset",
-    "alive_sleeves_for_symbol",
-    "data_inventory",
-
-    "execution_choices",
-    "skip_choices",
-    "dig_a_place_choice_ensemble_noul_pair",)
+# Filled from the import closure. Not a hand menu.
+UNIQUE_MODULES: tuple[str, ...] = ()
 
 LOADED: list[str] = []
 FAILED: dict[str, str] = {}
@@ -130,15 +46,12 @@ _STAMP_DIR = (
 _STAMP_PATH = _STAMP_DIR / "unique_loader_stamp.json"
 _FIRE_PATH = _STAMP_DIR / "unique_fire_stamp.json"
 _OBSERVE_PATH = _STAMP_DIR / "unique_observe_stamp.json"
-_FIRE_MIN_SEC = 20.0
-_HEAVY_MIN_SEC = 60.0
 _LAST_FIRE: dict[str, Any] = {}
-_LAST_FIRE_MONO = 0.0
-_LAST_HEAVY_MONO = 0.0
-_WOULD_BE_DONE = False
+_LAST_OBSERVE_KEY = ""
+_LOAD_LOCK = False
+_LOADED_ONCE = False
 OCCUPANCY_SEAT = "occupancy"
-# Remaining-owned occupancy pack (~6 IDs). Isolated consumes this.
-# Not gold-catalog isolated_reentry_is_new. Observe seats include occupancy.
+# Names the occupancy Choice can return. The return is used. A miss stays unset.
 OCCUPANCY_KEEP_ONE = frozenset(
     {
         "keep_one",
@@ -146,9 +59,6 @@ OCCUPANCY_KEEP_ONE = frozenset(
         "keep_one_occupied_integer",
     }
 )
-NEVER_FLATTEN_TICKET = "294215389"
-_NS_DIR = _REPO / "pipeline_state" / "ultimate_book" / CHALLENGE_NS
-_GOLD_RECORD = _NS_DIR / "trade_records" / f"{NEVER_FLATTEN_TICKET}.json"
 
 
 def _now() -> str:
@@ -164,6 +74,174 @@ def _is_challenge_writer() -> bool:
         return False
     argv = " ".join(sys.argv).replace("\\", "/").lower()
     return "operator" in argv and "run_book" in argv
+
+
+def _module_file(name: str) -> Path | None:
+    parts = name.split(".")
+    if not parts or any(not part.isidentifier() for part in parts):
+        return None
+    rel = Path(*parts)
+    py = _REPO / rel.with_suffix(".py")
+    init = _REPO / rel / "__init__.py"
+    if py.is_file():
+        return py
+    if init.is_file():
+        return init
+    return None
+
+
+def _package_of(path: Path) -> str | None:
+    try:
+        rel = path.resolve().relative_to(_REPO)
+    except ValueError:
+        return None
+    parts = list(rel.parts)
+    if parts[-1] == "__init__.py":
+        parts = parts[:-1]
+    elif parts[-1].endswith(".py"):
+        parts[-1] = parts[-1][:-3]
+    else:
+        return None
+    if not parts:
+        return None
+    return ".".join(parts)
+
+
+def _import_package(path: Path, module_name: str) -> str:
+    if path.name == "__init__.py":
+        return module_name
+    parts = module_name.split(".")
+    if len(parts) < 2:
+        return ""
+    return ".".join(parts[:-1])
+
+
+def _resolve_relative(package: str, level: int, module: str | None) -> str | None:
+    parts = package.split(".") if package else []
+    drop = level - 1
+    if drop < 0 or drop > len(parts):
+        return None
+    base = list(parts[: len(parts) - drop]) if drop else list(parts)
+    if module:
+        base.extend(module.split("."))
+    if not base:
+        return None
+    return ".".join(base)
+
+
+def _closure_from(entry: Path) -> list[str]:
+    """Import closure of run_book.py. Function-body imports count. So do constant import_module strings."""
+
+    class _Visitor(ast.NodeVisitor):
+        def __init__(self, package: str) -> None:
+            self.package = package
+            self.found: list[str] = []
+
+        def _add(self, name: str | None) -> None:
+            if name:
+                self.found.append(name)
+
+        def visit_Import(self, node: ast.Import) -> None:
+            for alias in node.names:
+                self._add(alias.name)
+
+        def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+            if node.level:
+                base = _resolve_relative(self.package, node.level, node.module)
+            else:
+                base = node.module
+            self._add(base)
+            if not base:
+                return
+            for alias in node.names:
+                if alias.name == "*":
+                    continue
+                child = base + "." + alias.name
+                if _module_file(child) is not None:
+                    self._add(child)
+
+        def visit_Call(self, node: ast.Call) -> None:
+            func = node.func
+            called = ""
+            if isinstance(func, ast.Name):
+                called = func.id
+            elif isinstance(func, ast.Attribute):
+                called = func.attr
+            if called == "import_module" and node.args:
+                arg = node.args[0]
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    text = arg.value
+                    if text and not text.startswith("."):
+                        self._add(text)
+            self.generic_visit(node)
+
+    seen: set[str] = set()
+    order: list[str] = []
+    root_name = _package_of(entry)
+    queue: list[str | None] = [root_name]
+    while queue:
+        current = queue.pop(0)
+        if not current or current in seen:
+            continue
+        path = _module_file(current)
+        if path is None:
+            continue
+        seen.add(current)
+        order.append(current)
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8-sig", errors="replace"))
+        except (OSError, SyntaxError):
+            continue
+        visitor = _Visitor(_import_package(path, current))
+        visitor.visit(tree)
+        for name in visitor.found:
+            if name not in seen:
+                queue.append(name)
+    return order
+
+
+def live_modules() -> tuple[str, ...]:
+    """Dotted modules the live path can import, starting at run_book.py."""
+
+    global UNIQUE_MODULES
+    if UNIQUE_MODULES:
+        return UNIQUE_MODULES
+    entry = _REPO / "run_book.py"
+    if not entry.is_file():
+        return ()
+    UNIQUE_MODULES = tuple(_closure_from(entry))
+    return UNIQUE_MODULES
+
+
+def _finite(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _returned_persist() -> tuple[float | None, str | None]:
+    """The persist Score already returned for this process. A miss stays empty.
+
+    The pinned composite weight is not copied. An empty answer does not become 0.
+    """
+
+    try:
+        priors = importlib.import_module("src.judgment.gold_priors")
+    except Exception as exc:  # noqa: BLE001
+        return None, f"{type(exc).__name__}: {exc}"
+    reader = getattr(priors, "applied_persistence_weight", None)
+    if not callable(reader):
+        return None, None
+    try:
+        return _finite(reader()), None
+    except Exception as exc:  # noqa: BLE001
+        return None, f"{type(exc).__name__}: {exc}"
 
 
 def _write_stamp(payload: dict[str, Any], *, canonical: bool) -> None:
@@ -216,7 +294,7 @@ def _slim(obj: Any) -> dict[str, Any]:
         except Exception:  # noqa: BLE001
             return {"type": type(obj).__name__}
     if not isinstance(obj, dict):
-        return {"type": type(obj).__name__, "repr": str(obj)[:240]}
+        return {"type": type(obj).__name__, "repr": str(obj)}
     keep = (
         "schema",
         "enabled",
@@ -293,29 +371,18 @@ def _occupancy_named(obj: Mapping[str, Any] | None) -> str:
     return str(raw or "").strip().lower()
 
 
-def _gold_ticket_occupied() -> bool:
-    """Fact: gold 294215389 is open. Never flattens. Never a send refuse."""
-    try:
-        d = json.loads(_GOLD_RECORD.read_text(encoding="utf-8"))
-    except Exception:
-        return False
-    if not isinstance(d, dict):
-        return False
-    return str(d.get("trade_lifecycle_status") or "").lower() == "open"
+def _wake_positions() -> tuple[list[dict[str, Any]], bool]:
+    """Positions on the chair wake. The second value is whether the wake was read."""
 
-
-
-def _open_broker_positions() -> list[dict[str, Any]]:
-    """Broker positions from the latest chair wake. No stand-in ticket."""
     path = _STAMP_DIR / "state" / "chair_wake.json"
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
-        return []
+        return [], False
     book = data.get("book") if isinstance(data, dict) else None
     raw = book.get("positions") if isinstance(book, dict) else None
     if not isinstance(raw, list):
-        return []
+        return [], True
     found: list[dict[str, Any]] = []
     for pos in raw:
         if not isinstance(pos, dict):
@@ -323,7 +390,59 @@ def _open_broker_positions() -> list[dict[str, Any]]:
         if pos.get("ticket") is None or not pos.get("symbol"):
             continue
         found.append(pos)
-    return found
+    return found, True
+
+
+def _open_broker_positions() -> list[dict[str, Any]]:
+    """Broker positions from the latest chair wake. No stand-in ticket."""
+
+    positions, _read = _wake_positions()
+    return positions
+
+
+def _position_facts(positions: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
+    raw = _open_broker_positions() if positions is None else positions
+    slim: list[dict[str, Any]] = []
+    for pos in raw:
+        slim.append(
+            {
+                "ticket": pos.get("ticket"),
+                "symbol": pos.get("symbol"),
+                "side": pos.get("side"),
+                "lots": pos.get("lots"),
+                "live_sl": pos.get("live_sl"),
+                "tp": pos.get("tp") if pos.get("tp") is not None else pos.get("live_tp"),
+                "sleeve": pos.get("sleeve") or pos.get("comment"),
+            }
+        )
+    return slim
+
+
+def _gold_rows(positions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for pos in positions:
+        symbol = str(pos.get("symbol") or "")
+        upper = symbol.upper()
+        if "XAU" not in upper and "GOLD" not in upper:
+            continue
+        rows.append(
+            {
+                "ticket": pos.get("ticket"),
+                "symbol": symbol,
+                "side": pos.get("side"),
+            }
+        )
+    return rows
+
+
+def _gold_ticket_occupied() -> bool | None:
+    """Whether the wake shows a gold position. Unread wake stays unset."""
+
+    positions, read = _wake_positions()
+    if not read:
+        return None
+    return bool(_gold_rows(positions))
+
 
 def _occupancy_state(
     *,
@@ -338,8 +457,7 @@ def _occupancy_state(
         "account": ident_login,
         "namespace": ident_ns,
         "login": ident_login,
-        "occupancy_hold_dead": True,
-                "never_flatten_tickets": [NEVER_FLATTEN_TICKET, int(NEVER_FLATTEN_TICKET)],
+        "open_positions": _position_facts(),
     }
     if extra:
         state.update(extra)
@@ -360,24 +478,32 @@ def _observe_seats() -> list[str]:
     return seats
 
 
-def compose_occupancy_hop(state: dict[str, Any] | None = None) -> dict[str, Any]:
-    """Ask the occupancy pack (~6 IDs). The Choice is the occupancy decision.
+def _keep_bit(choice: Any) -> bool | None:
+    """True when the returned choice is a keep. Empty stays unset."""
 
-    Open gold 294215389 is a fact on the row. This hop does not refuse a send
-    and does not flatten. Isolated consumes the same pack.
-    """
+    if choice is None:
+        return None
+    text = str(choice).strip().lower()
+    if not text:
+        return None
+    if text in OCCUPANCY_KEEP_ONE:
+        return True
+    return False
+
+
+def compose_occupancy_hop(state: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Ask the occupancy pack. The Choice is that return. This hop does not send."""
+
     row: dict[str, Any] = {
         "seat": OCCUPANCY_SEAT,
         "asked": False,
         "ok": False,
-        "occupancy_hold_dead": True,
-            }
-    st = dict(state or _occupancy_state())
-    st["open_gold"] = {
-        "ticket": NEVER_FLATTEN_TICKET,
-        "occupied": _gold_ticket_occupied(),
-        "never_flatten": True,
+        "occupancy_hold_dead": None,
+        "choice": None,
+        "keep_one": None,
     }
+    st = dict(state or _occupancy_state())
+    st["open_gold"] = _open_gold_fact()
     try:
         rem = importlib.import_module("src.judgment.remaining_ifs")
         occ = rem.compose_occupancy(st)
@@ -392,6 +518,8 @@ def compose_occupancy_hop(state: dict[str, Any] | None = None) -> dict[str, Any]
         row["reason"] = d.get("reason")
         row["occupancy_after_close"] = named
         row["persist_apply"] = d.get("persist_apply")
+        hold = d.get("occupancy_hold_dead")
+        row["occupancy_hold_dead"] = hold if isinstance(hold, bool) else None
     except Exception as exc:  # noqa: BLE001
         row["block"] = f"{type(exc).__name__}: {exc}"
         row["choice"] = None
@@ -403,44 +531,13 @@ def compose_occupancy_hop(state: dict[str, Any] | None = None) -> dict[str, Any]
         pack_ids = []
     row["pack_ids"] = pack_ids
     row["n_posted"] = len(pack_ids) if pack_ids else None
-    named = str(row.get("occupancy_after_close") or "")
-    disp = str(row.get("disposition") or "").lower()
-    row["keep_one"] = bool(
-        named in OCCUPANCY_KEEP_ONE
-        or disp in OCCUPANCY_KEEP_ONE
-        or "keep_one" in named
-        or "keep_one" in disp
-    )
-    row["gold_ticket_occupied"] = bool(_gold_ticket_occupied())
+    row["keep_one"] = _keep_bit(row.get("choice"))
+    row["gold_ticket_occupied"] = _gold_ticket_occupied()
     return row
 
 
-def load_unique_apply() -> dict[str, Any]:
-    """Import unique files into this process. Never raise into package init."""
-
-    global PERSIST, STAMP
-    LOADED.clear()
-    FAILED.clear()
-    persist: float | None = None
-    persist_block: str | None = None
-
-    for name in UNIQUE_MODULES:
-        try:
-            importlib.import_module(f"src.judgment.{name}")
-            LOADED.append(name)
-        except Exception as exc:  # noqa: BLE001 — stamp the exact block
-            FAILED[name] = f"{type(exc).__name__}: {exc}"
-
-    if "gold_priors" in LOADED:
-        try:
-            priors = importlib.import_module("src.judgment.gold_priors")
-            persist = float(priors.GATE_COMPOSITE_WEIGHTS["persistence"])
-        except Exception as exc:  # noqa: BLE001
-            persist_block = f"{type(exc).__name__}: {exc}"
-            FAILED["gold_priors.pin"] = persist_block
-    PERSIST = persist
-
-    STAMP = {
+def _stamp_body(names: tuple[str, ...] | list[str], persist: float | None, persist_block: str | None) -> dict[str, Any]:
+    return {
         "schema": SCHEMA,
         "loaded_at_utc": _now(),
         "pid": os.getpid(),
@@ -456,60 +553,75 @@ def load_unique_apply() -> dict[str, Any]:
         "fn_idle": True,
         "verification_quarantined": True,
         "challenge_writer": _is_challenge_writer(),
-        "n_declared": len(UNIQUE_MODULES),
-        "choice_hops": [
-            "place_choice",
-            "admission_place",
-            "size_exit",
-            "manage_choices",
-            "rung_choice",
-            "exec_gov_news",
-            "gold_sleeve_ifs",
-            "fear_withholds",
-        
-            "execution_choices",
-            "skip_choices",
-            "dig_a_place_choice_ensemble_noul_pair",],
+        "n_declared": len(names),
+        "choice_hops": list(LOADED),
     }
-    if _is_challenge_writer():
-        try:
-            fear = importlib.import_module("src.components.ultimate_book.minimal_size")
-            boot = getattr(fear, "_fear_boot_stamp", None)
-            if callable(boot):
-                boot()
-        except Exception:
-            pass
-    _write_stamp(STAMP, canonical=_is_challenge_writer())
-    return STAMP
 
 
+def load_unique_apply() -> dict[str, Any]:
+    """Import the live closure into this process and write one stamp.
 
-def _would_be_intent() -> Any:
-    """This bar on the open gold book. The hop asks. This object does not send."""
-    return type(
-        "_WouldBe",
-        (),
-        {
-            "symbol": "XAUUSD",
-            "sleeve": "dsp_descending_lows_accepted",
-            "side": "long",
-            "tag": "dsp_descending_lows_accepted",
-            "details": {
-                "symbol": "XAUUSD",
-                "sleeve": "dsp_descending_lows_accepted",
-                "namespace": CHALLENGE_NS,
-                "ticket": NEVER_FLATTEN_TICKET,
-            },
-        },
-    )()
+    Never raises into package init. Does not re-enter run_book. An empty
+    persist stays empty. Friends and side tests do not write the canonical stamp.
+    """
+
+    global PERSIST, STAMP, _LOAD_LOCK, _LOADED_ONCE
+    if _LOADED_ONCE and STAMP:
+        return STAMP
+    if _LOAD_LOCK:
+        return STAMP
+    _LOAD_LOCK = True
+    try:
+        names = live_modules()
+        LOADED.clear()
+        FAILED.clear()
+        writer = _is_challenge_writer()
+        STAMP = _stamp_body(names, None, None)
+        if writer:
+            _write_stamp(STAMP, canonical=True)
+        for name in names:
+            if name == "run_book" or name in sys.modules or name == __name__:
+                if name == "run_book":
+                    main_mod = sys.modules.get("__main__")
+                    main_file = str(getattr(main_mod, "__file__", "") or "").replace("\\", "/")
+                    if name in sys.modules or main_file.endswith("run_book.py"):
+                        LOADED.append(name)
+                    else:
+                        FAILED[name] = "entry_script"
+                else:
+                    LOADED.append(name)
+                continue
+            try:
+                importlib.import_module(name)
+                LOADED.append(name)
+            except Exception as exc:  # noqa: BLE001 — stamp the exact block
+                FAILED[name] = f"{type(exc).__name__}: {exc}"
+        persist, persist_block = _returned_persist()
+        PERSIST = persist
+        STAMP = _stamp_body(names, persist, persist_block)
+        if writer:
+            try:
+                fear = importlib.import_module("src.components.ultimate_book.minimal_size")
+                boot = getattr(fear, "_fear_boot_stamp", None)
+                if callable(boot):
+                    boot()
+            except Exception:
+                pass
+            _write_stamp(STAMP, canonical=True)
+        _LOADED_ONCE = True
+        return STAMP
+    finally:
+        _LOAD_LOCK = False
 
 
 def _open_gold_fact() -> dict[str, Any]:
+    """Gold positions on the wake. No stand-in ticket."""
+
+    positions, read = _wake_positions()
+    metals = _gold_rows(positions)
     return {
-        "ticket": NEVER_FLATTEN_TICKET,
-        "occupied": _gold_ticket_occupied(),
-        "symbol": "XAUUSD",
-        "never_flatten": True,
+        "positions": metals,
+        "occupied": bool(metals) if read else None,
     }
 
 
@@ -561,23 +673,33 @@ def _hop_reason(raw: Any) -> Any:
     return raw
 
 
-def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) -> dict[str, Any]:
-    """Challenge observe. Occupancy is in the seat set. The would-be asks; it does not send.
+def _observe_key(namespace: str) -> str:
+    """Structural facts for this observe. A quote flicker is not a new state."""
 
-    Never leftover-ships book_owner. Never sends.
+    facts = {
+        "namespace": namespace,
+        "positions": _position_facts(),
+    }
+    return json.dumps(facts, sort_keys=True, default=str)
+
+
+def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) -> dict[str, Any]:
+    """Challenge observe. Same structural state returns the ask already made.
+
+    A friend namespace is not this book. This function does not send.
     """
 
-    global _LAST_FIRE, _LAST_FIRE_MONO, _LAST_HEAVY_MONO, _WOULD_BE_DONE
+    global _LAST_FIRE, _LAST_OBSERVE_KEY
 
     ns = str(namespace or "").strip()
     row: dict[str, Any] = {
         "schema": "gtos.judgment.unique_observe.v1",
-        "action": "OBSERVE",
+        "action": None,
         "origin": origin or "observe_unique_apply",
         "namespace": ns,
         "persist": PERSIST,
         "broker_effect": False,
-        "leave_orig": True,
+        "leave_orig": None,
         "n_loaded": len(LOADED),
         "n_failed": len(FAILED),
         "pid": os.getpid(),
@@ -589,15 +711,9 @@ def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) ->
     if not ns:
         ns = CHALLENGE_NS
         row["namespace"] = ns
-
-    now_m = time.monotonic()
-    if _LAST_FIRE and (now_m - _LAST_FIRE_MONO) < _FIRE_MIN_SEC:
-        cached = dict(_LAST_FIRE)
-        cached["reason"] = "unique_apply_throttled"
-        cached["observed_at_utc"] = _now()
-        cached["broker_effect"] = False
-        cached["throttled"] = True
-        return cached
+    state_key = _observe_key(ns)
+    if _LAST_FIRE and state_key == _LAST_OBSERVE_KEY:
+        return dict(_LAST_FIRE)
 
     try:
         fc = importlib.import_module("src.judgment.friend_copy")
@@ -612,15 +728,15 @@ def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) ->
     try:
         tape = importlib.import_module("src.judgment.news_tape_join")
         status = tape.tape_join_status()
+        applied = getattr(tape, "NEWS_PROTOCOL_APPLIED", None)
+        invented = status.get("invented") if isinstance(status, dict) else None
         row["news"] = {
-            "NEWS_PROTOCOL_APPLIED": bool(getattr(tape, "NEWS_PROTOCOL_APPLIED", False)),
+            "NEWS_PROTOCOL_APPLIED": applied if isinstance(applied, bool) else None,
             "mill_url": getattr(tape, "MILL_URL", None),
-            "invented": bool(status.get("invented")) if isinstance(status, dict) else False,
+            "invented": invented if isinstance(invented, bool) else None,
         }
     except Exception as exc:  # noqa: BLE001
         row["news"] = {
-            "NEWS_PROTOCOL_APPLIED": False,
-            "mill_url": None,
             "block": f"{type(exc).__name__}: {exc}",
         }
 
@@ -635,182 +751,159 @@ def observe_unique_apply(*, namespace: Any = None, origin: str | None = None) ->
         "account_facts": _account_facts(),
     }
     rungs: dict[str, Any] = {}
-    run_heavy = (now_m - _LAST_HEAVY_MONO) >= _HEAVY_MIN_SEC or not _LAST_FIRE
-    if run_heavy:
-        rungs["isolated_15m"] = _try_rung(
-            "isolated_15m",
-            lambda: importlib.import_module("src.judgment.isolated_15m_reentry").maybe_prove_isolated_15m(),
-        )
-        rungs["daily_loop"] = _try_rung(
-            "daily_loop",
-            lambda: importlib.import_module("src.judgment.challenge_daily_loop").maybe_run_daily_loop(
-                login=CHALLENGE_LOGIN,
-                namespace=CHALLENGE_NS,
-            ),
-        )
-        rungs["command_center"] = _try_rung(
-            "command_center",
-            lambda: importlib.import_module("src.judgment.challenge_command_center").maybe_run_command_center(
-                login=CHALLENGE_LOGIN,
-                namespace=CHALLENGE_NS,
-            ),
-        )
-        rungs["hist_apply"] = _try_rung(
-            "hist_apply",
-            lambda: importlib.import_module("src.judgment.hist_apply_candidate").maybe_label(
-                login=CHALLENGE_LOGIN,
-                namespace=CHALLENGE_NS,
-            ),
-        )
-        rungs["remaining_ifs"] = _try_rung(
-            "remaining_ifs",
-            lambda: importlib.import_module("src.judgment.remaining_ifs").compose_remaining_ifs(
-                challenge_state,
-                None,
-                seat="companion",
-                branch="observe",
-                seats=tuple(seats),
-            ),
-        )
-        occ_obs = compose_occupancy_hop(challenge_state)
-        occ_obs["rung"] = "occupancy"
-        rungs["occupancy"] = occ_obs
-        rungs["friend_feedback"] = _try_rung(
-            "friend_feedback",
-            lambda: importlib.import_module("src.judgment.friend_feedback_loop").maybe_run_friend_feedback(
-                login=CHALLENGE_LOGIN,
-                namespace=CHALLENGE_NS,
-            ),
-        )
-        sib_state = dict(challenge_state)
-        rungs["sleeve_select"] = _sibling(
-            "src.judgment.sleeve_select",
-            "decide_sleeve_select_live",
-            {"symbol": "XAUUSD", "state": sib_state},
-        )
-        rungs["gold_sleeve"] = _sibling(
-            "src.judgment.gold_sleeve_ifs",
-            "decide_gold_sleeve_live",
-            {
-                "sleeve": "dsp_descending_lows_accepted",
-                "symbol": "XAUUSD",
-                "side": "long",
-                "state": sib_state,
-            },
-        )
-        try:
-            manage = importlib.import_module("src.judgment.manage_choices")
-            positions = _open_broker_positions()
-            asked: list[dict[str, Any]] = []
-            for pos in positions:
-                acts: dict[str, Any] = {}
-                for act in ("move_sl", "move_tp", "close"):
-                    facts = {
-                        "ticket": pos.get("ticket"),
-                        "symbol": pos.get("symbol"),
-                        "side": pos.get("side"),
-                        "lots": pos.get("lots"),
-                        "live_sl": pos.get("live_sl"),
-                        "entry": pos.get("entry") or pos.get("price_open"),
-                        "bid": pos.get("bid"),
-                        "ask": pos.get("ask"),
-                        "tp": pos.get("tp") or pos.get("live_tp"),
-                    }
-                    got = manage.decide(
-                        act,
-                        ticket=pos.get("ticket"),
-                        symbol=pos.get("symbol"),
-                        reason="open_position_heartbeat",
-                        facts=facts,
-                    )
-                    if (
-                        act == "move_sl"
-                        and isinstance(got, dict)
-                        and got.get("send")
-                        and got.get("choice") == "move_sl"
-                    ):
-                        got = manage.send_unique_move_sl(got, facts=facts)
-                    acts[act] = {
-                        "choice": got.get("choice") if isinstance(got, dict) else None,
-                        "probability": got.get("probability") if isinstance(got, dict) else None,
-                        "send": bool(got.get("send")) if isinstance(got, dict) else False,
-                        "decision_emitted": bool(got.get("decision_emitted")) if isinstance(got, dict) else False,
-                        "agent_order_send": bool(got.get("agent_order_send")) if isinstance(got, dict) else False,
-                    }
-                asked.append({"ticket": pos.get("ticket"), "symbol": pos.get("symbol"), "acts": acts})
-            only = asked[0] if len(asked) == 1 else None
-            sl_sent = any(
-                bool((item.get("acts") or {}).get("move_sl", {}).get("agent_order_send"))
-                for item in asked
-            )
-            row["manage"] = {
-                "ok": True,
-                "order_send": sl_sent,
-                "ticket": None if only is None else only["ticket"],
-                "acts": {} if only is None else only["acts"],
-                "positions": asked,
-            }
-        except Exception as exc:  # noqa: BLE001
-            row["manage"] = {"ok": False, "block": f"{type(exc).__name__}: {exc}", "order_send": False}
-        rungs["exec_gov_news"] = _sibling(
-            "src.judgment.exec_gov_news",
-            "maybe_run_news_skip",
-            {"state": sib_state},
-        )
-        rungs["state_choices"] = _sibling(
-            "src.judgment.state_choices",
-            "maybe_ask_surface",
-            {"namespace": CHALLENGE_NS},
-        )
-        rungs["learning_choices"] = _sibling(
-            "src.judgment.learning_choices",
-            "maybe_ask_learning",
-            {"namespace": CHALLENGE_NS},
-        )
-        _LAST_HEAVY_MONO = now_m
-        row["heavy"] = True
-        if _is_challenge_writer() and not _WOULD_BE_DONE and origin != "gate_order_send":
-            _WOULD_BE_DONE = True
-            try:
-                would = gate_order_send(
-                    intent=_would_be_intent(),
-                    login=CHALLENGE_LOGIN,
-                    namespace=CHALLENGE_NS,
-                    origin="observe_would_be",
-                    extra_state={"open_gold": _open_gold_fact(), "account_facts": _account_facts()},
-                )
-                row["would_be"] = {
-                    "action": would.get("action"),
-                    "choice": would.get("choice"),
-                    "unique_highest": would.get("unique_highest"),
-                    "asked": would.get("asked"),
+    rungs["isolated_15m"] = _try_rung(
+        "isolated_15m",
+        lambda: importlib.import_module("src.judgment.isolated_15m_reentry").maybe_prove_isolated_15m(),
+    )
+    rungs["daily_loop"] = _try_rung(
+        "daily_loop",
+        lambda: importlib.import_module("src.judgment.challenge_daily_loop").maybe_run_daily_loop(
+            login=CHALLENGE_LOGIN,
+            namespace=CHALLENGE_NS,
+        ),
+    )
+    rungs["command_center"] = _try_rung(
+        "command_center",
+        lambda: importlib.import_module("src.judgment.challenge_command_center").maybe_run_command_center(
+            login=CHALLENGE_LOGIN,
+            namespace=CHALLENGE_NS,
+        ),
+    )
+    rungs["hist_apply"] = _try_rung(
+        "hist_apply",
+        lambda: importlib.import_module("src.judgment.hist_apply_candidate").maybe_label(
+            login=CHALLENGE_LOGIN,
+            namespace=CHALLENGE_NS,
+        ),
+    )
+    rungs["remaining_ifs"] = _try_rung(
+        "remaining_ifs",
+        lambda: importlib.import_module("src.judgment.remaining_ifs").compose_remaining_ifs(
+            challenge_state,
+            None,
+            seat="companion",
+            branch="observe",
+            seats=tuple(seats),
+        ),
+    )
+    occ_obs = compose_occupancy_hop(challenge_state)
+    occ_obs["rung"] = "occupancy"
+    rungs["occupancy"] = occ_obs
+    rungs["friend_feedback"] = _try_rung(
+        "friend_feedback",
+        lambda: importlib.import_module("src.judgment.friend_feedback_loop").maybe_run_friend_feedback(
+            login=CHALLENGE_LOGIN,
+            namespace=CHALLENGE_NS,
+        ),
+    )
+    sib_state = dict(challenge_state)
+    subject = _position_facts()
+    lead = subject[0] if subject else {}
+    rungs["sleeve_select"] = _sibling(
+        "src.judgment.sleeve_select",
+        "decide_sleeve_select_live",
+        {"symbol": lead.get("symbol"), "state": sib_state},
+    )
+    rungs["gold_sleeve"] = _sibling(
+        "src.judgment.gold_sleeve_ifs",
+        "decide_gold_sleeve_live",
+        {
+            "sleeve": lead.get("sleeve"),
+            "symbol": lead.get("symbol"),
+            "side": lead.get("side"),
+            "state": sib_state,
+        },
+    )
+    try:
+        manage = importlib.import_module("src.judgment.manage_choices")
+        positions = _open_broker_positions()
+        asked: list[dict[str, Any]] = []
+        for pos in positions:
+            acts: dict[str, Any] = {}
+            for act in ("move_sl", "move_tp", "close"):
+                facts = {
+                    "ticket": pos.get("ticket"),
+                    "symbol": pos.get("symbol"),
+                    "side": pos.get("side"),
+                    "lots": pos.get("lots"),
+                    "live_sl": pos.get("live_sl"),
+                    "entry": pos.get("entry") or pos.get("price_open"),
+                    "bid": pos.get("bid"),
+                    "ask": pos.get("ask"),
+                    "tp": pos.get("tp") or pos.get("live_tp"),
                 }
-            except Exception as exc:  # noqa: BLE001
-                row["would_be_block"] = f"{type(exc).__name__}: {exc}"
-    else:
-        rungs = dict((_LAST_FIRE.get("rungs") or {}))
-        if isinstance(_LAST_FIRE.get("manage"), dict):
-            row["manage"] = _LAST_FIRE["manage"]
-        row["heavy"] = False
-        row["heavy_throttled"] = True
-
+                got = manage.decide(
+                    act,
+                    ticket=pos.get("ticket"),
+                    symbol=pos.get("symbol"),
+                    reason="open_position_heartbeat",
+                    facts=facts,
+                )
+                if (
+                    act == "move_sl"
+                    and isinstance(got, dict)
+                    and got.get("send")
+                    and got.get("choice") == "move_sl"
+                ):
+                    got = manage.send_unique_move_sl(got, facts=facts)
+                send_bit = got.get("send") if isinstance(got, dict) else None
+                emitted = got.get("decision_emitted") if isinstance(got, dict) else None
+                agent_bit = got.get("agent_order_send") if isinstance(got, dict) else None
+                acts[act] = {
+                    "choice": got.get("choice") if isinstance(got, dict) else None,
+                    "probability": got.get("probability") if isinstance(got, dict) else None,
+                    "send": send_bit if isinstance(send_bit, bool) else None,
+                    "decision_emitted": emitted if isinstance(emitted, bool) else None,
+                    "agent_order_send": agent_bit if isinstance(agent_bit, bool) else None,
+                }
+            asked.append({"ticket": pos.get("ticket"), "symbol": pos.get("symbol"), "acts": acts})
+        only = asked[0] if len(asked) == 1 else None
+        sl_sent = None
+        for item in asked:
+            bit = ((item.get("acts") or {}).get("move_sl") or {}).get("agent_order_send")
+            if bit is True:
+                sl_sent = True
+            elif sl_sent is None and bit is False:
+                sl_sent = False
+        row["manage"] = {
+            "ok": True,
+            "order_send": sl_sent,
+            "ticket": None if only is None else only["ticket"],
+            "acts": {} if only is None else only["acts"],
+            "positions": asked,
+        }
+    except Exception as exc:  # noqa: BLE001
+        row["manage"] = {"ok": False, "block": f"{type(exc).__name__}: {exc}", "order_send": None}
+    rungs["exec_gov_news"] = _sibling(
+        "src.judgment.exec_gov_news",
+        "maybe_run_news_skip",
+        {"state": sib_state},
+    )
+    rungs["state_choices"] = _sibling(
+        "src.judgment.state_choices",
+        "maybe_ask_surface",
+        {"namespace": CHALLENGE_NS},
+    )
+    rungs["learning_choices"] = _sibling(
+        "src.judgment.learning_choices",
+        "maybe_ask_learning",
+        {"namespace": CHALLENGE_NS},
+    )
     row["rungs"] = rungs
-    row["rung_ok"] = {k: bool(v.get("ok")) for k, v in rungs.items() if isinstance(v, dict)}
-    row["reason"] = "unique_apply_observed"
+    row["rung_ok"] = {
+        key: (True if value.get("ok") is True else False if value.get("ok") is False else None)
+        for key, value in rungs.items()
+        if isinstance(value, dict)
+    }
+    occupancy = rungs.get("occupancy") if isinstance(rungs.get("occupancy"), dict) else {}
+    row["reason"] = occupancy.get("choice")
+    row["leave_orig"] = occupancy.get("leave_orig") if isinstance(occupancy.get("leave_orig"), bool) else None
     row["broker_effect"] = False
     row["learn_loop_env"] = _truthy(os.environ.get("GTOS_JEV_LEARN_LOOP"))
     row["trained_models_env"] = _truthy(os.environ.get("GTOS_JEV_TRAINED_MODELS"))
     row["x_dig_env"] = _truthy(os.environ.get("GTOS_JEV_X_DIG"))
-    if _is_challenge_writer():
-        try:
-            fear = importlib.import_module("src.components.ultimate_book.minimal_size")
-            boot = getattr(fear, "_fear_boot_stamp", None)
-            if callable(boot):
-                boot()
-        except Exception:
-            pass
     _LAST_FIRE = dict(row)
-    _LAST_FIRE_MONO = now_m
+    _LAST_OBSERVE_KEY = state_key
     _write_observe(row)
     return row
 
@@ -856,7 +949,6 @@ def gate_order_send(
         "namespace": ns or CHALLENGE_NS,
         "persist": PERSIST,
         "broker_effect": False,
-        "never_flatten_ticket": NEVER_FLATTEN_TICKET,
         "n_loaded": len(LOADED),
         "n_failed": len(FAILED),
         "pid": os.getpid(),
@@ -909,7 +1001,7 @@ def gate_order_send(
         "action": choice,
         "choice": choice,
         "probabilities": place.get("probabilities"),
-        "unique_highest": place.get("unique_highest") is True,
+        "unique_highest": place.get("unique_highest") if isinstance(place.get("unique_highest"), bool) else None,
         "probability": place.get("probability"),
         "source": place.get("source"),
         "error": place.get("error"),
@@ -917,7 +1009,7 @@ def gate_order_send(
         "n_posted": place.get("n_posted"),
         "seat": place.get("seat") or "gate",
         "model": place.get("model") or "jev-1.13.0",
-        "asked": bool(asked.get("place")),
+        "asked": True if asked.get("place") is True else False if asked.get("place") is False else None,
     }
 
     admit = details.get("jev_admission_receipt") if isinstance(details.get("jev_admission_receipt"), dict) else None
@@ -1037,19 +1129,20 @@ def gate_order_send(
         "gold_ticket_occupied": occ.get("gold_ticket_occupied"),
         "pack_ids": occ.get("pack_ids"),
         "n_posted": occ.get("n_posted"),
-        "occupancy_hold_dead": True,
-        "asked": bool(occ.get("asked")),
+        "occupancy_hold_dead": occ.get("occupancy_hold_dead") if isinstance(occ.get("occupancy_hold_dead"), bool) else None,
+        "asked": True if occ.get("asked") is True else False if occ.get("asked") is False else None,
     }
 
     row["hops"] = hops
     row["asked"] = asked
     row["action"] = choice
     row["choice"] = choice
-    row["unique_highest"] = hops["place"].get("unique_highest") is True
+    place_unique = hops["place"].get("unique_highest")
+    row["unique_highest"] = place_unique if isinstance(place_unique, bool) else None
     row["probability"] = hops["place"].get("probability")
     row["probabilities"] = hops["place"].get("probabilities")
     row["model"] = "jev-1.13.0"
-    row["reason"] = "place_choice" if choice else "no_choice"
+    row["reason"] = choice
     row["broker_effect"] = False
     row["observe_seats"] = _observe_seats()
 
@@ -1069,3 +1162,17 @@ def gate_order_send(
     fire["schema"] = "gtos.judgment.unique_fire.v1"
     _write_fire(fire)
     return row
+
+
+def _boot_writer_load() -> None:
+    """Challenge run_book writes one loader stamp. Other processes do not."""
+
+    if not _is_challenge_writer():
+        return
+    try:
+        load_unique_apply()
+    except Exception:
+        return
+
+
+_boot_writer_load()

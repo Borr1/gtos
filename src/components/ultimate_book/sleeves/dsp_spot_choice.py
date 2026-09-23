@@ -34,11 +34,11 @@ def unique_highest(
             p = float(raw or 0.0)
         except (TypeError, ValueError):
             p = 0.0
-        if best is None or p > best_p + 1e-12:
+        if best is None or p > best_p:
             best = str(name)
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     if tied or best is None:
         return None

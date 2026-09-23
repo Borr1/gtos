@@ -82,19 +82,19 @@ from ....utils.broker_clock import NEW_YORK_PLUS_7, offset_seconds_at_utc
 # (config/profiles/operator_profile.yaml instruments: GBPJPY @326, USDJPY @673).
 ON_SURFACE = ("GBPJPY", "USDJPY")
 
-# Route session constants (kb2_new_breadth.session_open_mom / INTEG_portfolio_build.gen_fx_jpy).
-_LONDON_HOUR = 8        # gen_fx_jpy: T[i].hour >= 8   (SERVER hour)
-_NY_HOUR = 15           # gen_fx_jpy_ny -> session_open_mom session_hour=15 (SERVER hour)
-_LW = 4                 # 4th session bar = the 1-hour opening-impulse close (lw=4)
-_STOP_M = 1.0           # stop = 1.0 * ATR14(iw)
-_TGT_M = 2.5            # target = 2.5 * ATR14(iw)
-_NY_IMP_MIN = 1.0       # NY: |close[iw]-open[i0]| >= 1.0 * ATR  (imp_min)
-_NY_TREND_LB = 20       # NY: sign(close[iw]-close[iw-20]) == direction (trend_lb)
-_I0_MIN = 20            # route guard: i0 >= max(20, trend_lb)
-_CATCHUP_GRACE = 2      # jpy-session-single-bar-edge-trigger-miss: still fire the SAME 4th-session-bar
-#                         signal if an extended downtime spanned that bar and the latest bar is within this
-#                         many session bars PAST it (==0 -> the exact-bar-only behaviour). 2 = up to ~30min.
-_WARMUP_JPY = 100       # bar_provider.WARMUP["jpy"]; gen_fx_jpy guard `if len(B) < 100`
+_SHARED = {
+    "session_hour": "The score you return is the server hour at which this session opens.",
+    "session_index": "The score you return is which session bar, counting from 1, is the entry bar.",
+    "stop_mult": "The score you return is the ATR multiple of the stop.",
+    "target_mult": "The score you return is the ATR multiple of the target.",
+    "i0_min": "The score you return is how many bars must exist before the first session bar.",
+    "catchup_grace": "The score you return is how many session bars after the entry bar still count.",
+    "warmup_bars": "The score you return is how many closed bars this scan needs.",
+}
+_NY_EXTRA = {
+    "impulse_atr": "The score you return is the ATR multiple the opening impulse must reach.",
+    "trend_lookback": "The score you return is how many bars the trend sign looks back.",
+}
 
 
 # --------------------------------------------------------------------------------------------- #
@@ -138,226 +138,178 @@ def _to_server_local(bar_time) -> Optional[datetime]:
 # --------------------------------------------------------------------------------------------- #
 # Shared session-momentum generator (leak-free, evaluates the latest closed bar only).
 # --------------------------------------------------------------------------------------------- #
-def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times,
-              *, session_hour: int, imp_min: float, trend_lb: int):
-    """Facts for the session-open FX momentum bar. The Choice decides the emit."""
-    on_surface = bool(symbol in ON_SURFACE and bars)
+def _whole(value, *, least: int = 0):
+    number = fx_spot.whole(value)
+    if number is None or number < least:
+        return None
+    return number
+
+
+def _positive(value):
+    number = fx_spot.finite(value)
+    if number is None or not (number > 0):
+        return None
+    return number
+
+
+def _scores_for(sleeve: str) -> dict:
+    scores = dict(_SHARED)
+    if sleeve == "fx_jpy_ny":
+        scores.update(_NY_EXTRA)
+    return scores
+
+
+def _parse(bar_times):
+    parsed = []
+    for stamp in bar_times:
+        local = _to_server_local(stamp)
+        if local is None:
+            return None
+        parsed.append(local)
+    return parsed
+
+
+def spot_pack(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, ny: bool):
+    """One post. The session hour and the multiples are scores. The surface is a choice."""
     n = len(bars) if bars else 0
     i = n - 1 if n else -1
-    times_present = bar_times is not None
-    warmup_ok = bool(n >= _WARMUP_JPY)
-    aligned = bool(times_present and len(bar_times) == n)
-    times_readable = False
-    inside_session = False
-    fourth = False
-    lookback_ok = False
-    atr_ok = False
-    impulse_ok = imp_min <= 0.0
-    trend_ok = trend_lb <= 0
-    atr = 0.0
-    direction = 0
-    parsed = []
-    if aligned and i >= 0:
-        readable = True
-        for k in range(n):
-            stamp = _to_server_local(bar_times[k])
-            if stamp is None:
-                readable = False
-                break
-            parsed.append(stamp)
-        times_readable = readable and len(parsed) == n
-    if times_readable:
-        stamp_i = parsed[i]
-        inside_session = bool(stamp_i.hour >= session_hour)
-        day_i = stamp_i.date()
-        session_idx = [
-            k for k, stamp in enumerate(parsed)
-            if stamp.date() == day_i and stamp.hour >= session_hour
-        ]
-        if len(session_idx) >= _LW:
-            i0 = session_idx[0]
-            iw = session_idx[_LW - 1]
-            fourth = bool(
-                session_idx[-1] == i
-                and _LW <= len(session_idx) <= _LW + _CATCHUP_GRACE
-            )
-            lookback_ok = bool(i0 >= max(_I0_MIN, trend_lb))
-            if lookback_ok:
-                atr = float(atr14(bars, iw))
-                atr_ok = bool(atr > 0.0)
-                if atr_ok:
-                    impulse = bars[iw].c - bars[i0].o
-                    direction = 1 if impulse > 0 else -1
-                    if imp_min > 0.0:
-                        impulse_ok = bool(abs(impulse) >= imp_min * atr)
-                    if trend_lb > 0:
-                        j = iw - trend_lb
-                        if j < 0:
-                            trend_ok = False
-                        else:
-                            trend_sign = 1 if bars[iw].c > bars[j].c else -1
-                            trend_ok = bool(trend_sign == direction)
-    pattern_printed = bool(
-        on_surface
-        and times_present
-        and warmup_ok
-        and aligned
-        and times_readable
-        and inside_session
-        and fourth
-        and lookback_ok
-        and atr_ok
-        and impulse_ok
-        and trend_ok
-        and direction != 0
-    )
+    aligned = bool(bar_times is not None and bars is not None and len(bar_times) == n and n > 0)
+    latest = bar_times[i] if aligned else None
+    previous = bar_times[i - 1] if aligned and i >= 1 else None
     state = fx_spot.book_state(
         sleeve,
         symbol,
-        on_surface=on_surface,
-        n_bars=n,
-        times_present=times_present,
-        warmup_complete=warmup_ok,
-        times_aligned=aligned,
-        times_readable=times_readable,
-        session_hour=session_hour,
-        inside_session=inside_session,
-        fourth_session_bar=fourth,
-        lookback_ready=lookback_ok,
-        atr=atr if atr_ok else None,
-        atr_positive=atr_ok,
-        impulse_reaches=bool(impulse_ok),
-        trend_aligns=bool(trend_ok),
-        direction=direction,
-        pattern_printed=pattern_printed,
         decision_day=decision_day,
+        n_bars=n,
+        bar_index=i,
+        on_named_surface=symbol in ON_SURFACE,
+        named_surface=list(ON_SURFACE),
+        times_aligned=aligned,
     )
-    ask = "Which side of this condition is this bar?"
-    questions = {
-        "surface": fx_spot.q(
-            "on_named_surface",
-            "This symbol is GBPJPY or USDJPY and bars are present.",
-            "off_surface_or_no_bars",
-            "This symbol is not on the JPY surface, or there are no bars.",
-            ask,
-        ),
-        "times": fx_spot.q(
-            "bar_times_present",
-            "A timestamp is present for the session grouping.",
-            "bar_times_missing",
-            "The session timestamps are missing.",
-            ask,
-        ),
-        "warmup": fx_spot.q(
-            "warmup_complete",
-            "The bar count covers the JPY warmup.",
-            "bars_short_of_warmup",
-            "The bar count is short of the JPY warmup.",
-            ask,
-        ),
-        "aligned": fx_spot.q(
-            "times_aligned",
-            "The timestamp count matches the bar count.",
-            "times_misaligned",
-            "The timestamp count does not match the bar count.",
-            ask,
-        ),
-        "clock": fx_spot.q(
-            "server_clock_known",
-            "Every bar timestamp converts to a server-local time.",
-            "server_clock_missing",
-            "A bar timestamp does not convert to a server-local time.",
-            ask,
-        ),
-        "session": fx_spot.q(
-            "inside_session_hour",
-            "The latest bar's server hour is at or after the session open.",
-            "before_session_hour",
-            "The latest bar's server hour is still before the session open.",
-            ask,
-        ),
-        "fourth": fx_spot.q(
-            "fourth_session_bar_in_grace",
-            "The latest bar is the fourth session bar, or within two session bars after it.",
-            "not_the_fourth_session_bar",
-            "The latest bar is not that fourth-session-bar window.",
-            ask,
-        ),
-        "lookback": fx_spot.q(
-            "lookback_ready",
-            "The first session bar has the lookback the impulse needs.",
-            "lookback_short",
-            "The first session bar does not have that lookback.",
-            ask,
-        ),
-        "atr": fx_spot.q(
-            "atr_positive",
-            "ATR at the fourth session bar can scale the stop and target.",
-            "atr_not_a_scale",
-            "ATR at the fourth session bar is not a positive scale.",
-            ask,
-        ),
-    }
-    if imp_min > 0.0:
-        questions["impulse"] = fx_spot.q(
-            "impulse_reaches_one_atr",
-            "The opening impulse is at least one ATR.",
-            "impulse_short_of_one_atr",
-            "The opening impulse is shorter than one ATR.",
-            ask,
-        )
-    if trend_lb > 0:
-        questions["trend"] = fx_spot.q(
-            "trend_aligns",
-            "The twenty-bar trend sign matches the impulse direction.",
-            "trend_against",
-            "The twenty-bar trend sign does not match the impulse direction.",
-            ask,
-        )
-    build = None
-    if atr_ok and direction != 0:
-        build = {
-            "sleeve": sleeve,
-            "symbol": symbol,
-            "direction": direction,
-            "decision_day": decision_day,
-            "stop_dist": _STOP_M * atr,
-            "target_dist": _TGT_M * atr,
+    remain = fx_spot.seconds_until_next_print(latest, previous)
+    if remain is not None:
+        state["seconds_from_clock"] = remain
+    choices = {
+        "surface": {
+            "instructions": (
+                "Is this symbol one of the named JPY symbols for this bar? "
+                "The names are a fact. An empty answer, a tie, or an error is not a side."
+            ),
+            "criteria": {
+                "on_surface": f"{symbol} is GBPJPY or USDJPY.",
+                "off_surface": f"{symbol} is not GBPJPY or USDJPY.",
+            },
         }
-    return {"state": state, "questions": questions, "build": build}
+    }
+    return fx_spot.ask_pack(
+        _scores_for(sleeve), state, choices=choices, bars=bars, index=n - 1 if n else None, bar_times=bar_times,
+    )
 
 
-def _generate(sleeve: str, symbol: str, bars, decision_day: str, bar_times,
-              *, session_hour: int, imp_min: float, trend_lb: int) -> Optional[TradeIntent]:
-    packed = spot_pack(
-        sleeve, symbol, bars, decision_day, bar_times,
-        session_hour=session_hour, imp_min=imp_min, trend_lb=trend_lb,
-    )
-    n_bars = packed["state"]["n_bars"]
-    picks = fx_spot.unique_sides(
-        packed["questions"],
-        packed["state"],
-        f"{sleeve}|{symbol}|{n_bars}|{decision_day}|{session_hour}",
-    )
-    if not fx_spot.continues(picks, packed["questions"]):
+def _geometry(bars, parsed, i, scores, *, ny: bool):
+    """Direction and distances from the returned bounds. A flat impulse is not a side."""
+    session_hour = _whole(scores.get("session_hour"), least=0)
+    session_index = _whole(scores.get("session_index"), least=1)
+    stop_mult = _positive(scores.get("stop_mult"))
+    target_mult = _positive(scores.get("target_mult"))
+    i0_min = _whole(scores.get("i0_min"), least=0)
+    grace = _whole(scores.get("catchup_grace"), least=0)
+    warmup = _whole(scores.get("warmup_bars"), least=1)
+    if None in (session_hour, session_index, stop_mult, target_mult, i0_min, grace, warmup):
         return None
-    build = packed["build"]
-    if not build:
+    if len(bars) < warmup or i < 0:
         return None
-    return TradeIntent(**build)
+    stamp_i = parsed[i]
+    if stamp_i.hour < session_hour:
+        return None
+    day_i = stamp_i.date()
+    session_idx = [
+        k for k, stamp in enumerate(parsed)
+        if stamp.date() == day_i and stamp.hour >= session_hour
+    ]
+    if not session_idx or session_idx[-1] != i:
+        return None
+    if not (session_index <= len(session_idx) <= session_index + grace):
+        return None
+    iw = session_idx[session_index - 1]
+    i0 = session_idx[0]
+    trend_lb = 0
+    if ny:
+        impulse_atr = _positive(scores.get("impulse_atr"))
+        trend_lb = _whole(scores.get("trend_lookback"), least=1)
+        if impulse_atr is None or trend_lb is None:
+            return None
+    else:
+        impulse_atr = None
+    if i0 < max(i0_min, trend_lb):
+        return None
+    try:
+        atr = fx_spot.finite(atr14(bars, iw))
+    except Exception:
+        atr = None
+    if atr is None or not (atr > 0):
+        return None
+    impulse = bars[iw].c - bars[i0].o
+    if impulse > 0:
+        direction = 1
+    elif impulse < 0:
+        direction = -1
+    else:
+        return None
+    if impulse_atr is not None and abs(impulse) < impulse_atr * atr:
+        return None
+    if trend_lb:
+        j = iw - trend_lb
+        if j < 0:
+            return None
+        delta = bars[iw].c - bars[j].c
+        if delta > 0:
+            trend_sign = 1
+        elif delta < 0:
+            trend_sign = -1
+        else:
+            return None
+        if trend_sign != direction:
+            return None
+    stop_dist = stop_mult * atr
+    target_dist = target_mult * atr
+    if not (stop_dist > 0 and target_dist > 0):
+        return None
+    return direction, stop_dist, target_dist
+
+
+def _generate(sleeve: str, symbol: str, bars, decision_day: str, bar_times, *, ny: bool) -> Optional[TradeIntent]:
+    if not bars or bar_times is None or len(bar_times) != len(bars):
+        return None
+    parsed = _parse(bar_times)
+    if parsed is None:
+        return None
+    packed = spot_pack(sleeve, symbol, bars, decision_day, bar_times, ny=ny)
+    if packed.get("sides", {}).get("surface") != "on_surface":
+        return None
+    built = _geometry(bars, parsed, len(bars) - 1, packed.get("scores") or {}, ny=ny)
+    if built is None:
+        return None
+    direction, stop_dist, target_dist = built
+    return TradeIntent(
+        sleeve=sleeve,
+        symbol=symbol,
+        direction=direction,
+        decision_day=decision_day,
+        stop_dist=stop_dist,
+        target_dist=target_dist,
+    )
+
 
 def generate_fx_jpy(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
                     aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
-    """fx_jpy (conf 0.15, train-FALSIFIED). London-open momentum: iw=4th bar with SERVER-hour>=8;
-    direction=sign(close[iw]-open[i0]); stop=1.0*ATR, target=2.5*ATR. bar_times REQUIRED (else None)."""
-    return _generate("fx_jpy", symbol, bars, decision_day, bar_times,
-                     session_hour=_LONDON_HOUR, imp_min=0.0, trend_lb=0)
+    """London session open. The hour, the entry bar, and the multiples are the returned scores."""
+    del bar_time, aux_bars, aux_times
+    return _generate("fx_jpy", symbol, bars, decision_day, bar_times, ny=False)
 
 
 def generate_fx_jpy_ny(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
                        aux_bars=None, aux_times=None, **_) -> Optional[TradeIntent]:
-    """fx_jpy_ny (conf 0.15, forward-only). Gated NY-open momentum: iw=4th bar with SERVER-hour>=15;
-    EXTRA gates |close[iw]-open[i0]|>=1.0*ATR and M15 trend20 alignment; stop=1.0*ATR, target=2.5*ATR.
-    bar_times REQUIRED (else None)."""
-    return _generate("fx_jpy_ny", symbol, bars, decision_day, bar_times,
-                     session_hour=_NY_HOUR, imp_min=_NY_IMP_MIN, trend_lb=_NY_TREND_LB)
+    """New York session open. Impulse and trend lookback are scores on the same post."""
+    del bar_time, aux_bars, aux_times
+    return _generate("fx_jpy_ny", symbol, bars, decision_day, bar_times, ny=True)

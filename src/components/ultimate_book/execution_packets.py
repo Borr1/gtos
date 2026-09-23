@@ -55,18 +55,12 @@ def time_stop_m15(n_native_bars: int, grid: str):
 
     An empty score leaves the horizon unset.
     """
-    try:
-        from src.judgment.nineteen import score
-        per = score(
-            {"grid": str(grid), "native_bars": n_native_bars},
-            question_id="m15_bars_per",
-            instructions=(
-                "The score you return is how many M15 prints one bar of this grid contains. "
-                "It may sit between the levels. An empty score leaves the ratio unset. Do not send."
-            ),
-        )
-    except Exception:
-        return None
+    per = _anchored_score(
+        {"grid": str(grid), "native_bars": n_native_bars},
+        "m15_bars_per",
+        "The score you return is how many M15 prints one bar of this grid contains. "
+        "An empty score leaves the ratio unset. Do not send.",
+    )
     if per is None:
         return None
     try:
@@ -699,58 +693,231 @@ def _remember(qid: str, value: float | None, state: Mapping[str, Any], error: st
         })
 
 
+_LEVEL_FACTS = (
+    "high",
+    "low",
+    "bar_high",
+    "bar_low",
+    "prev_high",
+    "prev_low",
+    "session_high",
+    "session_low",
+    "day_high",
+    "day_low",
+    "swing_high",
+    "swing_low",
+)
+_DISTANCE_FACTS = ("atr", "atr_distance")
+_PACKET_UNIT = {
+    "m15_bars_per": "m15_prints",
+    "target_multiple": "r",
+    "trigger_r": "r",
+    "trail_gap_r": "r",
+    "pullback_r": "r",
+    "stop_distance_multiplier": "r",
+    "partial_close_ratio": "fraction",
+    "time_stop_bars": "bars",
+    "entry_price": "price",
+    "risk_percent": "percent",
+    "daily_loss_limit_pct": "percent",
+    "overall_loss_limit_pct": "percent",
+    "initial_equity_or_balance_baseline": "account",
+}
+_POSITION = (
+    " The score is your position on the named levels."
+    " It may sit between them."
+)
+
+
+def _named_pairs(facts: Mapping[str, Any], keys: tuple[str, ...]) -> list[tuple[str, float]]:
+    found: list[tuple[str, float]] = []
+    for key in keys:
+        number = _finite(facts.get(key))
+        if number is not None and number > 0:
+            found.append((key, number))
+    return found
+
+
+def _r_pairs(facts: Mapping[str, Any]) -> list[tuple[str, float]]:
+    """Exit distances on this card, in R of the stop."""
+
+    risk = _finite(facts.get("risk_distance"))
+    if risk is None or risk <= 0:
+        risk = _finite(facts.get("stop_dist"))
+    found: list[tuple[str, float]] = []
+    if risk is not None and risk > 0:
+        found.append(("stop_r", risk / risk))
+        bid = _finite(facts.get("bid"))
+        ask = _finite(facts.get("ask"))
+        if bid is not None and ask is not None:
+            gap = ask - bid
+            if gap < 0:
+                gap = -gap
+            found.append(("spread_r", gap / risk))
+        target = _finite(facts.get("target_dist"))
+        if target is not None and target > 0:
+            found.append(("target_r", target / risk))
+        entry = _finite(facts.get("entry_price"))
+        stop = _finite(facts.get("stop_loss"))
+        if entry is not None and stop is not None:
+            dist = entry - stop
+            if dist < 0:
+                dist = -dist
+            if dist > 0:
+                found.append(("stop_distance_r", dist / risk))
+        take_profit = _finite(facts.get("take_profit_1"))
+        if entry is not None and take_profit is not None and take_profit > 0:
+            dist = take_profit - entry
+            if dist < 0:
+                dist = -dist
+            if dist > 0:
+                found.append(("target_distance_r", dist / risk))
+        for key in _DISTANCE_FACTS:
+            distance = _finite(facts.get(key))
+            if distance is not None and distance > 0:
+                found.append((key + "_r", distance / risk))
+        for key in _LEVEL_FACTS:
+            level = _finite(facts.get(key))
+            if entry is None or level is None:
+                continue
+            dist = level - entry
+            if dist < 0:
+                dist = -dist
+            if dist > 0:
+                found.append((key + "_r", dist / risk))
+    proposed = _finite(facts.get("proposed_target_multiple"))
+    if proposed is not None and proposed > 0:
+        found.append(("proposed_target_multiple", proposed))
+    return found
+
+
+def _percent_pairs(facts: Mapping[str, Any]) -> list[tuple[str, float]]:
+    found: list[tuple[str, float]] = []
+    for key in ("proposed_risk_percent", "open_change_percent"):
+        number = _finite(facts.get(key))
+        if number is not None:
+            found.append((key, number))
+    return found
+
+
+def _account_pairs(facts: Mapping[str, Any]) -> list[tuple[str, float]]:
+    found = _named_pairs(
+        facts,
+        ("balance", "equity", "current_equity", "margin_free", "profit", "credit", "open_pnl_usd"),
+    )
+    try:
+        from src.components.ultimate_book.minimal_size import held_anchor_facts
+
+        held = held_anchor_facts()
+    except Exception:
+        held = {}
+    if isinstance(held, dict):
+        for key, value in held.items():
+            name = str(key)
+            if not name.startswith("notional_"):
+                continue
+            number = _finite(value)
+            if number is not None and number > 0:
+                found.append((name, number))
+    return found
+
+
+def _m15_print_pairs(facts: Mapping[str, Any]) -> list[tuple[str, float]]:
+    """One M15 print, and one bar of the named grid, in M15 prints."""
+
+    try:
+        from src.components.ultimate_book.launcher_facts import period_seconds, timeframe_code
+    except Exception:
+        return []
+    unit = period_seconds(timeframe_code("M15"))
+    grid_name = str(facts.get("grid") or "").strip()
+    grid_period = period_seconds(timeframe_code(grid_name)) if grid_name else None
+    if unit is None or unit <= 0 or grid_period is None or grid_period <= 0:
+        return []
+    return [
+        ("one_m15_print", unit / unit),
+        ("one_" + grid_name + "_bar", grid_period / unit),
+    ]
+
+
+def _bar_pairs(facts: Mapping[str, Any]) -> list[tuple[str, float]]:
+    local = [
+        (str(key), number)
+        for key, value in facts.items()
+        if str(key).startswith("bars_of_")
+        for number in (_finite(value),)
+        if number is not None and number > 0
+    ]
+    try:
+        from src.components.ultimate_book.launcher_facts import watched_clock_anchors
+
+        clock = watched_clock_anchors("bars")
+    except Exception:
+        clock = []
+    return list(clock) if clock else local
+
+
+def _quantity_anchors(qid: str, facts: Mapping[str, Any]) -> list[tuple[str, float]]:
+    unit = _PACKET_UNIT.get(str(qid))
+    if unit == "price":
+        return _named_pairs(
+            facts,
+            ("bid", "ask", "entry_price", "stop_loss", "take_profit_1") + _LEVEL_FACTS,
+        )
+    if unit == "r":
+        return _r_pairs(facts)
+    if unit == "percent":
+        return _percent_pairs(facts)
+    if unit == "account":
+        return _account_pairs(facts)
+    if unit == "bars":
+        return _bar_pairs(facts)
+    if unit == "m15_prints":
+        return _m15_print_pairs(facts)
+    return []
+
+
+def _with_position(instructions: str) -> str:
+    text = str(instructions).strip()
+    if "named levels" in text:
+        return text
+    return text + _POSITION
+
+
+def _anchored_score(facts: Mapping[str, Any], qid: str, instructions: str) -> float | None:
+    """One spine score. Fewer than two anchors does not post. A miss stays None."""
+
+    try:
+        from src.judgment.nineteen import score
+
+        return score(
+            dict(facts),
+            question_id=str(qid),
+            instructions=_with_position(instructions),
+            anchors=_quantity_anchors(qid, facts),
+        )
+    except TypeError:
+        return None
+    except Exception:
+        return None
+
+
 def _order_parameter_scores(
     facts: Mapping[str, Any],
     specs: tuple[tuple[str, str], ...],
 ) -> dict[str, float | None]:
     """Scores for this state. A miss stays None. Nothing here writes a constant back."""
-    unset = {qid: None for qid, _instructions in specs}
-    try:
-        from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number, unique_highest
-    except Exception:
-        return unset
     state = _scrub_facts(facts)
     try:
         questions = _score_questions(specs)
     except Exception:
-        return unset
+        questions = {}
     _attach_priors(state, questions)
-    error: str | None = None
-    try:
-        receipt = evaluate(state, questions=questions, merge_sleeve=False, model=_MODEL)
-    except Exception as exc:  # noqa: BLE001 — a dark ask must not raise into the packet
-        receipt = {}
-        error = type(exc).__name__
-    if not isinstance(receipt, dict):
-        receipt = {}
-        error = error or "evaluate_not_a_dict"
-    answers = receipt.get("answers") if isinstance(receipt.get("answers"), dict) else {}
-    if error is None:
-        raw_error = receipt.get("error") or receipt.get("skipped")
-        error = str(raw_error) if raw_error not in (None, "") else None
-    if not answers and error is None:
-        error = "empty"
     out: dict[str, float | None] = {}
-    for qid, _instructions in specs:
-        value: float | None = None
-        spot_error = error
-        block = answers.get(qid) if isinstance(answers, dict) else None
-        if error is None and isinstance(block, (int, float)) and not isinstance(block, bool):
-            value = _finite(block)
-        elif error is None and isinstance(block, dict) and not block.get("error") and not _tied(block, unique_highest):
-            try:
-                value = _finite(returned_number(block))
-            except Exception:
-                value = None
-            if value is None:
-                value = _finite(block.get("score"))
-                if value is None:
-                    value = _finite(block.get("value"))
-        if value is None and spot_error is None:
-            spot_error = "tie" if isinstance(block, dict) and _tied(block, unique_highest) else "score_missing"
+    for qid, instructions in specs:
+        value = _anchored_score(state, qid, instructions)
         out[qid] = value
-        _remember(qid, value, state, None if value is not None else spot_error)
+        _remember(qid, value, state, None if value is not None else "score_missing")
     return out
 
 
@@ -828,12 +995,7 @@ _INITIAL_BASELINE_Q = (
 
 def _spine_score(facts: Mapping[str, Any], role: str, instructions: str) -> float | None:
     """One spine score. None does not restore a profile constant."""
-    try:
-        from src.judgment.nineteen import score
-
-        return score(dict(facts), question_id=role, instructions=instructions)
-    except Exception:
-        return None
+    return _anchored_score(facts, role, instructions)
 
 
 def _proposed_target(prof: Mapping[str, Any], native_target: Any = None, native_stop: Any = None) -> float | None:
@@ -1023,15 +1185,56 @@ def build_book_trade_params(sized_unit, intent, geometry, account_state, *, prof
     proposed_risk = _finite(getattr(sized_unit, "risk_pct_per_trade", None))
     if proposed_risk is not None:
         order_facts["proposed_risk_percent"] = proposed_risk * 100.0
-    if challenge and isinstance(account_state, Mapping):
-        for fact_key, fact_value in (
-            ("bid", _finite(_g(geometry, "bid"))),
-            ("ask", _finite(_g(geometry, "ask"))),
-            ("balance", _finite(account_state.get("balance"))),
-            ("equity", _finite(account_state.get("current_equity"))),
-        ):
-            if fact_value is not None:
-                order_facts[fact_key] = fact_value
+    for fact_key, fact_value in (
+        ("bid", _g(geometry, "bid")),
+        ("ask", _g(geometry, "ask")),
+        ("risk_distance", base_risk_distance),
+        ("stop_dist", native_stop),
+        ("target_dist", native_target),
+        ("entry_price", entry_price),
+        ("stop_loss", _g(geometry, "stop_loss")),
+        ("take_profit_1", _g(geometry, "take_profit_1")),
+    ):
+        number = _finite(fact_value)
+        if number is not None:
+            order_facts[fact_key] = number
+    for structure_key in (
+        "high",
+        "low",
+        "bar_high",
+        "bar_low",
+        "prev_high",
+        "prev_low",
+        "session_high",
+        "session_low",
+        "day_high",
+        "day_low",
+        "swing_high",
+        "swing_low",
+        "atr",
+        "atr_distance",
+    ):
+        number = _finite(_g(geometry, structure_key))
+        if number is None:
+            number = _finite(getattr(intent, structure_key, None))
+        if number is not None:
+            order_facts[structure_key] = number
+    if isinstance(account_state, Mapping):
+        balance = _finite(account_state.get("balance"))
+        equity = _finite(account_state.get("current_equity"))
+        if equity is None:
+            equity = _finite(account_state.get("equity"))
+        if balance is not None:
+            order_facts["balance"] = balance
+        if equity is not None:
+            order_facts["equity"] = equity
+        if balance not in (None, 0) and equity is not None:
+            order_facts["open_change_percent"] = ((equity - balance) / balance) * 100.0
+            order_facts["open_pnl_usd"] = equity - balance
+        for account_key in ("margin_free", "profit", "credit"):
+            number = _finite(account_state.get(account_key))
+            if number is not None:
+                order_facts[account_key] = number
     specs = [_TARGET_MULTIPLE_Q, _RISK_PERCENT_Q]
     if challenge:
         specs.extend((
@@ -1095,7 +1298,7 @@ def build_book_trade_params(sized_unit, intent, geometry, account_state, *, prof
         risk_distance = base_risk_distance
         stop_loss = _g(geometry, "stop_loss", None)
     if no_broker_take_profit:
-        take_profit_1 = 0.0
+        take_profit_1 = None
     elif final_target_r is None or entry_price is None or risk_distance is None:
         take_profit_1 = None
     else:

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -261,6 +262,65 @@ def wire_apply_open(
     return False
 
 
+_SCORE_CACHE: dict[str, float | None] = {}
+_SCORE_LOCK = threading.Lock()
+
+
+def _finite_tilt(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _multiplier_score(facts: dict[str, Any]) -> float | None:
+    """One score for this state. Empty stays None. The tilt band is not put back."""
+
+    blob = json.dumps(facts, sort_keys=True, default=str)
+    with _SCORE_LOCK:
+        if blob in _SCORE_CACHE:
+            return _SCORE_CACHE[blob]
+    try:
+        from .nineteen import score
+    except Exception:
+        return None
+    anchors = []
+    seen = []
+    for key, label in (
+        ("shadow_tilt", "the shadow tilt named on this card"),
+        ("proposed_lo", "the lower band named on this card"),
+        ("proposed_hi", "the upper band named on this card"),
+    ):
+        number = _finite_tilt(facts.get(key))
+        if number is None or number in seen:
+            continue
+        seen.append(number)
+        anchors.append((label, number))
+    try:
+        number = score(
+            facts,
+            question_id="process_lock.live_multiplier",
+            instructions=(
+                "The score you return is the live size multiplier for this state. "
+                "The shadow tilt and whether the wire is open are facts. "
+                "An empty score leaves the multiplier unset. "
+                "Do not send. Do not flatten."
+            ),
+            anchors=anchors,
+        )
+    except Exception:
+        number = None
+    with _SCORE_LOCK:
+        _SCORE_CACHE[blob] = number
+    return number
+
+
+
 def live_multiplier(
     shadow_tilt: float,
     *,
@@ -269,21 +329,18 @@ def live_multiplier(
     prove: dict[str, Any] | None = None,
     lo: float | None = None,
     hi: float | None = None,
-) -> float:
-    """Live size follows the named wire clamp when APPLY is open for that row."""
-    if wire_id == WIRE_COST:
-        lo = COST_TILT_MIN if lo is None else lo
-        hi = COST_TILT_MAX if hi is None else hi
-    elif wire_id == WIRE_CA_SIZE:
-        lo = CA_TILT_MIN if lo is None else lo
-        hi = CA_TILT_MAX if hi is None else hi
-    else:
-        lo = FLOW_TILT_MIN if lo is None else lo
-        hi = FLOW_TILT_MAX if hi is None else hi
-    if not wire_apply_open(wire_id, ticket=ticket, prove=prove):
-        return 1.0
-    try:
-        value = float(shadow_tilt)
-    except (TypeError, ValueError):
-        return 1.0
-    return round(min(hi, max(lo, value)), 4)
+) -> float | None:
+    """The live multiplier is the score for this state.
+
+    A closed wire, a missing tilt, an empty score, or an error leaves it unset.
+    Nothing here puts an identity or a band back.
+    """
+    facts = {
+        "shadow_tilt": _finite_tilt(shadow_tilt),
+        "wire_id": None if wire_id is None else str(wire_id),
+        "ticket": None if ticket is None else str(ticket),
+        "apply_open": bool(wire_apply_open(wire_id, ticket=ticket, prove=prove)),
+        "proposed_lo": _finite_tilt(lo),
+        "proposed_hi": _finite_tilt(hi),
+    }
+    return _multiplier_score(facts)

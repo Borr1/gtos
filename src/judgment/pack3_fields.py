@@ -1,24 +1,16 @@
-"""Instrument Edge PACK 3 — locked fixture constants as SHADOW helpers.
+"""Instrument Edge PACK 3 — SHADOW field assembly.
 
-Chair lock 2026-09-18. SHADOW only. Clocks on ``time_utc`` only (server−3h).
+Clocks on ``time_utc`` only (server offset is a clock fact).
+On the Challenge writer the class is the ask. An empty answer leaves the
+class unset. Off that writer the recorded comparison stays for research.
 No new fluid gates. No new refuse walls. No APPLY. ENV-US30 stays integer OFF.
 Do not invent DXY, funding, peer OHLC, or a BOJ HIGH.
-
-Locked constants
-----------------
-- resid_cap = 0.15 GJ
-- london_expand >= 1.25 pass, fail < 1.0
-- ny_impulse >= 1.5 pass, chop < 1.0
-
-Locked clocks (time_utc)
-------------------------
-- London open winter 07:00–08:59 / summer 06:00–07:59
-- US30 cash open winter 14:30 / summer 13:30
-- LDN–NY overlap winter 13–17 / summer 12–16
 """
 
 from __future__ import annotations
 
+import json
+import threading
 from datetime import datetime, timedelta, timezone
 from typing import Any, Mapping
 
@@ -29,14 +21,76 @@ from .news_spine import F5_POST, F5_PRE
 SCHEMA = "gtos.judgment.aplus_pack3_fields.v0"
 ORIGIN = "instrument_edge_pack3_20260918"
 
-# Chair-locked fixture constants. Do not retune here.
+# Recorded comparison for research that is not the Challenge writer.
+# The Challenge class does not read these.
 RESID_CAP = 0.15
 LONDON_EXPAND_PASS = 1.25
 LONDON_EXPAND_FAIL = 1.0
 NY_IMPULSE_PASS = 1.5
 NY_IMPULSE_CHOP = 1.0
+# Broker server wall is UTC+3. Clock offset, not a decision.
 SERVER_MINUS_HOURS = 3
 TIME_UTC_SOURCE = "time_utc"
+
+_CHOICE_CACHE: dict[str, str | None] = {}
+_CHOICE_LOCK = threading.Lock()
+
+
+def _challenge() -> bool:
+    try:
+        from .state_choices import on_challenge
+    except Exception:
+        return False
+    try:
+        return bool(on_challenge())
+    except Exception:
+        return False
+
+
+def _choice(
+    qid: str,
+    facts: dict[str, Any],
+    criteria: dict[str, str],
+    instructions: str,
+) -> str | None:
+    blob = json.dumps({"q": qid, "f": facts}, sort_keys=True, default=str)
+    with _CHOICE_LOCK:
+        if blob in _CHOICE_CACHE:
+            return _CHOICE_CACHE[blob]
+    try:
+        from .jev_client import evaluate
+        from .jev_questions import unique_highest
+    except Exception:
+        return None
+    questions = {
+        qid: {
+            "type": "choice",
+            "instructions": instructions,
+            "criteria": {str(key): str(text) for key, text in criteria.items()},
+        }
+    }
+    try:
+        receipt = evaluate(
+            {"facts": facts, "order_send": False, "flatten": False},
+            questions=questions,
+            merge_sleeve=False,
+            model="jev-1.13.0",
+        )
+    except Exception:
+        return None
+    block = None
+    if isinstance(receipt, dict):
+        answers = receipt.get("answers")
+        if isinstance(answers, dict):
+            block = answers.get(qid)
+    probs = block.get("probabilities") if isinstance(block, dict) else None
+    try:
+        picked = unique_highest(probs if isinstance(probs, dict) else None, tuple(criteria))
+    except Exception:
+        picked = None
+    with _CHOICE_LOCK:
+        _CHOICE_CACHE[blob] = picked
+    return picked
 
 # Closed PACK 3 feature set. Do not silently add an eighth field here.
 PACK3_FIELD_IDS = (
@@ -327,11 +381,21 @@ def classify_london_expand(ratio: float | None) -> str | None:
     if ratio is None:
         return None
     value = float(ratio)
-    from .state_choices import LEGACY, london_expand_choice
-
-    chosen = london_expand_choice(value)
-    if chosen is not LEGACY:
-        return chosen
+    if _challenge():
+        return _choice(
+            "pack3.london_expand",
+            {"ratio": value},
+            {
+                "pass": "This expansion is a pass.",
+                "fail": "This expansion is a fail.",
+                "mid": "This expansion is neither a pass nor a fail.",
+            },
+            (
+                "The expansion ratio is on the card. "
+                "The unique highest class is the decision. "
+                "An empty answer or a tie leaves the class unset. Do not send."
+            ),
+        )
     if value >= LONDON_EXPAND_PASS:
         return "pass"
     if value < LONDON_EXPAND_FAIL:
@@ -343,11 +407,21 @@ def classify_ny_impulse(ratio: float | None) -> str | None:
     if ratio is None:
         return None
     value = float(ratio)
-    from .state_choices import LEGACY, ny_impulse_choice
-
-    chosen = ny_impulse_choice(value)
-    if chosen is not LEGACY:
-        return chosen
+    if _challenge():
+        return _choice(
+            "pack3.ny_impulse",
+            {"ratio": value},
+            {
+                "impulse": "This impulse is an impulse.",
+                "chop": "This impulse is chop.",
+                "mid": "This impulse is neither impulse nor chop.",
+            },
+            (
+                "The impulse ratio is on the card. "
+                "The unique highest class is the decision. "
+                "An empty answer or a tie leaves the class unset. Do not send."
+            ),
+        )
     if value >= NY_IMPULSE_PASS:
         return "impulse"
     if value < NY_IMPULSE_CHOP:
@@ -359,11 +433,20 @@ def classify_gj_residual(residual: float | None) -> str | None:
     if residual is None:
         return None
     magnitude = abs(float(residual))
-    from .state_choices import LEGACY, gj_residual_choice
-
-    chosen = gj_residual_choice(magnitude, RESID_CAP)
-    if chosen is not LEGACY:
-        return chosen
+    if _challenge():
+        return _choice(
+            "pack3.gj_residual",
+            {"abs_residual": magnitude},
+            {
+                "fail": "This residual fails.",
+                "pass": "This residual passes.",
+            },
+            (
+                "The absolute residual is on the card. "
+                "The unique highest class is the decision. "
+                "An empty answer or a tie leaves the class unset. Do not send."
+            ),
+        )
     return "fail" if magnitude > RESID_CAP else "pass"
 
 
@@ -417,13 +500,8 @@ def assert_pack3_maps_existing_families() -> dict[str, Any]:
 
 
 def locked_constants() -> dict[str, Any]:
+    """Clock facts only. The class is not a number in this map."""
     return {
-        "resid_cap": RESID_CAP,
-        "resid_unit": "GJ",
-        "london_expand_pass": LONDON_EXPAND_PASS,
-        "london_expand_fail": LONDON_EXPAND_FAIL,
-        "ny_impulse_pass": NY_IMPULSE_PASS,
-        "ny_impulse_chop": NY_IMPULSE_CHOP,
         "clock_source": TIME_UTC_SOURCE,
         "server_minus_hours": SERVER_MINUS_HOURS,
         "london_open_winter_utc": "07:00-08:59",
@@ -519,17 +597,82 @@ def assemble_pack3_fields(
     peers = dict(peer_state or {})
     fields: dict[str, Any] = {}
 
-    applies = field_applies("sess.ldn_ny_overlap_vol", symbol)
-    in_overlap = in_ldn_ny_overlap(as_of)
-    vol = supplied.get("sess.ldn_ny_overlap_vol")
-    if isinstance(vol, Mapping):
-        from .state_choices import on_challenge
+    from concurrent.futures import ThreadPoolExecutor
 
-        if not on_challenge() and "in_window" in vol:
-            in_overlap = bool(vol.get("in_window"))
+    vol = supplied.get("sess.ldn_ny_overlap_vol")
+    named_vol = None
+    overlap_override = None
+    if isinstance(vol, Mapping):
         named_vol = vol.get("vol")
+        if "in_window" in vol:
+            overlap_override = bool(vol.get("in_window"))
     else:
         named_vol = vol if isinstance(vol, (int, float)) else m15_vol
+
+    raw_expand = supplied.get("london_open_eur_gbp_expand")
+    named_ratio = None
+    london_override = None
+    if isinstance(raw_expand, Mapping):
+        if "in_window" in raw_expand:
+            london_override = bool(raw_expand.get("in_window"))
+        named_ratio = raw_expand.get("ratio")
+    elif isinstance(raw_expand, (int, float)):
+        named_ratio = float(raw_expand)
+
+    raw_ny = supplied.get("ny_cash_open_us30")
+    named_impulse = None
+    ny_override = None
+    if isinstance(raw_ny, Mapping):
+        if "in_window" in raw_ny:
+            ny_override = bool(raw_ny.get("in_window"))
+        named_impulse = raw_ny.get("impulse")
+    elif isinstance(raw_ny, (int, float)):
+        named_impulse = float(raw_ny)
+    elif isinstance(raw_ny, bool):
+        ny_override = raw_ny
+
+    raw_cross = supplied.get("corr.gbpjpy_risk_cross")
+    residual = supplied.get("residual")
+    dual = supplied.get("dual_leg_agree")
+    if raw_cross is None:
+        raw_cross = _named_from_peer(peers, "corr.gbpjpy_risk_cross")
+    if isinstance(raw_cross, Mapping):
+        residual = raw_cross.get("residual", residual)
+        dual = raw_cross.get("dual_leg_agree", dual)
+        cross_value = raw_cross.get("value", raw_cross.get("agree"))
+    else:
+        cross_value = raw_cross
+    if dual is None:
+        dual = _named_from_peer(peers, "gbpjpy_dual_leg_agree")
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        fut_overlap = pool.submit(in_ldn_ny_overlap, as_of)
+        fut_london = pool.submit(in_london_open, as_of)
+        fut_us30 = pool.submit(in_us30_cash_open, as_of)
+        fut_expand = pool.submit(classify_london_expand, named_ratio)
+        fut_impulse = pool.submit(classify_ny_impulse, named_impulse)
+        fut_residual = pool.submit(
+            classify_gj_residual,
+            residual if isinstance(residual, (int, float)) else None,
+        )
+        in_overlap = fut_overlap.result()
+        in_ldn = fut_london.result()
+        in_open = fut_us30.result()
+        expand_class = fut_expand.result()
+        impulse_class = fut_impulse.result()
+        residual_class = fut_residual.result()
+
+    from .state_choices import on_challenge
+
+    if not on_challenge():
+        if overlap_override is not None:
+            in_overlap = overlap_override
+        if london_override is not None:
+            in_ldn = london_override
+        if ny_override is not None:
+            in_open = ny_override
+
+    applies = field_applies("sess.ldn_ny_overlap_vol", symbol)
     lo, hi = overlap_window(as_of)
     fields["sess.ldn_ny_overlap_vol"] = _row(
         "sess.ldn_ny_overlap_vol",
@@ -570,8 +713,6 @@ def assemble_pack3_fields(
             "in_window": in_ldn if applies else None,
             "ratio": named_ratio if applies else None,
             "class": expand_class if applies else None,
-            "pass_at": LONDON_EXPAND_PASS,
-            "fail_below": LONDON_EXPAND_FAIL,
             "window_utc": [list(start), list(end)],
             "season": "summer" if uk_dst(as_of) else "winter",
             "clock_source": TIME_UTC_SOURCE,
@@ -609,8 +750,6 @@ def assemble_pack3_fields(
             "in_window": in_open if applies else None,
             "impulse": named_impulse if applies else None,
             "class": impulse_class if applies else None,
-            "pass_at": NY_IMPULSE_PASS,
-            "chop_below": NY_IMPULSE_CHOP,
             "open_utc": "13:30" if us_dst(as_of) else "14:30",
             "window_utc": [list(start), list(end)],
             "season": "summer" if us_dst(as_of) else "winter",
@@ -675,7 +814,6 @@ def assemble_pack3_fields(
             "dual_leg_agree": dual,
             "residual": residual,
             "residual_class": residual_class,
-            "resid_cap": RESID_CAP,
         }
         if applies and assembled_cross
         else None,
@@ -819,11 +957,29 @@ def score_gbpjpy_fixture(vector: str | Mapping[str, Any]) -> dict[str, Any]:
         expand_f = float(expand) if expand is not None else None
     except (TypeError, ValueError):
         expand_f = None
-    from .state_choices import LEGACY, gbpjpy_verdict_choice
-
-    chosen = gbpjpy_verdict_choice(dual, resid, RESID_CAP)
-    if chosen is not LEGACY:
-        verdict, reason = chosen
+    if _challenge():
+        picked = _choice(
+            "pack3.gbpjpy_verdict",
+            {"dual_leg_agree": dual, "abs_residual": resid},
+            {
+                "pass": "The dual leg agrees and the residual does not fail.",
+                "dual_split": "The dual leg does not agree.",
+                "residual": "The residual fails.",
+            },
+            (
+                "Dual agreement and the absolute residual are on the card. "
+                "The unique highest verdict is the decision. "
+                "An empty answer or a tie leaves the verdict unset. Do not send."
+            ),
+        )
+        if picked == "dual_split":
+            verdict, reason = "fail", "dual_split"
+        elif picked == "residual":
+            verdict, reason = "fail", "residual"
+        elif picked == "pass":
+            verdict, reason = "pass", None
+        else:
+            verdict, reason = None, None
     elif not dual:
         verdict = "fail"
         reason = "dual_split"
@@ -844,7 +1000,6 @@ def score_gbpjpy_fixture(vector: str | Mapping[str, Any]) -> dict[str, Any]:
         "dual_leg_agree": dual,
         "residual": resid,
         "residual_class": classify_gj_residual(resid),
-        "resid_cap": RESID_CAP,
         "london_expand": expand_f,
         "london_expand_class": classify_london_expand(expand_f),
         "shadow_only": True,

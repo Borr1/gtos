@@ -57,6 +57,58 @@ from typing import Any
 
 from .runtime_learning_packet import stable_hash
 
+_HOP: dict[tuple, dict[str, float | None]] = {}
+
+
+def _finite(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post."""
+    if cache_key in _HOP:
+        return dict(_HOP[cache_key])
+    payload = {
+        str(key): value
+        for key, value in dict(facts or {}).items()
+        if str(key) not in {"denominator", "other"}
+    }
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
+    try:
+        from src.judgment.nineteen import score as ask
+    except Exception:
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
+    _HOP[cache_key] = dict(out)
+    return out
+
 # The only event type this may ever touch. `position_closed`, `breach_flatten`,
 # `position_adopted`, `position_management_error` and every `unit_*` event are terminal or
 # rare, carry the outcomes the programme is actually measuring, and are never suppressed.
@@ -128,14 +180,38 @@ class PositionManagedEmitFilter:
         heartbeat_seconds: float = DEFAULT_HEARTBEAT_SECONDS,
         state_ttl_seconds: float = DEFAULT_STATE_TTL_SECONDS,
     ) -> None:
-        try:
-            self._heartbeat = max(0.0, float(heartbeat_seconds))
-        except (TypeError, ValueError):
-            self._heartbeat = float(DEFAULT_HEARTBEAT_SECONDS)
-        try:
-            self._ttl = max(0.0, float(state_ttl_seconds))
-        except (TypeError, ValueError):
-            self._ttl = float(DEFAULT_STATE_TTL_SECONDS)
+        offered_heartbeat = _finite(heartbeat_seconds)
+        offered_ttl = _finite(state_ttl_seconds)
+        second_levels = []
+        if offered_heartbeat is not None:
+            second_levels.append(("the offered heartbeat in seconds on this state", offered_heartbeat))
+        if offered_ttl is not None:
+            second_levels.append(("the offered unseen-position age in seconds on this state", offered_ttl))
+        bounds = _scores(
+            ("emit_filter", offered_heartbeat, offered_ttl),
+            {
+                "offered_heartbeat_seconds": offered_heartbeat,
+                "offered_state_ttl_seconds": offered_ttl,
+            },
+            {
+                "heartbeat_seconds": (
+                    "The score you return is how many seconds of an unchanged position_managed "
+                    "state still force one emit. An empty score does not force a heartbeat. Do not send."
+                ),
+                "state_ttl_seconds": (
+                    "The score you return is how many seconds an unseen position stays in the emit filter. "
+                    "An empty score does not evict on a clock. Do not send."
+                ),
+            },
+            {
+                "heartbeat_seconds": second_levels,
+                "state_ttl_seconds": second_levels,
+            },
+        )
+        heartbeat = bounds.get("heartbeat_seconds")
+        ttl = bounds.get("state_ttl_seconds")
+        self._heartbeat = None if heartbeat is None or heartbeat < 0 else float(heartbeat)
+        self._ttl = None if ttl is None or ttl < 0 else float(ttl)
         # key -> {digest, last_emit_at, suppressed_since_emit, last_seen_at}
         self._state: dict[str, dict[str, Any]] = {}
         self.suppressed_total = 0

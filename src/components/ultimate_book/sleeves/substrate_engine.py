@@ -1,208 +1,463 @@
-"""substrate_engine — byte-faithful vendored copy of the SUBSTRATE leak-free state machine.
+"""Substrate state for the live cell sleeves.
 
-Source of truth (READ-ONLY oracle, do NOT diverge):
-  research/operations/final_moonshot_v4_ultimate_mechanical_edge_2026_06_10/substrate.py
-
-This vendors EXACTLY the per-bar StateVec features that `substrate.cell_coords` consumes
-(vr, slope20/50/100, mtf_align, rng_pos, compression, ac60) plus the discretizers
-(`_bucket_*`), `cell_coords`, and the outcome GEOMETRY (stop_dist / target_dist). It is the
-single faithful home for the substrate math the live `sub_xvol_pullback` and `sub_mid_dn_revert`
-generators stand on. A parity test (tests/ultimate_book/test_substrate_sleeves.py) asserts this
-agrees per-bar with the ACTUAL route `substrate.build_states` + `substrate.cell_coords`.
-
-LIVE WARMUP NUANCE (deliberate, documented):
-  route `substrate.build_states` hard-guards n >= WARMUP+MAXBARS+5 (~295) and only assigns a state
-  for i in range(WARMUP, n) because it BATCH-LABELS the +MAXBARS forward outcome window. The LIVE
-  port has no forward window: it computes the state at the latest closed bar i = len(bars)-1 with
-  NO +MAXBARS guard, so the documented WARMUP of 210 bars is the only gate (bar_provider.enough(
-  bars, "substrate") == 210). Every feature here is leak-free (index <= i), so the state at bar i is
-  IDENTICAL whether computed on bars[:i+1] (live) or on the full series (route) — the parity test
-  proves it. The route's loop START at i=210 (vs the live i>=209 when len==210) is only a warmup
-  buffer choice; the feature formulae are well-defined for i >= 199 and unchanged across that bound.
-
-Constants/thresholds/lookbacks are copied verbatim. `atr14` is reused from ..primitives (a
-byte-identical vendored copy of geometry_lib.atr14). Do NOT "improve" anything in this module — any
-change silently breaks parity with the locked substrate map and trades real money on a wrong cell.
+The windows, the bucket edges, the stop, the target, and the side come
+back from one Score pack for this bar. An empty answer, a tie, or an
+error leaves that field unset. Nothing here puts a printed constant back.
+`atr14` is the measure in primitives. This module does not send.
 """
 from __future__ import annotations
-from typing import Optional
 
-from ..primitives import atr14   # byte-identical to route geometry_lib.atr14 (primitives.py:23-30)
+import threading
+from typing import Any, Optional
 
-# Warmup floor for the live state (bar_provider.WARMUP["substrate"] == 210; substrate.py:61 WARMUP).
-WARMUP = 210
+from ..primitives import atr14
+
+_MODEL = "jev-1.13.0"
+_UNSET = " An empty score leaves it unset. A tie leaves it unset. An error leaves it unset."
+_LOCK = threading.Lock()
+_CACHE: dict[tuple, dict[str, Any]] = {}
+
+# Name stays so a research import still binds. The bar count is the score.
+WARMUP = None
+
+_WINDOW_SPOTS = (
+    "warmup_bars",
+    "atr_mean_bars",
+    "slope_short_bars",
+    "slope_mid_bars",
+    "slope_long_bars",
+    "range_bars",
+    "comp_short_bars",
+    "comp_long_bars",
+    "persist_bars",
+    "persist_min_bars",
+)
+_BOUND_SPOTS = (
+    "align_thr",
+    "vr_lo",
+    "vr_mid",
+    "vr_hi",
+    "slope_up",
+    "slope_dn",
+    "rng_low",
+    "rng_high",
+    "comp_coil",
+    "comp_expand",
+    "persist_trend",
+    "persist_revert",
+    "session_asia_end",
+    "session_london_end",
+    "stop_atr",
+    "target_r",
+)
+_SCORE_SPOTS = _WINDOW_SPOTS + _BOUND_SPOTS
+_DIRECTION = "direction"
+
+_TEXT = {
+    "warmup_bars": "The score you return is how many closed bars this state needs before it can be read.",
+    "atr_mean_bars": "The score you return is how many ATR values the mean uses.",
+    "slope_short_bars": "The score you return is how many bars the short slope looks back.",
+    "slope_mid_bars": "The score you return is how many bars the mid slope looks back.",
+    "slope_long_bars": "The score you return is how many bars the long slope looks back.",
+    "range_bars": "The score you return is how many bars the range position uses.",
+    "comp_short_bars": "The score you return is how many bars the short true-range sum uses.",
+    "comp_long_bars": "The score you return is how many bars the long true-range sum uses.",
+    "persist_bars": "The score you return is how many returns the persistence uses.",
+    "persist_min_bars": "The score you return is how many returns persistence needs before it is readable.",
+    "align_thr": "The score you return is the slope size that counts as aligned on this bar.",
+    "vr_lo": "The score you return is the vol-ratio edge below which vol is lo.",
+    "vr_mid": "The score you return is the vol-ratio edge below which vol is mid.",
+    "vr_hi": "The score you return is the vol-ratio edge below which vol is hi.",
+    "slope_up": "The score you return is the slope edge above which trend is up.",
+    "slope_dn": "The score you return is the slope edge below which trend is down.",
+    "rng_low": "The score you return is the range-position edge below which position is low.",
+    "rng_high": "The score you return is the range-position edge above which position is high.",
+    "comp_coil": "The score you return is the compression edge below which compression is coil.",
+    "comp_expand": "The score you return is the compression edge above which compression is expand.",
+    "persist_trend": "The score you return is the persistence edge at or above which persistence is trend.",
+    "persist_revert": "The score you return is the persistence edge at or below which persistence is revert.",
+    "session_asia_end": "The score you return is the hour before which the session is asia.",
+    "session_london_end": "The score you return is the hour before which the session is london.",
+    "stop_atr": "The score you return is the stop as a multiple of ATR on this bar.",
+    "target_r": "The score you return is the target as a multiple of the stop on this bar.",
+}
+
+_MTF_LABEL = {1: "aligned", -1: "conflict", 0: "neutral"}
 
 
-# --------------------------------------------------------------------------------------------- #
-# persistence: lag-1 autocorrelation of a return series   (substrate.py:85-92  `_ac`)
-# Vendored EXACTLY (NOT src primitives.autocorr): the route's persistence bucket is computed by this
-# `_ac` (no None-guard, `if n < 3: return 0.0`, mean = sum/n). Fidelity over reuse.
-# --------------------------------------------------------------------------------------------- #
-def _ac(rets) -> float:
-    """lag-1 autocorrelation of a return series (persistence). substrate.py:85-92."""
+def _finite(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _whole(value: Any) -> int | None:
+    number = _finite(value)
+    if number is None:
+        return None
+    whole = int(round(number))
+    if whole < 1:
+        return None
+    return whole
+
+
+def _empty() -> dict[str, Any]:
+    out: dict[str, Any] = {spot: None for spot in _SCORE_SPOTS}
+    out["direction_side"] = None
+    return out
+
+
+def _key(facts: dict) -> tuple:
+    return (
+        facts.get("sleeve"),
+        facts.get("symbol"),
+        facts.get("decision_day"),
+        facts.get("i"),
+        facts.get("n_bars"),
+        _finite(facts.get("close")),
+        _finite(facts.get("high")),
+        _finite(facts.get("low")),
+        facts.get("hour"),
+    )
+
+
+def _questions(facts: dict | None = None, bars=None, i: int | None = None, bar_times=None) -> dict[str, Any]:
+    from src.judgment.jev_questions import spot_question
+    from .spot_choice import amount_question, anchors_for
+
+    packed: dict[str, Any] = {}
+    _questions.anchors = {}
+    for spot in _SCORE_SPOTS:
+        anchors = anchors_for(spot, facts, bars=bars, index=i, bar_times=bar_times)
+        _questions.anchors[spot] = anchors
+        packed.update(amount_question(spot, _TEXT[spot], anchors))
+    packed.update(
+        spot_question(
+            _DIRECTION,
+            "Which side does this cell take on this state? "
+            "An empty answer, a tie, or an error is not a side.",
+            {
+                "long": "The cell takes the long side.",
+                "short": "The cell takes the short side.",
+            },
+        )
+    )
+    return packed
+
+
+def _side(block: Any) -> str | None:
+    if not isinstance(block, dict) or block.get("error"):
+        return None
+    probs = block.get("probabilities")
+    if not isinstance(probs, dict) or not probs:
+        return None
+    try:
+        from src.judgment.jev_questions import unique_highest
+
+        picked = unique_highest(probs, ("long", "short"))
+    except Exception:
+        return None
+    if picked in {"long", "short"}:
+        return str(picked)
+    return None
+
+
+def _post(facts: dict, bars=None, i: int | None = None, bar_times=None) -> dict[str, Any]:
+    """One post for this bar. Windows, edges, geometry, and side travel together."""
+
+    out = _empty()
+    try:
+        from src.judgment.jev_client import evaluate
+        from src.judgment.jev_questions import append_outcome, prior_outcomes, returned_number
+    except Exception:
+        return out
+    try:
+        questions = _questions(facts, bars, i, bar_times)
+    except Exception:
+        return out
+    state = dict(facts)
+    try:
+        state["prior_outcomes"] = prior_outcomes(state=state, questions=questions)
+    except Exception:
+        state["prior_outcomes"] = []
+    try:
+        receipt = evaluate(state, questions=questions, model=_MODEL, merge_sleeve=False)
+    except Exception:
+        return out
+    if not isinstance(receipt, dict) or not receipt.get("ok"):
+        return out
+    raw = receipt.get("answers")
+    answers = raw if isinstance(raw, dict) else {}
+    for spot in _SCORE_SPOTS:
+        from .spot_choice import value_at
+
+        number = value_at(returned_number(answers.get(spot)), _questions.anchors.get(spot))
+        out[spot] = number
+        try:
+            append_outcome(spot, number, state, error=None if number is not None else "empty")
+        except Exception:
+            pass
+    out["direction_side"] = _side(answers.get(_DIRECTION))
+    return out
+
+
+def _ask(facts: dict, bars=None, i: int | None = None, bar_times=None) -> dict[str, Any]:
+    """The pack for these facts. The same facts reuse it. A new bar asks again."""
+
+    key = _key(facts)
+    with _LOCK:
+        hit = _CACHE.get(key)
+    if hit is not None:
+        return dict(hit)
+    pack = _post(facts, bars, i, bar_times)
+    sleeve = facts.get("sleeve")
+    symbol = facts.get("symbol")
+    with _LOCK:
+        for old in list(_CACHE):
+            if old[0] == sleeve and old[1] == symbol and old != key:
+                _CACHE.pop(old, None)
+        _CACHE[key] = pack
+    return dict(pack)
+
+
+def _ac(rets, min_n: int | None = None) -> float | None:
+    """Lag-1 autocorrelation. A short sample or a flat sample stays unset."""
+
+    if min_n is None:
+        return None
     n = len(rets)
-    if n < 3:
-        return 0.0
-    m = sum(rets) / n
-    num = sum((rets[k] - m) * (rets[k - 1] - m) for k in range(1, n))
-    den = sum((x - m) ** 2 for x in rets)
-    return num / den if den > 0 else 0.0
+    if n < min_n:
+        return None
+    mean = sum(rets) / n
+    num = sum((rets[k] - mean) * (rets[k - 1] - mean) for k in range(1, n))
+    den = sum((x - mean) ** 2 for x in rets)
+    if den <= 0:
+        return None
+    return num / den
 
 
-# --------------------------------------------------------------------------------------------- #
-# Discretizers — the confluence vocabulary   (substrate.py:168-197)
-# --------------------------------------------------------------------------------------------- #
-def _bucket_vr(vr):
-    """substrate.py:168-172."""
-    if vr < 0.85:
+def _bucket_vr(vr, lo=None, mid=None, hi=None):
+    if vr is None or lo is None or mid is None or hi is None:
+        return None
+    if vr < lo:
         return "lo"
-    if vr < 1.15:
+    if vr < mid:
         return "mid"
-    if vr < 1.6:
+    if vr < hi:
         return "hi"
     return "xhi"
 
 
-def _bucket_slope(s):
-    """substrate.py:174-177."""
-    if s > 1.5:
+def _bucket_slope(s, up=None, dn=None):
+    if s is None or up is None or dn is None:
+        return None
+    if s > up:
         return "up"
-    if s < -1.5:
+    if s < dn:
         return "dn"
     return "flat"
 
 
-def _bucket_rng(p):
-    """substrate.py:179-182."""
-    if p < 0.25:
+def _bucket_rng(p, low=None, high=None):
+    if p is None or low is None or high is None:
+        return None
+    if p < low:
         return "low"
-    if p > 0.75:
+    if p > high:
         return "high"
     return "mid"
 
 
-def _bucket_comp(c):
-    """substrate.py:184-187."""
-    if c < 0.7:
+def _bucket_comp(c, coil=None, expand=None):
+    if c is None or coil is None or expand is None:
+        return None
+    if c < coil:
         return "coil"
-    if c > 1.3:
+    if c > expand:
         return "expand"
     return "norm"
 
 
-def _bucket_persist(a):
-    """substrate.py:189-192."""
-    if a >= 0.10:
+def _bucket_persist(a, trend=None, revert=None):
+    if a is None or trend is None or revert is None:
+        return None
+    if a >= trend:
         return "trend"
-    if a <= -0.10:
+    if a <= revert:
         return "revert"
     return "rand"
 
 
-def _bucket_session(h):
-    """substrate.py:194-197. h is the bar's UTC hour."""
-    if h < 8:
+def _bucket_session(h, asia_end=None, london_end=None):
+    if h is None or asia_end is None or london_end is None:
+        return None
+    if h < asia_end:
         return "asia"
-    if h < 16:
+    if h < london_end:
         return "london"
     return "ny"
 
 
-# Multi-TF alignment label map (substrate.py:204).
-_MTF_LABEL = {1: "aligned", -1: "conflict", 0: "neutral"}
+def _window(bounds: dict, spot: str) -> int | None:
+    return _whole(bounds.get(spot))
 
 
-# --------------------------------------------------------------------------------------------- #
-# Per-bar leak-free StateVec (the subset cell_coords consumes)   (substrate.py:116-158)
-# --------------------------------------------------------------------------------------------- #
-def compute_state(bars, i: int, hour: Optional[int]) -> Optional[dict]:
-    """Return the leak-free StateVec dict at bar i (features index<=i ONLY), or None if ATR<=0.
+def compute_state(
+    bars,
+    i: int,
+    hour: Optional[int] = None,
+    *,
+    sleeve: str | None = None,
+    symbol: str | None = None,
+    decision_day: str | None = None,
+) -> Optional[dict]:
+    """Leak-free features at bar i. Missing bounds leave the state unset."""
 
-    Mirrors substrate.build_states' inner loop body (substrate.py:117-156) for exactly the fields
-    cell_coords reads: vr, slope50 (trend), mtf_align, rng_pos, compression, ac60, hour. slope20 and
-    slope100 are computed because mtf_align needs them. `hour` is threaded in from the bar timestamp
-    (the route reads T[i].hour; substrate.py:156) — pass None when the session bucket is not needed.
-
-    Caller MUST guarantee i >= 199 (so every lookback below is in-range); the live generators gate on
-    len(bars) >= WARMUP (210) => i = len-1 >= 209. Returns None when atr14(bars,i) <= 0 (skip, like
-    substrate.py:118-119).
-    """
-    a = atr14(bars, i)                                    # substrate.py:117  a = A[i]
-    if a <= 0:                                            # substrate.py:118-119
+    facts: dict[str, Any] = {
+        "sleeve": sleeve,
+        "symbol": symbol,
+        "decision_day": decision_day,
+        "i": i,
+        "n_bars": len(bars) if bars is not None else 0,
+        "hour": hour,
+    }
+    if bars is not None and 0 <= i < len(bars):
+        bar = bars[i]
+        facts["close"] = getattr(bar, "c", None)
+        facts["high"] = getattr(bar, "h", None)
+        facts["low"] = getattr(bar, "l", None)
+    bounds = _ask(facts, bars, i)
+    windows = {spot: _window(bounds, spot) for spot in _WINDOW_SPOTS}
+    if any(value is None for value in windows.values()):
         return None
-    # vr = a / sma100  (substrate.py:120-121); sma100 over the 100-bar ATR window i-99..i.
-    sma100 = sum(atr14(bars, k) for k in range(i - 99, i + 1)) / 100
-    vr = a / sma100 if sma100 > 0 else 1.0
-    # trend slopes normalised by ATR (substrate.py:125-127)
-    c_i = bars[i].c
-    slope20 = (c_i - bars[i - 20].c) / a
-    slope50 = (c_i - bars[i - 50].c) / a
-    slope100 = (c_i - bars[i - 100].c) / a
-    # multi-TF alignment (substrate.py:131-135)
-    def _sgn(v, thr=0.5):
-        return 1 if v > thr else (-1 if v < -thr else 0)
-    s_short = _sgn(slope20)
-    s_long = _sgn(slope100)
-    mtf_align = 1 if (s_short != 0 and s_short == s_long) else (
-        -1 if (s_short != 0 and s_long != 0 and s_short == -s_long) else 0)
-    # range position in last 50 bars (substrate.py:137-138)
-    lo50 = min(bars[k].l for k in range(i - 49, i + 1))
-    hi50 = max(bars[k].h for k in range(i - 49, i + 1))
-    rng_pos = (c_i - lo50) / (hi50 - lo50) if hi50 > lo50 else 0.5
-    # compression: recent 5-bar TR vs 20-bar TR (substrate.py:140; tr per substrate.py:109-110)
-    def _tr(k):
-        return max(bars[k].h - bars[k].l,
-                   abs(bars[k].h - bars[k - 1].c),
-                   abs(bars[k].l - bars[k - 1].c))
-    num5 = sum(_tr(k) for k in range(i - 4, i + 1)) / 5
-    den20 = sum(_tr(k) for k in range(i - 19, i + 1)) / 20 or 1   # `or 1` guard verbatim
-    comp = num5 / den20
-    # persistence: lag-1 autocorr of the 60-bar return series (substrate.py:142;
-    # rets[k]=C[k]-C[k-1] per substrate.py:112-113; slice rets[i-59:i+1] == 60 returns i-59..i)
-    rets_slice = [bars[k].c - bars[k - 1].c for k in range(i - 59, i + 1)]
-    ac60 = _ac(rets_slice)
+    if bars is None or i < 0 or i >= len(bars):
+        return None
+    warm = windows["warmup_bars"]
+    furthest = max(windows[spot] for spot in _WINDOW_SPOTS if spot != "persist_min_bars")
+    if i + 1 < warm or i < furthest:
+        return None
+    a = atr14(bars, i)
+    if a is None or a <= 0:
+        return None
+    mean_n = windows["atr_mean_bars"]
+    sma = sum(atr14(bars, k) for k in range(i - mean_n + 1, i + 1)) / mean_n
+    vr = None if sma <= 0 else a / sma
+    close = bars[i].c
+    slope_short = (close - bars[i - windows["slope_short_bars"]].c) / a
+    slope_mid = (close - bars[i - windows["slope_mid_bars"]].c) / a
+    slope_long = (close - bars[i - windows["slope_long_bars"]].c) / a
+    thr = _finite(bounds.get("align_thr"))
+    mtf_align = None
+    if thr is not None:
+        def _sgn(value: float) -> int:
+            if value > thr:
+                return 1
+            if value < -thr:
+                return -1
+            return 0
+
+        short_sign = _sgn(slope_short)
+        long_sign = _sgn(slope_long)
+        if short_sign != 0 and short_sign == long_sign:
+            mtf_align = 1
+        elif short_sign != 0 and long_sign != 0 and short_sign == -long_sign:
+            mtf_align = -1
+        else:
+            mtf_align = 0
+    range_n = windows["range_bars"]
+    lo = min(bars[k].l for k in range(i - range_n + 1, i + 1))
+    hi = max(bars[k].h for k in range(i - range_n + 1, i + 1))
+    rng_pos = None if hi <= lo else (close - lo) / (hi - lo)
+
+    def _tr(k: int) -> float:
+        return max(
+            bars[k].h - bars[k].l,
+            abs(bars[k].h - bars[k - 1].c),
+            abs(bars[k].l - bars[k - 1].c),
+        )
+
+    short_n = windows["comp_short_bars"]
+    long_n = windows["comp_long_bars"]
+    num = sum(_tr(k) for k in range(i - short_n + 1, i + 1)) / short_n
+    den = sum(_tr(k) for k in range(i - long_n + 1, i + 1)) / long_n
+    comp = None if den <= 0 else num / den
+    persist_n = windows["persist_bars"]
+    rets = [bars[k].c - bars[k - 1].c for k in range(i - persist_n + 1, i + 1)]
+    ac = _ac(rets, windows["persist_min_bars"])
     return {
         "vr": vr,
-        "slope20": slope20, "slope50": slope50, "slope100": slope100,
+        "slope20": slope_short,
+        "slope50": slope_mid,
+        "slope100": slope_long,
         "mtf_align": mtf_align,
-        "rng_pos": rng_pos, "compression": comp, "ac60": ac60,
+        "rng_pos": rng_pos,
+        "compression": comp,
+        "ac60": ac,
         "hour": hour,
+        "_atr": a,
+        "_bounds": bounds,
     }
 
 
 def cell_coords(st: dict) -> dict:
-    """Map a raw StateVec to discrete confluence coordinates. substrate.py:199-209.
+    """Discrete coordinates. A missing edge leaves that coordinate unset."""
 
-    `session` is only valid when st['hour'] is not None (the route always has T[i].hour). The live
-    sub_mid_dn_revert generator supplies hour from the bar timestamp; sub_xvol_pullback never reads
-    `session` (depth-4 cell) so it may pass hour=None.
-    """
+    bounds = st.get("_bounds") if isinstance(st, dict) else None
+    if not isinstance(bounds, dict):
+        bounds = {}
     coords = {
-        "vol":     _bucket_vr(st["vr"]),
-        "trend":   _bucket_slope(st["slope50"]),
-        "mtf":     _MTF_LABEL[st["mtf_align"]],
-        "rngpos":  _bucket_rng(st["rng_pos"]),
-        "comp":    _bucket_comp(st["compression"]),
-        "persist": _bucket_persist(st["ac60"]),
+        "vol": _bucket_vr(
+            st.get("vr"),
+            _finite(bounds.get("vr_lo")),
+            _finite(bounds.get("vr_mid")),
+            _finite(bounds.get("vr_hi")),
+        ),
+        "trend": _bucket_slope(
+            st.get("slope50"),
+            _finite(bounds.get("slope_up")),
+            _finite(bounds.get("slope_dn")),
+        ),
+        "mtf": _MTF_LABEL.get(st.get("mtf_align")),
+        "rngpos": _bucket_rng(
+            st.get("rng_pos"),
+            _finite(bounds.get("rng_low")),
+            _finite(bounds.get("rng_high")),
+        ),
+        "comp": _bucket_comp(
+            st.get("compression"),
+            _finite(bounds.get("comp_coil")),
+            _finite(bounds.get("comp_expand")),
+        ),
+        "persist": _bucket_persist(
+            st.get("ac60"),
+            _finite(bounds.get("persist_trend")),
+            _finite(bounds.get("persist_revert")),
+        ),
     }
     if st.get("hour") is not None:
-        coords["session"] = _bucket_session(st["hour"])
+        coords["session"] = _bucket_session(
+            st.get("hour"),
+            _finite(bounds.get("session_asia_end")),
+            _finite(bounds.get("session_london_end")),
+        )
     return coords
 
 
-# --------------------------------------------------------------------------------------------- #
-# Outcome GEOMETRY (live needs the stop/target distances, not the simulate label).
-#   substrate.outcome (substrate.py:248-255):  sd = stop_atr * atr ; td = target_R * sd
-# --------------------------------------------------------------------------------------------- #
 def stop_target(atr: float, stop_atr: float, target_R: float) -> tuple[float, float]:
-    """(stop_dist, target_dist) for a (stop_atr, target_R) geometry at this bar's ATR.
-    substrate.py:253-254:  sd = stop_atr * atr ; td = target_R * sd."""
+    """Stop and target distances from the returned multiples and this bar's ATR."""
+
     sd = stop_atr * atr
     td = target_R * sd
     return sd, td
 
 
 def cell_matches(coords: dict, conds: dict) -> bool:
-    """True iff every cell condition holds. Mirrors SUBSTRATE_corrcheck.materialize_cell:74
-    `all(co.get(d) == b for d, b in conds.items())`."""
-    return all(coords.get(d) == b for d, b in conds.items())
+    """True when every named coordinate equals the cell. An unset coordinate does not."""
+
+    return all(coords.get(name) == want for name, want in conds.items())

@@ -50,6 +50,13 @@ def git_env() -> dict:
     return env
 
 
+def remote_url(git_dir: Path) -> str:
+    chosen = os.environ.get("SOT_URL", "").strip()
+    if chosen:
+        return chosen
+    return github_url(git_dir)
+
+
 def github_url(git_dir: Path) -> str:
     current = ""
     found = ""
@@ -126,7 +133,7 @@ def main() -> int:
     git_dir = LIVE / ".git"
     if not git_dir.is_dir():
         raise SystemExit(f"no .git directory at {git_dir}")
-    url = github_url(git_dir)
+    url = remote_url(git_dir)
     HOLD.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     aside = HOLD / f"git-aside-f5-live-{stamp}"

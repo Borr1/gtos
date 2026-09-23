@@ -14,6 +14,7 @@ a safe no-op decision) so the live decision path is unaffected when the book err
 from __future__ import annotations
 
 import os
+import threading
 from collections.abc import Mapping
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
@@ -309,6 +310,19 @@ def effective_generation_sleeve_names(config: dict, tags=None, broker_symbol=Non
 _SKIP_SAMPLE_CAP = 64
 
 
+class _SlotFlight:
+    """One in-flight fetch or score. Waiters share it. Other keys do not."""
+
+    def __init__(self) -> None:
+        self.event = threading.Event()
+        self.value = None
+        self.error: BaseException | None = None
+
+
+_SLOT_LAST_BAR = threading.local()
+_ENGINE_LOCK = threading.Lock()
+
+
 def _sample_skip(bucket, row: dict) -> None:
     """Append `row` to a bounded telemetry sample. Never raises; never gates a decision."""
     try:
@@ -332,20 +346,196 @@ def _parse_bar_time(value: Any) -> datetime | None:
     return None
 
 
-def _limit_level(anchor: Any, move: Any) -> float | None:
-    """The open plus the returned price distance. An empty distance stays unset."""
+def _limit_level(anchor: Any, move: Any, direction: Any) -> float | None:
+    """The open shifted by the returned distance once the side exists.
 
-    if isinstance(anchor, bool) or isinstance(move, bool):
+    A long limit is the open minus that distance. A short limit is the open
+    plus that distance. A missing anchor, a missing move, a non-positive move,
+    or any other direction leaves the limit unset.
+    """
+
+    if isinstance(anchor, bool) or isinstance(move, bool) or isinstance(direction, bool):
+        return None
+    if direction not in (1, -1):
         return None
     if anchor is None or move is None:
         return None
     try:
-        level = float(anchor) + float(move)
+        distance = float(move)
+        base = float(anchor)
+        side = float(direction)
     except (TypeError, ValueError):
         return None
+    if distance != distance or distance in (float("inf"), float("-inf")) or not (distance > 0):
+        return None
+    level = base - side * distance
     if level != level or level in (float("inf"), float("-inf")):
         return None
     return level
+
+
+# Fact names copied onto the move ask. Labels below are the Score levels.
+_ANCHOR_FACT_KEYS = (
+    "high",
+    "low",
+    "close",
+    "forming_high",
+    "forming_low",
+    "prev_high",
+    "prev_low",
+    "prev_extreme_high",
+    "prev_extreme_low",
+    "session_high",
+    "session_low",
+    "day_high",
+    "day_low",
+)
+
+# (fact keys, level label). The value is the price distance from the entry.
+_ANCHOR_SOURCES = (
+    (("high", "forming_high"), "this bar high from the entry"),
+    (("low", "forming_low"), "this bar low from the entry"),
+    (("close",), "this bar close from the entry"),
+    (("prev_high",), "previous bar high from the entry"),
+    (("prev_low",), "previous bar low from the entry"),
+    (("prev_extreme_high",), "previous bars high from the entry"),
+    (("prev_extreme_low",), "previous bars low from the entry"),
+    (("session_high",), "session high from the entry"),
+    (("session_low",), "session low from the entry"),
+    (("day_high",), "day high from the entry"),
+    (("day_low",), "day low from the entry"),
+)
+
+
+def _aware_time(value: Any) -> datetime | None:
+    return _parse_bar_time(value)
+
+
+def _ordered_anchors(pairs: list[tuple[str, float]]) -> tuple[tuple[str, float], ...]:
+    """Nearest distance first. The same distance keeps the earlier label."""
+
+    ordered: list[tuple[str, float]] = []
+    seen: list[float] = []
+    for label, number in sorted(pairs, key=lambda item: item[1]):
+        if any(number == prior for prior in seen):
+            continue
+        seen.append(number)
+        ordered.append((label, number))
+    return tuple(ordered)
+
+
+def _atr_distance(facts: Mapping[str, Any] | None) -> float | None:
+    """ATR already stored on the card, in price units. Absent stays absent."""
+
+    if not isinstance(facts, Mapping):
+        return None
+    for key, value in facts.items():
+        if str(key).lower() != "atr":
+            continue
+        number = UltimateBookLiveEngine._unit_number(value)
+        if number is not None and number > 0:
+            return number
+    return None
+
+
+def _first_price(facts: Mapping[str, Any], keys: tuple[str, ...]) -> float | None:
+    for key in keys:
+        number = UltimateBookLiveEngine._unit_number(facts.get(key))
+        if number is not None:
+            return number
+    return None
+
+
+def _anchors_from_card(facts: Mapping[str, Any] | None) -> tuple[tuple[str, float], ...]:
+    """(label, distance) pairs in price units, nearest first.
+
+    This bar's high, low and close, the previous bars' extremes, the session
+    and day extremes, and ATR when the card already has it. The side is not
+    chosen here. Missing prices are dropped. Fewer than two distances is
+    still returned; the spine does not post that ask.
+    """
+
+    if not isinstance(facts, Mapping):
+        return ()
+    entry = UltimateBookLiveEngine._unit_number(facts.get("entry"))
+    if entry is None:
+        entry = UltimateBookLiveEngine._unit_number(facts.get("forming_open"))
+    if entry is None:
+        entry = UltimateBookLiveEngine._unit_number(facts.get("open"))
+    pairs: list[tuple[str, float]] = []
+    if entry is not None:
+        for keys, label in _ANCHOR_SOURCES:
+            price = _first_price(facts, keys)
+            if price is None:
+                continue
+            span = abs(price - entry)
+            if span != span or span in (float("inf"), float("-inf")):
+                continue
+            pairs.append((label, span))
+    atr = _atr_distance(facts)
+    if atr is not None:
+        pairs.append(("atr on this card", atr))
+    return _ordered_anchors(pairs)
+
+
+def _bind_entry(facts: dict) -> None:
+    """The open the move is measured from. A missing open stays absent."""
+
+    entry = UltimateBookLiveEngine._unit_number(facts.get("forming_open"))
+    if entry is None:
+        entry = UltimateBookLiveEngine._unit_number(facts.get("open"))
+    if entry is None:
+        facts.pop("entry", None)
+    else:
+        facts["entry"] = entry
+
+
+def _session_extremes(rows: list[tuple[datetime | None, float | None, float | None]], ivl_minutes: int):
+    """High and low of the contiguous run that ends on the current bar."""
+
+    if not rows or not ivl_minutes:
+        return None, None
+    limit = timedelta(minutes=int(ivl_minutes))
+    start = len(rows) - 1
+    index = start
+    while index > 0:
+        later = rows[index][0]
+        earlier = rows[index - 1][0]
+        if later is None or earlier is None:
+            return None, None
+        if later - earlier > limit:
+            break
+        index -= 1
+        start = index
+    highs: list[float] = []
+    lows: list[float] = []
+    for _when, high, low in rows[start:]:
+        if high is not None:
+            highs.append(high)
+        if low is not None:
+            lows.append(low)
+    return (max(highs) if highs else None, min(lows) if lows else None)
+
+
+def _day_extremes(rows: list[tuple[datetime | None, float | None, float | None]], day: str):
+    """High and low of bars on the current bar's UTC day."""
+
+    highs: list[float] = []
+    lows: list[float] = []
+    for when, high, low in rows:
+        if when is None:
+            continue
+        try:
+            key = decision_day_of(when)
+        except Exception:
+            continue
+        if key != day:
+            continue
+        if high is not None:
+            highs.append(high)
+        if low is not None:
+            lows.append(low)
+    return (max(highs) if highs else None, min(lows) if lows else None)
 
 
 class UltimateBookLiveEngine:
@@ -543,6 +733,12 @@ class UltimateBookLiveEngine:
         )
         self._bar_offset_latch = self._load_bar_offset_latch()
         self._hop_scores = {}
+        self._hop_inflight = {}
+        self._hop_flight_lock = threading.Lock()
+        self._bar_series_lock = threading.Lock()
+        self._bar_inflight = {}
+        self._offset_lock = threading.Lock()
+        self._offset_inflight = {}
         self._offset_asked = set()
         self._forming_reads = {}
         # CONTRACT leftover (Fable 5.1): assign the calendar the −45 amplifier reads.
@@ -643,13 +839,14 @@ class UltimateBookLiveEngine:
         try:
             from src.judgment.nineteen import score
 
+            offset_card = {
+                "latest_iso": latest_iso,
+                "interval_minutes": interval_minutes,
+                "adapter_offset_seconds": adapter_offset_seconds,
+                "seconds_from_clock": seconds_from_clock,
+            }
             return score(
-                {
-                    "latest_iso": latest_iso,
-                    "interval_minutes": interval_minutes,
-                    "adapter_offset_seconds": adapter_offset_seconds,
-                    "seconds_from_clock": seconds_from_clock,
-                },
+                offset_card,
                 question_id="broker_offset_seconds",
                 instructions=(
                     "The score you return is the broker offset in seconds to subtract "
@@ -658,6 +855,7 @@ class UltimateBookLiveEngine:
                     "An empty score leaves the stamp unshifted and does not restore a fixed window. "
                     "Do not send."
                 ),
+                anchors=_anchors_from_card(offset_card),
             )
         except Exception:
             return None
@@ -684,6 +882,58 @@ class UltimateBookLiveEngine:
 
     # ---------------- intent generation ----------------
     def _resolve_repair_offset_seconds(
+        self,
+        times: list[datetime],
+        *,
+        now: datetime,
+        interval_minutes: int,
+        cache_key: tuple | None,
+    ) -> int | None:
+        """One repair for this raw bar. Other bars do not wait on it."""
+
+        if not times:
+            return self._resolve_repair_offset_body(
+                times, now=now, interval_minutes=interval_minutes, cache_key=cache_key,
+            )
+        latest = times[-1]
+        latest = (latest if latest.tzinfo else latest.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
+        memo_key = (cache_key, latest.isoformat())
+        lock = self._offset_lock
+        with lock:
+            latch = getattr(self, "_bar_offset_latch", None) or {}
+            asked = getattr(self, "_offset_asked", None)
+            if isinstance(asked, set) and memo_key in asked and memo_key in latch:
+                return latch[memo_key]
+            if memo_key in latch and latch[memo_key] is not None:
+                return latch[memo_key]
+            gate = self._offset_inflight.get(memo_key)
+            if gate is None:
+                gate = _SlotFlight()
+                self._offset_inflight[memo_key] = gate
+                owner = True
+            else:
+                owner = False
+        if not owner:
+            gate.event.wait()
+            if gate.error is not None:
+                raise gate.error
+            return gate.value
+        try:
+            value = self._resolve_repair_offset_body(
+                times, now=now, interval_minutes=interval_minutes, cache_key=cache_key,
+            )
+            gate.value = value
+            return value
+        except Exception as exc:
+            gate.error = exc
+            raise
+        finally:
+            gate.event.set()
+            with lock:
+                if self._offset_inflight.get(memo_key) is gate:
+                    self._offset_inflight.pop(memo_key, None)
+
+    def _resolve_repair_offset_body(
         self,
         times: list[datetime],
         *,
@@ -746,7 +996,9 @@ class UltimateBookLiveEngine:
         memo_key = (cache_key, latest.isoformat())
 
         def _remember(value: float | None) -> float | None:
-            if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+            challenge = str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS
+            cap = None
+            if challenge:
                 bound = self._hop_score(
                     "bar_offset_latch_bound",
                     "The score you return is how many repaired bar stamps this book remembers. "
@@ -754,23 +1006,24 @@ class UltimateBookLiveEngine:
                     {"remembered": len(latch)},
                     cache_key=("bar_offset_latch_bound",),
                 )
-                cap = None
                 if bound is not None:
                     try:
                         cap = int(bound)
                     except (TypeError, ValueError):
                         cap = None
-                if cap is not None and cap > 0 and len(latch) > cap:
+            with self._offset_lock:
+                if challenge:
+                    if cap is not None and cap > 0 and len(latch) > cap:
+                        latch.clear()
+                elif len(latch) > 4096:
                     latch.clear()
-            elif len(latch) > 4096:
-                latch.clear()
-            asked_set = getattr(self, "_offset_asked", None)
-            if not isinstance(asked_set, set):
-                asked_set = set()
-                self._offset_asked = asked_set
-            asked_set.add(memo_key)
-            latch[memo_key] = value
-            self._persist_bar_offset_latch()
+                asked_set = getattr(self, "_offset_asked", None)
+                if not isinstance(asked_set, set):
+                    asked_set = set()
+                    self._offset_asked = asked_set
+                asked_set.add(memo_key)
+                latch[memo_key] = value
+                self._persist_bar_offset_latch()
             return value
 
         detected = None
@@ -947,15 +1200,43 @@ class UltimateBookLiveEngine:
         return float(number)
 
     def _hop_score(self, question_id: str, instructions: str, facts: dict | None, *, cache_key):
-        """One Score for this state. Empty, tie, and error stay unset for that same key."""
+        """One Score for this state. The same key shares one flight.
+
+        Empty, tie, and error stay unset for that key. Waiters take that
+        result and do not post again.
+        """
 
         cache = getattr(self, "_hop_scores", None)
         if not isinstance(cache, dict):
             cache = {}
             self._hop_scores = cache
-        if cache_key in cache:
-            return cache[cache_key]
-        number = None
+        anchors = _anchors_from_card(facts)
+        stored = (cache_key, anchors)
+        lock = getattr(self, "_hop_flight_lock", None)
+        inflight = getattr(self, "_hop_inflight", None)
+        if not isinstance(lock, threading.Lock) or not isinstance(inflight, dict):
+            with _ENGINE_LOCK:
+                lock = getattr(self, "_hop_flight_lock", None)
+                inflight = getattr(self, "_hop_inflight", None)
+                if not isinstance(lock, threading.Lock) or not isinstance(inflight, dict):
+                    lock = threading.Lock()
+                    inflight = {}
+                    self._hop_flight_lock = lock
+                    self._hop_inflight = inflight
+        with lock:
+            if stored in cache:
+                return cache[stored]
+            gate = inflight.get(stored)
+            if gate is None:
+                gate = _SlotFlight()
+                inflight[stored] = gate
+                owner = True
+            else:
+                owner = False
+        if not owner:
+            gate.event.wait()
+            return gate.value
+        cached = None
         try:
             from src.judgment.nineteen import score
 
@@ -963,20 +1244,27 @@ class UltimateBookLiveEngine:
                 dict(facts or {}),
                 question_id=str(question_id),
                 instructions=str(instructions),
+                anchors=anchors,
             )
-        except Exception:
-            number = None
-        if isinstance(number, bool) or number is None:
-            cached = None
-        else:
-            try:
-                cached = float(number)
-            except (TypeError, ValueError):
+            if isinstance(number, bool) or number is None:
                 cached = None
             else:
-                if cached != cached or cached in (float("inf"), float("-inf")):
+                try:
+                    cached = float(number)
+                except (TypeError, ValueError):
                     cached = None
-        cache[cache_key] = cached
+                else:
+                    if cached != cached or cached in (float("inf"), float("-inf")):
+                        cached = None
+        except Exception:
+            cached = None
+        finally:
+            with lock:
+                cache[stored] = cached
+                if inflight.get(stored) is gate:
+                    inflight.pop(stored, None)
+            gate.value = cached
+            gate.event.set()
         return cached
 
     def _seed_latch_bound(self, remembered: int) -> None:
@@ -1038,7 +1326,13 @@ class UltimateBookLiveEngine:
         if back <= 0:
             return None
         moves: dict[str, float] = {}
-        for (sym, tf, _n), pair in bar_cache.items():
+        lock = getattr(self, "_bar_series_lock", None)
+        if isinstance(lock, threading.Lock):
+            with lock:
+                series = list(bar_cache.items())
+        else:
+            series = list(bar_cache.items())
+        for (sym, tf, _n), pair in series:
             if int(tf) != int(TF_M15):
                 continue
             bars = pair[0] if pair else None
@@ -1187,19 +1481,30 @@ class UltimateBookLiveEngine:
         if low is None:
             low = self._unit_number(facts.get("low"))
         bar_iso = facts.get("decision_bar_iso")
+        entry = self._unit_number(facts.get("entry"))
+        if entry is None:
+            entry = anchor
         payload = {
             "symbol": facts.get("symbol"),
             "timeframe": timeframe,
             "bar_iso": bar_iso,
+            "entry": entry,
             "open": anchor,
             "high": high,
             "low": low,
+            "close": self._unit_number(facts.get("close")),
             "bid": self._unit_number(facts.get("bid")),
             "ask": self._unit_number(facts.get("ask")),
             "bid_from_open": self._unit_number(facts.get("bid_from_open")),
             "ask_from_open": self._unit_number(facts.get("ask_from_open")),
             "seconds_to_close": self._unit_number(facts.get("seconds_to_close")),
         }
+        for key in _ANCHOR_FACT_KEYS:
+            if key in facts and key not in payload:
+                payload[key] = facts.get(key)
+        atr = _atr_distance(facts)
+        if atr is not None:
+            payload["atr"] = atr
         # One ask per bar shape. A new high or low is a new state.
         # The live bid, ask, and seconds stay on the card for the unit ask.
         key = (
@@ -1215,13 +1520,14 @@ class UltimateBookLiveEngine:
             "projected_move",
             "The score you return is the projected move of this forming bar, "
             "a price distance from the open, before the close prints. "
-            "The limit level is the open plus that distance. "
+            "The side is chosen later. A long limit is the open minus that distance. "
+            "A short limit is the open plus that distance. "
             "An empty score leaves the move unset. Do not name the side. Do not send.",
             payload,
             cache_key=key,
         )
 
-    def _attach_forming_move(self, facts: dict, spec, symbol, ivl, now) -> None:
+    def _attach_forming_move(self, facts: dict, spec, symbol, ivl, now, bars=None, times=None) -> None:
         """Live forming facts, then the projected move for that price state."""
 
         seconds = facts.get("seconds_from_clock")
@@ -1230,6 +1536,7 @@ class UltimateBookLiveEngine:
             and not isinstance(seconds, bool)
             and seconds > 0
         )
+        replaced = False
         if fresh:
             forming = {
                 "open": facts.get("open"),
@@ -1243,6 +1550,7 @@ class UltimateBookLiveEngine:
                 symbol, getattr(spec, "timeframe", None), ivl, now,
             )
             if forming:
+                replaced = True
                 for name in ("open", "high", "low"):
                     if forming.get(name) is not None:
                         facts[name] = forming[name]
@@ -1277,18 +1585,114 @@ class UltimateBookLiveEngine:
             facts["seconds_to_close"] = forming.get("seconds_to_close")
         elif isinstance(seconds, (int, float)) and not isinstance(seconds, bool):
             facts["seconds_to_close"] = seconds
+        self._stamp_price_structure(facts, bars, times, ivl, forming=replaced)
+        _bind_entry(facts)
         if str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS:
             return
         move = self._projected_move(facts, getattr(spec, "timeframe", None))
         if move is None:
             return
         facts["projected_move"] = move
-        anchor = self._unit_number(facts.get("forming_open"))
-        if anchor is None:
-            anchor = self._unit_number(facts.get("open"))
-        level = _limit_level(anchor, move)
-        if level is not None:
-            facts["projected_level"] = level
+
+    def _price_span(self, bars) -> tuple[float | None, float | None]:
+        highs: list[float] = []
+        lows: list[float] = []
+        for bar in bars or ():
+            high = self._bar_number(bar, "h", "high")
+            low = self._bar_number(bar, "l", "low")
+            if high is not None:
+                highs.append(high)
+            if low is not None:
+                lows.append(low)
+        return (max(highs) if highs else None, min(lows) if lows else None)
+
+    def _stamp_price_structure(self, facts: dict, bars, times, ivl, *, forming: bool) -> None:
+        """Previous, session, and day extremes already in this series.
+
+        A missing bar or a missing clock stays absent. This does not name a side.
+        """
+
+        series = list(bars or ())
+        stamps = list(times or ())
+        aligned = bool(series) and len(series) == len(stamps)
+        previous = series if forming else series[:-1]
+        if previous:
+            facts["prev_high"] = self._bar_number(previous[-1], "h", "high")
+            facts["prev_low"] = self._bar_number(previous[-1], "l", "low")
+            if facts.get("prev_high") is None:
+                facts.pop("prev_high", None)
+            if facts.get("prev_low") is None:
+                facts.pop("prev_low", None)
+            extreme_high, extreme_low = self._price_span(previous)
+            if extreme_high is None:
+                facts.pop("prev_extreme_high", None)
+            else:
+                facts["prev_extreme_high"] = extreme_high
+            if extreme_low is None:
+                facts.pop("prev_extreme_low", None)
+            else:
+                facts["prev_extreme_low"] = extreme_low
+        else:
+            for name in ("prev_high", "prev_low", "prev_extreme_high", "prev_extreme_low"):
+                facts.pop(name, None)
+
+        current_time = None
+        rows: list[tuple[datetime | None, float | None, float | None]] = []
+        if aligned:
+            history = stamps if forming else stamps[:-1]
+            older = series if forming else series[:-1]
+            if len(history) == len(older):
+                for when, bar in zip(history, older):
+                    rows.append((
+                        _aware_time(when),
+                        self._bar_number(bar, "h", "high"),
+                        self._bar_number(bar, "l", "low"),
+                    ))
+            if forming and stamps and ivl:
+                opened = _aware_time(stamps[-1])
+                if opened is not None:
+                    current_time = opened + timedelta(minutes=int(ivl))
+            elif stamps and not forming:
+                current_time = _aware_time(stamps[-1])
+        if current_time is None:
+            for name in ("session_high", "session_low", "day_high", "day_low"):
+                facts.pop(name, None)
+            return
+        rows.append((
+            current_time,
+            self._unit_number(facts.get("high")),
+            self._unit_number(facts.get("low")),
+        ))
+        if ivl:
+            session_high, session_low = _session_extremes(rows, int(ivl))
+            if session_high is None:
+                facts.pop("session_high", None)
+            else:
+                facts["session_high"] = session_high
+            if session_low is None:
+                facts.pop("session_low", None)
+            else:
+                facts["session_low"] = session_low
+        else:
+            facts.pop("session_high", None)
+            facts.pop("session_low", None)
+        try:
+            day = decision_day_of(current_time)
+        except Exception:
+            day = None
+        if day:
+            day_high, day_low = _day_extremes(rows, day)
+            if day_high is None:
+                facts.pop("day_high", None)
+            else:
+                facts["day_high"] = day_high
+            if day_low is None:
+                facts.pop("day_low", None)
+            else:
+                facts["day_low"] = day_low
+        else:
+            facts.pop("day_high", None)
+            facts.pop("day_low", None)
 
     @staticmethod
     def _bar_on_card(facts: Mapping[str, Any] | None, asked: Any) -> str | None:
@@ -1350,16 +1754,19 @@ class UltimateBookLiveEngine:
         if open_px is not None and ask is not None:
             facts["ask_from_open"] = ask - open_px
         if bind_choice:
-            memo = getattr(self, "_last_bar_cards", None)
+            card_key = (
+                str(getattr(spec, "tag", "") or ""),
+                str(symbol),
+                str(facts.get("decision_bar_iso") or ""),
+            )
+            overlay = getattr(_SLOT_LAST_BAR, "cards", None)
             remembered = None
-            if isinstance(memo, dict):
-                remembered = memo.get(
-                    (
-                        str(getattr(spec, "tag", "") or ""),
-                        str(symbol),
-                        str(facts.get("decision_bar_iso") or ""),
-                    )
-                )
+            if isinstance(overlay, dict) and card_key in overlay:
+                remembered = overlay[card_key]
+            else:
+                memo = getattr(self, "_last_bar_cards", None)
+                if isinstance(memo, dict):
+                    remembered = memo.get(card_key)
             named = self._bar_on_card(facts, remembered)
             if named:
                 facts["last_bar_choice"] = named
@@ -1375,29 +1782,34 @@ class UltimateBookLiveEngine:
                 facts["seconds_from_clock"] = (bar_close - now).total_seconds()
             except Exception:
                 facts["seconds_from_clock"] = None
-        self._attach_forming_move(facts, spec, symbol, ivl, now)
+        self._attach_forming_move(facts, spec, symbol, ivl, now, bars, times)
         return facts
 
     def _remember_last_bar(self, sleeve, symbol, bar_iso, choice) -> None:
+        key = (str(sleeve or ""), str(symbol or ""), str(bar_iso or ""))
+        overlay = getattr(_SLOT_LAST_BAR, "cards", None)
+        if isinstance(overlay, dict):
+            overlay[key] = choice
+            return
         memo = getattr(self, "_last_bar_cards", None)
         if not isinstance(memo, dict):
             memo = {}
             self._last_bar_cards = memo
-        memo[(str(sleeve or ""), str(symbol or ""), str(bar_iso or ""))] = choice
+        memo[key] = choice
 
     def _limit_unit_from_closed_bar(
         self, spec, symbol, bars, times, day, generator_error, now=None, ivl=None,
     ):
-        """Ask the unit question, then build a limit intent from the returned level.
+        """Ask the unit question, then build a limit intent from the returned side.
 
-        The card already carries the projected move. This does not ask for it again.
-        The limit price is the open plus that distance. When this bar has no
-        range yet, the stop distance is that same returned distance.
-        An empty move or an empty side leaves the unit unset and does not
-        restore the close as the price.
+        The card carries the projected move, a price distance from the open.
+        The side is chosen later. A long limit is the open minus that distance.
+        A short limit is the open plus that distance. Stop and target are
+        scores between this card's anchors, measured from that limit. An empty
+        move, an empty side, or an empty stop leaves the unit unset. This does
+        not name the side and does not restore the close as the price.
         """
 
-        from src.judgment.book_engine_choices import limit_unit_spec
         from .admission import TradeIntent
 
         facts = self._closed_bar_card(
@@ -1408,39 +1820,625 @@ class UltimateBookLiveEngine:
             spot=f"{getattr(spec, 'tag', '')}|{symbol}|{facts.get('decision_bar_iso')}",
             facts=facts,
         )
-        row = limit_unit_spec(
-            winner,
-            close=facts.get("close"),
-            high=facts.get("high"),
-            low=facts.get("low"),
-        )
-        level = self._unit_number(facts.get("projected_level"))
-        move = self._unit_number(facts.get("projected_move"))
-        if level is None:
-            return None
-        if row is not None:
-            direction = int(row["direction"])
-            stop_dist = float(row["stop_dist"])
-        elif winner == "unit_long" and move is not None and abs(move) > 0:
+        if winner == "unit_long":
             direction = 1
-            stop_dist = abs(move)
-        elif winner == "unit_short" and move is not None and abs(move) > 0:
+        elif winner == "unit_short":
             direction = -1
-            stop_dist = abs(move)
         else:
             return None
+        anchor = self._unit_number(facts.get("forming_open"))
+        if anchor is None:
+            anchor = self._unit_number(facts.get("open"))
+        move = self._unit_number(facts.get("projected_move"))
+        level = _limit_level(anchor, move, direction)
+        if level is None:
+            return None
+        card = dict(facts)
+        card["entry"] = level
+        spot = (
+            str(getattr(spec, "tag", "") or ""),
+            str(symbol),
+            str(facts.get("decision_bar_iso") or ""),
+            level,
+        )
+        stop_dist = self._hop_score(
+            "unit_stop_dist",
+            "The score you return is the stop distance from the entry, in price units. "
+            "It may sit between the anchors. "
+            "An empty score leaves the stop unset. Do not name the side. Do not send.",
+            card,
+            cache_key=("unit_stop_dist",) + spot,
+        )
+        target = self._hop_score(
+            "unit_target_dist",
+            "The score you return is the target distance from the entry, in price units. "
+            "It may sit between the anchors. "
+            "An empty score leaves the target unset. Do not name the side. Do not send.",
+            card,
+            cache_key=("unit_target_dist",) + spot,
+        )
+        if stop_dist is None or not (stop_dist > 0):
+            return None
+        target_dist = target if target is not None and target > 0 else None
         try:
             return TradeIntent(
                 sleeve=spec.tag,
                 symbol=symbol,
                 direction=direction,
                 decision_day=day,
-                stop_dist=stop_dist,
+                stop_dist=float(stop_dist),
+                target_dist=None if target_dist is None else float(target_dist),
                 entry_price=float(level),
                 unit_choice=winner,
             )
         except Exception:
             return None
+
+    def _slot_generation(self) -> dict:
+        """Counters for one slot. The join adds them to the cycle."""
+
+        generation = {
+            "profile_supported_symbol_slot_count": 0,
+            "broker_unsupported_symbol_slot_count": 0,
+            "broker_unsupported_skips": [],
+            "insufficient_bars_symbol_slot_count": 0,
+            "insufficient_bars_skips": [],
+            "stale_decision_bar_symbol_slot_count": 0,
+            "stale_decision_bar_skips": [],
+            "future_decision_bar_symbol_slot_count": 0,
+            "generator_evaluated_symbol_slot_count": 0,
+        }
+        if self._event_clock_shadow is not None:
+            generation["event_clock_shadow"] = []
+        return generation
+
+    def _merge_count_map(self, base: dict, incoming: dict) -> None:
+        for key, value in incoming.items():
+            if isinstance(value, bool):
+                continue
+            if isinstance(value, int):
+                base[key] = int(base.get(key) or 0) + value
+            elif isinstance(value, list):
+                dest = base.setdefault(key, [])
+                for item in value:
+                    if key == "sleeves":
+                        if item not in dest:
+                            dest.append(item)
+                    elif key == "errors":
+                        if item not in dest and len(dest) < 8:
+                            dest.append(item)
+                    else:
+                        dest.append(item)
+            elif isinstance(value, dict):
+                nested = base.setdefault(key, {})
+                if isinstance(nested, dict):
+                    self._merge_count_map(nested, value)
+
+    def _merge_slot_generation(self, generation: dict, part: dict) -> None:
+        for key in (
+            "profile_supported_symbol_slot_count",
+            "broker_unsupported_symbol_slot_count",
+            "insufficient_bars_symbol_slot_count",
+            "stale_decision_bar_symbol_slot_count",
+            "future_decision_bar_symbol_slot_count",
+            "generator_evaluated_symbol_slot_count",
+        ):
+            generation[key] = int(generation.get(key) or 0) + int(part.get(key) or 0)
+        for key in (
+            "broker_unsupported_skips",
+            "insufficient_bars_skips",
+            "stale_decision_bar_skips",
+        ):
+            bucket = generation.get(key)
+            if not isinstance(bucket, list):
+                continue
+            for row in part.get(key) or []:
+                if len(bucket) >= _SKIP_SAMPLE_CAP:
+                    break
+                bucket.append(row)
+        shadow = part.get("event_clock_shadow")
+        if shadow and isinstance(generation.get("event_clock_shadow"), list):
+            generation["event_clock_shadow"].extend(shadow)
+        for key, value in part.items():
+            if not isinstance(value, dict):
+                continue
+            dest = generation.setdefault(key, {})
+            if isinstance(dest, dict):
+                self._merge_count_map(dest, value)
+
+    def _store_last_bar_cards(self, updates: dict) -> None:
+        if not updates:
+            return
+        memo = getattr(self, "_last_bar_cards", None)
+        if not isinstance(memo, dict):
+            memo = {}
+            self._last_bar_cards = memo
+        memo.update(updates)
+
+    def _raw_closed_bars(self, bar_cache, key, fetch):
+        """One raw fetch for this key. The caller slices the lists it is given."""
+
+        lock = self._bar_series_lock
+        inflight = self._bar_inflight
+        with lock:
+            found = bar_cache.get(key)
+            if found is not None:
+                return list(found[0]), list(found[1])
+            gate = inflight.get(key)
+            if gate is None:
+                gate = _SlotFlight()
+                inflight[key] = gate
+                owner = True
+            else:
+                owner = False
+        if not owner:
+            gate.event.wait()
+            if gate.error is not None:
+                raise gate.error
+            found = gate.value or ([], [])
+            return list(found[0]), list(found[1])
+        stored = None
+        error = None
+        try:
+            fetched = fetch()
+            if not fetched:
+                fetched = ([], [])
+            stored = (list(fetched[0]), list(fetched[1]))
+            with lock:
+                bar_cache[key] = stored
+        except Exception as exc:
+            error = exc
+        finally:
+            gate.value = stored
+            gate.error = error
+            gate.event.set()
+            with lock:
+                if inflight.get(key) is gate:
+                    inflight.pop(key, None)
+        if error is not None:
+            raise error
+        return list(stored[0]), list(stored[1])
+
+    def _generate_one_slot(
+        self,
+        spec,
+        symbol: str,
+        *,
+        now,
+        bar_cache,
+        generation,
+        generation_skips,
+        generation_terminals,
+        intents,
+        meta,
+        unsupported_seen,
+    ) -> None:
+        """One sleeve and symbol, in chain order. A raise leaves this slot only."""
+
+        def terminal(spec, symbol: str, status: str, **observed) -> None:
+            generation_terminals.append({
+                "sleeve": spec.tag,
+                "symbol": symbol,
+                "timeframe": spec.timeframe,
+                "terminal_status": status,
+                **observed,
+            })
+
+        primary_count = max(int(self._bar_count), int(getattr(spec, "bar_count", 0) or 0))
+        supports = getattr(self._broker_symbol, "supports", None)
+        if callable(supports) and not supports(symbol):
+            withhold_spec = str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS
+            if not withhold_spec:
+                withhold_spec = self._spot_choice(
+                    "instrument_spec",
+                    spot=f"{spec.tag}|{symbol}",
+                    facts={
+                        "symbol": symbol,
+                        "sleeve": spec.tag,
+                        "profile_supports_symbol": False,
+                    },
+                ) == "instrument_spec_missing"
+            if withhold_spec:
+                skip = {
+                    "symbol": symbol,
+                    "sleeve": spec.tag,
+                    "cluster": spec.cluster,
+                    "timeframe": spec.timeframe,
+                    "reason": "profile_missing_instrument_config",
+                }
+                generation["broker_unsupported_symbol_slot_count"] += 1
+                unsupported_seen.add(symbol)
+                skips = generation["broker_unsupported_skips"]
+                if isinstance(skips, list) and len(skips) < 64:
+                    skips.append(dict(skip))
+                generation_skips.append(skip)
+                terminal(spec, symbol, "profile_unsupported")
+                return
+        generation["profile_supported_symbol_slot_count"] += 1
+        broker_sym = self._broker_symbol(symbol)   # canonical -> broker for ALL fetches
+        key = (symbol, spec.timeframe, primary_count)
+        # fetch under the BROKER name; meta + intent.symbol stay canonical for placement
+        #
+        # `now`/`interval_minutes` make `candles_to_bars` keep a last candle it
+        # can PROVE is closed (`time + interval <= now`). H4 always passes both
+        # so a session-close last candle (FRA40 Friday 17:00, no next forming
+        # bar) is not discarded. Other TFs still pass them ONLY under the
+        # pre-gap flag. Applied to the PRIMARY decision fetch only -- the aux
+        # feed below is an M1 volume-profile window, not a decision bar.
+        # H4 always keeps a last candle whose interval has elapsed
+        # (FRA40 Friday 17:00: session close has no next forming bar).
+        # D1 stays on the default drop unless --recover-pre-gap-bar
+        # (D1 pre-gap EV is worse; do not flip that flag globally).
+        # The cache keeps this raw series. The slot slices its own copy.
+        interval_minutes = _TF_MINUTES.get(spec.timeframe)
+        keep_last_closed = bool(self._recover_pre_gap_bar) or spec.timeframe in (
+            16388, "H4", TF_H4,
+        )
+        if keep_last_closed:
+            bars, times = self._raw_closed_bars(
+                bar_cache,
+                key,
+                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=primary_count, clock=now, minutes=interval_minutes, ns=getattr(self, "_namespace", None): get_closed_bars(
+                    mt5, broker, tf, count,
+                    now=clock, interval_minutes=minutes, namespace=ns,
+                ),
+            )
+        else:
+            bars, times = self._raw_closed_bars(
+                bar_cache,
+                key,
+                lambda mt5=self._mt5, broker=broker_sym, tf=spec.timeframe, count=primary_count, ns=getattr(self, "_namespace", None): get_closed_bars(
+                    mt5, broker, tf, count, namespace=ns,
+                ),
+            )
+        if not bars:
+            # No series to index. This keeps the cycle alive. On Challenge
+            # the unit Choice is asked before this slot returns.
+            try:
+                generation["insufficient_bars_symbol_slot_count"] += 1
+                _sample_skip(generation["insufficient_bars_skips"], {
+                    "symbol": symbol,
+                    "sleeve": spec.tag,
+                    "cluster": spec.cluster,
+                    "reason": "insufficient_bars",
+                    "bars_returned": 0,
+                    "bars_requested": primary_count,
+                    "warmup_required": self._warmup_required(spec),
+                })
+            except Exception:      # noqa: BLE001 — telemetry never gates
+                pass
+            terminal(
+                spec, symbol, "bars_unavailable",
+                observed_bar_count=0,
+                decision_bar_iso=times[-1].isoformat() if times else None,
+            )
+            if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+                self._limit_unit_from_closed_bar(
+                    spec, symbol, bars, times, None, None,
+                    now=now, ivl=_TF_MINUTES.get(spec.timeframe),
+                )
+                terminal(
+                    spec, symbol, "unit_unset",
+                    observed_bar_count=0,
+                    decision_bar_iso=times[-1].isoformat() if times else None,
+                )
+            return
+        series_bar = times[-1].isoformat() if times else ""
+        if not enough(bars, spec.cluster, symbol, spec.timeframe, series_bar):
+            # Counted, not silent. On Challenge the skip is the feed Choice.
+            withhold_feed = str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS
+            if not withhold_feed:
+                withhold_feed = self._spot_choice(
+                    "feed_lookback",
+                    spot=f"{spec.tag}|{symbol}|{len(bars)}|{primary_count}",
+                    facts={
+                        "symbol": symbol,
+                        "sleeve": spec.tag,
+                        "bars_returned": len(bars),
+                        "bars_requested": primary_count,
+                        "warmup_required": self._warmup_required(spec),
+                    },
+                ) == "feed_short"
+            if withhold_feed:
+                try:
+                    generation["insufficient_bars_symbol_slot_count"] += 1
+                    _sample_skip(generation["insufficient_bars_skips"], {
+                        "symbol": symbol,
+                        "sleeve": spec.tag,
+                        "cluster": spec.cluster,
+                        "reason": "insufficient_bars",
+                        "bars_returned": len(bars),
+                        "bars_requested": primary_count,
+                        "warmup_required": self._warmup_required(spec),
+                    })
+                except Exception:      # noqa: BLE001 — telemetry never gates
+                    pass
+                terminal(
+                    spec,
+                    symbol,
+                    "insufficient_warmup",
+                    observed_bar_count=len(bars),
+                    decision_bar_iso=times[-1].isoformat() if times else None,
+                )
+                return
+        # DECISION-BAR RECENCY (chronological guard): the cycle is triggered by ONE reference
+        # symbol's bar close, but each sleeve evaluates its OWN symbol's latest closed bar. If that
+        # bar is grossly stale — the symbol's market is closed/holiday, its bar did not advance at
+        # this trigger, or this is a cold post-restart read — acting on it is the ref-vs-sleeve
+        # chronological hazard (e.g. trading a frozen index bar). Skip a bar whose close is older
+        # than ~2 intervals. Fail-open if the interval is unknown.
+        ivl = _TF_MINUTES.get(spec.timeframe)
+        repaired_offset = None
+        slot_observed = {
+            "decision_bar_iso": times[-1].isoformat() if times else None,
+        }
+        if ivl and times:
+            try:
+                times, repaired_offset = self._normalize_future_bar_times(
+                    times,
+                    now=now,
+                    interval_minutes=ivl,
+                    cache_key=key,
+                )
+                bar_close = times[-1] + timedelta(minutes=ivl)
+                slot_observed["decision_bar_iso"] = times[-1].isoformat()
+                if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+                    # The closed bar is named by the last_bar ask. The old
+                    # 30-second and two-interval comparisons do not choose here.
+                    _card = self._closed_bar_card(
+                        spec, symbol, bars, times, now, ivl,
+                    )
+                    _lb = self._spot_choice(
+                        "last_bar",
+                        spot=f"{spec.tag}|{symbol}|{slot_observed['decision_bar_iso']}",
+                        facts=_card,
+                    )
+                    # Empty stays empty and does not slice. use_previous_close
+                    # slices when that ask returned it.
+                    _named = self._bar_on_card(_card, _lb)
+                    slot_observed["last_bar_choice"] = _named
+                    self._remember_last_bar(
+                        spec.tag, symbol, slot_observed["decision_bar_iso"], _named,
+                    )
+                    if _named == "use_previous_close":
+                        _prior_times = times[:-1]
+                        _prior_bars = bars[:-1]
+                        if _prior_times and _prior_bars:
+                            times = _prior_times
+                            bars = _prior_bars
+                            bar_close = times[-1] + timedelta(minutes=ivl)
+                            slot_observed["decision_bar_iso"] = times[-1].isoformat()
+                            self._remember_last_bar(
+                                spec.tag, symbol, slot_observed["decision_bar_iso"], _named,
+                            )
+                    elif _named == "closed_bar_does_not_reach":
+                        self._limit_unit_from_closed_bar(
+                            spec,
+                            symbol,
+                            bars,
+                            times,
+                            decision_day_of(times[-1]) if times else None,
+                            None,
+                            now=now,
+                            ivl=ivl,
+                        )
+                        terminal(spec, symbol, "last_bar_withholds", **slot_observed)
+                        return
+                else:
+                    # Other books keep the clock gate. Challenge does not.
+                    if (bar_close - now).total_seconds() > 30.0 and len(times) >= 2 and len(bars) >= 2:
+                        _prev_close = times[-2] + timedelta(minutes=ivl)
+                        if (_prev_close - now).total_seconds() <= 30.0:
+                            times = times[:-1]
+                            bars = bars[:-1]
+                            bar_close = _prev_close
+                            slot_observed["decision_bar_iso"] = times[-1].isoformat()
+                    if (bar_close - now).total_seconds() > 30.0:
+                        generation_skips.append({
+                            "symbol": symbol,
+                            "sleeve": spec.tag,
+                            "reason": "future_decision_bar_time",
+                            "decision_bar_iso": times[-1].isoformat(),
+                            "bar_close_utc": bar_close.isoformat(),
+                            "now_utc": now.isoformat(),
+                        })
+                        try:
+                            generation["future_decision_bar_symbol_slot_count"] += 1
+                        except Exception:  # noqa: BLE001 — telemetry never gates
+                            pass
+                        terminal(spec, symbol, "future_decision_bar", **slot_observed)
+                        return
+                    if (now - bar_close).total_seconds() > 2 * ivl * 60:
+                        age_minutes = (now - bar_close).total_seconds() / 60.0
+                        try:
+                            generation["stale_decision_bar_symbol_slot_count"] += 1
+                            _sample_skip(generation["stale_decision_bar_skips"], {
+                                "symbol": symbol,
+                                "sleeve": spec.tag,
+                                "reason": "stale_decision_bar",
+                                "decision_bar_iso": times[-1].isoformat(),
+                                "bar_close_utc": bar_close.isoformat(),
+                                "now_utc": now.isoformat(),
+                                "age_minutes": round(age_minutes, 1),
+                                "stale_limit_minutes": 2 * ivl,
+                            })
+                        except Exception:  # noqa: BLE001 — telemetry never gates
+                            pass
+                        terminal(spec, symbol, "stale_decision_bar", **slot_observed)
+                        return
+            except Exception:
+                pass
+        # Q2 SHADOW ONLY. times[-1] is the decision bar OPEN. The observer
+        # derives the exact H4 close, resolves broker time, and latches retries.
+        if self._event_clock_shadow is not None and spec.timeframe == TF_H4:
+            try:
+                event_row = self._event_clock_shadow.observe(
+                    decision_bar_iso=times[-1],
+                    timeframe=spec.timeframe,
+                    observed_at_utc=now,
+                )
+            except Exception as exc:
+                event_row = {
+                    "schema": "gtos.q2_exact_h4_event_shadow.v1",
+                    "classification_status": "observer_error_fail_closed",
+                    "admission_effect": False,
+                    "decision_bar_iso": times[-1].isoformat(),
+                    "decision_bar_semantics": "bar_open_utc",
+                    "timeframe": spec.timeframe,
+                    "shadow_would_reject": None,
+                    "reason": "event_clock_shadow_observer_error",
+                    "error": repr(exc),
+                    "observed_at_utc": now.isoformat(),
+                }
+            event_row = dict(event_row)
+            event_row.update({"symbol": symbol, "sleeve": spec.tag})
+            generation["event_clock_shadow"].append(event_row)
+        # optional SECONDARY feed (e.g. M1 for the vp volume profile); cached per (symbol, aux_tf)
+        aux_bars, aux_times = None, None
+        if spec.aux_timeframe and spec.aux_count > 0:
+            akey = (symbol, spec.aux_timeframe, spec.aux_count)
+            aux_bars, aux_times = self._raw_closed_bars(
+                bar_cache,
+                akey,
+                lambda mt5=self._mt5, broker=broker_sym, tf=spec.aux_timeframe, count=spec.aux_count: get_closed_bars(
+                    mt5, broker, tf, count,
+                ),
+            )
+            if aux_times and repaired_offset:
+                aux_times = [
+                    (t if t.tzinfo else t.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
+                    - timedelta(seconds=repaired_offset)
+                    for t in aux_times
+                ]
+        day = decision_day_of(times[-1])
+        try:
+            generation["generator_evaluated_symbol_slot_count"] += 1
+        except Exception:      # noqa: BLE001 — telemetry never gates
+            pass
+        generator_error = None
+        from_closed_bar = False
+        peer_panel = None
+        try:
+            # bar_time = the decision bar's UTC datetime; bar_times = the full aligned series
+            # (JPY session logic); aux_bars/aux_times = the secondary feed (vp M1). Each
+            # generator reads only what it needs (the rest tolerate the extra kwargs via **_).
+            # CONTRACT leftover A2 (Fable 5.1): pass peer_panel so dsp/xa direction_resolver
+            # can return None on 0. skip_on_resolver_disagree stays unarmed.
+            peer_panel = None
+            if spec.tag in DISPLACEMENT_BUILT or str(spec.tag).startswith(("dsp_", "xa_")):
+                try:
+                    peer_panel = self._f5_peer_panel(bar_cache, symbol)
+                except Exception:
+                    peer_panel = None
+            intent = spec.generator(symbol, bars, day, bar_time=times[-1], bar_times=times,
+                                    aux_bars=aux_bars, aux_times=aux_times,
+                                    runtime_now=now, peer_panel=peer_panel)
+        except Exception as exc:
+            generator_error = type(exc).__name__
+            intent = None
+        if intent is None and str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+            # The sleeve's None or exception is a fact. Ask before this slot returns.
+            intent = self._limit_unit_from_closed_bar(
+                spec, symbol, bars, times, day, generator_error,
+                now=now, ivl=ivl,
+            )
+            from_closed_bar = intent is not None
+        if intent is None:
+            if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
+                status = "unit_unset"
+            else:
+                status = "generator_exception" if generator_error else "no_candidate"
+            terminal(
+                spec,
+                symbol,
+                status,
+                generator_error=generator_error,
+                **slot_observed,
+            )
+            return
+        # B3: scale stop/target from the per-class table. Filled tickets keep broker SL/TP.
+        # A unit built from the closed bar keeps that bar's range.
+        try:
+            if (
+                not from_closed_bar
+                and (
+                    spec.tag in DISPLACEMENT_BUILT
+                    or str(spec.tag).startswith(("dsp_", "xa_"))
+                )
+            ):
+                intent = apply_class_geometry(intent)
+        except Exception:
+            pass
+        # THE SPREAD-GEOMETRY FLOOR (default-OFF; see __init__). Applied here, after
+        # the generator has proposed a stop and before the intent exists as far as
+        # anything downstream is concerned -- which is the whole point: an intent
+        # refused here never reaches `_running_conviction_override`, so it cannot
+        # raise the day's Kelly-lite multiplier for the sleeves that do place.
+        refusal = self._spread_geometry_refusal(intent, spec, symbol, generation)
+        if refusal is not None:
+            generation_skips.append(refusal)
+            terminal(
+                spec,
+                symbol,
+                "spread_floor_refused",
+                direction=getattr(intent, "direction", None),
+                **slot_observed,
+            )
+            return
+        # THE RATIFIED ENTRY-HOUR CONVENTION (default-OFF; see __init__). Applied
+        # after the floor and immediately before the intent exists downstream, so a
+        # deferred intent does not enter the day's conviction count AT HOUR 00 -- it
+        # enters when it actually fires, which is the honest count. `now` is the
+        # CYCLE's instant, passed in, never a fresh wall-clock read inside the loop.
+        deferral = self._entry_hour_deferral(intent, spec, symbol, times[-1], now,
+                                             generation)
+        if deferral is not None:
+            generation_skips.append(deferral)
+            terminal(
+                spec,
+                symbol,
+                "entry_hour_deferred",
+                direction=getattr(intent, "direction", None),
+                **slot_observed,
+            )
+            return
+        intents.append(intent)
+        meta_row = {"symbol": symbol, "timeframe": spec.timeframe, "tag": spec.tag,
+                    "last_close": bars[-1].c, "decision_day": day,
+                    # the decision bar's UTC timestamp — the idempotency key granularity so a
+                    # continuously-ticking launcher places each (sleeve, symbol, bar) ONCE.
+                    "decision_bar_iso": times[-1].isoformat()}
+        try:
+            if peer_panel is not None:
+                from .xasset_direction import direction_resolver
+                meta_row["xasset_d"] = direction_resolver(
+                    spec.tag, {"symbol": symbol}, peer_panel)
+                meta_row["peer_panel_aligned_move"] = peer_panel.get("aligned_move")
+        except Exception:
+            pass
+        try:
+            from .minimal_size import (
+                f5_calendar_prime_window_reason,
+                f5_load_live_calendar_events,
+            )
+            if str(self._namespace) == "operator":
+                self._f5_calendar_events = f5_load_live_calendar_events(
+                    getattr(self, "_repo_root", None)
+                )
+            events = getattr(self, "_f5_calendar_events", None)
+            prime = f5_calendar_prime_window_reason(symbol, now, events)
+            if prime:
+                meta_row["calendar_amplifier"] = prime
+        except Exception:
+            pass
+        meta.append(meta_row)
+        terminal(
+            spec,
+            symbol,
+            "candidate_emitted",
+            direction=getattr(intent, "direction", None),
+            **slot_observed,
+        )
 
     def _generate_intents(self, tags=None, now: Optional[datetime] = None) -> tuple[list, list[dict]]:
         now = now or datetime.now(timezone.utc)
@@ -1500,429 +2498,100 @@ class UltimateBookLiveEngine:
         # accidentally report the previous cycle's denominator.
         self._last_generation_telemetry = generation
 
-        def terminal(spec, symbol: str, status: str, **observed) -> None:
-            generation_terminals.append({
-                "sleeve": spec.tag,
-                "symbol": symbol,
-                "timeframe": spec.timeframe,
-                "terminal_status": status,
-                **observed,
-            })
-
         if self._event_clock_shadow is not None:
             generation["event_clock_shadow"] = []
         unsupported_seen: set[str] = set()
-        for spec in specs:
-            for symbol in spec.on_surface:
-                primary_count = max(int(self._bar_count), int(getattr(spec, "bar_count", 0) or 0))
-                supports = getattr(self._broker_symbol, "supports", None)
-                if callable(supports) and not supports(symbol):
-                    withhold_spec = str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS
-                    if not withhold_spec:
-                        withhold_spec = self._spot_choice(
-                            "instrument_spec",
-                            spot=f"{spec.tag}|{symbol}",
-                            facts={
-                                "symbol": symbol,
-                                "sleeve": spec.tag,
-                                "profile_supports_symbol": False,
-                            },
-                        ) == "instrument_spec_missing"
-                    if withhold_spec:
-                        skip = {
-                            "symbol": symbol,
-                            "sleeve": spec.tag,
-                            "cluster": spec.cluster,
-                            "timeframe": spec.timeframe,
-                            "reason": "profile_missing_instrument_config",
-                        }
-                        generation["broker_unsupported_symbol_slot_count"] += 1
-                        unsupported_seen.add(symbol)
-                        skips = generation["broker_unsupported_skips"]
-                        if isinstance(skips, list) and len(skips) < 64:
-                            skips.append(dict(skip))
-                        generation_skips.append(skip)
-                        terminal(spec, symbol, "profile_unsupported")
-                        continue
-                generation["profile_supported_symbol_slot_count"] += 1
-                broker_sym = self._broker_symbol(symbol)   # canonical -> broker for ALL fetches
-                key = (symbol, spec.timeframe, primary_count)
-                if key not in bar_cache:
-                    # fetch under the BROKER name; meta + intent.symbol stay canonical for placement
-                    #
-                    # `now`/`interval_minutes` make `candles_to_bars` keep a last candle it
-                    # can PROVE is closed (`time + interval <= now`). H4 always passes both
-                    # so a session-close last candle (FRA40 Friday 17:00, no next forming
-                    # bar) is not discarded. Other TFs still pass them ONLY under the
-                    # pre-gap flag. Applied to the PRIMARY decision fetch only -- the aux
-                    # feed below is an M1 volume-profile window, not a decision bar.
-                    # H4 always keeps a last candle whose interval has elapsed
-                    # (FRA40 Friday 17:00: session close has no next forming bar).
-                    # D1 stays on the default drop unless --recover-pre-gap-bar
-                    # (D1 pre-gap EV is worse; do not flip that flag globally).
-                    interval_minutes = _TF_MINUTES.get(spec.timeframe)
-                    keep_last_closed = bool(self._recover_pre_gap_bar) or spec.timeframe in (
-                        16388, "H4", TF_H4,
-                    )
-                    if keep_last_closed:
-                        bar_cache[key] = get_closed_bars(
-                            self._mt5, broker_sym, spec.timeframe, primary_count,
-                            now=now, interval_minutes=interval_minutes,
-                            namespace=getattr(self, "_namespace", None))
-                    else:
-                        bar_cache[key] = get_closed_bars(
-                            self._mt5, broker_sym, spec.timeframe, primary_count,
-                            namespace=getattr(self, "_namespace", None))
-                bars, times = bar_cache[key]
-                if not bars:
-                    # No series to index. This keeps the cycle alive. On Challenge
-                    # the unit Choice is asked before this slot returns.
-                    try:
-                        generation["insufficient_bars_symbol_slot_count"] += 1
-                        _sample_skip(generation["insufficient_bars_skips"], {
-                            "symbol": symbol,
-                            "sleeve": spec.tag,
-                            "cluster": spec.cluster,
-                            "reason": "insufficient_bars",
-                            "bars_returned": 0,
-                            "bars_requested": primary_count,
-                            "warmup_required": self._warmup_required(spec),
-                        })
-                    except Exception:      # noqa: BLE001 — telemetry never gates
-                        pass
-                    terminal(
-                        spec, symbol, "bars_unavailable",
-                        observed_bar_count=0,
-                        decision_bar_iso=times[-1].isoformat() if times else None,
-                    )
-                    if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
-                        self._limit_unit_from_closed_bar(
-                            spec, symbol, bars, times, None, None,
-                            now=now, ivl=_TF_MINUTES.get(spec.timeframe),
-                        )
-                        terminal(
-                            spec, symbol, "unit_unset",
-                            observed_bar_count=0,
-                            decision_bar_iso=times[-1].isoformat() if times else None,
-                        )
-                    continue
-                if not enough(bars, spec.cluster):
-                    # Counted, not silent. On Challenge the skip is the feed Choice.
-                    withhold_feed = str(getattr(self, "_namespace", "") or "") != _CHALLENGE_NS
-                    if not withhold_feed:
-                        withhold_feed = self._spot_choice(
-                            "feed_lookback",
-                            spot=f"{spec.tag}|{symbol}|{len(bars)}|{primary_count}",
-                            facts={
-                                "symbol": symbol,
-                                "sleeve": spec.tag,
-                                "bars_returned": len(bars),
-                                "bars_requested": primary_count,
-                                "warmup_required": self._warmup_required(spec),
-                            },
-                        ) == "feed_short"
-                    if withhold_feed:
-                        try:
-                            generation["insufficient_bars_symbol_slot_count"] += 1
-                            _sample_skip(generation["insufficient_bars_skips"], {
-                                "symbol": symbol,
-                                "sleeve": spec.tag,
-                                "cluster": spec.cluster,
-                                "reason": "insufficient_bars",
-                                "bars_returned": len(bars),
-                                "bars_requested": primary_count,
-                                "warmup_required": self._warmup_required(spec),
-                            })
-                        except Exception:      # noqa: BLE001 — telemetry never gates
-                            pass
-                        terminal(
-                            spec,
-                            symbol,
-                            "insufficient_warmup",
-                            observed_bar_count=len(bars),
-                            decision_bar_iso=times[-1].isoformat() if times else None,
-                        )
-                        continue
-                # DECISION-BAR RECENCY (chronological guard): the cycle is triggered by ONE reference
-                # symbol's bar close, but each sleeve evaluates its OWN symbol's latest closed bar. If that
-                # bar is grossly stale — the symbol's market is closed/holiday, its bar did not advance at
-                # this trigger, or this is a cold post-restart read — acting on it is the ref-vs-sleeve
-                # chronological hazard (e.g. trading a frozen index bar). Skip a bar whose close is older
-                # than ~2 intervals. Fail-open if the interval is unknown.
-                ivl = _TF_MINUTES.get(spec.timeframe)
-                repaired_offset = None
-                slot_observed = {
-                    "decision_bar_iso": times[-1].isoformat() if times else None,
-                }
-                if ivl and times:
-                    try:
-                        times, repaired_offset = self._normalize_future_bar_times(
-                            times,
-                            now=now,
-                            interval_minutes=ivl,
-                            cache_key=key,
-                        )
-                        if repaired_offset:
-                            bar_cache[key] = (bars, times)
-                        bar_close = times[-1] + timedelta(minutes=ivl)
-                        slot_observed["decision_bar_iso"] = times[-1].isoformat()
-                        if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
-                            # The closed bar is named by the last_bar ask. The old
-                            # 30-second and two-interval comparisons do not choose here.
-                            _card = self._closed_bar_card(
-                                spec, symbol, bars, times, now, ivl,
-                            )
-                            _lb = self._spot_choice(
-                                "last_bar",
-                                spot=f"{spec.tag}|{symbol}|{slot_observed['decision_bar_iso']}",
-                                facts=_card,
-                            )
-                            # Empty stays empty and does not slice. use_previous_close
-                            # slices when that ask returned it.
-                            _named = self._bar_on_card(_card, _lb)
-                            slot_observed["last_bar_choice"] = _named
-                            self._remember_last_bar(
-                                spec.tag, symbol, slot_observed["decision_bar_iso"], _named,
-                            )
-                            if _named == "use_previous_close":
-                                _prior_times = times[:-1]
-                                _prior_bars = bars[:-1]
-                                if _prior_times and _prior_bars:
-                                    times = _prior_times
-                                    bars = _prior_bars
-                                    bar_cache[key] = (bars, times)
-                                    bar_close = times[-1] + timedelta(minutes=ivl)
-                                    slot_observed["decision_bar_iso"] = times[-1].isoformat()
-                                    self._remember_last_bar(
-                                        spec.tag, symbol, slot_observed["decision_bar_iso"], _named,
-                                    )
-                            elif _named == "closed_bar_does_not_reach":
-                                self._limit_unit_from_closed_bar(
-                                    spec,
-                                    symbol,
-                                    bars,
-                                    times,
-                                    decision_day_of(times[-1]) if times else None,
-                                    None,
-                                    now=now,
-                                    ivl=ivl,
-                                )
-                                terminal(spec, symbol, "last_bar_withholds", **slot_observed)
-                                continue
-                        else:
-                            # Other books keep the clock gate. Challenge does not.
-                            if (bar_close - now).total_seconds() > 30.0 and len(times) >= 2 and len(bars) >= 2:
-                                _prev_close = times[-2] + timedelta(minutes=ivl)
-                                if (_prev_close - now).total_seconds() <= 30.0:
-                                    times = times[:-1]
-                                    bars = bars[:-1]
-                                    bar_cache[key] = (bars, times)
-                                    bar_close = _prev_close
-                                    slot_observed["decision_bar_iso"] = times[-1].isoformat()
-                            if (bar_close - now).total_seconds() > 30.0:
-                                generation_skips.append({
-                                    "symbol": symbol,
-                                    "sleeve": spec.tag,
-                                    "reason": "future_decision_bar_time",
-                                    "decision_bar_iso": times[-1].isoformat(),
-                                    "bar_close_utc": bar_close.isoformat(),
-                                    "now_utc": now.isoformat(),
-                                })
-                                try:
-                                    generation["future_decision_bar_symbol_slot_count"] += 1
-                                except Exception:  # noqa: BLE001 — telemetry never gates
-                                    pass
-                                terminal(spec, symbol, "future_decision_bar", **slot_observed)
-                                continue
-                            if (now - bar_close).total_seconds() > 2 * ivl * 60:
-                                age_minutes = (now - bar_close).total_seconds() / 60.0
-                                try:
-                                    generation["stale_decision_bar_symbol_slot_count"] += 1
-                                    _sample_skip(generation["stale_decision_bar_skips"], {
-                                        "symbol": symbol,
-                                        "sleeve": spec.tag,
-                                        "reason": "stale_decision_bar",
-                                        "decision_bar_iso": times[-1].isoformat(),
-                                        "bar_close_utc": bar_close.isoformat(),
-                                        "now_utc": now.isoformat(),
-                                        "age_minutes": round(age_minutes, 1),
-                                        "stale_limit_minutes": 2 * ivl,
-                                    })
-                                except Exception:  # noqa: BLE001 — telemetry never gates
-                                    pass
-                                terminal(spec, symbol, "stale_decision_bar", **slot_observed)
-                                continue
-                    except Exception:
-                        pass
-                # Q2 SHADOW ONLY. times[-1] is the decision bar OPEN. The observer
-                # derives the exact H4 close, resolves broker time, and latches retries.
-                if self._event_clock_shadow is not None and spec.timeframe == TF_H4:
-                    try:
-                        event_row = self._event_clock_shadow.observe(
-                            decision_bar_iso=times[-1],
-                            timeframe=spec.timeframe,
-                            observed_at_utc=now,
-                        )
-                    except Exception as exc:
-                        event_row = {
-                            "schema": "gtos.q2_exact_h4_event_shadow.v1",
-                            "classification_status": "observer_error_fail_closed",
-                            "admission_effect": False,
-                            "decision_bar_iso": times[-1].isoformat(),
-                            "decision_bar_semantics": "bar_open_utc",
-                            "timeframe": spec.timeframe,
-                            "shadow_would_reject": None,
-                            "reason": "event_clock_shadow_observer_error",
-                            "error": repr(exc),
-                            "observed_at_utc": now.isoformat(),
-                        }
-                    event_row = dict(event_row)
-                    event_row.update({"symbol": symbol, "sleeve": spec.tag})
-                    generation["event_clock_shadow"].append(event_row)
-                # optional SECONDARY feed (e.g. M1 for the vp volume profile); cached per (symbol, aux_tf)
-                aux_bars, aux_times = None, None
-                if spec.aux_timeframe and spec.aux_count > 0:
-                    akey = (symbol, spec.aux_timeframe, spec.aux_count)
-                    if akey not in bar_cache:
-                        bar_cache[akey] = get_closed_bars(
-                            self._mt5, broker_sym, spec.aux_timeframe, spec.aux_count)
-                    aux_bars, aux_times = bar_cache[akey]
-                    if aux_times and repaired_offset:
-                        aux_times = [
-                            (t if t.tzinfo else t.replace(tzinfo=timezone.utc)).astimezone(timezone.utc)
-                            - timedelta(seconds=repaired_offset)
-                            for t in aux_times
-                        ]
-                        bar_cache[akey] = (aux_bars, aux_times)
-                day = decision_day_of(times[-1])
+        self._bar_inflight = {}
+        slots = [(spec, symbol) for spec in specs for symbol in spec.on_surface]
+        task_count = int(generation["active_symbol_slot_count"])
+        if slots and task_count != len(slots):
+            task_count = len(slots)
+
+        def _run_slot(spec, symbol):
+            slot_generation = self._slot_generation()
+            slot_skips: list[dict] = []
+            slot_terminals: list[dict] = []
+            slot_intents: list = []
+            slot_meta: list[dict] = []
+            slot_unsupported: set[str] = set()
+            _SLOT_LAST_BAR.cards = {}
+            try:
                 try:
-                    generation["generator_evaluated_symbol_slot_count"] += 1
-                except Exception:      # noqa: BLE001 — telemetry never gates
-                    pass
-                generator_error = None
-                from_closed_bar = False
-                peer_panel = None
-                try:
-                    # bar_time = the decision bar's UTC datetime; bar_times = the full aligned series
-                    # (JPY session logic); aux_bars/aux_times = the secondary feed (vp M1). Each
-                    # generator reads only what it needs (the rest tolerate the extra kwargs via **_).
-                    # CONTRACT leftover A2 (Fable 5.1): pass peer_panel so dsp/xa direction_resolver
-                    # can return None on 0. skip_on_resolver_disagree stays unarmed.
-                    peer_panel = None
-                    if spec.tag in DISPLACEMENT_BUILT or str(spec.tag).startswith(("dsp_", "xa_")):
-                        try:
-                            peer_panel = self._f5_peer_panel(bar_cache, symbol)
-                        except Exception:
-                            peer_panel = None
-                    intent = spec.generator(symbol, bars, day, bar_time=times[-1], bar_times=times,
-                                            aux_bars=aux_bars, aux_times=aux_times,
-                                            runtime_now=now, peer_panel=peer_panel)
+                    self._generate_one_slot(
+                        spec,
+                        symbol,
+                        now=now,
+                        bar_cache=bar_cache,
+                        generation=slot_generation,
+                        generation_skips=slot_skips,
+                        generation_terminals=slot_terminals,
+                        intents=slot_intents,
+                        meta=slot_meta,
+                        unsupported_seen=slot_unsupported,
+                    )
                 except Exception as exc:
-                    generator_error = type(exc).__name__
-                    intent = None
-                if intent is None and str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
-                    # The sleeve's None or exception is a fact. Ask before this slot returns.
-                    intent = self._limit_unit_from_closed_bar(
-                        spec, symbol, bars, times, day, generator_error,
-                        now=now, ivl=ivl,
-                    )
-                    from_closed_bar = intent is not None
-                if intent is None:
-                    if str(getattr(self, "_namespace", "") or "") == _CHALLENGE_NS:
-                        status = "unit_unset"
-                    else:
-                        status = "generator_exception" if generator_error else "no_candidate"
-                    terminal(
-                        spec,
-                        symbol,
-                        status,
-                        generator_error=generator_error,
-                        **slot_observed,
-                    )
-                    continue
-                # B3: scale stop/target from the per-class table. Filled tickets keep broker SL/TP.
-                # A unit built from the closed bar keeps that bar's range.
-                try:
-                    if (
-                        not from_closed_bar
-                        and (
-                            spec.tag in DISPLACEMENT_BUILT
-                            or str(spec.tag).startswith(("dsp_", "xa_"))
-                        )
-                    ):
-                        intent = apply_class_geometry(intent)
-                except Exception:
-                    pass
-                # THE SPREAD-GEOMETRY FLOOR (default-OFF; see __init__). Applied here, after
-                # the generator has proposed a stop and before the intent exists as far as
-                # anything downstream is concerned -- which is the whole point: an intent
-                # refused here never reaches `_running_conviction_override`, so it cannot
-                # raise the day's Kelly-lite multiplier for the sleeves that do place.
-                refusal = self._spread_geometry_refusal(intent, spec, symbol, generation)
-                if refusal is not None:
-                    generation_skips.append(refusal)
-                    terminal(
-                        spec,
-                        symbol,
-                        "spread_floor_refused",
-                        direction=getattr(intent, "direction", None),
-                        **slot_observed,
-                    )
-                    continue
-                # THE RATIFIED ENTRY-HOUR CONVENTION (default-OFF; see __init__). Applied
-                # after the floor and immediately before the intent exists downstream, so a
-                # deferred intent does not enter the day's conviction count AT HOUR 00 -- it
-                # enters when it actually fires, which is the honest count. `now` is the
-                # CYCLE's instant, passed in, never a fresh wall-clock read inside the loop.
-                deferral = self._entry_hour_deferral(intent, spec, symbol, times[-1], now,
-                                                     generation)
-                if deferral is not None:
-                    generation_skips.append(deferral)
-                    terminal(
-                        spec,
-                        symbol,
-                        "entry_hour_deferred",
-                        direction=getattr(intent, "direction", None),
-                        **slot_observed,
-                    )
-                    continue
-                intents.append(intent)
-                meta_row = {"symbol": symbol, "timeframe": spec.timeframe, "tag": spec.tag,
-                            "last_close": bars[-1].c, "decision_day": day,
-                            # the decision bar's UTC timestamp — the idempotency key granularity so a
-                            # continuously-ticking launcher places each (sleeve, symbol, bar) ONCE.
-                            "decision_bar_iso": times[-1].isoformat()}
-                try:
-                    if peer_panel is not None:
-                        from .xasset_direction import direction_resolver
-                        meta_row["xasset_d"] = direction_resolver(
-                            spec.tag, {"symbol": symbol}, peer_panel)
-                        meta_row["peer_panel_aligned_move"] = peer_panel.get("aligned_move")
-                except Exception:
-                    pass
-                try:
-                    from .minimal_size import (
-                        f5_calendar_prime_window_reason,
-                        f5_load_live_calendar_events,
-                    )
-                    if str(self._namespace) == "operator":
-                        self._f5_calendar_events = f5_load_live_calendar_events(
-                            getattr(self, "_repo_root", None)
-                        )
-                    events = getattr(self, "_f5_calendar_events", None)
-                    prime = f5_calendar_prime_window_reason(symbol, now, events)
-                    if prime:
-                        meta_row["calendar_amplifier"] = prime
-                except Exception:
-                    pass
-                meta.append(meta_row)
-                terminal(
-                    spec,
-                    symbol,
-                    "candidate_emitted",
-                    direction=getattr(intent, "direction", None),
-                    **slot_observed,
-                )
+                    slot_intents = []
+                    slot_meta = []
+                    slot_generation = self._slot_generation()
+                    slot_skips = []
+                    slot_unsupported = set()
+                    slot_terminals = [{
+                        "sleeve": getattr(spec, "tag", None),
+                        "symbol": symbol,
+                        "timeframe": getattr(spec, "timeframe", None),
+                        "terminal_status": "slot_exception",
+                        "error": type(exc).__name__,
+                    }]
+            finally:
+                remembered = getattr(_SLOT_LAST_BAR, "cards", None)
+                last_bar = dict(remembered) if isinstance(remembered, dict) else {}
+                _SLOT_LAST_BAR.cards = None
+            return {
+                "intents": slot_intents,
+                "meta": slot_meta,
+                "skips": slot_skips,
+                "terminals": slot_terminals,
+                "generation": slot_generation,
+                "unsupported": slot_unsupported,
+                "last_bar": last_bar,
+            }
+
+        results = []
+        if slots and task_count:
+            from concurrent.futures import ThreadPoolExecutor
+
+            with ThreadPoolExecutor(max_workers=task_count) as pool:
+                futures = [
+                    pool.submit(_run_slot, spec, symbol) for spec, symbol in slots
+                ]
+                for future, (spec, symbol) in zip(futures, slots):
+                    try:
+                        results.append(future.result())
+                    except Exception as exc:
+                        results.append({
+                            "intents": [],
+                            "meta": [],
+                            "skips": [],
+                            "terminals": [{
+                                "sleeve": getattr(spec, "tag", None),
+                                "symbol": symbol,
+                                "timeframe": getattr(spec, "timeframe", None),
+                                "terminal_status": "slot_exception",
+                                "error": type(exc).__name__,
+                            }],
+                            "generation": self._slot_generation(),
+                            "unsupported": set(),
+                            "last_bar": {},
+                        })
+        for result in results:
+            intents.extend(result["intents"])
+            meta.extend(result["meta"])
+            generation_skips.extend(result["skips"])
+            generation_terminals.extend(result["terminals"])
+            unsupported_seen.update(result["unsupported"])
+            self._merge_slot_generation(generation, result["generation"])
+            self._store_last_bar_cards(result["last_bar"])
+
         generation["broker_unsupported_unique_symbols"] = sorted(unsupported_seen)
         self._last_generation_telemetry = generation
         self._last_generation_skips = generation_skips
@@ -2042,11 +2711,27 @@ class UltimateBookLiveEngine:
                         age_minutes,
                     ),
                 )
-                if requested_score is None:
-                    raise ValueError("retry_bars_unset")
-                requested = int(requested_score)
-                if requested <= 0:
-                    raise ValueError("retry_bars_unset")
+                requested = None
+                if requested_score is not None and not isinstance(requested_score, bool):
+                    try:
+                        requested = int(requested_score)
+                    except (TypeError, ValueError):
+                        requested = None
+                if requested is None or requested <= 0:
+                    # An empty or non-positive score leaves this window unset.
+                    # It does not raise and it does not plant a bar count.
+                    counts["fail_open"] += 1
+                    observation = {
+                        "mode": policy.mode,
+                        "sleeve": sleeve,
+                        "symbol": symbol,
+                        "applied": False,
+                        "reason": "retry_bars_unset",
+                    }
+                    observations = generation.setdefault("risk_unit_floor_observations", [])
+                    if len(observations) < 64:
+                        observations.append(dict(observation))
+                    return observation
             else:
                 # Other books keep the window they already had.
                 requested = LOOKBACK_BARS + int(age_minutes // 15) + 8

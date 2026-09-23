@@ -375,7 +375,6 @@ TICKET_SUBCLASS: dict[str, str] = {
     REVIEW_OFFHOURS_TICKET: "review_keep_offhours_false_structure",
 }
 
-_TIE_EPS = 1e-12
 _matrix_cache: dict[str, Any] | None = None
 _bands_cache: dict[str, Any] | None = None
 
@@ -483,7 +482,7 @@ def pick_cost_of_error(
     """Gut rule: argmin E[YES]/E[NO]/E[HUMAN]; ties → UNSURE then NO."""
 
     if p is None:
-        raise ValueError("p is required to pick")
+        return None, {}
     prob = float(p)
     if prob < 0.0 or prob > 1.0:
         raise ValueError("p must be in [0, 1]")
@@ -492,7 +491,7 @@ def pick_cost_of_error(
     e_human = float(cost_human)
     scores = {"YES": e_yes, "NO": e_no, "UNSURE": e_human}
     min_e = min(scores.values())
-    tied = [name for name, value in scores.items() if abs(value - min_e) <= _TIE_EPS]
+    tied = [name for name, value in scores.items() if value == min_e]
     if "UNSURE" in tied:
         chosen: CostPick = "UNSURE"
     elif "NO" in tied:

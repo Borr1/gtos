@@ -1113,11 +1113,11 @@ def _unique_local(numeric: Mapping[str, float], order: tuple[str, ...]) -> str |
         if name not in numeric:
             continue
         p = numeric[name]
-        if best_p is None or p > best_p + 1e-12:
+        if best_p is None or p > best_p:
             best = name
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     if tied or best is None:
         return None

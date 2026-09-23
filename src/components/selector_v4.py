@@ -43,12 +43,6 @@ from src.components.poi_execution_lifecycle import (
 from src.research.reduced_risk_action_reason_contract import (
     OPEN_REDUCED_SELECTOR_REASONS as SHARED_OPEN_REDUCED_SELECTOR_REASONS,
 )
-from src.research.moonshot_scheduler_v4_best_trade_allocator import (
-    PACKAGE_NEW_ENTRY_AUTHORITY_IMMUTABLE_PAYLOAD_CONTRACT,
-    PACKAGE_NEW_ENTRY_AUTHORITY_PAYLOAD_SCHEMA,
-    package_new_entry_authority_payload_hash_sha256,
-    package_new_entry_authority_scope_for_action_intent,
-)
 
 
 SELECTOR_V4_ACTIONS = (
@@ -674,6 +668,13 @@ def _package_new_entry_signed_authority_detail(
     stages can still materialize and sign candidates; until then selector-level
     fill-floor softening remains diagnostic instead of risk-bearing.
     """
+
+    from src.research.moonshot_scheduler_v4_best_trade_allocator import (
+        PACKAGE_NEW_ENTRY_AUTHORITY_IMMUTABLE_PAYLOAD_CONTRACT,
+        PACKAGE_NEW_ENTRY_AUTHORITY_PAYLOAD_SCHEMA,
+        package_new_entry_authority_payload_hash_sha256,
+        package_new_entry_authority_scope_for_action_intent,
+    )
 
     sources: tuple[tuple[str, Mapping[str, Any]], ...] = (
         ("event", event),

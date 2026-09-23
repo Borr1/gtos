@@ -86,6 +86,278 @@ _CORE = (
 _LITERALS = ("ON_SURFACE", "TAG", "_DIRECTION", "DIRECTION")
 
 
+
+import threading as _anchor_threading
+
+_ANCHOR_CARD = _anchor_threading.local()
+
+
+def _anchor_finite(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _is_map(value):
+    if isinstance(value, dict):
+        return True
+    if isinstance(value, (str, bytes)):
+        return False
+    try:
+        from collections.abc import Mapping
+    except Exception:
+        return False
+    return isinstance(value, Mapping)
+
+
+def _bind_card(card):
+    _ANCHOR_CARD.value = card if _is_map(card) else None
+
+
+def _bound_card(explicit):
+    if _is_map(explicit):
+        return explicit
+    bound = getattr(_ANCHOR_CARD, "value", None)
+    return bound if _is_map(bound) else None
+
+
+def _anchor_sources(card):
+    if not _is_map(card):
+        return []
+    found = [card]
+    for key in ("account", "facts", "pair", "news", "ticket", "proposed", "extra", "labels", "subject_facts", "candidate"):
+        inner = card.get(key)
+        if _is_map(inner) and inner is not card:
+            found.append(inner)
+    return found
+
+
+_COUNT_FIELDS = (
+    "n_candidates", "n_events", "n_sleeves", "n_bars", "bars_available",
+    "repeats", "session_bars", "day_bars", "swing_bars", "bars_since_high",
+    "bars_since_low", "candles_elapsed", "closed_orig_stop_count",
+)
+_COUNT_SEQS = (
+    "prior_outcomes", "candidates", "events", "sleeve_members", "lengths",
+    "stamps", "hashes", "bars", "bar_times", "members", "closed",
+    "legacy_symbol_keys", "families", "priors",
+)
+_PRICE_FIELDS = (
+    "bid", "ask", "entry", "entry_price", "stop", "stop_loss", "sl", "tp",
+    "take_profit", "price", "high", "low", "close", "open", "orig_sl", "orig_tp",
+    "stop_now", "target", "trail", "fill_price", "exit_px",
+)
+_SECOND_FIELDS = (
+    "seconds_until_cycle", "seconds_until_now", "age_s", "age_seconds",
+    "seconds_since_quote", "seconds_since_bar", "seconds_since_last_close",
+    "seconds_between_closes", "seconds_since_prior_close", "expiry_seconds",
+    "timeout_seconds",
+)
+_MINUTE_FIELDS = (
+    "minutes_since_flat", "age_minutes", "minutes_until_now", "window_minutes",
+)
+_HOUR_FIELDS = ("age_hours", "lag_hours", "hours_since_bar", "hours_open", "measured_hours")
+_DAY_FIELDS = ("age_days", "lag_days", "days_open", "measured_days")
+_LOT_FIELDS = (
+    "volume", "volume_min", "volume_step", "lots", "lot",
+    "volume_current", "volume_initial",
+)
+_POINT_FIELDS = (
+    "spread_points", "stop_level", "freeze_level", "tick_points", "deviation_points",
+)
+_INCLUDE_WORDS = ("hide", "short", "long", "full")
+
+
+def _named_pairs(card, fields, seqs=()):
+    pairs = []
+    for source in _anchor_sources(card):
+        for key in fields:
+            number = _anchor_finite(source.get(key))
+            if number is None:
+                continue
+            pairs.append((f"the {key} named on this card", number))
+        for key in seqs:
+            seq = source.get(key)
+            if isinstance(seq, (list, tuple)) and not isinstance(seq, (str, bytes)):
+                pairs.append((f"the count of {key} named on this card", float(len(seq))))
+    return pairs
+
+
+def _keys_matching(card, tokens):
+    pairs = []
+
+    def walk(node):
+        if _is_map(node):
+            for key, value in node.items():
+                low = str(key).lower()
+                if "floor" in low or "baseline" in low:
+                    continue
+                number = _anchor_finite(value)
+                if number is not None and any(tok in low for tok in tokens):
+                    pairs.append((f"the {low} named on this card", number))
+                    continue
+                if _is_map(value):
+                    walk(value)
+                elif isinstance(value, list):
+                    for item in value:
+                        if _is_map(item):
+                            walk(item)
+
+    walk(card)
+    return pairs
+
+
+def _anchors_for_spot(qid, card):
+    name = str(qid).lower()
+    try:
+        from .jev_questions import count_anchors, minute_anchors, mult_anchors, usd_anchors, weight_anchors
+    except Exception:
+        def count_anchors(_card):
+            return []
+
+        def minute_anchors(_card):
+            return []
+
+        def mult_anchors(_card):
+            return []
+
+        def usd_anchors(_card):
+            return []
+
+        def weight_anchors(_card):
+            return []
+
+    override = globals().get("_UNIT_OVERRIDE")
+    if isinstance(override, dict):
+        base = name[: -len("_parameter")] if name.endswith("_parameter") else name
+        spec = override.get(base)
+        if spec == "weight":
+            return list(weight_anchors(card) or [])
+        if spec == "count":
+            pairs = list(count_anchors(card) or [])
+            pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+            return pairs
+        if isinstance(spec, tuple):
+            return _named_pairs(card, spec)
+    if any(tok in name for tok in ("loop", "splice", "width", "lookback", "bound", "_cap")):
+        pairs = list(count_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _COUNT_FIELDS, _COUNT_SEQS))
+        return pairs
+    if "ac60" in name or "autocorr" in name:
+        return _keys_matching(card, ("ac60", "autocorr"))
+    if "direction" in name:
+        return _keys_matching(card, ("direction",))
+    if name.endswith("_r") or "mfe" in name or "mae" in name:
+        return list(weight_anchors(card) or [])
+    if "hour" in name:
+        return _named_pairs(card, _HOUR_FIELDS)
+    if "minute" in name:
+        pairs = list(minute_anchors(card) or [])
+        pairs.extend(_named_pairs(card, _MINUTE_FIELDS))
+        return pairs
+    if "day" in name and "today" not in name:
+        return _named_pairs(card, _DAY_FIELDS)
+    if any(tok in name for tok in ("second", "expiry", "timeout", "pause", "adopt_wait")):
+        return _named_pairs(card, _SECOND_FIELDS)
+    if any(tok in name for tok in ("tilt", "alignment", "weight", "persist")):
+        pairs = list(weight_anchors(card) or [])
+        if len(pairs) >= 2:
+            return pairs
+        return list(mult_anchors(card) or [])
+    if any(tok in name for tok in ("lot", "volume")):
+        return _named_pairs(card, _LOT_FIELDS)
+    if "scale" in name:
+        return _scale_pairs(card)
+    if any(tok in name for tok in ("price",)) or name in {"manage_sl_price", "manage_tp_price"}:
+        return _named_pairs(card, _PRICE_FIELDS)
+    if "point" in name or "deviation" in name:
+        return _named_pairs(card, _POINT_FIELDS)
+    if "spread" in name:
+        return _named_pairs(card, ("spread", "spread_points"))
+    if any(tok in name for tok in ("usd", "equity", "pnl", "cash")):
+        return list(usd_anchors(card) or [])
+    return []
+
+
+def _scale_pairs(card):
+    pairs = []
+    for source in _anchor_sources(card):
+        volume = _anchor_finite(source.get("volume"))
+        if volume is None:
+            volume = _anchor_finite(source.get("volume_current"))
+        initial = _anchor_finite(source.get("volume_initial"))
+        least = _anchor_finite(source.get("volume_min"))
+        step = _anchor_finite(source.get("volume_step"))
+        if volume not in (None, 0) and least is not None:
+            pairs.append(("minimum volume over this volume", least / volume))
+        if volume not in (None, 0) and step is not None:
+            pairs.append(("volume step over this volume", step / volume))
+        if initial not in (None, 0) and volume is not None:
+            pairs.append(("current volume over initial volume", volume / initial))
+    return pairs
+
+
+def _amount_block(qid, instructions, card):
+    """Amount Score. Fewer than two anchors in this unit does not post."""
+
+    source = _bound_card(card)
+    try:
+        from .jev_questions import amount_question
+
+        built = amount_question(qid, instructions, _anchors_for_spot(qid, source))
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    for key in ("answer", "choice", "score", "value", "noul", "probabilities", "default"):
+        block.pop(key, None)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _ordinal_block(qid, instructions, words):
+    """Word levels. Fewer than two words does not post. The index is not an amount."""
+
+    try:
+        from .jev_questions import ordinal_question
+
+        built = ordinal_question(qid, instructions, words)
+    except Exception:
+        return {}
+    if not isinstance(built, dict):
+        return {}
+    row = built.get(str(qid))
+    if not isinstance(row, dict):
+        return {}
+    criteria = row.get("criteria")
+    if not isinstance(criteria, list) or len(criteria) < 2:
+        return {}
+    block = dict(row)
+    block["type"] = "score"
+    block["instructions"] = instructions
+    return {str(qid): block}
+
+
+def _score_amount_or_ordinal(qid, instructions, card=None, *_rest):
+    if str(qid).startswith("include_"):
+        return _ordinal_block(qid, instructions, _INCLUDE_WORDS)
+    return _amount_block(qid, instructions, card)
+
+
 def _paths_for(tag: str) -> list[Path]:
     return [root / f"{tag}.py" for _name, root in _ROOTS]
 
@@ -301,24 +573,11 @@ def _choice_question(qid: str, instructions: str, criteria: Mapping[str, str]) -
     return {qid: body}
 
 
-def _score_question(qid: str, instructions: str, levels: tuple[str, ...] | list[str]) -> dict[str, Any]:
-    text = _scrub_text(instructions)
-    criteria = [_scrub_text(str(item)) for item in levels] or list(_BETWEEN)
-    body: dict[str, Any] = {"type": "score", "instructions": text, "criteria": criteria}
-    parameter_question = _import_from("jev_questions", "parameter_question")
-    if parameter_question is not None:
-        try:
-            built = parameter_question(qid, text)
-            block = built.get(qid) if isinstance(built, dict) else None
-            if isinstance(block, dict):
-                shaped = {key: val for key, val in block.items() if not _limit_key(str(key))}
-                shaped["type"] = "score"
-                shaped["instructions"] = text
-                shaped["criteria"] = criteria
-                body = shaped
-        except Exception:
-            pass
-    return {qid: body}
+
+def _score_question(qid, instructions, card=None, *_rest):
+    """Amount on this card, or an include-depth ordinal. A bare Score does not post."""
+
+    return _score_amount_or_ordinal(qid, instructions, card)
 
 
 def _noul_question(qid: str, instructions: str, yes: str, no: str) -> dict[str, Any]:
@@ -541,131 +800,135 @@ def _direction_levels(facts: Mapping[str, Any]) -> list[str]:
 def _questions(facts: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
     """One pack. Types are choice, noul, or score."""
 
-    pack: dict[str, Any] = {}
-    pack.update(_choice_question(
-        "surface_status",
-        "Is this sleeve module the loaded surface for this state, or is it missing? "
-        "File existence on this state is a fact. "
-        "The option you return is the status. "
-        "An empty answer or a tie is not a status. "
-        "Do not send.",
-        _STATUS_CRITERIA,
-    ))
-    tag_order = _tag_order(facts)
-    pack.update(_choice_question(
-        "surface_tag",
-        "Which tag is this sleeve on this state? "
-        "The option you return is the tag. "
-        "An empty answer or a tie is not a tag. "
-        "Do not send.",
-        {name: f"{name} is the sleeve tag on this state." for name in tag_order},
-    ))
-    path_order: list[str] = []
-    path_by_id: dict[str, str] = {}
-    for row in facts.get("candidates") or []:
-        if not isinstance(row, dict) or not row.get("exists"):
-            continue
-        ident = str(row.get("id") or "")
-        if not ident or _limit_key(ident):
-            continue
-        path_order.append(ident)
-        path_by_id[ident] = str(row.get("path") or "")
-    if path_order:
+    _bind_card(facts)
+    try:
+        pack: dict[str, Any] = {}
         pack.update(_choice_question(
-            "surface_path",
-            "Which copy is the path for this sleeve on this state? "
-            "The copies on this state are facts. "
-            "The option you return is the path. "
-            "An empty answer or a tie is not a path. "
+            "surface_status",
+            "Is this sleeve module the loaded surface for this state, or is it missing? "
+            "File existence on this state is a fact. "
+            "The option you return is the status. "
+            "An empty answer or a tie is not a status. "
             "Do not send.",
-            {ident: f"The {ident} copy is the path for this state." for ident in path_order},
+            _STATUS_CRITERIA,
         ))
-    pack.update(_noul_question(
-        "surface_apply",
-        "Does this sleeve surface apply on this state? "
-        "The noul you return is that answer. "
-        "An empty noul leaves apply unset. "
-        "Do not send.",
-        "This sleeve surface applies on this state.",
-        "This sleeve surface does not apply on this state.",
-    ))
-    pack.update(_score_question(
-        "surface_direction",
-        "The score you return is the direction for this sleeve on this state. "
-        "It may sit between the levels on this state. "
-        "A direction already written on a copy is a fact. "
-        "An empty score leaves the direction unset. "
-        "Do not send.",
-        _direction_levels(facts),
-    ))
-    component_order = _component_order(facts)
-    pack.update(_choice_question(
-        "surface_component",
-        "Which sleeve component is this load on this state? "
-        "The option you return is that component. "
-        "An empty answer or a tie is not a component. "
-        "Do not send.",
-        {name: f"{name} is the sleeve component on this state." for name in component_order},
-    ))
-    pack.update(_noul_question(
-        "surface_component_exists",
-        "Does this sleeve component exist on this state? "
-        "The noul you return is that existence. "
-        "An empty noul leaves it unset. "
-        "Do not send.",
-        "This sleeve component exists on this state.",
-        "This sleeve component does not exist on this state.",
-    ))
-    pack.update(_score_question(
-        "surface_threshold",
-        "The score you return is the threshold for this sleeve surface. "
-        "It may sit between the levels on this state. "
-        "An empty score leaves the threshold unset. "
-        "Do not send.",
-        _BETWEEN,
-    ))
-    pack.update(_score_question(
-        "surface_loop_bound",
-        "The score you return is how many candidate copies this load considers. "
-        "The measured candidate count on this state is a fact. "
-        "It may sit between the levels on this state. "
-        "An empty score leaves the bound unset. "
-        "Do not send.",
-        _BETWEEN,
-    ))
-    pack.update(_score_question(
-        "surface_parameter",
-        "The score you return is the parameter for this sleeve surface. "
-        "It may sit between the levels on this state. "
-        "An empty score leaves the parameter unset. "
-        "Do not send.",
-        _BETWEEN,
-    ))
-    used: dict[str, str] = {}
-    symbol_qids: list[tuple[str, str]] = []
-    for symbol in facts.get("proposed_symbols") or []:
-        qid = _symbol_qid(str(symbol), used)
-        if qid is None:
-            continue
-        symbol_qids.append((str(symbol), qid))
+        tag_order = _tag_order(facts)
+        pack.update(_choice_question(
+            "surface_tag",
+            "Which tag is this sleeve on this state? "
+            "The option you return is the tag. "
+            "An empty answer or a tie is not a tag. "
+            "Do not send.",
+            {name: f"{name} is the sleeve tag on this state." for name in tag_order},
+        ))
+        path_order: list[str] = []
+        path_by_id: dict[str, str] = {}
+        for row in facts.get("candidates") or []:
+            if not isinstance(row, dict) or not row.get("exists"):
+                continue
+            ident = str(row.get("id") or "")
+            if not ident or _limit_key(ident):
+                continue
+            path_order.append(ident)
+            path_by_id[ident] = str(row.get("path") or "")
+        if path_order:
+            pack.update(_choice_question(
+                "surface_path",
+                "Which copy is the path for this sleeve on this state? "
+                "The copies on this state are facts. "
+                "The option you return is the path. "
+                "An empty answer or a tie is not a path. "
+                "Do not send.",
+                {ident: f"The {ident} copy is the path for this state." for ident in path_order},
+            ))
         pack.update(_noul_question(
-            qid,
-            f"Is {symbol} on this sleeve surface for this state? "
-            "The symbols written on a copy are facts. "
-            "The noul you return is that membership. "
-            "An empty noul leaves this symbol unset. "
+            "surface_apply",
+            "Does this sleeve surface apply on this state? "
+            "The noul you return is that answer. "
+            "An empty noul leaves apply unset. "
             "Do not send.",
-            f"{symbol} is on this sleeve surface.",
-            f"{symbol} is not on this sleeve surface.",
+            "This sleeve surface applies on this state.",
+            "This sleeve surface does not apply on this state.",
         ))
-    plan = {
-        "tag_order": tag_order,
-        "path_order": tuple(path_order),
-        "path_by_id": path_by_id,
-        "component_order": component_order,
-        "symbol_qids": tuple(symbol_qids),
-    }
-    return pack, plan
+        pack.update(_score_question(
+            "surface_direction",
+            "The score you return is the direction for this sleeve on this state. "
+            "It may sit between the levels on this state. "
+            "A direction already written on a copy is a fact. "
+            "An empty score leaves the direction unset. "
+            "Do not send.",
+            _direction_levels(facts),
+        ))
+        component_order = _component_order(facts)
+        pack.update(_choice_question(
+            "surface_component",
+            "Which sleeve component is this load on this state? "
+            "The option you return is that component. "
+            "An empty answer or a tie is not a component. "
+            "Do not send.",
+            {name: f"{name} is the sleeve component on this state." for name in component_order},
+        ))
+        pack.update(_noul_question(
+            "surface_component_exists",
+            "Does this sleeve component exist on this state? "
+            "The noul you return is that existence. "
+            "An empty noul leaves it unset. "
+            "Do not send.",
+            "This sleeve component exists on this state.",
+            "This sleeve component does not exist on this state.",
+        ))
+        pack.update(_score_question(
+            "surface_threshold",
+            "The score you return is the threshold for this sleeve surface. "
+            "It may sit between the levels on this state. "
+            "An empty score leaves the threshold unset. "
+            "Do not send.",
+            _BETWEEN,
+        ))
+        pack.update(_score_question(
+            "surface_loop_bound",
+            "The score you return is how many candidate copies this load considers. "
+            "The measured candidate count on this state is a fact. "
+            "It may sit between the levels on this state. "
+            "An empty score leaves the bound unset. "
+            "Do not send.",
+            _BETWEEN,
+        ))
+        pack.update(_score_question(
+            "surface_parameter",
+            "The score you return is the parameter for this sleeve surface. "
+            "It may sit between the levels on this state. "
+            "An empty score leaves the parameter unset. "
+            "Do not send.",
+            _BETWEEN,
+        ))
+        used: dict[str, str] = {}
+        symbol_qids: list[tuple[str, str]] = []
+        for symbol in facts.get("proposed_symbols") or []:
+            qid = _symbol_qid(str(symbol), used)
+            if qid is None:
+                continue
+            symbol_qids.append((str(symbol), qid))
+            pack.update(_noul_question(
+                qid,
+                f"Is {symbol} on this sleeve surface for this state? "
+                "The symbols written on a copy are facts. "
+                "The noul you return is that membership. "
+                "An empty noul leaves this symbol unset. "
+                "Do not send.",
+                f"{symbol} is on this sleeve surface.",
+                f"{symbol} is not on this sleeve surface.",
+            ))
+        plan = {
+            "tag_order": tag_order,
+            "path_order": tuple(path_order),
+            "path_by_id": path_by_id,
+            "component_order": component_order,
+            "symbol_qids": tuple(symbol_qids),
+        }
+        return pack, plan
+    finally:
+        _bind_card(None)
 
 
 def _pack_ok(questions: Mapping[str, Any], plan: Mapping[str, Any]) -> bool:

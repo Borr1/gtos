@@ -1,7 +1,7 @@
-"""orb_crypto_london_widen — F5-only WIDEN container beside orb_crypto_london.
+"""Widened container beside orb_crypto_london.
 
-k=1.72 floor on the incumbent OR-width stop. Container unchanged.
-OPUS-F5-MAXVALUE §3.4.
+The multiple is the widen score on the opening-range pack. An empty score
+does not scale the stop and does not restore a printed multiple.
 """
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from ..admission import TradeIntent
 from . import orb_crypto_london
 
 ON_SURFACE = orb_crypto_london.ON_SURFACE
-K = 1.72
 
 
 def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=None,
@@ -22,9 +21,19 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
         aux_bars=aux_bars, aux_times=aux_times, **kw)
     if intent is None:
         return None
-    sd = intent.stop_dist * K
-    td = None if intent.target_dist is None else intent.target_dist * K
-    if sd <= 0:
+    multiple = orb_crypto_london.cached_number(
+        symbol, bars, decision_day, bar_time, bar_times, "widen_k",
+    )
+    if multiple is None or not (multiple > 0):
         return None
-    return replace(intent, sleeve="orb_crypto_london_widen", stop_dist=sd,
-                   target_dist=td)
+    stop_dist = intent.stop_dist * multiple
+    target = None if intent.target_dist is None else intent.target_dist * multiple
+    if not (stop_dist > 0):
+        return None
+    widened = replace(
+        intent,
+        sleeve="orb_crypto_london_widen",
+        stop_dist=stop_dist,
+        target_dist=target,
+    )
+    return widened

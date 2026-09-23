@@ -51,23 +51,21 @@ def winsorize_R(r: float) -> float:
     value = float(r)
     if not _on_challenge_book():
         return max(R_WINSOR_LO, min(R_WINSOR_HI, value))
-    pack = _pack(
-        {"r": value, "recorded_lo": R_WINSOR_LO, "recorded_hi": R_WINSOR_HI, "login": 0},
-        {
-            "winsor_lo": _score_q(
-                "The score you return is the low winsor bound for this R. "
-                "The recorded low bound is a fact, not the bound. "
-                "An empty score leaves the low side unset. Do not send."
-            ),
-            "winsor_hi": _score_q(
-                "The score you return is the high winsor bound for this R. "
-                "The recorded high bound is a fact, not the bound. "
-                "An empty score leaves the high side unset. Do not send."
-            ),
-        },
+    card = {"r": value, "recorded_lo": R_WINSOR_LO, "recorded_hi": R_WINSOR_HI, "login": 0}
+    lo = _admit_score(
+        "winsor_lo",
+        "The score you return is the low winsor bound for this R. "
+        "The recorded low bound is a fact, not the bound. "
+        "An empty score leaves the low side unset. Do not send.",
+        card,
     )
-    lo = pack.get("winsor_lo")
-    hi = pack.get("winsor_hi")
+    hi = _admit_score(
+        "winsor_hi",
+        "The score you return is the high winsor bound for this R. "
+        "The recorded high bound is a fact, not the bound. "
+        "An empty score leaves the high side unset. Do not send.",
+        card,
+    )
     if lo is not None:
         value = max(float(lo), value)
     if hi is not None:
@@ -1317,20 +1315,189 @@ class TradeIntent:
 _SCORE_CACHE: dict[str, float | None] = {}
 
 
+_SCORE_UNIT = {
+    "winsor_lo": "r",
+    "winsor_hi": "r",
+    "stress_derisk": "multiplier",
+    "stress_window": "count",
+    "kelly_lite": "multiplier",
+    "overlay_sizeup": "multiplier",
+    "overlay_sizeup_cap": "multiplier",
+    "sleeve_confidence": "multiplier",
+    "learning_mult": "multiplier",
+    "unit_risk": "fraction",
+    "vol_level_tilt": "multiplier",
+    "gross_open_risk_room": "fraction",
+    "soft_daily_stop_pct": "fraction",
+    "max_dd_limit_pct": "fraction",
+    "max_dd_entry_block_pct": "fraction",
+    "hard_daily_limit_pct": "fraction",
+    "size_cap_multiplier": "multiplier",
+    "profit_target_mult": "multiplier",
+    "label_maxbars": "count",
+}
+
+_FRACTION_FACTS = (
+    ("realized_today_pct", "realized result today, as a fraction of equity"),
+    ("open_risk_pct", "open risk already on the book, as a fraction of equity"),
+    ("dd", "drawdown from the reference, as a fraction of equity"),
+    ("gain", "gain from the reference, as a fraction of equity"),
+    ("room_pct", "room still open, as a fraction of equity"),
+    ("base_risk", "this profile's base risk, as a fraction of equity"),
+    ("recorded_base_risk", "the recorded base risk, as a fraction of equity"),
+    ("recorded_soft_daily_stop_pct", "the firm's soft daily stop, as a fraction of equity"),
+    ("recorded_hard_daily_limit_pct", "the firm's hard daily limit, as a fraction of equity"),
+    ("recorded_max_dd_limit_pct", "the firm's max-drawdown limit, as a fraction of equity"),
+    ("recorded_max_dd_entry_block_pct", "the firm's entry-buffer drawdown, as a fraction of equity"),
+    ("recorded_derisk_start_dd_pct", "the drawdown where size starts to shrink, as a fraction of equity"),
+    ("recorded_gross_open_risk_cap_pct", "the firm's gross open-risk cap, as a fraction of equity"),
+    ("recorded_profit_target_pct", "the firm's profit target, as a fraction of equity"),
+)
+
+
+def _finite_fact(value: Any) -> float | None:
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _card_fact(facts: dict, key: str) -> float | None:
+    if not isinstance(facts, dict):
+        return None
+    return _finite_fact(facts.get(key))
+
+
+def _push_anchor(levels: list, seen: list, label: str, number: float | None) -> None:
+    text = str(label or "").strip()
+    if number is None or not text or number in seen:
+        return
+    seen.append(number)
+    levels.append((text, number))
+
+
+def _fraction_anchors(facts: dict) -> list:
+    """Risk room in fractions of equity. The firm's limits are already on the card."""
+    levels: list = []
+    seen: list = []
+    for key, label in _FRACTION_FACTS:
+        _push_anchor(levels, seen, label, _card_fact(facts, key))
+    cap = _card_fact(facts, "recorded_gross_open_risk_cap_pct")
+    open_risk = _card_fact(facts, "open_risk_pct")
+    realized = _card_fact(facts, "realized_today_pct")
+    dd = _card_fact(facts, "dd")
+    if cap is not None and open_risk is not None:
+        _push_anchor(levels, seen, "room left under the gross open-risk cap, as a fraction of equity", cap - open_risk)
+    hard = _card_fact(facts, "recorded_hard_daily_limit_pct")
+    if hard is not None and realized is not None:
+        _push_anchor(levels, seen, "room left to the firm's hard daily limit, as a fraction of equity", hard + realized)
+    soft = _card_fact(facts, "recorded_soft_daily_stop_pct")
+    if soft is not None and realized is not None:
+        _push_anchor(levels, seen, "room left to the firm's soft daily stop, as a fraction of equity", soft + realized)
+    wall = _card_fact(facts, "recorded_max_dd_limit_pct")
+    if wall is not None and dd is not None:
+        _push_anchor(levels, seen, "room left to the firm's max-drawdown limit, as a fraction of equity", wall - dd)
+    entry = _card_fact(facts, "recorded_max_dd_entry_block_pct")
+    if entry is not None and dd is not None:
+        _push_anchor(levels, seen, "room left to the firm's entry buffer, as a fraction of equity", entry - dd)
+    return levels
+
+
+def _multiplier_anchors(facts: dict) -> list:
+    """Size as a dimensionless ratio of account or broker facts already on the card."""
+    levels: list = []
+    seen: list = []
+    equity = _card_fact(facts, "equity")
+    high = _card_fact(facts, "high_water")
+    reference = _card_fact(facts, "max_dd_reference_equity")
+    balance = _card_fact(facts, "balance")
+    if balance is None:
+        balance = _card_fact(facts, "current_balance")
+    if equity not in (None, 0.0) and high not in (None, 0.0):
+        _push_anchor(levels, seen, "equity over the high water", equity / high)
+    if equity not in (None, 0.0) and reference not in (None, 0.0):
+        _push_anchor(levels, seen, "equity over the max-drawdown reference", equity / reference)
+    if balance not in (None, 0.0) and equity not in (None, 0.0):
+        _push_anchor(levels, seen, "balance over equity", balance / equity)
+    cap = _card_fact(facts, "recorded_gross_open_risk_cap_pct")
+    room = _card_fact(facts, "room_pct")
+    open_risk = _card_fact(facts, "open_risk_pct")
+    if room is not None and cap not in (None, 0.0):
+        _push_anchor(levels, seen, "open room over the gross open-risk cap", room / cap)
+    if open_risk is not None and cap not in (None, 0.0):
+        _push_anchor(levels, seen, "open risk over the gross open-risk cap", open_risk / cap)
+    _push_anchor(levels, seen, "this sleeve's registry weight", _card_fact(facts, "registry_confidence"))
+    _push_anchor(levels, seen, "this sleeve's learning map value", _card_fact(facts, "map_value"))
+    _push_anchor(levels, seen, "this bar's vol ratio", _card_fact(facts, "vr"))
+    mapped = facts.get("map") if isinstance(facts, dict) else None
+    if isinstance(mapped, dict):
+        for name, raw in mapped.items():
+            _push_anchor(levels, seen, "learning map value for " + str(name), _finite_fact(raw))
+    return levels
+
+
+def _count_anchors(facts: dict) -> list:
+    """Counts already on the card. A recorded default is not a count."""
+    levels: list = []
+    seen: list = []
+    for key, label in (
+        ("traded_days", "prior traded days on this card"),
+        ("n_active", "firing sleeves on this card"),
+        ("n", "members of this unit"),
+    ):
+        _push_anchor(levels, seen, label, _card_fact(facts, key))
+    units = facts.get("units") if isinstance(facts, dict) else None
+    if isinstance(units, list):
+        _push_anchor(levels, seen, "units described on this card", float(len(units)))
+    return levels
+
+
+def _r_anchors(facts: dict) -> list:
+    levels: list = []
+    seen: list = []
+    for key, label in (
+        ("r", "this trade's R"),
+        ("spread_r", "this spread in R"),
+    ):
+        _push_anchor(levels, seen, label, _card_fact(facts, key))
+    return levels
+
+
+def _anchors_for(role: str, facts: dict) -> list:
+    unit = _SCORE_UNIT.get(str(role).split("|", 1)[0])
+    if unit == "fraction":
+        return _fraction_anchors(facts)
+    if unit == "multiplier":
+        return _multiplier_anchors(facts)
+    if unit == "count":
+        return _count_anchors(facts)
+    if unit == "r":
+        return _r_anchors(facts)
+    return []
+
+
 def _admit_score(role: str, instructions: str, facts: dict) -> float | None:
     """One score for this role and these facts. The nineteen import stays.
 
-    The same facts reuse the return. An empty score stays empty.
+    Anchors are this hop's unit, taken from facts already on the card.
+    Fewer than two does not post. The same facts reuse the return.
+    An empty score stays empty.
     """
+    anchors = _anchors_for(role, facts)
     try:
-        key = role + "|" + json.dumps(facts, sort_keys=True, default=str)
+        key = role + "|" + json.dumps({"facts": facts, "anchors": anchors}, sort_keys=True, default=str)
     except TypeError:
-        key = role + "|" + str(facts)
+        key = role + "|" + str(facts) + "|" + str(anchors)
     if key in _SCORE_CACHE:
         return _SCORE_CACHE[key]
     try:
         from src.judgment.nineteen import score
-        number = score(facts, question_id=role, instructions=instructions)
+        number = score(facts, question_id=role, instructions=instructions, anchors=anchors)
     except Exception:
         number = None
     if number is not None:
@@ -1578,22 +1745,20 @@ def _learning_challenge(kept: list, learning_rerate, refuse) -> list:
     for sleeve in sleeves:
         if gate is not None:
             questions[f"learning_gate|{sleeve}"] = gate
-        questions[f"learning_mult|{sleeve}"] = _score_q(
-            "The score you return is this sleeve's learning multiplier on this state. "
-            "The map value and the recorded max are facts, not the multiplier. "
-            "An empty score leaves the multiplier unset. Do not send."
-        )
-    pack = _pack(
-        {
-            "login": 0,
-            "recorded_max": LEARNING_RERATE_MAX,
-            "map": {sleeve: learning_rerate.get(sleeve) for sleeve in sleeves},
-        },
-        questions,
-    )
+    card = {
+        "login": 0,
+        "recorded_max": LEARNING_RERATE_MAX,
+        "map": {sleeve: learning_rerate.get(sleeve) for sleeve in sleeves},
+    }
+    pack = _pack(card, questions)
     _LEARNING_DROPPED.clear()
+    mult_text = (
+        "The score you return is this sleeve's learning multiplier on this state. "
+        "The map value and the recorded max are facts, not the multiplier. "
+        "An empty score leaves the multiplier unset. Do not send."
+    )
     for sleeve in sleeves:
-        _LEARNING_MULT[sleeve] = pack.get(f"learning_mult|{sleeve}")
+        _LEARNING_MULT[sleeve] = _admit_score(f"learning_mult|{sleeve}", mult_text, card)
         if pack.get(f"learning_gate|{sleeve}") == "learning_gate_drop":
             _LEARNING_DROPPED.add(sleeve)
     retained = []
@@ -1983,12 +2148,6 @@ def _challenge_risk_units(
     questions: dict[str, Any] = {}
     for row in described:
         tag = f"{row['day']}|{row['cluster']}"
-        questions[f"unit_risk|{tag}"] = _score_q(
-            "The score you return is this unit's worst-case open risk as a fraction of live equity. "
-            f"The unit is {tag}. "
-            "The profile base, the registry weights, the room, and the open risk are facts, not the risk. "
-            "An empty score leaves this unit's risk unset. Do not write zero. Do not send."
-        )
         if how is not None:
             block = dict(how)
             block["instructions"] = str(how.get("instructions") or "") + f" This question is the unit {tag}."
@@ -2000,13 +2159,22 @@ def _challenge_risk_units(
         if learning_rerate and any(_LEARNING_MULT.get(sleeve) is None for sleeve in members):
             out.append(SizedUnit(cluster, members, n, None, None, None, False, "learning_unset"))
             continue
-        risk = pack.get(f"unit_risk|{tag}")
+        risk = _admit_score(
+            f"unit_risk|{tag}",
+            "The score you return is this unit's worst-case open risk as a fraction of live equity. "
+            f"The unit is {tag}. "
+            "The profile base, the registry weights, the room, and the open risk are facts, not the risk. "
+            "An empty score leaves this unit's risk unset. Do not write zero. Do not send.",
+            card,
+        )
         if risk is None:
-            per_trade = None
-            unit_risk = None
-        else:
-            unit_risk = float(risk)
-            per_trade = (unit_risk / n) if n else None
+            unit = SizedUnit(cluster, members, n, None, None, None, False, "risk_unset")
+            if how is not None:
+                _note_side(unit, pack.get(f"how_many|{tag}"))
+            out.append(unit)
+            continue
+        unit_risk = float(risk)
+        per_trade = (unit_risk / n) if n else None
         pool_reason: tuple[str, ...] = ()
         if sqrt_n_pooling and n > 1:
             pool_reason = (f"sqrtN_pool_n{n}",)
@@ -2351,6 +2519,24 @@ def _on_challenge_book() -> bool:
     return "operator" in argv and "run_book" in argv
 
 
+def _whole_book_keep(score: Any) -> bool:
+    """The whole-book block stands only when Jev's answer is KEEP.
+
+    Empty and KILL leave the candidates to be sized. A bool or a number is
+    not the answer, so a planted flag cannot hold the block.
+    """
+    if score is None or isinstance(score, (bool, int, float)):
+        return False
+    if isinstance(score, str):
+        return score.strip().upper() == "KEEP"
+    if isinstance(score, Mapping):
+        for key in ("score", "choice", "verdict", "admission"):
+            if key in score:
+                return _whole_book_keep(score.get(key))
+        return False
+    return False
+
+
 def _challenge_factor(spot: str, facts: dict) -> float | None:
     """Score multiplier on Challenge. None does not apply a table or a haircut."""
     if not _on_challenge_book():
@@ -2394,10 +2580,6 @@ _UNIT_SIDE: dict[int, str | None] = {}
 _UNIT_ASKED: set[int] = set()
 
 
-def _score_q(text: str) -> dict[str, str]:
-    return {"type": "score", "instructions": text}
-
-
 def _spot(name: str) -> dict | None:
     try:
         from src.judgment.admission_choices import spot_block
@@ -2419,13 +2601,8 @@ def _pack(facts: dict, questions: dict) -> dict:
 
 
 def _scalar(role: str, instructions: str, facts: dict) -> float | None:
-    number = _pack(facts, {role: _score_q(instructions)}).get(role)
-    if number is None:
-        return None
-    try:
-        return float(number)
-    except (TypeError, ValueError):
-        return None
+    """One score. Anchors come from this card. An empty answer stays unset."""
+    return _admit_score(role, instructions, facts)
 
 
 def _note_side(unit: SizedUnit, side: str | None) -> None:
@@ -2489,49 +2666,64 @@ def _challenge_governor(
     card = _equity_card(state, limits)
     if base_risk is not None:
         card["base_risk"] = base_risk
-    questions: dict[str, Any] = {
-        "gross_open_risk_room": _score_q(
+    pack = {
+        "gross_open_risk_room": _admit_score(
+            "gross_open_risk_room",
             "The score you return is the gross open-risk room on this live equity, "
             "as a fraction of equity still open for new risk. "
             "The recorded cap is a fact, not the room. "
-            "An empty score leaves the room unset. Do not write zero. Do not send."
+            "An empty score leaves the room unset. Do not write zero. Do not send.",
+            card,
         ),
-        "soft_daily_stop_pct": _score_q(
+        "soft_daily_stop_pct": _admit_score(
+            "soft_daily_stop_pct",
             "The score you return is the soft daily stop for this live equity, as a fraction of equity. "
             "The recorded stop is a fact, not the stop. "
-            "An empty score leaves the stop unset. Do not send."
+            "An empty score leaves the stop unset. Do not send.",
+            card,
         ),
-        "max_dd_limit_pct": _score_q(
+        "max_dd_limit_pct": _admit_score(
+            "max_dd_limit_pct",
             "The score you return is the max-drawdown limit for this live equity, as a fraction of equity. "
             "The recorded limit is a fact, not the limit. "
-            "An empty score leaves the limit unset. Do not send."
+            "An empty score leaves the limit unset. Do not send.",
+            card,
         ),
-        "max_dd_entry_block_pct": _score_q(
+        "max_dd_entry_block_pct": _admit_score(
+            "max_dd_entry_block_pct",
             "The score you return is the entry-buffer drawdown for this live equity, as a fraction of equity. "
             "The recorded buffer is a fact, not the buffer. "
-            "An empty score leaves the buffer unset. Do not send."
+            "An empty score leaves the buffer unset. Do not send.",
+            card,
         ),
-        "hard_daily_limit_pct": _score_q(
+        "hard_daily_limit_pct": _admit_score(
+            "hard_daily_limit_pct",
             "The score you return is the hard daily limit for this live equity, as a fraction of equity. "
             "The recorded limit is a fact, not the limit. "
-            "An empty score leaves the limit unset. Do not send."
+            "An empty score leaves the limit unset. Do not send.",
+            card,
         ),
-        "size_cap_multiplier": _score_q(
+        "size_cap_multiplier": _admit_score(
+            "size_cap_multiplier",
             "The score you return is the size-cap multiplier on this live equity. "
             "The drawdown and the recorded de-risk shape are facts, not the multiplier. "
-            "An empty score leaves the size uncut. Do not send."
+            "An empty score leaves the size uncut. Do not send.",
+            card,
         ),
-        "profit_target_mult": _score_q(
+        "profit_target_mult": _admit_score(
+            "profit_target_mult",
             "The score you return is the profit-target size multiplier on this live equity. "
             "The recorded target and the recorded shrink are facts, not the multiplier. "
-            "An empty score leaves the size uncut. Do not send."
+            "An empty score leaves the size uncut. Do not send.",
+            card,
         ),
     }
+    questions: dict[str, Any] = {}
     for name in ("soft_daily_stop", "max_dd_limit", "max_dd_entry_buffer", "ceiling_smooth"):
         block = _spot(name)
         if block is not None:
             questions[name] = block
-    pack = _pack(card, questions)
+    pack.update(_pack(card, questions))
     if pack.get("ceiling_smooth") == "ceiling_refuses":
         return GovernorDecision(False, 0.0, None, "ceiling_profile_requires_smooth_ddefense")
     if pack.get("soft_daily_stop") == "soft_stop_reached":
@@ -2786,6 +2978,7 @@ def admit_and_size(
     symbol_damage_guard: bool = False,
     vol_level_tilt: bool = False,
     candidate_refusal_sink: "list[dict[str, Any]] | None" = None,
+    admission_score: Any = None,
 ) -> dict[str, Any]:
     """Top-level deployable decision: governor gate -> confidence-weighted correlated-unit sizing.
 
@@ -2868,9 +3061,11 @@ def admit_and_size(
         gov = evaluate_governor(state, limits=limits, base_risk=base_risk)
     else:
         gov = evaluate_governor(state, limits=limits)
-    if not gov.allow_new_entries and (
-        challenge
-        or _admission_blocks(
+    if not gov.allow_new_entries and challenge:
+        # Jev's answer decides. KEEP holds this block. Empty and KILL size.
+        jev_block = _whole_book_keep(admission_score)
+    elif not gov.allow_new_entries:
+        jev_block = _admission_blocks(
             "governor",
             {
                 "allow_new_entries": False,
@@ -2878,7 +3073,9 @@ def admit_and_size(
                 "size_cap_multiplier": gov.size_cap_multiplier,
             },
         )
-    ):
+    else:
+        jev_block = False
+    if not gov.allow_new_entries and jev_block:
         return {
             "ok": True, "new_entries_allowed": False, "reason": gov.reason,
             "profile": profile, "account": account.upper(), "base_risk_per_unit": base_risk,

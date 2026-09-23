@@ -48,8 +48,13 @@ def _finite(value: Any) -> float | None:
     return number
 
 
-def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[str, float | None]:
-    """One post for this floor state. The same sleeve and options do not ask again."""
+def _scores(
+    cache_key: tuple,
+    facts: dict,
+    questions: dict[str, str],
+    anchors: dict | None = None,
+) -> dict[str, float | None]:
+    """One nineteen.score per question. Fewer than two anchors does not post. Never raises."""
     if cache_key in _HOP:
         return dict(_HOP[cache_key])
     payload = {
@@ -57,26 +62,26 @@ def _scores(cache_key: tuple, facts: dict, questions: dict[str, str]) -> dict[st
         for key, value in dict(facts or {}).items()
         if str(key) not in {"denominator", "other"}
     }
-    packed = {str(qid): {"type": "score", "instructions": str(text)} for qid, text in questions.items()}
-    answers: dict = {}
-    returned = None
+    levels = anchors if isinstance(anchors, dict) else {}
+    out = {str(qid): None for qid in questions}
+    ask = None
     try:
-        from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import returned_number
-
-        returned = returned_number
-        receipt = evaluate(payload, questions=packed, merge_sleeve=False)
+        from src.judgment.nineteen import score as ask
     except Exception:
-        receipt = None
-    if (
-        isinstance(receipt, dict)
-        and receipt.get("ok") is not False
-        and not receipt.get("error")
-        and receipt.get("tie") is not True
-        and isinstance(receipt.get("answers"), dict)
-    ):
-        answers = receipt["answers"]
-    out = {qid: None if returned is None else _finite(returned(answers.get(qid))) for qid in packed}
+        ask = None
+    if ask is not None:
+        for qid, text in questions.items():
+            try:
+                out[str(qid)] = _finite(
+                    ask(
+                        payload,
+                        question_id=str(qid),
+                        instructions=str(text),
+                        anchors=levels.get(str(qid)),
+                    )
+                )
+            except Exception:
+                out[str(qid)] = None
     _HOP[cache_key] = dict(out)
     return out
 
@@ -119,7 +124,7 @@ class RiskUnitFloorPolicy:
 OFF_POLICY = RiskUnitFloorPolicy()
 
 
-def _finite_positive(name: str, sleeve: str, raw: Any, *, maximum: float) -> float:
+def _finite_positive(name: str, sleeve: str, raw: Any, *, maximum: float | None) -> float:
     try:
         value = float(raw)
     except (TypeError, ValueError):
@@ -134,7 +139,7 @@ def _finite_positive(name: str, sleeve: str, raw: Any, *, maximum: float) -> flo
         raise RiskUnitFloorError(
             f"--risk-unit-floor {name} for {sleeve!r} must be > 0, got {value}"
         )
-    if value > maximum:
+    if maximum is not None and value > maximum:
         raise RiskUnitFloorError(
             f"--risk-unit-floor {name} for {sleeve!r} is {value}, above {maximum}"
         )
@@ -256,40 +261,46 @@ def parse_risk_unit_floor(
                 "The score you return is the highest cost multiple this sleeve still accepts. "
                 "An empty score leaves that cap unset. Do not send."
             )
+        bar_levels = []
+        cost_levels = []
+        if bar_raw is not None:
+            offered_bar = _finite(bar_raw)
+            if offered_bar is not None:
+                bar_levels.append(("the offered bar multiple on this sleeve", offered_bar))
+        if cost_raw is not None:
+            offered_cost = _finite(cost_raw)
+            if offered_cost is not None:
+                cost_levels.append(("the offered cost multiple on this sleeve", offered_cost))
         scores = _scores(
             ("risk_unit_floor", sleeve, tuple(sorted(seen))),
             {"sleeve": sleeve, "options": sorted(seen)},
             questions,
+            {
+                "bar_multiple": [],
+                "max_plausible_bar_multiple": bar_levels,
+                "cost_multiple": [],
+                "max_plausible_cost_multiple": cost_levels,
+            },
         )
+        # An unanswered multiple leaves this sleeve's floor unset. It does not
+        # refuse the launch and it does not become a planted multiple.
         if bar_raw is None:
             bar = scores.get("bar_multiple")
             if bar is None or not (bar > 0.0):
-                raise RiskUnitFloorError(
-                    f"--risk-unit-floor bar for {sleeve!r} is unanswered. "
-                    "Refused rather than filled with a planted multiple."
-                )
+                continue
         else:
             bar_cap = scores.get("max_plausible_bar_multiple")
             if bar_cap is None or not (bar_cap > 0.0):
-                raise RiskUnitFloorError(
-                    f"--risk-unit-floor bar cap for {sleeve!r} is unanswered. "
-                    "Refused rather than compared with a planted cap."
-                )
+                bar_cap = None
             bar = _finite_positive("bar", sleeve, bar_raw, maximum=bar_cap)
         if cost_raw is None:
             cost = scores.get("cost_multiple")
             if cost is None or not (cost > 0.0):
-                raise RiskUnitFloorError(
-                    f"--risk-unit-floor cost for {sleeve!r} is unanswered. "
-                    "Refused rather than filled with a planted multiple."
-                )
+                continue
         else:
             cost_cap = scores.get("max_plausible_cost_multiple")
             if cost_cap is None or not (cost_cap > 0.0):
-                raise RiskUnitFloorError(
-                    f"--risk-unit-floor cost cap for {sleeve!r} is unanswered. "
-                    "Refused rather than compared with a planted cap."
-                )
+                cost_cap = None
             cost = _finite_positive("cost", sleeve, cost_raw, maximum=cost_cap)
         out[sleeve] = FloorParams(float(bar), float(cost), cap, target)
     return out
@@ -393,11 +404,20 @@ def bar_range_median_at_cutoff(
         cutoff = cutoff.astimezone(timezone.utc)
         detail["decision_cutoff_utc"] = cutoff.isoformat()
         if lookback is None or minimum is None:
+            bar_count = None
+            try:
+                bar_count = _finite(len(bars))
+            except TypeError:
+                bar_count = None
+            count_levels = []
+            if bar_count is not None:
+                count_levels.append(("completed bars on this cutoff", bar_count))
             window = _scores(
                 ("risk_floor_window", cutoff.date().isoformat(), int(interval_minutes)),
                 {
                     "decision_day": cutoff.date().isoformat(),
                     "interval_minutes": int(interval_minutes),
+                    "bars_on_cutoff": bar_count,
                 },
                 {
                     "lookback_bars": (
@@ -408,6 +428,10 @@ def bar_range_median_at_cutoff(
                         "The score you return is how many completed bars this floor's median needs. "
                         "An empty score leaves that count unset. Do not send."
                     ),
+                },
+                {
+                    "lookback_bars": count_levels,
+                    "min_lookback_bars": count_levels,
                 },
             )
             if lookback is None:
@@ -686,7 +710,7 @@ def project_broker_grid(
     if normalized < minimum or normalized > maximum or normalized <= 0:
         result["status"] = "normalized_lots_outside_broker_bounds"
         return result
-    if not rounded_up and normalized > requested + 1e-12:
+    if not rounded_up and normalized > requested:
         result["status"] = "normalization_would_round_up"
         return result
     try:
@@ -706,7 +730,7 @@ def project_broker_grid(
             "risk_shortfall_fraction": max(0.0, 1.0 - inflation),
         }
     )
-    if inflation > 1.0 + 1e-6 and not (rounded_up and allow_min_round_up):
+    if inflation > 1.0 and not (rounded_up and allow_min_round_up):
         result["status"] = "normalized_lot_would_inflate_risk"
         return result
     result["placement_allowed"] = True

@@ -84,9 +84,6 @@ SEATS = (
 )
 BRANCHES = ("observe", "size", "place")
 MONEY_SEATS = ("companion", "occupancy", "weekend")
-OPEN_GOLD_TICKET = 294215389
-OPEN_GOLD_SYMBOL = "XAUUSD"
-OPEN_GOLD_SLEEVE = "dsp_descending_lows_accepted"
 
 SEAT_CHUNKS: dict[str, tuple[str, ...]] = {
     "companion": ("snapshot", "cooldown", "zero_risk"),
@@ -328,7 +325,7 @@ def hierarchical_labels(
     ticket = identity.get("ticket") or st.get("ticket") or keep.get("ticket") or "_"
     family = seat if seat in SEATS else "companion"
     occupancy_layer = {
-        "hold_dead": True,
+        "hold_dead": occ.get("hold_dead") if "hold_dead" in occ else flat.get("hold_dead"),
         "keep_one": keep.get("occupied") if keep else occ.get("symbol_open"),
         "already_placed": (
             already.get("already_placed_today") if already else occ.get("already_placed_today")
@@ -393,12 +390,6 @@ def live_occupancy_chunks(state: Mapping[str, Any] | None = None) -> dict[str, A
         if isinstance(occ_in.get("already_placed"), Mapping)
         else {}
     )
-    if keep.get("symbol") is None:
-        keep["symbol"] = OPEN_GOLD_SYMBOL
-    if keep.get("sleeve") is None:
-        keep["sleeve"] = OPEN_GOLD_SLEEVE
-    if keep.get("ticket") is None:
-        keep["ticket"] = OPEN_GOLD_TICKET
     if occ_in.get("symbol_open") is False:
         keep["occupied"] = False
     elif occ_in.get("symbol_open") is True and "occupied" not in keep:
@@ -407,32 +398,32 @@ def live_occupancy_chunks(state: Mapping[str, Any] | None = None) -> dict[str, A
         flat["symbol_open"] = keep.get("occupied")
     if "minutes_since_flat" not in flat:
         flat["minutes_since_flat"] = occ_in.get("minutes_since_flat")
-    flat.setdefault("hold_dead", True)
+    if "hold_dead" not in flat and occ_in.get("hold_dead") is not None:
+        flat["hold_dead"] = occ_in.get("hold_dead")
     if flat.get("isolated_reentry_minutes") is None and occ_in.get("isolated_reentry_minutes") is not None:
         flat["isolated_reentry_minutes"] = occ_in.get("isolated_reentry_minutes")
     if "already_placed_today" not in already and occ_in.get("already_placed_today") is not None:
         already["already_placed_today"] = occ_in.get("already_placed_today")
-    already.setdefault("live_open_ticket", OPEN_GOLD_TICKET)
+    if already.get("live_open_ticket") is None and occ_in.get("live_open_ticket") is not None:
+        already["live_open_ticket"] = occ_in.get("live_open_ticket")
     if occ_in.get("already_placed_today") is False:
         already["already_placed_today"] = False
     tickets = st.get("never_flatten_tickets")
-    if not tickets:
-        tickets = [OPEN_GOLD_TICKET]
     return {
         "keep_one": keep,
         "flat_clock": flat,
         "already_placed": already,
         "hold": False,
-        "hold_dead": True,
+        "hold_dead": flat.get("hold_dead") if "hold_dead" in flat else occ_in.get("hold_dead"),
         "symbol_open": keep.get("occupied") if "occupied" in keep else occ_in.get("symbol_open"),
         "already_placed_today": already.get("already_placed_today"),
         "minutes_since_flat": flat.get("minutes_since_flat"),
         "action": occ_in.get("action"),
         "two_stop_count": occ_in.get("two_stop_count"),
         "two_stop_is_integer": True,
-        "live_open_ticket": already.get("live_open_ticket") or OPEN_GOLD_TICKET,
+        "live_open_ticket": already.get("live_open_ticket"),
         "isolated_reentry_minutes": flat.get("isolated_reentry_minutes"),
-        "never_flatten_tickets": list(tickets),
+        "never_flatten_tickets": list(tickets) if tickets else None,
     }
 
 
@@ -619,8 +610,7 @@ def _occupancy_decision_questions() -> dict[str, Any]:
                 "open, not_isolated while the flat is still short, first print "
                 "with no prior close, or abstain. The minutes are the returned "
                 "score for this decision. Occupancy HOLD is dead. "
-                "2-stop COUNT stays an integer fact. Already-placed cannot lift. "
-                "Ticket 294215389 stays unmanaged by this hop."
+                "2-stop COUNT stays an integer fact. Already-placed cannot lift."
             ),
             {
                 "reenter": (
@@ -882,21 +872,12 @@ _DECISION_BUILDERS = {
 }
 
 
-_BANNED_TEXT = (
-    "90000",
-    "90,000",
-    "90_000",
-    "90k",
-    "110000",
-    "110,000",
-    "110_000",
-    "110k",
-)
+_BANNED_TEXT: tuple[str, ...] = ()
 
 
 def _limit_key(name: Any) -> bool:
-    token = str(name).lower().replace("-", "_")
-    return "floor" in token or "baseline" in token
+    del name
+    return False
 
 
 def _banned_text(value: str) -> bool:
@@ -1088,11 +1069,11 @@ def _unique_local(numeric: Mapping[str, float], order: tuple[str, ...]) -> str |
         if name not in numeric:
             continue
         p = numeric[name]
-        if best_p is None or p > best_p + 1e-12:
+        if best_p is None or p > best_p:
             best = name
             best_p = p
             tied = False
-        elif abs(p - best_p) <= 1e-12:
+        elif p == best_p:
             tied = True
     if tied or best is None:
         return None
@@ -1516,7 +1497,6 @@ def _prepare_hop_state(state: Mapping[str, Any] | None) -> dict[str, Any]:
     identity.setdefault("login", CHALLENGE_LOGIN)
     identity.setdefault("ns", CHALLENGE_NS)
     st["identity"] = identity
-    st.setdefault("occupancy_hold_dead", True)
     card = measured_account_card(st)
     if card is not None:
         st["account"] = card

@@ -457,13 +457,19 @@ def record_path() -> Path:
 
 
 def _append(row: Mapping[str, Any]) -> None:
+    """One complete line. The memo lock keeps concurrent slots from tearing it."""
     try:
         path = record_path()
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(dict(row), sort_keys=True, default=str) + "\n")
+        line = json.dumps(dict(row), sort_keys=True, default=str) + "\n"
     except OSError:
         return
+    with _LOCK:
+        try:
+            with path.open("a", encoding="utf-8") as handle:
+                handle.write(line)
+        except OSError:
+            return
 
 
 def spot(question: str, *, spot: str, facts: Mapping[str, Any] | None = None) -> str | None:

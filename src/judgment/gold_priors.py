@@ -170,7 +170,7 @@ def one_post_per_candidate() -> bool:
 
 
 def gold_only() -> bool:
-    return True
+    return False
 
 
 @lru_cache(maxsize=1)
@@ -304,7 +304,7 @@ def _long_summary(value: Any) -> Any:
         }
         slim = {k: value[k] for k in value.keys() if k in keep or k.endswith("_empty")}
         if not slim:
-            slim = {k: value[k] for k in list(value.keys())[:8]}
+            slim = {k: value[k] for k in value.keys()}
         return slim
     return value
 
@@ -368,7 +368,7 @@ def hierarchical_labels(
         "origin": ident.get("origin_organism"),
         "family_node": ident.get("family_class"),
         "sleeve": ident.get("sleeve"),
-        "symbol": ident.get("symbol") or "XAUUSD",
+        "symbol": ident.get("symbol") or "",
         "side": ident.get("side"),
         "as_of": clock.get("as_of_utc"),
         "day": ident.get("decision_day"),
@@ -500,25 +500,19 @@ def _depth_question(path: str, seat: str | None) -> dict[str, Any]:
 
 
 def _weight_question(qid: str) -> dict[str, Any]:
+    """A weight is the amount on this card. Fewer than two weights does not post."""
+
     spot = _weight_qid(qid)
     text = (
         f"What weight does the returned {qid} score carry when the gate scores "
         "on this state are combined? The score you return is that weight. "
         "It may sit between levels. An empty score leaves the weight unset."
     )
-    try:
-        from .jev_questions import parameter_question
+    row = _pending_score(spot, text, None)
+    if not isinstance(row, dict):
+        return {}
+    return {spot: row}
 
-        built = parameter_question(spot, text)
-        block = built.get(spot) if isinstance(built, dict) else None
-        if isinstance(block, dict) and str(block.get("type") or "") == "score":
-            copied = dict(block)
-            copied["type"] = "score"
-            copied["instructions"] = text
-            return {spot: copied}
-    except Exception:
-        pass
-    return {spot: {"type": "score", "instructions": text}}
 
 
 def _decision_questions(seat: str | None) -> dict[str, Any]:
@@ -544,7 +538,7 @@ def gold_systemone_payload(
     second Noul per field, and not every tick. Include-depth on the body is
     the returned Choice map. A miss does not fill a depth.
     """
-    questions = _decision_questions(seat)
+    questions = _anchor_questions(_decision_questions(seat), state or {})
     base = _scrub(dict(state or {}))
     labeled = schema_at_depth(base, seat=seat, include_depth=include_depth)
     labeled["labels"] = hierarchical_labels(state, seat=seat)
@@ -554,7 +548,7 @@ def gold_systemone_payload(
         "questions": questions,
         "ask_together": True,
         "one_post": True,
-        "gold_only": True,
+        "gold_only": False,
         "noul_every_tick": False,
         "seat": seat,
         "book": CHALLENGE_LOGIN,
@@ -587,7 +581,7 @@ def diagnostic_composite(
     scores: Mapping[str, Any] | None,
     weights: Mapping[str, Any] | None = None,
 ) -> float | None:
-    """Diagnostic weighted sum on 0–1 (returned score / 2). Not a place cliff.
+    """Diagnostic weighted sum of returned scores. Not a place cliff.
 
     Each weight is a returned Score. A missing Score omits that term. The
     recorded pin is not copied in. No returned term leaves the sum unset.
@@ -610,7 +604,7 @@ def diagnostic_composite(
         value = _finite(raw.get(qid))
         if value is None:
             continue
-        total += number * (value / 2.0)
+        total += number * value
         used = True
     if not used:
         return None
@@ -625,11 +619,11 @@ def _local_unique(numeric: Mapping[str, float], order: tuple[str, ...]) -> str |
         if name not in numeric:
             continue
         prob = numeric[name]
-        if best_p is None or prob > best_p + 1e-12:
+        if best_p is None or prob > best_p:
             best = name
             best_p = prob
             tied = False
-        elif abs(prob - best_p) <= 1e-12:
+        elif prob == best_p:
             tied = True
     if tied or best is None:
         return None
@@ -735,7 +729,7 @@ def evaluate_gold_priors(
     An empty answer, a tie, a missing score, or an error leaves that field
     unset. This does not send an order.
     """
-    questions = _decision_questions(seat)
+    questions = _anchor_questions(_decision_questions(seat), state or {})
     asked = _scrub(dict(state or {}))
     asked["labels"] = hierarchical_labels(state, seat=seat)
     asked["model"] = MODEL
@@ -750,6 +744,7 @@ def evaluate_gold_priors(
         error = "import_failed"
     if error is None and evaluate is not None:
         try:
+            questions = _anchor_questions(questions, asked)
             got = evaluate(
                 asked,
                 model=MODEL,
@@ -830,3 +825,406 @@ def assert_gold_pin() -> dict[str, Any]:
         "do_not_hunt": DO_NOT_HUNT,
         "book": CHALLENGE_LOGIN,
     }
+
+
+_BOUND_CARD = None
+
+_SKIP_FACT_KEYS = frozenset({
+    "login",
+    "magic",
+    "model",
+    "prior_outcomes",
+    "reason_ids",
+    "scoped_xau_names",
+    "windows",
+    "order_send",
+    "flatten",
+    "namespace",
+    "ns",
+    "api_url",
+    "schema",
+    "questions",
+    "answers",
+    "criteria",
+    "instructions",
+})
+_PRICE_KEYS = frozenset({
+    "entry",
+    "stop",
+    "target",
+    "entry_price",
+    "stop_loss",
+    "take_profit",
+    "take_profit_1",
+    "bid",
+    "ask",
+    "price",
+    "sl",
+    "tp",
+    "deal_final",
+    "event_stop_now",
+    "inv_entry",
+    "inv_stop",
+})
+_PRICE_QIDS = frozenset({
+    "inv_entry",
+    "inv_stop",
+    "entry_stop_parameter",
+    "entry_target_parameter",
+    "host_named_sl",
+})
+_WEIGHT_QIDS = frozenset({
+    "geometry_vs_tape",
+    "session_fitness",
+    "level_respect",
+    "flow_alignment",
+    "persistence",
+})
+_UNIX_QIDS = frozenset({"gfull_start", "gfull_end", "cutoff_unix"})
+_COUNT_LISTS = frozenset({
+    "events",
+    "rows",
+    "candidates",
+    "peers",
+    "sites",
+    "stubs",
+    "recipe_rows",
+    "recipes",
+})
+_ORDINAL_EXACT = frozenset({
+    "wall_pressure",
+    "fill_realism",
+    "paper_live_parity",
+    "protection_still_earns",
+    "session_liquidity",
+})
+
+
+def _bind_card(card):
+    global _BOUND_CARD
+    if isinstance(card, Mapping):
+        _BOUND_CARD = card
+
+
+def _finite_fact(value):
+    if isinstance(value, bool) or value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _ordinal_words(qid):
+    name = str(qid)
+    if name == "session_liquidity":
+        return ("thin liquidity", "ordinary liquidity", "deep liquidity")
+    if name == "include_depth" or name.startswith("include_"):
+        return ("hide", "short", "long", "full")
+    if name in _ORDINAL_EXACT or name.endswith("_quality"):
+        return ("poor", "ordinary", "clean")
+    return None
+
+
+def _qid_unit(qid):
+    name = str(qid).lower()
+    if _ordinal_words(name):
+        return ""
+    if "minute" in name:
+        return "minutes"
+    if name.endswith("_sl") or name in _PRICE_QIDS:
+        return "price"
+    if name.endswith("_s") or "second" in name or "prefer_s" in name:
+        return "seconds"
+    if "_pct" in name or "percent" in name:
+        return "pct"
+    if name.endswith("_r") or "spread_r" in name:
+        return "r"
+    if name in _WEIGHT_QIDS or "weight" in name or "persist" in name:
+        return "weight"
+    if (
+        name.endswith("_mult")
+        or name.endswith("_multiple")
+        or "multiplier" in name
+        or "_tilt" in name
+        or name.endswith("_tilt")
+    ):
+        return "mult"
+    if name in _UNIX_QIDS or name.endswith("_unix"):
+        return "unix"
+    if "dist" in name or name.endswith("_eps") or "epsilon" in name:
+        return "distance"
+    if name.endswith("_hour") or name == "utc_hour":
+        return "hour"
+    if "horizon" in name or name.endswith("_days"):
+        return "days"
+    if name.endswith("_rate"):
+        return "rate"
+    if name.endswith("_net"):
+        return "money"
+    if "line" in name:
+        return "lines"
+    if (
+        name.endswith("_n")
+        or "_n_" in name
+        or name.endswith("_count")
+        or "loop" in name
+        or name.endswith("_bars")
+        or name.endswith("_cap")
+        or name.endswith("_k")
+        or name.startswith("n_")
+        or "nth" in name
+        or "candidate" in name
+        or "occupancy" in name
+        or "corr_window" in name
+        or name.endswith("_shadow")
+        or "shadow" in name
+    ):
+        return "count"
+    return ""
+
+
+def _key_unit(key):
+    name = str(key).lower()
+    if name in _SKIP_FACT_KEYS or name.startswith("_"):
+        return ""
+    if "minute" in name:
+        return "minutes"
+    if name.endswith("_sl") or name in _PRICE_KEYS:
+        return "price"
+    if name.endswith("_seconds") or name.endswith("_s") or "delta_s" in name or "prefer_s" in name:
+        return "seconds"
+    if "_pct" in name or name.endswith("_percent") or "percent" in name:
+        return "pct"
+    if name.endswith("_r") or name in {"spread_r", "locked_r"}:
+        return "r"
+    if "weight" in name or "persist" in name:
+        return "weight"
+    if (
+        name.endswith("_mult")
+        or name.endswith("_multiple")
+        or "multiplier" in name
+        or name.endswith("_tilt")
+        or name in {"tilt", "shadow_tilt"}
+    ):
+        return "mult"
+    if name.endswith("_unix") or name in {"gfull_start", "gfull_end", "cutoff_unix"}:
+        return "unix"
+    if "dist" in name or name.endswith("_eps") or "epsilon" in name:
+        return "distance"
+    if name.endswith("_hour") or name == "utc_hour":
+        return "hour"
+    if "horizon" in name or name.endswith("_days"):
+        return "days"
+    if name.endswith("_rate"):
+        return "rate"
+    if name.endswith("_net") or name in {"equity", "balance", "profit", "pnl", "open_pnl", "net"}:
+        return "money"
+    if "line" in name:
+        return "lines"
+    if (
+        name.endswith("_n")
+        or "_n_" in name
+        or name.endswith("_count")
+        or "loop" in name
+        or name.endswith("_bars")
+        or name.endswith("_cap")
+        or name.endswith("_k")
+        or name.startswith("n_")
+        or name.endswith("_hits")
+        or name.endswith("_anchors")
+        or "candidate" in name
+        or "nth" in name
+        or name == "occupancy_world"
+    ):
+        return "count"
+    return ""
+
+
+def _fact_label(key, used):
+    text = "the " + str(key) + " named on this card"
+    if text not in used:
+        used.add(text)
+        return text
+    index = 2
+    while True:
+        alt = "another " + str(key) + " named on this card (" + str(index) + ")"
+        if alt not in used:
+            used.add(alt)
+            return alt
+        index += 1
+
+
+def _walk_facts(value, key, unit, pairs, labels, seen):
+    if isinstance(value, Mapping):
+        ident = id(value)
+        if ident in seen:
+            return
+        seen.add(ident)
+        for child_key, child in value.items():
+            if not isinstance(child_key, str) or child_key.lower() in _SKIP_FACT_KEYS:
+                continue
+            _walk_facts(child, child_key, unit, pairs, labels, seen)
+        return
+    if isinstance(value, (list, tuple)) and not isinstance(value, (str, bytes)):
+        ident = id(value)
+        if ident in seen:
+            return
+        seen.add(ident)
+        if unit == "count" and str(key).lower() in _COUNT_LISTS:
+            pairs.append((_fact_label("count of " + str(key), labels), float(len(value))))
+        for item in value:
+            if isinstance(item, Mapping):
+                _walk_facts(item, key, unit, pairs, labels, seen)
+        return
+    if _key_unit(key) != unit:
+        return
+    number = _finite_fact(value)
+    if number is None:
+        return
+    pairs.append((_fact_label(key, labels), number))
+
+
+def _distance_gap(card, pairs, labels):
+    left = None
+    right = None
+
+    def walk(node, seen):
+        nonlocal left, right
+        if not isinstance(node, Mapping):
+            return
+        ident = id(node)
+        if ident in seen:
+            return
+        seen.add(ident)
+        if left is None:
+            left = _finite_fact(node.get("left"))
+        if right is None:
+            right = _finite_fact(node.get("right"))
+        for child in node.values():
+            if isinstance(child, Mapping):
+                walk(child, seen)
+
+    if isinstance(card, Mapping):
+        walk(card, set())
+    if left is None or right is None:
+        return
+    pairs.append((_fact_label("stop gap", labels), abs(left - right)))
+
+
+def _anchors_for(unit, card):
+    if not unit or not isinstance(card, Mapping):
+        return []
+    pairs = []
+    labels = set()
+    if unit == "weight":
+        try:
+            from .jev_questions import weight_anchors
+
+            for label, number in weight_anchors(card):
+                pairs.append((str(label), number))
+                labels.add(str(label))
+        except Exception:
+            pairs = []
+            labels = set()
+    _walk_facts(card, "", unit, pairs, labels, set())
+    if unit == "distance":
+        _distance_gap(card, pairs, labels)
+    return pairs
+
+
+def _pending_score(qid, instructions, words=None):
+    text = "" if instructions is None else str(instructions)
+    scrub = globals().get("_scrub_text")
+    if callable(scrub):
+        try:
+            cleaned = scrub(text)
+        except Exception:
+            return None
+        if cleaned is None:
+            return None
+        if isinstance(cleaned, str):
+            text = cleaned
+    text = text.strip()
+    if not text:
+        return None
+    for guard_name in ("_limit_key", "_skip_key", "_blocked", "_blocked_text", "_bad_text"):
+        guard = globals().get(guard_name)
+        if not callable(guard):
+            continue
+        try:
+            if guard(str(qid)) or guard(text):
+                return None
+        except Exception:
+            return None
+    row = {"type": "score", "instructions": text}
+    if words:
+        kept = [str(item).strip() for item in words if str(item).strip()]
+        if len(kept) >= 2:
+            row["_words"] = kept
+    return row
+
+
+def _anchor_questions(questions, card):
+    """Rebuild each Score from this card. Fewer than two levels drops that Score."""
+
+    if not isinstance(questions, Mapping):
+        return questions
+    _bind_card(card)
+    out = {}
+    for key, block in questions.items():
+        if not isinstance(block, dict) or str(block.get("type") or "") != "score":
+            out[key] = block
+            continue
+        name = str(key)
+        words = block.get("_words")
+        if not isinstance(words, (list, tuple)):
+            words = _ordinal_words(name)
+        try:
+            if words:
+                from .jev_questions import ordinal_question
+
+                built = ordinal_question(name, str(block.get("instructions") or ""), words)
+            else:
+                from .jev_questions import amount_question
+
+                built = amount_question(
+                    name,
+                    str(block.get("instructions") or ""),
+                    _anchors_for(_qid_unit(name), card),
+                )
+        except Exception:
+            continue
+        row = built.get(name) if isinstance(built, dict) else None
+        if not isinstance(row, dict) or not row.get("criteria"):
+            continue
+        if block.get("ignore_if"):
+            row = dict(row)
+            row["ignore_if"] = block.get("ignore_if")
+        out[key] = row
+    return out
+
+
+def _snap_ordinal(block, n_levels):
+    try:
+        count = int(n_levels)
+    except (TypeError, ValueError):
+        return None
+    if count < 2:
+        return None
+    try:
+        from .jev_questions import ordinal_index
+
+        return ordinal_index(block, count)
+    except Exception:
+        return None
+
+
+def _snap_if_ordinal(qid, block, fallback):
+    words = _ordinal_words(qid)
+    if not words:
+        return fallback
+    return _snap_ordinal(block, len(words))
