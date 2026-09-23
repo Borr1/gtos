@@ -16,8 +16,11 @@ the seconds until the bar prints, or until the next cycle. An ask with no
 expiry has no timeout. A returned score is not that deadline. A 429, 503,
 or 529 is asked again only when Retry-After fits before that deadline.
 The same card is one in-flight post. Waiters share that receipt. Only an
-ok receipt with answers is remembered. Every ask is a stream on the one
-shared connection. A dead connection settles only the ask that noticed it.
+ok receipt with answers is remembered. Each asking thread has its own
+HTTP/2 connection. One connection shared by many threads aborts under the
+fan-out. A transport error or a non-JSON body closes that thread's
+connection and posts again on a fresh one until the state's expiry.
+Retry-After is the only pause.
 The account pack runs on its own thread and a decision does not join it.
 A Score with no criteria does not post. No token-budget field is sent. Model
 ``jev-1.13.0``. POST https://api.typesafe.ai/v1/systemone. The return is a
@@ -34,6 +37,7 @@ import hashlib
 import http.client
 import io
 import json
+import logging
 import os
 import threading
 import time
@@ -44,6 +48,7 @@ from typing import Any, Callable, Mapping
 from .jev_questions import systemone_payload
 
 API_URL = "https://api.typesafe.ai/v1/systemone"
+_LOG = logging.getLogger(__name__)
 _MODEL = "jev-1.13.0"
 _DEPTHS = ("hide", "short", "long", "full")
 _ALLOWED_TYPES = {"noul", "choice", "score"}
@@ -783,9 +788,17 @@ def _remember_scores(account: Mapping[str, Any], receipt: Mapping[str, Any]) -> 
 
 _PARAM_ANSWERS: dict[str, Any] = {}
 _PARAM_LOCK = threading.Lock()
-_HTTP: Any = None
-_HTTP_LOCK = threading.Lock()
+_THREAD = threading.local()
 _OVERLOADED = frozenset({429, 503, 529})
+
+
+class _Unreadable(Exception):
+    """A response whose body is not JSON. The prefix was logged, not kept."""
+
+    def __init__(self, status: int, headers: Any) -> None:
+        self.status = status
+        self.headers = headers
+        super().__init__(status)
 
 
 class _Gate:
@@ -800,7 +813,7 @@ _FLIGHT: dict[str, _Gate] = {}
 
 
 def _open_client() -> Any:
-    """One shared HTTP/2 client. Every ask is a stream. No pool size and no timeout."""
+    """One HTTP/2 client for this thread. No pool size and no timeout."""
 
     import httpx
 
@@ -808,33 +821,38 @@ def _open_client() -> Any:
 
 
 def _http() -> Any:
-    """The shared client. Tasks do not construct one."""
+    """This thread's client. Another thread does not post on it."""
 
-    global _HTTP
-    with _HTTP_LOCK:
-        if _HTTP is None:
-            _HTTP = _open_client()
-        return _HTTP
+    client = getattr(_THREAD, "client", None)
+    if client is None:
+        client = _open_client()
+        _THREAD.client = client
+    return client
 
 
 def _retire(client: Any) -> None:
-    """Forget a dead client. This ask is the only one settled here.
+    """Drop this thread's connection. The next post opens a fresh one.
 
-    The client stays open. Other streams already on it finish or fail as
-    their own asks. Closing it here would settle those asks too.
+    Only this thread posts on the client, so closing it does not settle
+    another ask.
     """
 
-    global _HTTP
-    with _HTTP_LOCK:
-        if _HTTP is not client:
-            return
-        _HTTP = None
+    if getattr(_THREAD, "client", None) is not client:
+        return
+    _THREAD.client = None
+    closer = getattr(client, "close", None)
+    if closer is None:
+        return
+    try:
+        closer()
+    except Exception:
+        return
 
 
 def _dead_connection(exc: BaseException) -> bool:
     """A transport failure. An HTTP status and an expired ask are not this."""
 
-    if isinstance(exc, (TimeoutError, urllib.error.HTTPError)):
+    if isinstance(exc, (TimeoutError, urllib.error.HTTPError, _Unreadable)):
         return False
     if "Timeout" in type(exc).__name__:
         return False
@@ -848,8 +866,16 @@ def _dead_connection(exc: BaseException) -> bool:
         "WriteError",
         "CloseError",
         "RemoteProtocolError",
+        "LocalProtocolError",
         "NetworkError",
     }
+
+
+def _note_non_json(status: int, raw: bytes) -> None:
+    """Status and the first bytes. The key is not part of this line."""
+
+    prefix = bytes(raw[:16]).hex()
+    _LOG.warning("systemone non-json status=%s prefix=%s", int(status), prefix)
 
 
 def _send(client: Any, key: str, payload: Mapping[str, Any], timeout: float | None) -> tuple[Any, int | None, Any]:
@@ -863,7 +889,12 @@ def _send(client: Any, key: str, payload: Mapping[str, Any], timeout: float | No
         timeout=timeout,
     )
     status = int(response.status_code)
-    return response.json(), status, response.headers
+    try:
+        parsed = response.json()
+    except json.JSONDecodeError:
+        _note_non_json(status, response.content[:16])
+        raise _Unreadable(status, response.headers) from None
+    return parsed, status, response.headers
 
 
 def _owns(key: str) -> bool:
@@ -1117,13 +1148,28 @@ def _rewrite_anchors(answers: dict[str, Any], anchors: Mapping[str, list[tuple[s
     return out
 
 
-def _transmit(key: str, payload: Mapping[str, Any], wait: float | None) -> tuple[Any, int | None]:
-    """One stream on the shared connection.
+def _again(headers: Any, deadline: float | None) -> bool:
+    """Ask again. Wait only when Retry-After still fits the state's expiry."""
 
-    429, 503, and 529 follow Retry-After when it fits the deadline. No expiry
-    means no timeout. A returned score is never this wait. A missing
-    Retry-After does not invent a pause. A dead connection is raised here.
-    The caller settles this ask and leaves every other ask on the replacement.
+    raw = _header(headers, "Retry-After")
+    if raw is None or not str(raw).strip():
+        if deadline is not None and _remaining(deadline, None) == 0:
+            return False
+        return True
+    pause = _retry_pause(headers, deadline)
+    if pause is None:
+        return False
+    time.sleep(pause)
+    return True
+
+
+def _transmit(key: str, payload: Mapping[str, Any], wait: float | None) -> tuple[Any, int | None]:
+    """One post on this thread's connection.
+
+    429, 503, and 529 follow Retry-After when it fits the deadline. A
+    transport error or a non-JSON body posts again on a fresh connection
+    until that same deadline. No expiry means no timeout. A missing
+    Retry-After does not invent a pause.
     """
 
     deadline = None if wait is None else time.time() + float(wait)
@@ -1141,10 +1187,18 @@ def _transmit(key: str, payload: Mapping[str, Any], wait: float | None) -> tuple
                     time.sleep(pause)
                     continue
             raise
+        except _Unreadable as exc:
+            _retire(client)
+            if _again(exc.headers, deadline):
+                continue
+            raise TimeoutError("deadline")
         except Exception as exc:
-            if _dead_connection(exc):
-                _retire(client)
-            raise
+            if not _dead_connection(exc):
+                raise
+            _retire(client)
+            if deadline is not None and _remaining(deadline, wait) == 0:
+                raise TimeoutError("deadline")
+            continue
         if status in _OVERLOADED:
             pause = _retry_pause(headers, deadline)
             if pause is not None:
