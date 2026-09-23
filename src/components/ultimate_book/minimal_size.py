@@ -3318,17 +3318,32 @@ class MinimalSizeScaler:
             return None
         try:
             from src.judgment.apply_size import honor_f5_scaler_risk
-            honored, _stamp = honor_f5_scaler_risk(
+            params = dict(trade_params) if isinstance(trade_params, Mapping) else {}
+            honored, stamp = honor_f5_scaler_risk(
                 nominal,
                 scaler=self,
-                trade_params=dict(trade_params) if isinstance(trade_params, Mapping) else {},
+                trade_params=params,
                 login=getattr(self, "login", None) or 0,
                 ns=getattr(self, "ns", None) or F5_NAMESPACE or "operator",
                 target_risk_usd=target,
             )
-            if honored is None:
+            if honored is None or not isinstance(stamp, dict):
                 return None
-            return float(honored)
+            try:
+                cash = float(honored)
+                ceiling = float(stamp.get("binding_room_usd"))
+            except (TypeError, ValueError):
+                return None
+            if (
+                cash != cash
+                or ceiling != ceiling
+                or cash in (float("inf"), float("-inf"))
+                or ceiling in (float("inf"), float("-inf"))
+                or cash <= 0
+                or cash > ceiling
+            ):
+                return None
+            return cash
         except Exception:
             return None
 

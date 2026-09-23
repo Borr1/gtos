@@ -550,6 +550,224 @@ def f5_scaler_should_honor(
     return scaler is not None
 
 
+def _positive_usd(value: Any) -> float | None:
+    number = _float_or_none(value)
+    if number is None or number <= 0 or number != number:
+        return None
+    if number in (float("inf"), float("-inf")):
+        return None
+    return number
+
+
+def _percent_fraction(value: Any) -> float | None:
+    """A ``*_pct`` fact is a percent: 5.0 is five percent, 0.5 is half a percent."""
+
+    number = _positive_usd(value)
+    if number is None:
+        return None
+    fraction = number / 100.0
+    if fraction <= 0 or fraction >= 1.0:
+        return None
+    return fraction
+
+
+def floor_room_usd(params: Mapping[str, Any] | None, equity: Any = None) -> float | None:
+    """USD between this account's equity and its floor."""
+
+    facts = params if isinstance(params, Mapping) else {}
+    equity_n = _positive_usd(equity if equity is not None else facts.get("equity"))
+    named = _positive_usd(facts.get("floor_room_usd"))
+    if named is None:
+        named = _positive_usd(facts.get("floor_room"))
+    if named is not None and (equity_n is None or named < equity_n):
+        return named
+    floor = _positive_usd(facts.get("floor"))
+    if floor is not None and equity_n is not None and equity_n > floor:
+        return equity_n - floor
+    initial = _positive_usd(facts.get("initial_balance"))
+    overall = _positive_usd(facts.get("overall_loss_pct"))
+    if initial is None or overall is None or equity_n is None:
+        return None
+    fraction = _percent_fraction(overall)
+    if fraction is None:
+        return None
+    computed = initial * (1.0 - fraction)
+    if equity_n <= computed:
+        return None
+    return equity_n - computed
+
+
+def _day_baseline(facts: Mapping[str, Any]) -> float | None:
+    named = _positive_usd(facts.get("day_start_equity_or_balance_baseline"))
+    if named is not None:
+        return named
+    starts = []
+    for key in ("day_start_equity", "day_start_balance"):
+        number = _positive_usd(facts.get(key))
+        if number is not None:
+            starts.append(number)
+    if not starts:
+        return None
+    return max(starts)
+
+
+def _remaining_loss_room(baseline: Any, equity: Any, percent: Any, initial: Any) -> float | None:
+    """Room to the firm's daily floor: the day's start less the percent of the initial balance."""
+
+    base = _positive_usd(baseline)
+    equity_n = _positive_usd(equity)
+    initial_n = _positive_usd(initial)
+    fraction = _percent_fraction(percent)
+    if base is None or equity_n is None or initial_n is None or fraction is None:
+        return None
+    room = equity_n - (base - initial_n * fraction)
+    if room <= 0:
+        return None
+    return room
+
+
+def daily_room_read(
+    params: Mapping[str, Any] | None,
+    equity: Any = None,
+) -> tuple[float | None, str]:
+    """Remaining USD under the firm's daily loss rule.
+
+    A named USD room is that room. Otherwise the firm's daily percent of the
+    initial balance is measured down from the higher of the day's starting
+    equity and balance. An internal overlay is not a rule of the account.
+    """
+
+    facts = params if isinstance(params, Mapping) else {}
+    named = facts.get("daily_room_usd")
+    if named not in (None, ""):
+        number = _positive_usd(named)
+        if number is None:
+            return None, "unset"
+        return number, "named"
+    equity_n = equity if equity is not None else facts.get("equity")
+    baseline = _day_baseline(facts)
+    percent = facts.get("daily_percent_external")
+    if percent in (None, "") or baseline is None:
+        return None, "unset"
+    room = _remaining_loss_room(baseline, equity_n, percent, facts.get("initial_balance"))
+    if room is None:
+        return None, "unset"
+    return room, "firm_rule"
+
+
+def open_risk_read(params: Mapping[str, Any] | None) -> tuple[float | None, str]:
+    """Stop-risk already open, in USD. A flat book is zero. An unread book stays unset."""
+
+    facts = params if isinstance(params, Mapping) else {}
+    if "open_risk_usd" in facts and facts.get("open_risk_usd") not in (None, ""):
+        number = _float_or_none(facts.get("open_risk_usd"))
+        if (
+            number is None
+            or number < 0
+            or number != number
+            or number in (float("inf"), float("-inf"))
+        ):
+            return None, "unset"
+        return number, "named"
+    positions = facts.get("positions_total")
+    if positions in (None, ""):
+        return None, "unset"
+    try:
+        count = int(positions)
+    except (TypeError, ValueError):
+        return None, "unset"
+    if count == 0:
+        return 0.0, "flat"
+    return None, "unset"
+
+
+def binding_room_usd(
+    params: Mapping[str, Any] | None,
+    equity: Any = None,
+) -> tuple[float | None, str]:
+    """Smaller of the floor room and the daily room, net of open risk."""
+
+    facts = params if isinstance(params, Mapping) else {}
+    equity_n = equity if equity is not None else facts.get("equity")
+    floor_room = floor_room_usd(facts, equity_n)
+    daily_room, _daily_read = daily_room_read(facts, equity_n)
+    open_risk, _risk_read = open_risk_read(facts)
+    if floor_room is None or daily_room is None or open_risk is None:
+        return None, "unset"
+    room = min(floor_room, daily_room) - open_risk
+    if room <= 0:
+        return None, "empty"
+    return room, "bound"
+
+
+def cash_anchor_levels(
+    params: Mapping[str, Any] | None,
+    *,
+    target: Any = None,
+    equity: Any = None,
+) -> list[tuple[str, float]]:
+    """Cash levels in USD. Each level sits inside the binding room.
+
+    Equity, balance, day-start, and margin are account scale. They are not
+    levels of this cash.
+    """
+
+    facts = params if isinstance(params, Mapping) else {}
+    room, _read = binding_room_usd(facts, equity if equity is not None else facts.get("equity"))
+    if room is None or room <= 0:
+        return []
+    pairs: list[tuple[str, float]] = []
+    launcher = _positive_usd(target)
+    if launcher is not None and launcher < room:
+        pairs.append(("the launcher cash, in USD", launcher))
+    pairs.append(("the binding room, in USD", room))
+    kept: list[tuple[str, float]] = []
+    seen: list[float] = []
+    for label, number in pairs:
+        if number in seen:
+            continue
+        seen.append(number)
+        kept.append((label, number))
+    kept.sort(key=lambda pair: pair[1])
+    return kept
+
+
+def _cash_inside_room(cash: Any, room: Any) -> bool:
+    number = _positive_usd(cash)
+    ceiling = _positive_usd(room)
+    if number is None or ceiling is None:
+        return False
+    return number <= ceiling
+
+
+def _score_cash(state: Mapping[str, Any], anchors: list[tuple[str, float]]) -> float | None:
+    """One cash score on these levels. Fewer than two levels does not post."""
+
+    if len(anchors) < 2:
+        return None
+    ceiling = max(value for _label, value in anchors)
+    try:
+        from .nineteen import score
+    except Exception:
+        return None
+    try:
+        number = score(
+            dict(state),
+            question_id="unit_usd",
+            instructions=(
+                "The score you return is this unit's cash in USD. "
+                "It may sit between the levels. "
+                "An empty score leaves the cash unset. Do not send."
+            ),
+            anchors=anchors,
+        )
+    except Exception:
+        return None
+    if not _cash_inside_room(number, ceiling):
+        return None
+    return _positive_usd(number)
+
+
 def honor_f5_scaler_risk(
     nominal: Any,
     *,
@@ -563,6 +781,9 @@ def honor_f5_scaler_risk(
     """Map the size hop onto the next unit. Never places.
 
     The cash is the returned parameter. An empty answer stays empty.
+    A returned cash above the binding room is not the cash. The binding
+    room is the smaller of the room to the floor and the daily room, net
+    of open risk. Equity-scale anchors are not levels of this cash.
     """
     params = trade_params if isinstance(trade_params, dict) else {}
     nominal_f = _float_or_none(nominal)
@@ -575,30 +796,63 @@ def honor_f5_scaler_risk(
     honored = target
     used = "scaler_target" if target is not None else "size_not_decided"
     choice_row: dict[str, Any] | None = None
+    floor_room = floor_room_usd(params, params.get("equity"))
+    daily_room, daily_read = daily_room_read(params, params.get("equity"))
+    open_risk, risk_read = open_risk_read(params)
+    binding_room, binding_read = binding_room_usd(params, params.get("equity"))
+    anchors = cash_anchor_levels(params, target=target, equity=params.get("equity"))
     if is_challenge_account(login=login, ns=ns):
         # The next unit's cash is the returned parameter. A miss stays unset.
-        try:
-            from .size_exit import choose_size_and_persist
-
-            choice_row = choose_size_and_persist(
-                {
-                    "login": login,
-                    "namespace": ns,
-                    "open_ticket": ticket,
-                    "launcher_f5_minimal_size_usd": target,
-                    "launcher_notional_initial_usd": getattr(
-                        getattr(scaler, "_cfg", None), "notional_initial_usd", None
-                    ),
-                }
-            )
-        except Exception as exc:  # noqa: BLE001 — a miss stays unset
-            choice_row = {"size_decided": False, "error": type(exc).__name__}
-        if choice_row.get("size_decided") and choice_row.get("cash_usd") is not None:
-            honored = float(choice_row["cash_usd"])
-            used = "size_choice"
-        else:
+        # The payload keys are the ones this hop already posts.
+        # No room means no cash, and the hop is not asked.
+        if binding_room is None:
             honored = None
             used = "size_not_decided"
+        else:
+            try:
+                from .size_exit import choose_size_and_persist
+
+                choice_row = choose_size_and_persist(
+                    {
+                        "login": login,
+                        "namespace": ns,
+                        "open_ticket": ticket,
+                        "launcher_f5_minimal_size_usd": target,
+                        "launcher_notional_initial_usd": getattr(
+                            getattr(scaler, "_cfg", None), "notional_initial_usd", None
+                        ),
+                    }
+                )
+            except Exception as exc:  # noqa: BLE001 — a miss stays unset
+                choice_row = {"size_decided": False, "error": type(exc).__name__}
+            if not isinstance(choice_row, dict):
+                choice_row = {"size_decided": False}
+            cash = choice_row.get("cash_usd")
+            if choice_row.get("size_decided") and _cash_inside_room(cash, binding_room):
+                honored = float(cash)
+                used = "size_choice"
+            elif choice_row.get("size_decided"):
+                scored = _score_cash(
+                    {
+                        "login": login,
+                        "namespace": ns,
+                        "equity": params.get("equity"),
+                        "floor_room_usd": floor_room,
+                        "daily_room_usd": daily_room,
+                        "open_risk_usd": open_risk,
+                        "binding_room_usd": binding_room,
+                    },
+                    anchors,
+                )
+                if scored is None:
+                    honored = None
+                    used = "size_not_decided"
+                else:
+                    honored = scored
+                    used = "size_cash_anchors"
+            else:
+                honored = None
+                used = "size_not_decided"
     elif f5_scaler_should_honor(login=login, ns=ns, ticket=ticket, scaler=scaler):
         if tilt is not None and target is not None:
             honored = target * tilt
@@ -615,6 +869,14 @@ def honor_f5_scaler_risk(
         "intended_risk_usd": _float_or_none(honored),
         "jev_combined_live_tilt": tilt,
         "f5_scaler_honor": used,
+        "floor_room_usd": floor_room,
+        "daily_room_usd": daily_room,
+        "daily_room_read": daily_read,
+        "open_risk_usd": open_risk,
+        "open_risk_read": risk_read,
+        "binding_room_usd": binding_room,
+        "binding_room_read": binding_read,
+        "cash_anchors": [{"label": label, "usd": value} for label, value in anchors],
         "size_alternative": None if choice_row is None else choice_row.get("size_alternative"),
         "size_function": None if choice_row is None else choice_row.get("size_function"),
         "size_if": None if choice_row is None else choice_row.get("size_if"),
