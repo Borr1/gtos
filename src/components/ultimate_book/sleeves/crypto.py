@@ -27,34 +27,6 @@ def _finite(value):
     return number
 
 
-def _returned_value(block):
-    """The value is the Score, the Noul, or the Choice. A tie is unset."""
-    if not isinstance(block, dict) or block.get("error"):
-        return None
-    score = _finite(block.get("score")) if "score" in block else None
-    if score is not None:
-        return score
-    noul = block.get("noul")
-    if "noul" in block and not isinstance(noul, bool):
-        number = _finite(noul)
-        if number is not None:
-            return number
-    probs = block.get("probabilities")
-    if isinstance(probs, dict) and probs:
-        from src.judgment.jev_questions import unique_highest
-
-        name = unique_highest(probs)
-        if name is None:
-            return None
-        return _finite(name)
-    choice = block.get("choice")
-    if choice in (None, ""):
-        return None
-    if str(choice).strip().lower() in {"tie", "tied"}:
-        return None
-    return _finite(choice)
-
-
 def _questions(facts, bars, i):
     from .spot_choice import amount_question, anchors_for
 
@@ -117,10 +89,10 @@ def _ask(state, questions, anchors):
         raw = receipt.get("answers")
         if isinstance(raw, dict):
             answers = raw
-    from .spot_choice import value_at
+    from .spot_choice import answered_amount
 
     values = {
-        spot: value_at(_returned_value(answers.get(spot)), anchors.get(spot))
+        spot: answered_amount(spot, answers.get(spot), anchors.get(spot))
         for spot in questions
     }
     try:

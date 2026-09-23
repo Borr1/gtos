@@ -197,7 +197,7 @@ def _ask_all(facts: dict, bars=None, i: int | None = None) -> dict[str, Any]:
     out["_asked"] = False
     try:
         from src.judgment.jev_client import evaluate
-        from src.judgment.jev_questions import append_outcome, prior_outcomes, returned_number
+        from src.judgment.jev_questions import append_outcome, prior_outcomes
     except Exception:
         return out
     try:
@@ -220,8 +220,18 @@ def _ask_all(facts: dict, bars=None, i: int | None = None) -> dict[str, Any]:
     wait = _timeout_s(state)
     if wait is not None:
         call["timeout_s"] = wait
+    def _once(posted):
+        posted_call = dict(call)
+        posted_call["questions"] = posted
+        return evaluate(state, **posted_call)
+
+    def _rebuild():
+        return _questions(facts, bars, i)
+
     try:
-        receipt = evaluate(state, **call)
+        from .spot_choice import post_again
+
+        receipt = post_again(_once, questions, _rebuild)
     except Exception:
         return out
     if not isinstance(receipt, dict) or not receipt.get("ok"):
@@ -229,9 +239,9 @@ def _ask_all(facts: dict, bars=None, i: int | None = None) -> dict[str, Any]:
     raw = receipt.get("answers")
     answers = raw if isinstance(raw, dict) else {}
     for spot in _SCORE_SPOTS:
-        from .spot_choice import value_at
+        from .spot_choice import answered_amount
 
-        number = value_at(returned_number(answers.get(spot)), _questions.anchors.get(spot))
+        number = answered_amount(spot, answers.get(spot), _questions.anchors.get(spot))
         out[spot] = number
         try:
             append_outcome(

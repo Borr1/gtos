@@ -97,9 +97,8 @@ def ask_scores(facts: dict, texts: dict[str, str], bars=None, index=None, bar_ti
         from src.judgment.jev_questions import (
             append_outcome,
             prior_outcomes,
-            returned_number,
         )
-        from .spot_choice import amount_question, anchors_for, value_at
+        from .spot_choice import amount_question, anchors_for, answered_amount
     except Exception:
         return out
     questions: dict = {}
@@ -135,7 +134,7 @@ def ask_scores(facts: dict, texts: dict[str, str], bars=None, index=None, bar_ti
     if not isinstance(answers, dict):
         answers = {}
     for spot in spots:
-        number = value_at(returned_number(answers.get(spot)), built.get(spot))
+        number = answered_amount(spot, answers.get(spot), built.get(spot))
         out[spot] = number
         try:
             append_outcome(
