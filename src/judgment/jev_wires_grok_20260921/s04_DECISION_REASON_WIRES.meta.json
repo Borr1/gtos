@@ -1,0 +1,24 @@
+{
+  "schema": "gtos.jev_everywhere.decision_reason_wires.v1",
+  "session_id_label": "04_fluid_gates_place_fluid_family",
+  "as_of_ict": "2026-09-21T06:20:00+07:00",
+  "doctrine": "/workspace/gtos/close_loop/war_room_20260920/JEV_EVERYWHERE_DOCTRINE_20260921.md",
+  "gap_inventory": "/workspace/gtos/close_loop/war_room_20260920/JEV_COMPLETE_JUDGE_GAP_INVENTORY_20260921.md",
+  "freshest_inventory": "/workspace/gtos/close_loop/war_room_20260920/_pr41_land/ai-trading-agent/judgment/astra/JEV_GATE_INVENTORY.json",
+  "never_broker_place": true,
+  "never_invent_news_protocol": true,
+  "do_not_flip_GTOS_JEV_SLEEVE_SELECT_APPLY": true,
+  "n_reasons": 60,
+  "n_jev_wires": 51,
+  "n_envelope_keep": 9,
+  "counts_by_class_now": {
+    "SHADOW_ONLY": 46,
+    "JEV_JUDGED": 4,
+    "ENVELOPE": 8,
+    "STATIC_CODE": 2
+  },
+  "counts_by_proposed": {
+    "JEV_WIRE": 51,
+    "ENVELOPE_KEEP": 9
+  }
+}

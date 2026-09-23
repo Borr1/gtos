@@ -1,0 +1,481 @@
+{
+  "schema": "gtos.jev_everywhere.decision_reason_wires.v0",
+  "session_id_label": "11_host_events_news_join_honesty",
+  "as_of_ict": "2026-09-21T06:12:00+07:00",
+  "target_wire_family": "news_join ENVELOPE honesty; no invent",
+  "never_invent_news_protocol": true,
+  "never_broker_place": true,
+  "place": false,
+  "do_not_flip_global_sleeve_select_apply": true,
+  "n_reasons": 46,
+  "n_jev_wires": 18,
+  "n_envelope_keep": 28,
+  "legend": {
+    "class_now": ["JEV_JUDGED", "STATIC_CODE", "SHADOW_ONLY", "ENVELOPE"],
+    "proposed": ["JEV_WIRE", "ENVELOPE_KEEP"],
+    "wire_type": ["Choice", "Score", "Noul", "none"],
+    "news_join_contract": "COMPLETE_STATE.news_join is object when a real JSON spine join and/or host-writer join exists; else the sentinel STATE_MISSING. spine_empty=true is honesty of covering, not STATE_MISSING. NEWS_PROTOCOL never appears."
+  },
+  "wires": [
+    {
+      "reason": "news_join_state_missing",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "STATE_MISSING",
+      "complete_state_fields": ["news_join", "full_state_dark", "n_incomplete"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_SHADOW=1",
+      "notes": "When no spine files AND no host writer row (live resolve missing), COMPLETE_STATE.news_join='STATE_MISSING'. Honest skip. Do not invent HIGH. Policy C analog: STATE_MISSING skip not refuse."
+    },
+    {
+      "reason": "news_join_object_when_real_join",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "object{spine, host_news, event_join, protocol:'STATE_MISSING'}",
+      "complete_state_fields": ["news_join", "news_join.spine_empty", "news_join.host_news_source", "news_join.host_news_inventory_status"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_SHADOW=1; GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "Assembler assemble_news_join() — draft only. Real join = attach_news with n_files>=1 OR news_inventory_at source=challenge_host_news_writer. Feed into evaluate() COMPLETE_STATE. APPLY fire-rate stays 0."
+    },
+    {
+      "reason": "never_invent_news_protocol",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["news_join.protocol"],
+      "env_flag_draft": null,
+      "notes": "veto.refuse_invented_news_protocol. named_sources repair do_not_invent_news_protocol. Staged NEWS_PROTOCOL_V2.md is spec not live auth. Do not draft endpoints from chat."
+    },
+    {
+      "reason": "news_protocol_v2_staged_spec_not_live_auth",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["news_join.protocol"],
+      "env_flag_draft": null,
+      "notes": "Files exist under _audit_tmp / astra-pack-mirror as staged specs. Organism NEWS_PROTOCOL.md candidates: zero. G4 ingest-when-real only."
+    },
+    {
+      "reason": "event_questions_abstain_on_spine_empty",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "event_questions_abstain=spine_empty",
+      "complete_state_fields": ["news_join.spine_empty"],
+      "env_flag_draft": null,
+      "notes": "compose.event_questions_abstain keyed ONLY on news.spine_empty. Do not invert unread into abstain. Event Nouls near 0.5 when empty."
+    },
+    {
+      "reason": "host_unread_is_not_spine_empty",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["news_join.spine_empty", "news_join.host_news_inventory_status"],
+      "env_flag_draft": null,
+      "notes": "Wave M: 0/97 spine_empty. Host unread is calendar_honest=false. FLUID-NWS-005 must not be inverted."
+    },
+    {
+      "reason": "live_host_events_no_lab_fallback",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "host_news_source=unassembled",
+      "complete_state_fields": ["news_join.host_news_source"],
+      "env_flag_draft": "GTOS_JEV_HOST_EVENTS; GTOS_CHALLENGE_EVENTS",
+      "notes": "resolve_host_events_path(live=True) never uses DEFAULT_EVENTS. Set-but-missing env stays missing. Box live events.jsonl MISSING → live extra unassembled."
+    },
+    {
+      "reason": "june_week_of_record_no_overwrite",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": [],
+      "env_flag_draft": null,
+      "notes": "data/news_calendar.json week_of 2026-05-31. news_calendar_sync.refuse_june_overwrite."
+    },
+    {
+      "reason": "frozen_calendar_archive_not_drop_in",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": [],
+      "env_flag_draft": null,
+      "notes": "news_calendar.json.frozen-20260821 is history, different schema. Do not merge 6239 events."
+    },
+    {
+      "reason": "w7_news_filter_fail_open_not_challenge",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": [],
+      "env_flag_draft": null,
+      "notes": "NewsCalendar 'NO events loaded — all trades will proceed'. Challenge stays on news_spine + host writer. G9 out of F5 scope."
+    },
+    {
+      "reason": "leftover_news_tape_excluded",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["news_join.walter"],
+      "env_flag_draft": null,
+      "notes": "news_tape occupancy+Walter stale 2026-08-27 result_count 0. Not a source. walter.present stays false."
+    },
+    {
+      "reason": "deltaone_historical_stamps_only",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["news_join.spine.events"],
+      "env_flag_draft": null,
+      "notes": "Two past unscheduled_nfp source stamps DeItaone/<id>. No mill client/URL in git. Do not synthesize prints if mill down. Never set spine_empty because mill is down."
+    },
+    {
+      "reason": "official_high_spine_stub_zero_kept",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "STATE_MISSING",
+      "complete_state_fields": ["news_join.official_high_spine"],
+      "env_flag_draft": null,
+      "notes": "G5: slate fold events_kept=0. Do not recycle spine as input. Second axis STATE_MISSING until events exist."
+    },
+    {
+      "reason": "news_brief_stub_zero_kept",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "STATE_MISSING",
+      "complete_state_fields": ["news_join.news_brief"],
+      "env_flag_draft": null,
+      "notes": "G5 sibling. 0 kept. Do not invent rows to fill."
+    },
+    {
+      "reason": "intel_layer_mac_path_not_challenge_vps",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "STATE_MISSING",
+      "complete_state_fields": ["news_join.intel_layer"],
+      "env_flag_draft": null,
+      "notes": "G7 leftover-ship C:\\Users\\trader\\intel-layer\\calendar is Mac. Challenge VPS is Administrator. Do not invent path."
+    },
+    {
+      "reason": "walter_present_false_until_real",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "walter.present=false",
+      "complete_state_fields": ["news_join.walter"],
+      "env_flag_draft": null,
+      "notes": "Information tissue unassembled. Abstain, do not chat-summarize."
+    },
+    {
+      "reason": "ff_thisweek_not_warsh_class",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["news_join.spine.sources"],
+      "env_flag_draft": null,
+      "notes": "G8 optional tool; already-cited FF URL. Fetch fail → exit 2, no hand-written HIGH. Do not retune warsh_class from ISM/PMI/claims."
+    },
+    {
+      "reason": "refuse_invented_news_protocol_veto",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": [],
+      "env_flag_draft": null,
+      "notes": "veto.InventedNewsProtocolVeto. Envelope integer."
+    },
+    {
+      "reason": "forbidden_jev_key_invented_news_events",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": [],
+      "env_flag_draft": null,
+      "notes": "FORBIDDEN_JEV_STATE_KEYS includes invented_news_events and NEWS_PROTOCOL. refuse_raw_tick_dump_to_jev walks keys."
+    },
+    {
+      "reason": "harvest_forbidden_news_protocol",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": [],
+      "env_flag_draft": null,
+      "notes": "harvest_patterns raises if NEWS_PROTOCOL / invent_high attached."
+    },
+    {
+      "reason": "news_labels_do_not_stack_physical_lots",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["place_context"],
+      "env_flag_draft": "GTOS_JEV_APPLY_LIVE (size only; not news)",
+      "notes": "Wave M: physical lots stay flow×cost. calendar_honest / NWS family are LABEL. Do not stack news into size without hist-prove."
+    },
+    {
+      "reason": "host_events_trail_sl_differs_monitor_only",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["remint"],
+      "env_flag_draft": null,
+      "notes": "last_stop_now / named_final_sl / sl_differs TRAIL_EPS=0.05. Monitor jitter ~0.005 is not a trail. Not remint. Not news_join. Keep envelope."
+    },
+    {
+      "reason": "named_sources_do_not_invent_news_protocol",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": [],
+      "env_flag_draft": null,
+      "notes": "Does not fetch. Missing file stays missing."
+    },
+    {
+      "reason": "host_writer_emit_without_read_g2_repair_not_invent",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "inventory_status=NOT_READ|UNKNOWN|None",
+      "complete_state_fields": ["news_join.host_news_inventory_status"],
+      "env_flag_draft": null,
+      "notes": "G2: writer is LIVE emitting; READ=0 on tape. Repair = host writer parses existing f5_high_calendar.json. Chair/host, not this Cloud seat. Do not invent HIGH to get READ."
+    },
+    {
+      "reason": "t15_t60_inventory_status_honesty",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "READ|NOT_READ|UNKNOWN|None",
+      "complete_state_fields": ["news_join.host_news_inventory_status", "news_join.host_news_n_in_window"],
+      "env_flag_draft": "GTOS_JEV_HOST_EVENTS",
+      "notes": "news_inventory_at prefers named status within 6h; t60 None reprints lose to nearby t15 NOT_READ. Unread stays named."
+    },
+    {
+      "reason": "observe_must_not_mutate_cost_skip",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "none",
+      "complete_state_fields": ["place_context.last_refusal_class"],
+      "env_flag_draft": null,
+      "notes": "maybe_observe_fluid_at_place extra.must_not_mutate_cost_skip=True. News join is observe/LABEL, not a new refuse."
+    },
+    {
+      "reason": "ca_size_event_join_unassembled_tilt_1_0",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "tilt=1.0 when spine_empty",
+      "complete_state_fields": ["news_join.event_join"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "Fail-closed size: missing join does not guess a 0.0 event haircut. CA APPLY is a different session (06)."
+    },
+    {
+      "reason": "leftover_ship_compose_not_on_this_branch",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "STATE_MISSING",
+      "complete_state_fields": ["news_join.calendar_fold"],
+      "env_flag_draft": null,
+      "notes": "G6: f5_desk/composer.py and minimal_size.py missing on PR41. Do not wholesale book_owner. F5 15/60 already in news_spine."
+    },
+    {
+      "reason": "calendar_honest_fluid_adm_009",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true|false (noul)",
+      "complete_state_fields": ["news_join", "news_join.host_news_source", "news_join.host_news_inventory_status", "news_join.spine_empty"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "FLUID-ADM-009 APPLIED_NAMED LABEL (Wave M: false 10 / true 87). Code _calendar_honest. Feed COMPLETE_STATE.news_join. Does not stack size. Keep APPLY fire-rate off."
+    },
+    {
+      "reason": "calendar_honest_prompt_g3",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true=spine present AND (no writer OR READ); false=empty OR writer not READ",
+      "complete_state_fields": ["news_join"],
+      "env_flag_draft": "GTOS_JEV_A1_CALL (observe)",
+      "notes": "G3: jev_questions.calendar_honest STALE vs Wave M. world_questions.calendar_honest_world already correct. Patch sketch rewrites gold_fanout prompt only. No live APPLY."
+    },
+    {
+      "reason": "calendar_honest_world",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true|false",
+      "complete_state_fields": ["news_join", "news_join.host_news_*"],
+      "env_flag_draft": null,
+      "notes": "world pack already Wave M. Keep. Compose world never resizes."
+    },
+    {
+      "reason": "spine_empty_honesty_fluid_nws_005",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true=spine empty (abstain events); false=spine present",
+      "complete_state_fields": ["news_join.spine_empty"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "FLUID-NWS-005 SHADOW: false 97/97 because f5_high_calendar covers every Challenge as-of. G10 wait for a REAL uncovered as-of. Do not invent empty."
+    },
+    {
+      "reason": "event_proximity_fluid_nws_001",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true=named HIGH in F5 T-15..T+60; false=named and outside; ~0.5 if spine_empty",
+      "complete_state_fields": ["news_join.high_in_f5_window", "news_join.events"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "APPLIED_NAMED LABEL; chair VETO draft. Code uses news.high_in_f5_window. Fire-rate APPLY (admit refuse) ONLY after Challenge hist-prove. Default-off."
+    },
+    {
+      "reason": "high_in_f5_window_fluid_nws_002",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true|false; unknown if spine_empty",
+      "complete_state_fields": ["news_join.high_in_f5_window"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "APPLIED_NAMED LABEL. Feed news_join. Empty → you do not know."
+    },
+    {
+      "reason": "minutes_to_nearest_fluid_nws_003",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": ["Inside window or overdue", "Nearby same session", "Far or unknown"],
+      "complete_state_fields": ["news_join.minutes_to_nearest_high"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "APPLIED_NAMED LABEL Score. Spine empty → mid/abstain."
+    },
+    {
+      "reason": "warsh_class_fluid_nws_004",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": ["boe_fomc_nfp_cpi", "other_high", "none"],
+      "complete_state_fields": ["news_join.events", "news_join.warsh_class"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "APPLIED_NAMED LABEL Choice. Do not invent. none if empty. BOJ pack2/3/4/5/6 are LABELs not refuse walls."
+    },
+    {
+      "reason": "past_flag_fluid_nws_006",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true=nearest HIGH past as-of",
+      "complete_state_fields": ["news_join.minutes_to_nearest_high"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "APPLIED_NAMED LABEL. false if future/missing/empty."
+    },
+    {
+      "reason": "event_proximity_world",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true|false; ~0.5 if spine_empty",
+      "complete_state_fields": ["news_join.high_in_f5_window", "news_join.high_in_w7_window"],
+      "env_flag_draft": null,
+      "notes": "world pack. chair VETO draft only. compose_world_shadow never resizes. Do not invent NEWS_PROTOCOL."
+    },
+    {
+      "reason": "event_size_score",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "local event_size from news.window",
+      "complete_state_fields": ["news_join"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "fluid_local.event_size. LABEL. Physical lots not stacked. Hist-prove before any size APPLY."
+    },
+    {
+      "reason": "veto_event_noul",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true if high_in_f5_window and not spine_empty",
+      "complete_state_fields": ["news_join.high_in_f5_window"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "fluid_local.veto_event mirrors event_proximity. Chair VETO draft. Not a live refuse this session."
+    },
+    {
+      "reason": "ca_size_event_join_score",
+      "class_now": "SHADOW_ONLY",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Score",
+      "choice_labels_or_score": "event_join tilt 1.0 or EVT_HIGH_TILT",
+      "complete_state_fields": ["news_join.event_join"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "Uses news_spine join only. Empty → assembled=false source=news_spine_empty. Session 06 owns CA_SIZE APPLY. Here: feed news_join, keep APPLY=0."
+    },
+    {
+      "reason": "event_join_features_currency",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "usd/gbp/jpy/eur_high_in_window | None if empty",
+      "complete_state_fields": ["news_join.event_join"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_SHADOW=1",
+      "notes": "cross_asset.event_join_features. Real JSON join by currency. Include inside news_join object when spine join exists; else omit / STATE_MISSING child."
+    },
+    {
+      "reason": "g1_live_a1_host_inventory_extra",
+      "class_now": "JEV_JUDGED",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "calendar_honest via extra host_news_*",
+      "complete_state_fields": ["news_join.host_news_*"],
+      "env_flag_draft": "GTOS_JEV_HOST_EVENTS; GTOS_JEV_A1_LOG=1",
+      "notes": "G1 LANDED in _pr41_land a1_log/apply_size + tests. Repair map still says MISSING — stale vs PR41. Chair copy onto VPS not claimed. Live box events.jsonl MISSING."
+    },
+    {
+      "reason": "gold_state_attach_host_news",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "completeness.host_news_read",
+      "complete_state_fields": ["news_join", "n_incomplete"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_SHADOW=1",
+      "notes": "assemble_gold_state_v0 attach_news only — host inventory gap on live gold_state. Draft: merge assemble_news_join into gold_state extra so evaluate() sees COMPLETE_STATE.news_join."
+    },
+    {
+      "reason": "host_news_inventory_read_noul",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": "true iff inventory_status==READ",
+      "complete_state_fields": ["news_join.host_news_inventory_status"],
+      "env_flag_draft": "GTOS_JEV_NEWS_JOIN_APPLY=0",
+      "notes": "world.completeness.host_news_read already bool. Tape READ=0 so this Noul is constant-false until G2. Still wire (honest), do not invent READ."
+    },
+    {
+      "reason": "complete_state_news_join_full_state_dark",
+      "class_now": "ENVELOPE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": "full_state_dark may be true if news_join STATE_MISSING AND other blocks dark — news_join alone does not force refuse",
+      "complete_state_fields": ["full_state_dark", "n_incomplete", "news_join"],
+      "env_flag_draft": null,
+      "notes": "news_join is OPTIONAL on COMPLETE_STATE. Missing news_join increments n_incomplete but Policy C analog is skip-not-refuse. Fail-closed if Jev dark: keep envelope honesty, do not change fire."
+    }
+  ]
+}

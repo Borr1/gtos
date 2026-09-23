@@ -1,0 +1,248 @@
+{
+  "schema": "gtos.jev_everywhere.decision_reason_wires.v1",
+  "session_id_label": "15_residual_static_book_owner_batch_a",
+  "as_of_ict": "2026-09-21T06:05:33+07:00",
+  "module": "book_owner",
+  "canonical_file": "/workspace/gtos/close_loop/war_room_20260920/_pr41_land/ai-trading-agent/src/components/ultimate_book/book_owner.py",
+  "n_reasons": 7,
+  "n_jev_wires": 2,
+  "n_envelope_keep": 5,
+  "never_broker_place": true,
+  "global_sleeve_select_apply_flipped": false,
+  "notes_global": "All seven are STATIC_CODE today (gap inventory). Envelope reasons stay integers. Jev-upgradable drafts default-off, fail-closed if Jev dark. Chair APPLY later after Challenge hist-prove. This session does not claim APPLY landed.",
+  "wires": [
+    {
+      "reason": "breach_flatten_block",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "account.login",
+        "account.ns",
+        "account.equity_r",
+        "account.dd_wall_r",
+        "account.realized_today_pct",
+        "place_context.writer_ready",
+        "place_context.authority",
+        "hard_off_hit",
+        "occupancy.n_open_book"
+      ],
+      "env_flag_draft": null,
+      "live_effect": "BLOCK_NEW",
+      "emitters": [
+        "UltimateBookOwner.run_cycle:1891-1936 (if _breach_block then place=False; skip string when runtime_effect_now and not place)",
+        "UltimateBookOwner._apply_breach_flatten:2841-2900 (operator FLATTEN.flag or governor breach after _breach_confirm ticks)"
+      ],
+      "gate_ids": ["UB-PLC-001", "UB-MGT-002", "UB-MGT-003", "UB-MGT-004"],
+      "envelope_wall_ids": ["ENV-DD", "ENV-KILL", "ENV-H8"],
+      "fail_closed_if_jev_dark": "n/a — Jev never authorizes place through this latch",
+      "notes": "Prop wall. Daily flatten at -4% vs -5% prop; maxDD flatten at 9% vs -10%/90k static floor. Operator FLATTEN.flag is identity. Unassessable governor returns None and LEAVES the latch (fail-safe). Jev Choice PLACE through this latch is forbidden. Observe-LABEL of would_units while blocked belongs to session 12, not an APPLY wire. Soft exception of the flatten threshold would be HARD_OFF_EXCEPTION-class and is out of Batch A — never a silent code flip."
+    },
+    {
+      "reason": "kill_switch_or_halt_forced_observe_only",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "place_context.writer_ready",
+        "place_context.authority",
+        "place_context.last_refusal_class",
+        "account.login",
+        "account.ns"
+      ],
+      "env_flag_draft": null,
+      "live_effect": "OBSERVE_ONLY",
+      "emitters": [
+        "BookLauncher.tick:265-270 (killed or halted => place=False)",
+        "UltimateBookOwner.run_cycle:1932-1936 (skip string when place=False and not _breach_block)"
+      ],
+      "gate_ids": ["UB-PLC-002", "UB-PLC-019", "ENV-KILL"],
+      "envelope_wall_ids": ["ENV-KILL", "$KILL"],
+      "fail_closed_if_jev_dark": "n/a — operator brake is integer",
+      "notes": "Operator identity. pipeline_state/ULTIMATE_BOOK_KILL.flag and RESEARCH_RUNTIME_HALT.flag. open_trade also inherits runtime_halt. Catch-all skip when launcher passes place=False for any non-breach reason. Jev must not override operator/halt. Tests: test_kill_switch_forces_observe_only, test_halt_flag_forces_observe_only."
+    },
+    {
+      "reason": "account_state_unavailable",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "account.login",
+        "account.ns",
+        "account.equity_r",
+        "account.dd_wall_r",
+        "account.soft_daily_stop",
+        "full_state_dark",
+        "n_incomplete"
+      ],
+      "env_flag_draft": null,
+      "live_effect": "SKIP",
+      "emitters": [
+        "UltimateBookOrderRouter.account_state:37-53 (None if equity/balance unreadable or <=0)",
+        "UltimateBookOwner.run_cycle:1976-1980 (skip + bar_consumable=False retry)"
+      ],
+      "gate_ids": ["UB-PLC-022", "UB-ADM-DDREF"],
+      "envelope_wall_ids": ["ENV-DD"],
+      "fail_closed_if_jev_dark": "n/a — cannot size without equity/balance",
+      "notes": "Identity + prop headroom. The V4 send contract needs current_equity, balance, day_start baseline, reset_window_id on the SAME tick as the order. Placing without it is a prop-wall violation. Code already retries (bar_consumable=False). No Jev PLACE. Optional session-19 observe evaluate() on the skip is LABEL only."
+    },
+    {
+      "reason": "profile_missing_instrument_config",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "symbol",
+        "broker_symbol",
+        "alive_sleeves",
+        "selected_sleeve_candidate",
+        "place_context.ticket_draft_fp",
+        "full_state_dark",
+        "n_incomplete"
+      ],
+      "env_flag_draft": null,
+      "live_effect": "SKIP",
+      "emitters": [
+        "UltimateBookEngine._generate_intents:550-565 (broker_symbol.supports False)",
+        "UltimateBookOwner.run_cycle:2007-2014 (_profile_supports_symbol False, post-generation)",
+        "UltimateBookOwner._runtime_learning skip stamp:993-995 (source_completeness_status)"
+      ],
+      "gate_ids": ["UB-PLC-006", "UB-PLC-FN-SKIP"],
+      "envelope_wall_ids": [],
+      "fail_closed_if_jev_dark": "n/a — cannot invent a broker mapping",
+      "notes": "Identity/config physics. Two emitters (generation + owner). Historical XAUEUR/XAGEUR/XAUAUD/XAGAUD redacted_account 216-skip cells are PROFILE REPAIR, not a Jev place. Noul state_sufficient as a diagnostic LABEL (config hole vs genuine unsupported) is session 19 observe, not APPLY. Jev must not mint mt5_symbol."
+    },
+    {
+      "reason": "weekend_entry_embargo",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Choice",
+      "choice_labels_or_score": {
+        "Choice": ["KEEP_EMBARGO", "SCOPED_ENTRY_OK", "DELAY"],
+        "Score": {
+          "id": "weekend_carry",
+          "levels": [
+            "Horizon dies in the flatten/weekend gap (0)",
+            "Ordinary Friday hold; mixed (1)",
+            "Sleeve can legally carry; clock+horizon fit (2)"
+          ]
+        },
+        "companion_Choice": {
+          "id": "crypto_weekend_grid",
+          "labels": ["KEEP_CALENDAR", "GRID_EXEMPT", "ABSTAIN"]
+        }
+      },
+      "complete_state_fields": [
+        "symbol",
+        "broker_symbol",
+        "session_day",
+        "decision_bar_iso",
+        "session_bucket",
+        "selected_sleeve_candidate",
+        "alive_sleeves",
+        "phi",
+        "cost",
+        "occupancy",
+        "account.login",
+        "account.ns",
+        "account.firm",
+        "account.phase",
+        "weekend.policy_enabled",
+        "weekend.governs_sleeve",
+        "weekend.hours_to_boundary",
+        "weekend.flatten_before_hours",
+        "weekend.entry_embargo_hours",
+        "weekend.exempt_sleeves",
+        "weekend.server",
+        "hard_off_hit",
+        "news_join",
+        "full_state_dark",
+        "n_incomplete",
+        "place_context"
+      ],
+      "env_flag_draft": "GTOS_JEV_BOOK_OWNER_BATCH_A_SHADOW=1 (LABEL); GTOS_JEV_WEEKEND_EMBARGO_APPLY=0 until hist-prove. Never redacted_account funded flatten-window override.",
+      "live_effect": "SKIP",
+      "emitters": [
+        "UltimateBookOwner._weekend_entry_block:3018-3043",
+        "WeekendPolicy.entry_blocked:281-295 (max(embargo, flatten_before_hours))",
+        "UltimateBookOwner.run_cycle:2020-2028"
+      ],
+      "gate_ids": ["UB-PLC-007"],
+      "envelope_wall_ids": [],
+      "fail_closed_if_jev_dark": "KEEP_EMBARGO (static skip). Never PLACE.",
+      "notes": "ONLY Jev-upgradable SKIP that can eventually change fire rate (after hist). Split required: (1) flatten-window same-tick entry stays ENVELOPE when firm prohibits weekend hold (redacted_account FUNDED) — opening a trade that _weekend_flat_close would kill on the same tick is not a judgment. (2) extra entry_embargo_hours beyond flatten_before_hours is an economic Score (BA_WEEKEND_V1 embargo cells). (3) crypto GRID vs CALENDAR is Choice (BTCUSD quoted through 56.2% of weeks). FTMO Challenge: FIRM_RULES_V1 has NO weekend_holding key; policy default-OFF; arming it pays a measured cost for no rule — SCOPED_ENTRY_OK is the HARD_OFF_EXCEPTION pattern, hist-gated, never silent. Policy OFF: this reason does not fire; Friday VETO via weekend_carry is session 01/14 place family, not a new skip. Do not invent NEWS_PROTOCOL; news_join=STATE_MISSING OK."
+    },
+    {
+      "reason": "weekend_policy_clock_unavailable",
+      "class_now": "STATIC_CODE",
+      "proposed": "ENVELOPE_KEEP",
+      "wire_type": "none",
+      "choice_labels_or_score": null,
+      "complete_state_fields": [
+        "weekend.server",
+        "weekend.policy_enabled",
+        "account.firm",
+        "account.phase",
+        "full_state_dark",
+        "n_incomplete"
+      ],
+      "env_flag_draft": null,
+      "live_effect": "SKIP",
+      "emitters": [
+        "UltimateBookOwner._weekend_entry_block:3033-3042 (no server or entry_blocked exception)",
+        "weekend_policy.next_weekend_boundary_utc (raises on unregistered server)",
+        "UltimateBookOwner.weekend_policy_preflight:2941-2956 (launch refuse)"
+      ],
+      "gate_ids": ["UB-PLC-007", "UB-MGT-006"],
+      "envelope_wall_ids": [],
+      "fail_closed_if_jev_dark": "n/a — cannot invent a weekend boundary",
+      "notes": "Fail-closed dark clock. Opposite degradation vs _weekend_flat_close (which does not invent a close). Jev guessing Saturday 00:00 is a FN-funded compliance hole. Right fix: resolve server name / do not arm policy without clock / launch preflight already refuses. Not a Jev PLACE."
+    },
+    {
+      "reason": "no_tick_transient",
+      "class_now": "STATIC_CODE",
+      "proposed": "JEV_WIRE",
+      "wire_type": "Noul",
+      "choice_labels_or_score": {
+        "Noul": "tape_fresh",
+        "compose_if_apply": {
+          "P_yes_ge_threshold_retry": "RETRY (keep bar_consumable=False; current static)",
+          "P_yes_lt_threshold_consume": "CONSUME_BAR (stand; do not chase a closed-market reopen as the same decision bar)",
+          "never": "PLACE without a tick"
+        },
+        "optional_Choice": ["RETRY", "CONSUME_BAR", "DELAY"]
+      },
+      "complete_state_fields": [
+        "symbol",
+        "broker_symbol",
+        "session_day",
+        "decision_bar_iso",
+        "session_bucket",
+        "selected_sleeve_candidate",
+        "tick.present",
+        "tick.age_s",
+        "tick.last_iso",
+        "bar_consumable",
+        "minutes_since_decision_bar",
+        "place_context.last_refusal_class",
+        "full_state_dark",
+        "n_incomplete",
+        "news_join"
+      ],
+      "env_flag_draft": "GTOS_JEV_BOOK_OWNER_BATCH_A_SHADOW=1 (LABEL); GTOS_JEV_NO_TICK_TAPE_FRESH_APPLY=0 until hist-prove. Place without tick remains ENVELOPE.",
+      "live_effect": "SKIP_RETRY",
+      "emitters": [
+        "UltimateBookOwner._tick:549-554",
+        "UltimateBookOwner.run_cycle:2088-2094"
+      ],
+      "gate_ids": ["UB-PLC-GEOM-TICK", "UB-PLC-013"],
+      "envelope_wall_ids": [],
+      "fail_closed_if_jev_dark": "RETRY (bar_consumable=False) — current static. Never PLACE.",
+      "notes": "Tick is None: cannot form live stop/target (physics). PLACE without a bid/ask is ENVELOPE. The upgradable bit is retry-vs-consume: always-retry can chase a stale bar when the market reopens (cousin of stale_late_entry_after_restart / UB-PLC-016, owned by session 01/16); always-consume loses a valid bar during a brief MT5 hole. Adjacent static already skips tick_age>900s as stale_tick_market_closed (fail-OPEN on missing timestamp). tape_fresh is named in the 193-gate inventory but NOT implemented in gold_fanout_questions(). APPLY only mutates bar_consumable. Do not invent a session calendar; market_expected_open is STATE_MISSING unless a named clock field is assembled."
+    }
+  ]
+}

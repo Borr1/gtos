@@ -1,0 +1,1000 @@
+[
+  {
+    "reason": "circuit_breaker_open",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "governor.operator_circuit_breaker",
+      "account.login",
+      "account.ns",
+      "place_context.authority"
+    ],
+    "env_flag_draft": "none — integer kill switch ultimate_book_operator_circuit_breaker / GovernorState.operator_circuit_breaker",
+    "notes": "INVENTORY row. Outer operator kill: allow_new=false, size_cap=0. Hard ENVELOPE. Soft exception only via Chair + Jev+Challenge hist (session 09 pattern KEEP_OFF|SCOPED_EXCEPTION) — never silent code flip. Jev dark cannot reopen. Inventory live_effect BLOCK_OR_DERISK is too loose: this is BLOCK only.",
+    "taxonomy": "BLOCK",
+    "inventory": true,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "fail_closed:nan_state",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.equity", "governor.high_water", "governor.realized_today_pct", "governor.open_risk_pct"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL (inventory omitted). Contradictory/NaN GovernorState. Identity envelope. Noul governor_state_honest may LABEL completeness; cannot authorize entries.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "fail_closed:nonpositive_equity",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.equity", "governor.high_water"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. equity<=0 or high_water<=0. Prop-identity envelope.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "fail_closed:high_water_below_equity",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.equity", "governor.high_water"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Sanity invariant. Wrong high_water silently shifts DD wall — keep integer.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "fail_closed:negative_open_risk",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.open_risk_pct"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Negative open_risk is contradictory state.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "soft_daily_stop_reached",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": {
+      "choice": ["BLOCK_KEEP", "DERISK_TRIM", "STAND"],
+      "score_companion": {
+        "id": "daily_room_size_mult",
+        "levels": ["near_hard_daily_wall_haircut", "ordinary_intraday", "green_day_full"]
+      }
+    },
+    "complete_state_fields": [
+      "account.equity_r",
+      "account.soft_daily_stop",
+      "governor.realized_today_pct",
+      "governor.open_risk_pct",
+      "governor.hard_daily_limit_pct",
+      "governor.joint_daily_room",
+      "governor.soft_daily_stop_pct",
+      "occupancy.n_open_book",
+      "session_bucket",
+      "alive_sleeves",
+      "news_join"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SOFT_STOP_CHOICE (default 0); GTOS_JEV_ADMISSION_SHADOW; APPLY=0 until hist",
+    "notes": "INVENTORY. Live BLOCK new entries at -3% (hard prop daily is -5%). Buffer, not the prop wall → Jev candidate. Default-until-prove: keep BLOCK. Score may SHRINK size in the approach band (realized in (-3%,0]). Choice DERISK_TRIM may only leave remaining room inside hard-5% minus 0.5pp joint buffer. Cannot reopen circuit. Jev dark => BLOCK. Cannot PLACE. news_join honest STATE_MISSING.",
+    "taxonomy": "BLOCK_or_DERISK",
+    "inventory": true,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "max_dd_limit_reached",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "governor.dd_frac",
+      "governor.max_dd_reference_equity",
+      "account.dd_wall_r",
+      "governor.equity"
+    ],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL (inventory omitted). Prop-fatal STATIC -10% from initial balance (FTMO/FN 90k on 100k). Not trailing. Hard ENVELOPE. Exception only Jev+hist never silent.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "max_dd_entry_buffer_reached",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "governor.dd_frac",
+      "governor.max_dd_entry_block_pct",
+      "governor.max_dd_limit_pct"
+    ],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Live YAML 0.09 — last entry buffer before -10% wall. Keep BLOCK. Soft derisk BEFORE this line is derisking_into_maxdd_wall (Score). Do not let Jev reopen inside the 9–10% band.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "BLOCK_NEW size_cap=0"
+  },
+  {
+    "reason": "gross_risk_cap_exhausted",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "governor.open_risk_pct",
+      "governor.gross_open_risk_cap_pct",
+      "governor.available_gross_risk_pct",
+      "governor.joint_daily_room"
+    ],
+    "env_flag_draft": "none for the cap existence; shed policy is gross_risk_cap_would_exceed",
+    "notes": "RESIDUAL. Remaining headroom <=0 after joint-daily tighten (realized loss + new open cannot exceed -5%). Cap existence is prop envelope. How to allocate remaining headroom is the Score shed wire.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "BLOCK_NEW"
+  },
+  {
+    "reason": "derisking_into_maxdd_wall",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "maxdd_derisk_size_mult",
+        "levels": [
+          "at_or_past_entry_buffer_zero",
+          "deep_band_heavy_haircut",
+          "mid_band_moderate_haircut",
+          "early_band_light_haircut",
+          "below_derisk_start_full"
+        ]
+      }
+    },
+    "complete_state_fields": [
+      "governor.dd_frac",
+      "governor.derisk_mode",
+      "governor.derisk_start_dd_pct",
+      "governor.size_cap_multiplier",
+      "governor.max_dd_limit_pct",
+      "account.equity_r",
+      "account.dd_wall_r",
+      "alive_sleeves",
+      "phi_by_sleeve",
+      "occupancy",
+      "stress.consecutive_loss_days",
+      "stress.trailing_neg_frac"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; GTOS_JEV_ADMISSION_SHADOW; GTOS_JEV_ADMISSION_APPLY=0",
+    "notes": "INVENTORY. PRIMARY Score candidate. Live slates already show this reason with cap_mult≈0.42–0.71 (smooth mode from dd=0). Static formula band=full-until-7%-then-linear; smooth=1-dd/0.10. Jev Score may only SHRINK vs static cap_mult (never widen). Compose with stress/kelly/vol AFTER this cap. Fail-closed if Jev dark => static cap_mult. Live derisk_mode=smooth is the certified pair for 2.0% ceiling — Score cannot silently switch to band.",
+    "taxonomy": "DERISK",
+    "inventory": true,
+    "live_effect": "SIZE_CAP_MULT allow_new=true"
+  },
+  {
+    "reason": "profit_target_protect_derisk",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "profit_target_lock_size_mult",
+        "levels": [
+          "lock_pass_quarter_or_less",
+          "lock_pass_half",
+          "still_hunt_near_full"
+        ]
+      }
+    },
+    "complete_state_fields": [
+      "governor.profit_target_pct",
+      "governor.profit_target_derisk_mult",
+      "governor.gain_vs_initial",
+      "governor.dd_frac",
+      "account.equity_r",
+      "session_day"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; APPLY=0",
+    "notes": "INVENTORY. OPS-03: once equity >= initial*(1+target) shrink NEW size (default ×0.25) and keep trading. Score may shrink further, never raise above static profit_target_derisk_mult. Combines min() with maxDD derisk. YAML profit_target_pct currently 0 (dataclass default) unless ops sets it — confirm on host. Cannot PLACE.",
+    "taxonomy": "DERISK",
+    "inventory": true,
+    "live_effect": "SIZE_CAP_MULT allow_new=true"
+  },
+  {
+    "reason": "ok",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {
+      "noul": {
+        "id": "governor_room_honest",
+        "true": "Named governor fields are finite and room remains under daily/maxDD/gross caps",
+        "false": "A named governor field is missing, contradictory, or room is already exhausted"
+      }
+    },
+    "complete_state_fields": [
+      "governor.allow_new",
+      "governor.size_cap_multiplier",
+      "governor.realized_today_pct",
+      "governor.open_risk_pct",
+      "governor.dd_frac",
+      "full_state_dark",
+      "n_incomplete"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SHADOW",
+    "notes": "RESIDUAL pass-through when cap_mult==1. Observe Noul only. Must not become a new refuse. Feeds COMPLETE_STATE honesty for other wires.",
+    "taxonomy": "OBSERVE",
+    "inventory": false,
+    "live_effect": "ADMIT_FULL"
+  },
+  {
+    "reason": "ceiling_profile_requires_smooth_ddefense",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "governor.profile",
+      "governor.base_risk_per_unit",
+      "governor.derisk_mode"
+    ],
+    "env_flag_draft": "none — GTOS_UB_DERISK_MODE / ultimate_book_derisk_mode stay integer",
+    "notes": "INVENTORY. Safety interlock: base_risk>=2.0% only certified with derisk_mode=smooth. Live profile clean3_w7_ceiling_nom2p00. Un-certified band pairing refused size 0. Hard ENVELOPE. Softening the pairing is a hist-gated Chair exception, not a Jev Score.",
+    "taxonomy": "BLOCK",
+    "inventory": true,
+    "live_effect": "BLOCK_NEW (governor dict None)"
+  },
+  {
+    "reason": "leader_impulse_veto",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "leader_impulse_sizeup",
+        "levels": [
+          "leader_opposed_no_sizeup",
+          "unclear_or_missing_ll_impulse",
+          "no_leader_impulse_sizeup"
+        ]
+      }
+    },
+    "complete_state_fields": [
+      "selected_sleeve_candidate",
+      "sleeve_features.ll_impulse",
+      "identity.side",
+      "world.gold_vs_index",
+      "world.gold_vs_usd",
+      "phi",
+      "session_bucket"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_OVERLAY_SCORE; live ultimate_book_overlays=false so structurally inert until generator fills ll_impulse",
+    "notes": "INVENTORY name is misleading: this is SIZE-UP 1.5x on sub_xvol_pullback when ll_impulse==none, NOT a BLOCK. Inventory live_effect BLOCK_OR_DERISK is wrong. Live overlays=false AND generator does not populate ll_impulse → overlay_sizeup_for returns 1.0. Score over COMPLETE_STATE (cross-asset leaders named, never invent US30 impulse). Combined size-up capped OVERLAY_SIZEUP_MAX=1.75 ENVELOPE. Shrink-half of other tilts stays outside the cap.",
+    "taxonomy": "DERISK_or_SIZEUP",
+    "inventory": true,
+    "live_effect": "SIZE_UP (inert live)"
+  },
+  {
+    "reason": "session_active_stack",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "session_active_sizeup",
+        "levels": ["dead_or_wrong_hour", "ordinary_session", "london_ny_active_hours"]
+      }
+    },
+    "complete_state_fields": [
+      "sleeve_features.decision_hour",
+      "sessions.named",
+      "sessions.broker_hour",
+      "clock.is_friday",
+      "identity.sleeve"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_OVERLAY_SCORE",
+    "notes": "RESIDUAL sibling of leader_impulse_veto. SIZE-UP 1.15x when H4 hour in {8,12,16} on sub_xvol_pullback / sub_mid_dn_revert. Live inert (overlays=false; decision_hour unpopulated). Writer clock stays integer; Score fitness only. Friday cutoff is LABEL not a new refuse.",
+    "taxonomy": "DERISK_or_SIZEUP",
+    "inventory": false,
+    "live_effect": "SIZE_UP (inert live)"
+  },
+  {
+    "reason": "gross_risk_cap_would_exceed",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "unit_keep_under_gross_cap",
+        "levels": ["shed_this_unit", "borderline_fit", "keep_this_unit"]
+      }
+    },
+    "complete_state_fields": [
+      "alive_menu",
+      "phi_by_sleeve",
+      "governor.available_gross_risk_pct",
+      "units[].cluster",
+      "units[].confidence",
+      "units[].unit_risk_pct",
+      "occupancy"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SHED_SCORE; APPLY=0",
+    "notes": "RESIDUAL. FFD shed by FIT not conviction (D1). Cap never bound in recorded W7 fortnight (0/668). Score per unit KEEP|SHED; must not exceed remaining headroom; never widen cap. Affinity: prefer XAU/GBPJPY keep when receipts say, without flipping global sleeve-select APPLY. Jev dark => keep FFD.",
+    "taxonomy": "DERISK",
+    "inventory": false,
+    "live_effect": "SHED_UNIT size 0"
+  },
+  {
+    "reason": "unknown_profile",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.profile"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. admit_and_size + bridge fail_closed_unknown_profile. Identity envelope.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "fail_closed:unknown_sleeve",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.sleeve", "alive_sleeves"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Whole cluster-day unit sizes 0. Envelope.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "UNIT_SIZE_0"
+  },
+  {
+    "reason": "fail_closed:bad_direction",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.side"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. direction not in {+1,-1}.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "UNIT_SIZE_0"
+  },
+  {
+    "reason": "fail_closed:nonpositive_stop",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["geometry.stop_dist"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Geometry identity. Do not invent ATR stop.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "UNIT_SIZE_0"
+  },
+  {
+    "reason": "fail_closed:bad_intra_size",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["sleeve_features.intra_size"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "UNIT_SIZE_0"
+  },
+  {
+    "reason": "w7_dropped_symbols",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.symbol", "cost.spread_r"],
+    "env_flag_draft": "none — ultimate_book_drop_w7_symbols=true",
+    "notes": "RESIDUAL. HEATOIL_c / NATGAS_cash tick floors swamp stop. Tick-true envelope. is_tick_tradeable / TICK_SPREAD_FLOOR_UNTRADEABLE_R=0.20 cousin.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "DROP_INTENT"
+  },
+  {
+    "reason": "tick_spread_floor_untradeable",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.symbol", "cost.spread_r", "cost.tick_spread_floor_r"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL helper is_tick_tradeable. Pretrade spread_r refuse itself is session 16 Score COST. This untradeable floor (>=0.20R) stays envelope.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "GATE_SYMBOL_OUT"
+  },
+  {
+    "reason": "vp_acceptance_drop",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": {
+      "choice": ["DROP_NOISE", "KEEP_BASE", "ABSTAIN"]
+    },
+    "complete_state_fields": [
+      "identity.sleeve",
+      "sleeve_features.vp_loc",
+      "regime_tag",
+      "conf_band"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SHADOW; live ultimate_book_vp_acceptance=false so inert",
+    "notes": "RESIDUAL. Drops sub_mid_dn_revert unless vp_loc=above_va. Default-OFF live. Choice over named vp_loc only — do not invent volume profile. Jev dark + flag ON => keep DROP. APPLY after hist; Module_ATR R must not be used as this sleeve's EV.",
+    "taxonomy": "BLOCK_or_KEEP",
+    "inventory": false,
+    "live_effect": "DROP_INTENT (flag off live)"
+  },
+  {
+    "reason": "learning_rerate_GATE",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.sleeve", "learning_rerate.mult"],
+    "env_flag_draft": "none — actuator GATE 0.0 stays drop",
+    "notes": "RESIDUAL. learning_rerate[sleeve]==0.0 DROPS intents. Un-gating a non-edge sleeve is Chair+hist, not silent Jev. Tilt half is a separate Score.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "DROP_SLEEVE (flag off live)"
+  },
+  {
+    "reason": "learning_rerate_tilt",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "learning_confidence_tilt",
+        "levels": ["down_weight", "hold", "bounded_size_up"]
+      }
+    },
+    "complete_state_fields": [
+      "identity.sleeve",
+      "learning_rerate.mult",
+      "phi",
+      "account"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; APPLY=0; never exceed LEARNING_RERATE_MAX=1.25",
+    "notes": "RESIDUAL. DOWN_WEIGHT 0.5 / SIZE_UP ≤1.25. Default-off live (edge_reconciler brake-only). Score may shrink vs actuator; size-up still bounded by envelope MAX. Session 06 apply_size is a different post-admit tilt family — compose min/product, never stack above overlay cap.",
+    "taxonomy": "DERISK",
+    "inventory": false,
+    "live_effect": "SIZE_TILT (flag off live)"
+  },
+  {
+    "reason": "metals_confluence_reject",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": {
+      "choice": ["DROP", "ADMIT_TRIM", "ABSTAIN"]
+    },
+    "complete_state_fields": [
+      "identity.sleeve",
+      "identity.symbol",
+      "sleeve_features.htf_slope_norm",
+      "sleeve_features.mom_20_atr",
+      "sleeve_features.fvg_freshness_bars",
+      "sleeve_features.atr_ratio",
+      "sleeve_features.session_hour",
+      "sleeve_features.a8_k_of_4_pass",
+      "geometry.atr14"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SHADOW; live ultimate_book_metals_confluence_gate=true",
+    "notes": "RESIDUAL. Live ON. Drops metals_core/metals_softband that CARRY A8 features and fail K=3-of-4. Featureless admit-as-today. atr_ratio is a NAMED decision-bar fact (index<=i) — not Module_ATR blotter R, not invented regime. Choice may ADMIT_TRIM (Score size_mult<1) vs DROP; Jev dark => keep DROP when gate armed. a8_agrees Noul already exists in fanout (consistency only, not a re-vote). Affinity XAU/XAG.",
+    "taxonomy": "BLOCK_or_DERISK",
+    "inventory": false,
+    "live_effect": "DROP_INTENT when features fail K"
+  },
+  {
+    "reason": "symbol_damage_quarantine",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.symbol", "symbol_damage.verdict", "symbol_damage.net", "symbol_damage.win_rate"],
+    "env_flag_draft": "none — QUARANTINE 0.0 stays drop; flag default-off",
+    "notes": "RESIDUAL. Per-symbol circuit (account governor has no per-symbol breaker). Un-quarantine only via Jev+hist KEEP_OFF|SCOPED_EXCEPTION pattern, not this Score batch.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "DROP_SYMBOL (flag off live)"
+  },
+  {
+    "reason": "symbol_damage_risk_reduce",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "symbol_damage_size_mult",
+        "levels": ["half_or_less", "light_reduce", "healthy_full"]
+      }
+    },
+    "complete_state_fields": [
+      "identity.symbol",
+      "symbol_damage.verdict",
+      "symbol_damage.trades",
+      "symbol_damage.net",
+      "session_bucket"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; APPLY=0",
+    "notes": "RESIDUAL. Static 0.5. Score may shrink further, never raise above 0.5 while verdict=risk_reduce. Leak-free prior closed deals only.",
+    "taxonomy": "DERISK",
+    "inventory": false,
+    "live_effect": "SIZE_TILT 0.5 (flag off live)"
+  },
+  {
+    "reason": "stress_derisk_ladder_step",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "ladder_derisk_size_mult",
+        "levels": ["step2_x0_60", "step1_x0_80", "no_streak_full"]
+      }
+    },
+    "complete_state_fields": [
+      "stress.consecutive_loss_days",
+      "governor.size_cap_multiplier",
+      "account",
+      "session_day"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; live ultimate_book_stress_derisk=true",
+    "notes": "RESIDUAL. TIER-1 LADDER_STEPS (1.0, 0.80, 0.60). Live ON. Leak-free prior days only. Score may shrink; floor STRESS_DERISK_MIN_MULT=0.60 ENVELOPE. TIER-2 regime overlay stays opt-in (forward-flat alone) — do not APPLY regime from this session.",
+    "taxonomy": "DERISK",
+    "inventory": false,
+    "live_effect": "DAY_SIZE_MULT <=1"
+  },
+  {
+    "reason": "stress_derisk_coloss_breaker",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "coloss_derisk_size_mult",
+        "levels": ["breaker_x0_60", "near_trigger", "clear"]
+      }
+    },
+    "complete_state_fields": [
+      "stress.trailing_neg_frac",
+      "stress.coloss_window",
+      "alive_sleeves"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE",
+    "notes": "RESIDUAL. trailing-5d cross-sleeve neg-firing frac >=0.57 → ×0.60. Live ON with ladder. Score shrink-only. Floor 0.60 envelope.",
+    "taxonomy": "DERISK",
+    "inventory": false,
+    "live_effect": "DAY_SIZE_MULT <=1"
+  },
+  {
+    "reason": "kelly_lite_conviction",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "kelly_day_size_mult",
+        "levels": ["single_edge_haircut", "two_three_ordinary", "multi_edge_sizeup"]
+      }
+    },
+    "complete_state_fields": [
+      "kelly.n_active_sleeves_today",
+      "kelly.conservative",
+      "alive_sleeves",
+      "conflict_set"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; live kelly_lite=true conservative=true",
+    "notes": "RESIDUAL. Half-Kelly bins {0.748, 0.991, 1.241} live. Combined size-up capped 1.75 ENVELOPE. Top bin train-thin — Score should not exceed conservative bins on Challenge until hist. Running count must use same precount filters (D3). Not a place wire.",
+    "taxonomy": "DERISK_or_SIZEUP",
+    "inventory": false,
+    "live_effect": "DAY_SIZE_MULT"
+  },
+  {
+    "reason": "vol_level_tilt",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "vol_level_size_mult",
+        "levels": ["expanded_xhi_sizeup_damped", "near_centre", "low_xhi_derisk"]
+      }
+    },
+    "complete_state_fields": [
+      "identity.sleeve",
+      "sleeve_features.vr",
+      "sleeve_features.vol_ratio",
+      "geometry.atr14"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; live default-off (launcher --vol-level-tilt, not YAML)",
+    "notes": "RESIDUAL. clamp(vr/2.0, 0.80, 1.20) on sub_xvol_pullback. Net de-risk. vr is named substrate fact — NOT Module_ATR blotter, NOT invented regime. Fail-open-to-1.0 if vr missing. Shrink half MUST apply outside OVERLAY_SIZEUP_MAX (already split in size_correlated_units).",
+    "taxonomy": "DERISK",
+    "inventory": false,
+    "live_effect": "INTENT_SIZE_TILT (flag off live)"
+  },
+  {
+    "reason": "derisk_mode_smooth_vs_band",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.derisk_mode", "governor.profile", "governor.base_risk_per_unit"],
+    "env_flag_draft": "none — GTOS_UB_DERISK_MODE stays integer; Score lives on derisking_into_maxdd_wall",
+    "notes": "RESIDUAL shape flag, not a reason string. Live smooth required for 2.0% ceiling. Do not let Jev flip band↔smooth. Shape change is Chair+hist. The Score on derisking_into_maxdd_wall already judges magnitude inside the certified shape.",
+    "taxonomy": "ENVELOPE_SHAPE",
+    "inventory": false,
+    "live_effect": "SELECTS_CAP_FORMULA"
+  },
+  {
+    "reason": "joint_daily_gross_cap_tighten",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": {
+      "score": {
+        "id": "joint_daily_headroom_use",
+        "levels": ["leave_more_buffer", "use_static_joint_room", "invalid_would_breach_hard_daily"]
+      }
+    },
+    "complete_state_fields": [
+      "governor.realized_today_pct",
+      "governor.hard_daily_limit_pct",
+      "governor.gross_open_risk_cap_pct",
+      "governor.joint_daily_room"
+    ],
+    "env_flag_draft": "GTOS_JEV_ADMISSION_SIZE_SCORE; APPLY=0",
+    "notes": "RESIDUAL. book_engine._joint_daily_limits shrinks gross cap so realized+open+0.5pp cannot hit -5%. Score may leave MORE buffer, never less than the joint formula. Hard daily FTMO_DAILY=0.05 ENVELOPE.",
+    "taxonomy": "DERISK",
+    "inventory": false,
+    "live_effect": "SHRINK_GROSS_CAP"
+  },
+  {
+    "reason": "equity_unavailable",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["account.equity_r"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. book_engine._safe. No governor math without equity.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "SKIP"
+  },
+  {
+    "reason": "day_baseline_unavailable",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.day_start_balance", "account"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Deal-capable broker but reconstruct_day_start_balance failed. Wrong baseline can miss -5% daily. Fail-closed.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "SKIP"
+  },
+  {
+    "reason": "fail_closed:asymmetric_profile_without_explicit_account",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.profile", "governor.account"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL D10. staggered_1p00_0p50 unused live. Side choice is risk allocation, not Jev Score.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "missing_dial_keys",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.required_dial_keys"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL D8. Enabled book with missing REQUIRED_DIAL_KEYS fails closed rather than silently 1.25%/band.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "unknown_candidate_book_profile",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.candidate_book_profile"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL bridge fail-closed. Allowlist identity.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "unknown_candidate_book_sleeves",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.candidate_book_sleeves"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "unknown_market_expansion_profile",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.market_expansion_profile"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "unknown_market_expansion_policy",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.market_expansion_policy"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "market_expansion_policy_sleeve_mismatch",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.market_expansion_sleeves", "governor.market_expansion_policy"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Explicit list must match named policy set.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "market_expansion_allowlist_empty",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.market_expansion_sleeves"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. include=true + empty allowlist + explicit_allowlist policy fails closed. Live uses named policy positive_weighted12_after_swap so resolver fills sleeves.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "unknown_market_expansion_sleeves",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.market_expansion_sleeves"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "fail_closed_broad_selector_still_live",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["surface.selector_v4_apply_to_execution", "surface.ultimate_book_disable_broad_selector"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL replacement invariant. Two selectors must never both bear risk.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FAIL_CLOSED"
+  },
+  {
+    "reason": "ultimate_book_disabled_by_config",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["place_context.writer_ready"],
+    "env_flag_draft": "none — authority gate",
+    "notes": "RESIDUAL triple-gate. Identity. Shadow still computes would_*.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "SHADOW_ONLY"
+  },
+  {
+    "reason": "ultimate_book_apply_to_execution_false",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["place_context.authority"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL authority gate.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "SHADOW_ONLY"
+  },
+  {
+    "reason": "ultimate_book_live_activation_allowed_false",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["place_context.authority"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Halt files / third gate.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "SHADOW_ONLY"
+  },
+  {
+    "reason": "ultimate_book_live_broker_authority_false",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["place_context.authority"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Observe-only. Distinct from book_owner live_broker_authority_false_observe_only (session 15/16).",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "OBSERVE_ONLY"
+  },
+  {
+    "reason": "flatten_on_breach_daily",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "governor.realized_today_pct",
+      "governor.flatten_daily_loss_pct",
+      "account"
+    ],
+    "env_flag_draft": "none — ultimate_book_flatten_on_breach; last-resort OPEN flatten",
+    "notes": "RESIDUAL cousin. Live ON at -4% vs -5% prop. ENTRY governor is admit-side; this FLATTENS open positions. Owner remint/flatten OPEN after hist — but THIS threshold is prop-fatal last-resort. Do not Jev-soften. Design Choice FLATTEN_CANDIDATE belongs to session 01/08, not a size Score.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FLATTEN_OPEN + BLOCK_NEW"
+  },
+  {
+    "reason": "flatten_on_breach_maxdd",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "governor.dd_frac",
+      "governor.flatten_maxdd_pct",
+      "governor.max_dd_reference_equity"
+    ],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL. Live flatten at 9% vs 10%/90k. Same last-resort envelope as daily flatten.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "FLATTEN_OPEN + BLOCK_NEW"
+  },
+  {
+    "reason": "overlay_sizeup_max_cap",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["governor.overlay_sizeup_max"],
+    "env_flag_draft": "none — OVERLAY_SIZEUP_MAX=1.75",
+    "notes": "RESIDUAL constant. Combined size-up (overlays × kelly × vol_up) never exceeds 1.75. Score wires must compose inside this cap. Shrink halves apply after.",
+    "taxonomy": "ENVELOPE_SHAPE",
+    "inventory": false,
+    "live_effect": "CAP_COMBINED_SIZEUP"
+  },
+  {
+    "reason": "stress_derisk_min_mult_floor",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["stress.min_mult"],
+    "env_flag_draft": "none — STRESS_DERISK_MIN_MULT=0.60",
+    "notes": "RESIDUAL floor. Overlay only shrinks; floor 0.60. Score cannot go below without a separate Chair hist (ruin-safe).",
+    "taxonomy": "ENVELOPE_SHAPE",
+    "inventory": false,
+    "live_effect": "FLOOR_DAY_MULT"
+  },
+  {
+    "reason": "ftmo_prop_walls",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": [
+      "account.dd_wall_r",
+      "governor.hard_daily_limit_pct",
+      "governor.max_dd_limit_pct",
+      "governor.profit_target_pct"
+    ],
+    "env_flag_draft": "none — FTMO_TARGET=0.08 FTMO_MAXDD=0.10 FTMO_DAILY=0.05",
+    "notes": "RESIDUAL constants. Prop identity. Soft stops/buffers may be Jev-judged; these three walls may not.",
+    "taxonomy": "BLOCK",
+    "inventory": false,
+    "live_effect": "PROP_RULE"
+  },
+  {
+    "reason": "ub_auth_010_observe",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {
+      "noul": {
+        "id": "governor_observe_attached",
+        "true": "gold_state.governor named fields are present on this UB-AUTH-010 row",
+        "false": "governor block empty or unassembled"
+      }
+    },
+    "complete_state_fields": ["governor", "identity", "occupancy"],
+    "env_flag_draft": "GTOS_JEV_A1_LOG / GTOS_JEV_ALIVE_SHADOW already; add GTOS_JEV_ADMISSION_SHADOW for governor questions",
+    "notes": "Existing observe of bridge decision. Fanout has no governor Score today — gold_state.governor often empty on A1 rows (host_occupancy was the repair). Expand questions (draft admission_questions) without changing the decision. APPLY=0.",
+    "taxonomy": "OBSERVE",
+    "inventory": false,
+    "live_effect": "LOG_ONLY"
+  },
+  {
+    "reason": "sized",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["units[].reason"],
+    "env_flag_draft": "none",
+    "notes": "RESIDUAL pass-through unit reason when sizing succeeded. Not a decision. Overlay tags (kelly_lite_naN_xM, ladder_stepK, coloss_breaker, vol_level_tilt_*) already record WHY. Keep as forensics; do not Jev-rewrite the string.",
+    "taxonomy": "OBSERVE",
+    "inventory": false,
+    "live_effect": "UNIT_SIZED"
+  }
+]

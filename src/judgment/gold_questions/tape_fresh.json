@@ -1,0 +1,30 @@
+{
+  "id": "tape_fresh",
+  "type": "noul",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "no tick/bar timestamps",
+  "include_depth": {
+    "clock": "full",
+    "timeframes.m15": "full"
+  },
+  "instructions": "Is the market clock alive (bar/tick age vs interval)? Missing timestamps are undecidable \u2014 compose-side ignore-if. Do not Noul this every tick on a live manage loop; it rides the candidate POST.",
+  "criteria": {
+    "true": "Named bar/tick age is alive versus the interval",
+    "false": "Named tape is stale versus the interval"
+  }
+}

@@ -1,0 +1,484 @@
+{
+  "schema": "gtos.jev.policy_c.question_bank_ablation.v1",
+  "as_of_ict": "2026-09-21T06:06:37+07:00",
+  "source": "/workspace/gtos/close_loop/war_room_20260920/_pr41_land/ai-trading-agent/src/judgment/jev_questions.py",
+  "n_gold_fanout": 49,
+  "model": "jev-1.13.0",
+  "api": "https://api.typesafe.ai/v1/systemone",
+  "typesafe_note": "Questions run in parallel and cannot see one another's answers. Extra questions cost tokens. Ask independent useful questions together.",
+  "core": [
+    "state_sufficient",
+    "flow_alignment",
+    "session_fitness",
+    "cost_hurtful",
+    "calendar_honest",
+    "family_study_vs_keep",
+    "spine_empty_honesty"
+  ],
+  "speculative": [
+    "flow_stance",
+    "geometry_vs_tape",
+    "level_respect",
+    "event_proximity",
+    "a8_agrees",
+    "admit",
+    "cost_vs_tape",
+    "stale_standing",
+    "last_refusal_class",
+    "friday_cutoff_label",
+    "high_in_f5_window",
+    "gold_usd_comove",
+    "session_liquidity",
+    "occupancy_world"
+  ],
+  "ablate_from_policy_c_pack": [
+    "session_size",
+    "geo_size",
+    "level_size",
+    "event_size",
+    "ac60_size",
+    "combined_size",
+    "veto_corr",
+    "veto_event",
+    "veto_cost",
+    "veto_occupancy_label",
+    "close_label",
+    "time_stop_vs_orig",
+    "hold_too_late",
+    "mfe_shape",
+    "trail_vs_orig",
+    "leave_orig_293332188",
+    "runner_r",
+    "isolated_reentry",
+    "sibling_cooldown",
+    "spring_reprint",
+    "minutes_since_flat",
+    "two_stop_would_be_third",
+    "cluster_same_day",
+    "minutes_to_nearest",
+    "warsh_class",
+    "past_flag",
+    "gold_index_comove",
+    "risk_on_funding"
+  ],
+  "new_policy_c_only": [
+    "policy_c_choice",
+    "incomplete_severity"
+  ],
+  "place_choice_open_default_off": [
+    "PLACE",
+    "STAND",
+    "DELAY"
+  ],
+  "rows": [
+    {
+      "question_id": "state_sufficient",
+      "wire_type": "Noul",
+      "tier": "CORE",
+      "labels": "true=named blocks present enough; false=required missing",
+      "note": "FLUID-ADM-001"
+    },
+    {
+      "question_id": "flow_stance",
+      "wire_type": "Choice",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "with_flow",
+        "against_flow",
+        "no_clear_flow"
+      ],
+      "note": "FLUID-ADM-002"
+    },
+    {
+      "question_id": "flow_alignment",
+      "wire_type": "Score",
+      "tier": "CORE",
+      "labels": [
+        "Fighting HTF/session flow",
+        "Mixed/rotating",
+        "Aligned"
+      ],
+      "note": "FLUID-ADM-003 / f5_xau_flow_alignment_size_tilt"
+    },
+    {
+      "question_id": "session_fitness",
+      "wire_type": "Score",
+      "tier": "CORE",
+      "labels": [
+        "Dead/Friday/wrong hour",
+        "Ordinary",
+        "Sleeve clean hour"
+      ],
+      "note": "FLUID-ADM-004"
+    },
+    {
+      "question_id": "geometry_vs_tape",
+      "wire_type": "Score",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "Stop dies 1-2 M15",
+        "Ordinary house risk",
+        "Stop/target fit vol"
+      ],
+      "note": "FLUID-ADM-005"
+    },
+    {
+      "question_id": "level_respect",
+      "wire_type": "Score",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "Through opposing level",
+        "No relevant level",
+        "Holding/reclaiming"
+      ],
+      "note": "FLUID-ADM-006"
+    },
+    {
+      "question_id": "cost_hurtful",
+      "wire_type": "Noul",
+      "tier": "CORE",
+      "labels": "true=cost-dominated (size tilt never refuse)",
+      "note": "F5-JEV-004"
+    },
+    {
+      "question_id": "event_proximity",
+      "wire_type": "Noul",
+      "tier": "SPECULATIVE",
+      "labels": "true=named HIGH in code window; spine empty ~0.5",
+      "note": "news honesty"
+    },
+    {
+      "question_id": "calendar_honest",
+      "wire_type": "Noul",
+      "tier": "CORE",
+      "labels": "true=spine present + events named",
+      "note": "FLUID-ADM-009"
+    },
+    {
+      "question_id": "a8_agrees",
+      "wire_type": "Noul",
+      "tier": "SPECULATIVE",
+      "labels": "metals A8 consistency; ignore non-metals",
+      "note": "FLUID-ADM-008"
+    },
+    {
+      "question_id": "admit",
+      "wire_type": "Choice",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "admit",
+        "abstain",
+        "hard_refuse"
+      ],
+      "note": "FLUID-ADM-007 / UB-AUTH-010 \u2014 NOT the Policy C A|C|D menu; do not write Policy C refuse from this answer"
+    },
+    {
+      "question_id": "family_study_vs_keep",
+      "wire_type": "Choice",
+      "tier": "CORE",
+      "labels": [
+        "study",
+        "keep",
+        "hard_off"
+      ],
+      "note": "FLUID-ADM-012; confirm named class; never discover bleed as Noul"
+    },
+    {
+      "question_id": "session_size",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "size tilt from session_fitness; cannot zero",
+      "note": "session 06 apply_size"
+    },
+    {
+      "question_id": "geo_size",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "size tilt from geometry_vs_tape",
+      "note": "session 06"
+    },
+    {
+      "question_id": "level_size",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "size tilt from level_respect",
+      "note": "session 06"
+    },
+    {
+      "question_id": "event_size",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "size tilt from HIGH proximity; spine empty \u2192 1",
+      "note": "session 06"
+    },
+    {
+      "question_id": "ac60_size",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "ac60/band fluidity",
+      "note": "session 06"
+    },
+    {
+      "question_id": "combined_size",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "combined living size case; code multiplies live_flow\u00d7live_cost",
+      "note": "session 06"
+    },
+    {
+      "question_id": "veto_corr",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "draft corr HOLD; occupancy KEEP is code",
+      "note": "session 04 place_fluid"
+    },
+    {
+      "question_id": "veto_event",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "draft pre-fill event VETO",
+      "note": "session 04"
+    },
+    {
+      "question_id": "veto_cost",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "draft cost VETO; must not become cost_skip",
+      "note": "session 04 / 16"
+    },
+    {
+      "question_id": "veto_occupancy_label",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "label crowded occupancy; keep-one stays integer",
+      "note": "session 01/04"
+    },
+    {
+      "question_id": "cost_vs_tape",
+      "wire_type": "Score",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "Spread dominates vol",
+        "Ordinary",
+        "Cheap vs vol"
+      ],
+      "note": "context for trim Score"
+    },
+    {
+      "question_id": "stale_standing",
+      "wire_type": "Noul",
+      "tier": "SPECULATIVE",
+      "labels": "standing stale vs as_of",
+      "note": "freshness"
+    },
+    {
+      "question_id": "last_refusal_class",
+      "wire_type": "Choice",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "none",
+        "cost",
+        "other"
+      ],
+      "note": "do not invent refusal"
+    },
+    {
+      "question_id": "close_label",
+      "wire_type": "Choice",
+      "tier": "ABLATE",
+      "labels": [
+        "orig_stop",
+        "broker_tp",
+        "time_stop",
+        "breach_flatten",
+        "other"
+      ],
+      "note": "EXPOST illegal on live_intent"
+    },
+    {
+      "question_id": "time_stop_vs_orig",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "LABEL; do not remint",
+      "note": "EXPOST/hold family session 08"
+    },
+    {
+      "question_id": "hold_too_late",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "LABEL; do not flatten",
+      "note": "session 08"
+    },
+    {
+      "question_id": "mfe_shape",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "EXPOST only",
+      "note": "illegal live_intent"
+    },
+    {
+      "question_id": "trail_vs_orig",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "LABEL; do not remint",
+      "note": "session 08"
+    },
+    {
+      "question_id": "leave_orig_293332188",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "ticket exception live 1.0",
+      "note": "process_lock"
+    },
+    {
+      "question_id": "runner_r",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "LABEL; do not flatten",
+      "note": "EXPOST"
+    },
+    {
+      "question_id": "friday_cutoff_label",
+      "wire_type": "Noul",
+      "tier": "SPECULATIVE",
+      "labels": "writer clock stays integer",
+      "note": "ENV-DEAD cousin"
+    },
+    {
+      "question_id": "isolated_reentry",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "do not call legal 15m reprint a remint",
+      "note": "session 08"
+    },
+    {
+      "question_id": "sibling_cooldown",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "2-stop COUNT stays integer",
+      "note": "session 08"
+    },
+    {
+      "question_id": "spring_reprint",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "spring reprint vs remint",
+      "note": "session 08"
+    },
+    {
+      "question_id": "minutes_since_flat",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "LABEL minutes-since-flat",
+      "note": "session 08"
+    },
+    {
+      "question_id": "two_stop_would_be_third",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "LABEL would-be third; not the counter",
+      "note": "ENV-TWO-STOP"
+    },
+    {
+      "question_id": "cluster_same_day",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "same-day cluster label",
+      "note": "occupancy"
+    },
+    {
+      "question_id": "high_in_f5_window",
+      "wire_type": "Noul",
+      "tier": "SPECULATIVE",
+      "labels": "code HIGH in F5 window; spine empty unknown",
+      "note": "session 11"
+    },
+    {
+      "question_id": "minutes_to_nearest",
+      "wire_type": "Score",
+      "tier": "ABLATE",
+      "labels": "news minutes; spine empty mid",
+      "note": "session 11"
+    },
+    {
+      "question_id": "warsh_class",
+      "wire_type": "Choice",
+      "tier": "ABLATE",
+      "labels": [
+        "boe_fomc_nfp_cpi",
+        "other_high",
+        "none"
+      ],
+      "note": "do not invent HIGH"
+    },
+    {
+      "question_id": "spine_empty_honesty",
+      "wire_type": "Noul",
+      "tier": "CORE",
+      "labels": "empty spine \u2260 no HIGH",
+      "note": "session 11 honesty"
+    },
+    {
+      "question_id": "past_flag",
+      "wire_type": "Noul",
+      "tier": "ABLATE",
+      "labels": "nearest HIGH already past",
+      "note": "session 11"
+    },
+    {
+      "question_id": "gold_usd_comove",
+      "wire_type": "Choice",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "with_usd",
+        "against_usd",
+        "no_clear"
+      ],
+      "note": "do not invent DXY"
+    },
+    {
+      "question_id": "gold_index_comove",
+      "wire_type": "Choice",
+      "tier": "ABLATE",
+      "labels": [
+        "with_us30",
+        "against_us30",
+        "no_clear"
+      ],
+      "note": "world pack; missing US30 \u2192 no_clear"
+    },
+    {
+      "question_id": "risk_on_funding",
+      "wire_type": "Choice",
+      "tier": "ABLATE",
+      "labels": [
+        "risk_on",
+        "risk_off",
+        "mixed"
+      ],
+      "note": "USDJPY alone is rates_proxy not risk_on"
+    },
+    {
+      "question_id": "session_liquidity",
+      "wire_type": "Score",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "Thin asia/dead/friday",
+        "Ordinary LDN/NY",
+        "LDN-NY overlap"
+      ],
+      "note": "clock only; do not invent volume"
+    },
+    {
+      "question_id": "occupancy_world",
+      "wire_type": "Score",
+      "tier": "SPECULATIVE",
+      "labels": [
+        "Empty/unknown",
+        "One cluster",
+        "Two+ clusters"
+      ],
+      "note": "KEEP-one stays integer"
+    }
+  ]
+}

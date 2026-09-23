@@ -1,0 +1,76 @@
+{
+  "id": "persistence",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission",
+    "size"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "ac60 null (warmup)",
+  "compose_weight": 0.0,
+  "aliases": [
+    "ac60_size"
+  ],
+  "include_depth": {
+    "sleeve_features.ac60": "long",
+    "identity": "full",
+    "timeframes.h4": "long"
+  },
+  "instructions": "Is persistence with named gold flow a range on this bar, or a coin? Legend 0 fighting/mean-reverting vs the side; 1 random; 2 persistent with the side. Ask across ac60 0.02\u20130.20, not at 0.10. GOLD-002: live metals_core is ac60>=0.10; metals_softband is 0.04<=ac60<0.10. G-FULL long p_target core 0.216 n=5740 vs softband 0.216 n=6103 (\u0394=+0.07 pp). Revert \u2264\u22120.10 is the highest unsigned long hit-rate 0.229 n=14809. ob_micro \u22650.20 is 0.203. A long-only ac60>=0.10 cliff fights the tape unless flow_stance is in the same request. Do not re-encode the 0.10 wall. Size: this Score IS the range (FLUID-SIZ-007 ac60_size alias). Pin w_persist=0.00 \u2014 it does not move the diagnostic composite; the Score is still asked.",
+  "criteria": [
+    "Fighting or mean-reverting versus the named side",
+    "Random / coin versus the named side",
+    "Persistent with the named side"
+  ],
+  "measured": {
+    "window": "G-FULL",
+    "persist": {
+      "revert": {
+        "n": 14809,
+        "long_p_target": 0.22857721655749882
+      },
+      "rand_low": {
+        "n": 17299,
+        "long_p_target": 0.20816232152147524
+      },
+      "softband": {
+        "n": 6103,
+        "long_p_target": 0.2156316565623464
+      },
+      "core": {
+        "n": 5740,
+        "long_p_target": 0.21637630662020907
+      },
+      "ob_micro": {
+        "n": 3129,
+        "long_p_target": 0.20262064557366571
+      }
+    },
+    "core_minus_softband_pp": 0.07446500578626725
+  },
+  "g2m_observed_not_retuned": {
+    "core": {
+      "n": 498,
+      "long_p_target": 0.16265060240963855
+    },
+    "softband": {
+      "n": 479,
+      "long_p_target": 0.13778705636743216
+    },
+    "delta": 0.02486354604220639,
+    "note": "G-2M persist ranks above flow; do not retune. Pin stays G-FULL."
+  }
+}

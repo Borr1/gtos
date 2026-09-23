@@ -1,0 +1,32 @@
+{
+  "id": "calendar_honest",
+  "type": "noul",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "never",
+  "include_depth": {
+    "news": "short"
+  },
+  "instructions": "Is news.spine_empty false and news.events non-empty for this as-of? Consistency only \u2014 not an invented HIGH. On this G-FULL M15 the spine is empty, so expect false.",
+  "criteria": {
+    "true": "Spine is present and events are named",
+    "false": "Spine empty or events missing \u2014 abstain event questions"
+  },
+  "measured": {
+    "G-FULL_news_spine": "empty"
+  }
+}

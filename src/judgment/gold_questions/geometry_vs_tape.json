@@ -1,0 +1,72 @@
+{
+  "id": "geometry_vs_tape",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission",
+    "size"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "geometry missing",
+  "compose_weight": 0.43,
+  "include_depth": {
+    "geometry": "full",
+    "timeframes.m15": "full",
+    "sleeve_features.vol_ratio": "long",
+    "cost": "short"
+  },
+  "instructions": "Does this stop/target fit the named tape, or does the stop die in the next 1\u20132 M15 prints? Legend 0 stop likely dies next 1\u20132 M15; 1 ordinary; 2 fit. Do not define 1 as house 1R/6R. G-FULL n=47080 stop 1.0\u00d7ATR14 / target 2.0\u00d7ATR14 / 8 M15 / stop-first: long p_target 0.216, p_stop 0.513. Vol: lo 0.267 n=18064 vs xhi 0.087 n=3348. High vol on an unsigned every-bar walker kills 2R. A generator that only fires in hi/xhi needs this Score, not a louder if vr>=1.2. Heaviest gold weight: w_geo=0.43.",
+  "criteria": [
+    "Stop likely dies in the next 1\u20132 M15 prints",
+    "Ordinary house risk versus named vol",
+    "Stop and target fit named vol"
+  ],
+  "measured": {
+    "window": "G-FULL",
+    "n": 47080,
+    "long_p_target": 0.21618521665250637,
+    "long_p_stop": 0.5129991503823279,
+    "vol": {
+      "lo": {
+        "n": 18064,
+        "long_p_target": 0.266662976085031
+      },
+      "mid": {
+        "n": 16637,
+        "long_p_target": 0.2182484822984913
+      },
+      "hi": {
+        "n": 8992,
+        "long_p_target": 0.15858540925266904
+      },
+      "xhi": {
+        "n": 3348,
+        "long_p_target": 0.08691756272401434
+      }
+    },
+    "delta_lo_minus_xhi": 0.17974541336101663
+  },
+  "g2m_observed_not_retuned": {
+    "lo": {
+      "n": 1635,
+      "long_p_target": 0.23914373088685015
+    },
+    "xhi": {
+      "n": 333,
+      "long_p_target": 0.08408408408408409
+    },
+    "delta": 0.15505964680276607
+  }
+}

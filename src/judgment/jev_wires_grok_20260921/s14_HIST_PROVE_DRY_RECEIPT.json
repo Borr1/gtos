@@ -1,0 +1,83 @@
+{
+  "schema": "gtos.jev.place_fluid.hist_prove.draft.v0",
+  "session": "14_place_fluid_hist_prove_apply",
+  "proven": false,
+  "pass": false,
+  "apply": false,
+  "place": false,
+  "broker_effect": false,
+  "never_place_default": true,
+  "owner_override_20260921_place_when_proved": true,
+  "phase_a": {
+    "phase": "A_dry_existing_shadow_no_place_now",
+    "shadow_path": "/workspace/gtos/close_loop/war_room_20260920/_pr41_land/ai-trading-agent/judgment/astra/lab/challenge_shadow_20260917/shadow.jsonl",
+    "shadow_present": true,
+    "n": 97,
+    "kinds": {
+      "open": 1,
+      "slate": 40,
+      "slate_skip": 10,
+      "deal_close": 46
+    },
+    "writer_placed": 47,
+    "fire_rate_writer": 0.4845360824742268,
+    "hard_off_placed": 17,
+    "keep_placed": 3,
+    "n_news_empty": 0,
+    "n_invented_high": 0,
+    "plc_decidable": {
+      "FLUID-PLC-001": 97,
+      "FLUID-PLC-002": 97,
+      "FLUID-PLC-003": 47,
+      "FLUID-PLC-004": 97,
+      "FLUID-PLC-005": 47,
+      "FLUID-PLC-007": 97,
+      "FLUID-PLC-006": 40
+    },
+    "plc_moved": {
+      "FLUID-PLC-001": 97,
+      "FLUID-PLC-002": 97,
+      "FLUID-PLC-003": 47,
+      "FLUID-PLC-004": 97,
+      "FLUID-PLC-005": 47,
+      "FLUID-PLC-007": 22,
+      "FLUID-PLC-006": 40
+    },
+    "place_now_question_present": false,
+    "cannot_pass_apply": true,
+    "reason": "place_now not in symbol_fanout_questions; local STAND-only cannot PASS",
+    "never_broker_place": true
+  },
+  "phase_b_module_atr": {
+    "lens": "Module_ATR",
+    "never_merge_dig_edge": true,
+    "honesty": "geometry_proxy_ohlc_touch \u2260 live module TradeIntent",
+    "blotters": {
+      "three_fresh": {
+        "path": "/workspace/gtos/close_loop/war_room_20260920/blotter_Module_ATR_XAUUSD_dsp_three_fresh_lower_lows.jsonl",
+        "present": true,
+        "n_rows": 11239
+      },
+      "spring": {
+        "path": "/workspace/gtos/close_loop/war_room_20260920/blotter_Module_ATR_XAUUSD_dsp_spring_close_on_20low_through_the_box.jsonl",
+        "present": true,
+        "n_rows": 5659
+      },
+      "gbpjpy_vss": {
+        "path": "/workspace/gtos/close_loop/war_room_20260920/blotter_Module_ATR_GBPJPY_vss_fxcross_london_proxy.jsonl",
+        "present": true,
+        "n_rows": 818
+      },
+      "gbpjpy_sub_mid": {
+        "path": "/workspace/gtos/close_loop/war_room_20260920/blotter_Module_ATR_GBPJPY_sub_mid_dn_re_proxy_SHORT.jsonl",
+        "present": true,
+        "n_rows": 2057
+      }
+    },
+    "phase_b_status": "NOT_RUN_this_session"
+  },
+  "deals_present": true,
+  "gate_to_apply": "see HIST_PROVE_PLAN.md \u2014 Chair NAME after PASS",
+  "do_not_flip_GTOS_JEV_SLEEVE_SELECT_APPLY": true,
+  "do_not_flip_GTOS_JEV_FLUID_GATES_APPLY_for_place": true
+}

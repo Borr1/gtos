@@ -1,0 +1,44 @@
+{
+  "id": "exit_class",
+  "type": "choice",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "close"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "no exit object yet",
+  "include_depth": {
+    "geometry": "long",
+    "occupancy": "hide"
+  },
+  "close_is_second_object": true,
+  "instructions": "What noun is this exit? time_stop is first-class in criteria. Challenge XAU n=21: 5/5 winners = time_stop; 16/16 losers = orig_stop. V1 labelled the paying class manual_other. Close/manage workers that omit time_stop mis-name the only gold that paid on that tape. Close-label is a second object after the exit exists \u2014 one POST of this Choice, not a Noul every tick and not dumped on the live as-of-open fire. Do not ask toxic_remint / will this hit TP / KEEP-OFF on the live as-of-open object. Do not remint.",
+  "criteria": {
+    "orig_stop": "Named exit is orig_stop",
+    "broker_tp": "Named exit is broker_tp",
+    "time_stop": "Named exit is time_stop",
+    "breach_flatten": "Named exit is breach_flatten",
+    "other": "Named exit is other / unknown \u2014 not manual_other on winners"
+  },
+  "measured": {
+    "challenge_xau": {
+      "n": 21,
+      "net_usd": -814.94,
+      "winners": 5,
+      "winners_exit": "time_stop",
+      "losers": 16,
+      "losers_exit": "orig_stop"
+    }
+  }
+}

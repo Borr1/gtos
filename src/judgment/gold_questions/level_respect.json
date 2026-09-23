@@ -1,0 +1,73 @@
+{
+  "id": "level_respect",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "gate",
+    "admission"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "levels.source==unassembled",
+  "compose_weight": 0.12,
+  "include_depth": {
+    "levels.prior_day_high": "long",
+    "levels.prior_day_low": "long",
+    "levels.fvg": "short",
+    "identity": "full",
+    "timeframes.m15": "full"
+  },
+  "instructions": "Is this fire holding a named supporting PDH/PDL/FVG, or punching through the opposing one? Legend 0 through opposing; 1 no relevant level; 2 holding/reclaiming. G-FULL: long below PDL 0.174 n=4708 vs inside 0.223 n=31088 vs above PDH 0.215 n=11253. Short above PDH 0.176 vs short below PDL 0.195. The miss is long through PDL. FVG/weekly unassembled on this M15 \u2014 include-depth short, do not invent. Pin w_lvl=0.12.",
+  "criteria": [
+    "Firing through a named opposing PDH/PDL/FVG",
+    "No relevant named level",
+    "Holding or reclaiming a named supporting level"
+  ],
+  "measured": {
+    "window": "G-FULL",
+    "level": {
+      "inside_long": {
+        "n": 31088,
+        "p": 0.22285126093669583
+      },
+      "above_pdh_long": {
+        "n": 11253,
+        "p": 0.21496489824935572
+      },
+      "below_pdl_long": {
+        "n": 4708,
+        "p": 0.17395921835174172
+      },
+      "above_pdh_short": {
+        "n": 11253,
+        "p": 0.1763085399449036
+      },
+      "below_pdl_short": {
+        "n": 4708,
+        "p": 0.1951996601529312
+      }
+    },
+    "delta_inside_minus_below_pdl": 0.04889204258495411
+  },
+  "g2m_observed_not_retuned": {
+    "inside": {
+      "n": 2464,
+      "p": 0.1976461038961039
+    },
+    "below_pdl": {
+      "n": 659,
+      "p": 0.13960546282245828
+    },
+    "delta": 0.05804064107364562
+  }
+}

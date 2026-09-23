@@ -1,0 +1,36 @@
+{
+  "id": "a8_quality",
+  "type": "score",
+  "model": "jev-1.13.0",
+  "book": "0",
+  "ns": "operator",
+  "magic": "0",
+  "gold_only": true,
+  "noul_every_tick": false,
+  "one_systemone_post_per_candidate": true,
+  "ask_together": true,
+  "seats": [
+    "admission"
+  ],
+  "pin_window": "G-FULL",
+  "test_window": "G-2M",
+  "do_not_hunt": "G-2W",
+  "ignore_if_compose_side": true,
+  "verification_quarantined": "0",
+  "ignore_if": "not a metals sleeve",
+  "include_depth": {
+    "sleeve_features.a8": "short",
+    "news": "short",
+    "levels.fvg": "short"
+  },
+  "instructions": "Is A8 confluence a range on this bar? Legend 0 = 0\u20131 of the named fields; 1 = 2-of-4; 2 = 3\u20134-of-4 and news/levels do not contradict. Integer K=3-of-4 still computes as a fact. This Score may move K on named APPLY. Unassembled on this Mac walk (FVG detector not run). Unproven until metals generator JSONL. Include-depth short \u2014 do not invent A8 from unsigned M15.",
+  "criteria": [
+    "0\u20131 of the named A8 fields",
+    "2-of-4 named A8 fields",
+    "3\u20134-of-4 and news/levels do not contradict"
+  ],
+  "measured": {
+    "assembled_on_G-FULL_M15": false,
+    "fvg_detector": "not_run"
+  }
+}

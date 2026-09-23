@@ -1,0 +1,712 @@
+[
+  {
+    "reason": "harvest_identity_login_0",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["account.login", "account.ns", "identity.origin_organism"],
+    "env_flag_draft": null,
+    "notes": "Challenge payout writer 0 / operator / magic 0. Harvest refuses any other login. Integer identity."
+  },
+  {
+    "reason": "harvest_quarantine_login_0",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["account.quarantine_login"],
+    "env_flag_draft": null,
+    "notes": "Verification login quarantined. challenge.assert_challenge_payout_writer raises. Never harvest 0 as Challenge-true."
+  },
+  {
+    "reason": "harvest_challenge_ns_magic_identity",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["account.ns", "identity.magic", "harvest.envelope"],
+    "env_flag_draft": null,
+    "notes": "ns operator magic 0. Do not wear W7 books."
+  },
+  {
+    "reason": "harvest_never_invent_news_protocol",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["news_join", "news.spine_empty", "news.high_in_f5_window", "news.events"],
+    "env_flag_draft": null,
+    "notes": "Honest STATE_MISSING OK. attach_harvest_blocks raises on invented HIGH / NEWS_PROTOCOL. Stamps-only from host_events."
+  },
+  {
+    "reason": "harvest_never_invent_tickets",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.ticket"],
+    "env_flag_draft": null,
+    "notes": "CLOSE_LOOP_BATCH_V1 n=48 tickets_invented=false per_ticket_labels=false. Fixture pack n=6 is not the batch. Pair only named tickets on tape."
+  },
+  {
+    "reason": "harvest_reject_april_historical",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["timeframes.*.source_path", "completeness.tape_present"],
+    "env_flag_draft": null,
+    "notes": "learn_loop.tape_uses_april_historical. bars.challenge_search_dirs never includes data/historical."
+  },
+  {
+    "reason": "harvest_never_merge_R_lenses",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["R_Challenge_book", "R_Module_ATR", "R_Dig_3R", "R_Edge_ATR", "lens"],
+    "env_flag_draft": null,
+    "notes": "Do-not list: never merge Dig_3R / Edge_ATR / Module_ATR / Challenge_book R. Separate columns. Pair same_lens unless explicit cite pair_kind=module_keep_vs_challenge_stand."
+  },
+  {
+    "reason": "harvest_module_atr_geometry_proxy_not_tradeintent",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["lens", "geometry.module_atr_exit_shape", "who_decided"],
+    "env_flag_draft": null,
+    "notes": "Module_ATR blotter = geometry_proxy stop0.75/tgt6.0 ATR. APPROXIMATION != live module TradeIntent. Do not invent ATR/regime to fill gaps; use bars.atr14 or STATE_MISSING."
+  },
+  {
+    "reason": "harvest_module_atr_not_live_sub_mid_dn_revert",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["lens", "identity.sleeve", "label_lock"],
+    "env_flag_draft": null,
+    "notes": "EURUSD Module_ATR SHORT proxy does NOT prove live F5 tag sub_mid_dn_revert (LONG H4 1ATR/3R). graduate_to_admit=false."
+  },
+  {
+    "reason": "harvest_xagusd_honest_empty",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.symbol", "completeness.tape_present"],
+    "env_flag_draft": null,
+    "notes": "JEV_WIN_LOSE_LEARN_XAGUSD_HONEST_EMPTY n_pairs=0. No XAGUSD_M15.csv. Refuse invented year twins. Re-cut after Module_ATR deepen lands."
+  },
+  {
+    "reason": "harvest_crypto_banned_for_aplus",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.symbol", "asset_class", "banned_for_aplus"],
+    "env_flag_draft": null,
+    "notes": "BTCUSD/ETHUSD Module_ATR KEEP = research only / banned_for_aplus. Train-valid STAND lessons; do not promote to A+ or Challenge APPLY."
+  },
+  {
+    "reason": "harvest_hard_off_family_integers",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["hard_off_hit", "identity.family_class", "surface.hard_off_family_this_row"],
+    "env_flag_draft": null,
+    "notes": "bleed/idxrev/orb_crypto/xa_huge/mx_us30 stay integers. Harvest may LABEL exceptions as research; never silent code flip. Soft exception only via Jev+Challenge hist (session 09)."
+  },
+  {
+    "reason": "harvest_us30_house_hard_off_honesty",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["harvest.route_class.house_hard_off", "identity.symbol"],
+    "env_flag_draft": null,
+    "notes": "Chair route_class US30=index with house_hard_off honesty. P0-2 prove. Do not invent UK100/BTC/ETH class until named."
+  },
+  {
+    "reason": "harvest_two_stop_count_integer",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["occupancy.same_sleeve_orig_stops_utc_day", "occupancy.two_stop_exhausted", "remint.two_stop_armed"],
+    "env_flag_draft": null,
+    "notes": "2-stop COUNT stays code. Harvest Noul would_be_nth_stop is LABEL only."
+  },
+  {
+    "reason": "harvest_envelope_walls_stay_integers",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["harvest.law.envelope_wall_ids", "account.dd_wall_r"],
+    "env_flag_draft": null,
+    "notes": "process_lock ENVELOPE_WALL_IDS. PREAUTH_EFFECTS size_tilt|label only. Harvest cannot lift walls."
+  },
+  {
+    "reason": "harvest_affinity_instrument_x_sleeve",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.symbol", "identity.sleeve", "alive_menu.affinity"],
+    "env_flag_draft": null,
+    "notes": "Doctrine affinity held. Pair matcher prefers same instrument×sleeve. Never blend FX+XAU into one R book (A2 law)."
+  },
+  {
+    "reason": "harvest_expost_illegal_on_live_intent",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["as_of_clock", "harvest.learn", "outcome_only_do_not_use_as_live_input"],
+    "env_flag_draft": null,
+    "notes": "gold_state.reject_expost / OnlineLabelAtom. miss_type, realized R, exit_class illegal on live_intent. Close twin uses as_of_close_illegal_for_live."
+  },
+  {
+    "reason": "harvest_expanding_parked",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.sleeve", "expanding_parked"],
+    "env_flag_draft": null,
+    "notes": "JWL locks expanding PARKED. Harvest must not promote expanding_up_staircase to live admit."
+  },
+  {
+    "reason": "harvest_leave_orig_ticket_293332188",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["identity.ticket", "occupancy.leave_orig"],
+    "env_flag_draft": null,
+    "notes": "process_lock LEAVE_ORIG_TICKETS. Live tilts stay 1.0. Harvest labels but does not manage."
+  },
+  {
+    "reason": "harvest_session_never_broker_place",
+    "class_now": "ENVELOPE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["place_context", "compose.never_place"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_APPLY=0",
+    "notes": "This session never order_send. Owner override 2026-09-21: eternal never_place WRONG — harvest still does not place; harvest_place_would_have is LABEL only. Default-off until prove."
+  },
+  {
+    "reason": "harvest_emit_from_challenge_close",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["EMIT_ROW", "SKIP_STILL_OPEN", "SKIP_IDENTITY", "SKIP_APRIL", "ABSTAIN"],
+    "complete_state_fields": ["identity.ticket", "identity.login", "as_of_clock", "completeness.tape_present"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "learn_from_close exists but default-off and unpaired. Wire harvest emitter as Choice over complete close facts. Fail-closed if identity/tape illegal. apply=false."
+  },
+  {
+    "reason": "harvest_skip_still_open",
+    "class_now": "STATIC_CODE",
+    "proposed": "ENVELOPE_KEEP",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["still_open"],
+    "env_flag_draft": null,
+    "notes": "learn_from_close skipped=still_open. Integer: no EXPOST harvest on open tickets."
+  },
+  {
+    "reason": "harvest_pair_win_lose_match",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["PAIR_OK", "PAIR_WEAK", "UNPAIRED", "REFUSE_CROSS_LENS", "ABSTAIN"],
+    "complete_state_fields": ["pair.pair_id", "pair.similarity_keys", "identity.symbol", "identity.sleeve_family", "clock.session_bucket", "identity.side", "lens"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "Today Chair-manual JWL packs. Propose Jev Choice over structural similarity. Code enumerates candidate twins (same symbol×sleeve_family×session×side×lens); Jev picks PAIR_OK vs WEAK. Cross-lens refuse unless cite-kind. Never invent a loser."
+  },
+  {
+    "reason": "harvest_pair_kind",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["ticket_twin", "sleeve_twin_asset_split", "year_twin_module_atr", "module_keep_vs_challenge_stand", "unpaired"],
+    "complete_state_fields": ["pair.pair_kind", "lens", "identity.asset_class"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "A1 ticket twin / A2 sleeve twin with asset-split law / B-C Module_ATR year twin / EA4 cite Challenge STAND vs Module KEEP. Code constrains legal kinds; Jev chooses among legal."
+  },
+  {
+    "reason": "harvest_pair_role",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["WIN_LIKE", "LOSE_LIKE", "RELATIVE_WEAK", "UNPAIRED", "ABSTAIN"],
+    "complete_state_fields": ["pair.role", "R_Challenge_book", "R_Module_ATR", "lens"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "JWL uses win/lose/relative_weak/thin_hold/challenge_stand_cite. EURUSD Module_ATR all years KEEP — soft twin is RELATIVE_WEAK not invented loss."
+  },
+  {
+    "reason": "harvest_pair_quality",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["unmatched_or_cross_lens", "weak_similarity", "structural_twin"],
+    "complete_state_fields": ["pair.deltas_win_vs_lose", "pair.similarity_keys"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "New Score. Low score → keep unpaired rather than force a twin."
+  },
+  {
+    "reason": "harvest_pair_delta",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["no_named_delta", "session_or_conf_only", "structure_held_vs_false_structure"],
+    "complete_state_fields": ["pair.deltas_win_vs_lose", "miss_type", "exit_class", "conf_band", "clock.session_bucket"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "A1 deltas: orig_tp+ok_win+CONF_GATE_KEEP vs orig_stop+FS+CONF_GATE_REVIEW. Score the named delta; do not leak miss into live Policy C."
+  },
+  {
+    "reason": "harvest_loser_reuse_honesty",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "loser reused across pairs and stamped", "false": "unique loser or unpaired"},
+    "complete_state_fields": ["pair.loser_reused", "identity.ticket"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "293128383 reused A2+A3 — stamped. Noul checks honesty of reuse stamp. Never hide reuse."
+  },
+  {
+    "reason": "harvest_strike_when_right_choice",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["A_STAND_DOWN", "B_SIZE_HALF", "C_SIZE_TRIM", "D_FULL", "E_KEEP_CAP"],
+    "complete_state_fields": ["full_state_dark", "n_incomplete", "alive_sleeves", "regime_tag", "conf_band", "session_fit", "identity.keep_surface"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Today Python stub (war_room strike_rule) AND Policy C helper (pre-entry, no miss/year_le0). Harvest must POST TypeSafe Choice over COMPLETE_STATE using REAL menu ids. Mapping honesty KEEP→D_FULL STAND→A_STAND_DOWN REVIEW→C_SIZE_TRIM. Train answers use real ids. Live Policy C must NOT read miss_type."
+  },
+  {
+    "reason": "harvest_desired_label_antioracle",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["stand_down", "half_size", "admit"],
+    "complete_state_fields": ["identity.asset_class", "identity.sleeve_family", "identity.keep_surface", "clock.session_bucket"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "CF-C desired_label is outcome-oracle (miss leak). JEV_TRAIN_PIVOT: false_abstain=0 on 7 ok_wins is NOT a live claim. Rebuild labels from entry-time features only (C entry-fit hold +3.306). Keep oracle labels in outcome_only for upper-bound study."
+  },
+  {
+    "reason": "harvest_keep_residual_fs_cap",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["E_KEEP_CAP", "C_SIZE_TRIM", "D_FULL"],
+    "complete_state_fields": ["identity.keep_surface", "conf_band", "miss_type"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "KEEP + false_structure → REVIEW/cap not hard-off (P0_KEEP_REVIEW). Bits in jev_shadow_bit_evaluator.keep_review_bit. miss_type is EXPOST — live path uses conf_band+keep_surface only."
+  },
+  {
+    "reason": "harvest_cf_d_stand_down_label",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["A_STAND_DOWN", "E_KEEP_CAP", "B_SIZE_HALF"],
+    "complete_state_fields": ["identity.keep_surface", "identity.family_class", "identity.sleeve_family"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "CF D: FS non-KEEP stand_down; KEEP exempt. Cite hold 70/30 sumR=+4.713. SHADOW research label; no APPLY until entry-time KEEP signature (no miss leak) proves on fresh hold."
+  },
+  {
+    "reason": "harvest_close_label",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["orig_stop", "broker_tp", "time_stop", "breach_flatten", "other"],
+    "complete_state_fields": ["exit_class", "close_reason", "as_of_clock"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "jev_questions.close_label exists; harvest currently uses classify_close STATIC. Wire Jev Choice on close clock only. time_stop first-class. Illegal on live_intent."
+  },
+  {
+    "reason": "harvest_hold_too_late",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "hold looks late vs sleeve horizon", "false": "ordinary or unknown"},
+    "complete_state_fields": ["held_min", "identity.sleeve", "exit_class"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Existing question. Do not flatten. time_stop cluster → draft this Noul."
+  },
+  {
+    "reason": "harvest_time_stop_vs_orig",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "time-stop horizon disagrees with orig geometry", "false": "agree or unassembled"},
+    "complete_state_fields": ["exit_class", "geometry.stop_dist", "geometry.plan_r"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Existing jev_questions.time_stop_vs_orig. LABEL; 2-stop COUNT stays integer."
+  },
+  {
+    "reason": "harvest_event_proximity",
+    "class_now": "JEV_JUDGED",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "named HIGH inside code window", "false": "named events exist and none in window"},
+    "complete_state_fields": ["news_join", "news.high_in_f5_window", "news.spine_empty", "news.events"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Already in fan-out. Harvest starved: spine often empty → near 0.5, not 'no HIGH'. event_gap miss n=3 on tape. Do not invent NEWS_PROTOCOL. Size tilt later; never refuse from harvest."
+  },
+  {
+    "reason": "harvest_calendar_honest",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "spine present and events named", "false": "spine empty — abstain event questions"},
+    "complete_state_fields": ["news.spine_empty", "news.events"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Consistency Noul. Empty spine is not no-BOJ."
+  },
+  {
+    "reason": "harvest_feature_as_of_honest",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "named feature_as_of <= clock.as_of_utc", "false": "leak or missing as-of"},
+    "complete_state_fields": ["harvest.pit", "clock.as_of_utc", "sleeve_features"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "P0-1 SHADOW prove on Challenge 0. ready_to_apply=false. Harvest must stamp pit.honest; leak rows are train-negatives not live features."
+  },
+  {
+    "reason": "harvest_route_class",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["metal", "fx_major", "fx_cross", "index", "unknown"],
+    "complete_state_fields": ["identity.symbol", "harvest.route_class", "identity.tf_route"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "P0-2 Chair-named table. SHADOW labels. Live 1.0. XAU may keep legacy multi. UK100/BTC/ETH unknown_until_landed."
+  },
+  {
+    "reason": "harvest_fill_realism",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["bar_fantasy", "next_open", "tick_true"],
+    "complete_state_fields": ["harvest.fill", "harvest.fill_realism", "cost.source"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "P0-5 Score 0/1/2. unknown abstains. No APPLY."
+  },
+  {
+    "reason": "harvest_cost_complete",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "named spread/slip/commission present", "false": "cost unassembled"},
+    "complete_state_fields": ["cost", "harvest.fill.cost_complete"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "harvest_patterns.noul_cost_complete. Size-tilt input later; never a new refuse."
+  },
+  {
+    "reason": "harvest_cost_hurtful",
+    "class_now": "JEV_JUDGED",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "spread eats material fraction of stop", "false": "cost ordinary"},
+    "complete_state_fields": ["cost.spread_r_of_stop", "geometry.plan_r"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Existing fan-out; F5-JEV-004 size tilt [0.70,1.00] live on XAU. Harvest stamps Noul on close rows. Cost-never-kill inverted into size-up forbidden."
+  },
+  {
+    "reason": "harvest_entry_state_sufficient",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "named blocks enough to judge fire as-of", "false": "required named block missing"},
+    "complete_state_fields": ["completeness", "full_state_dark", "n_incomplete", "missing_fields"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "jev_questions.state_sufficient. Policy C uses n_incomplete>=3 STATIC threshold. Prefer Jev Noul over complete state; keep threshold as fail-closed fallback when Jev dark."
+  },
+  {
+    "reason": "harvest_alive_before_keep",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "alive_sleeves_for_symbol named and true", "false": "PENDING or false — do not KEEP when alive dark"},
+    "complete_state_fields": ["alive_sleeves", "inventory.candidate_sleeve_alive"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "JWL proposal JWL_Q_ALIVE_BEFORE_KEEP. Geometry print alone != strike. PENDING honest."
+  },
+  {
+    "reason": "harvest_regime_tag_null_ok",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "null regime must not force STAND", "false": "named regime fights fire"},
+    "complete_state_fields": ["regime_tag"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "regime_tag null on all 60 Challenge closes. NEVER invent S14. Partial session_h4_context n=54. JWL_Q_REGIME_NULL_OK. null_ok."
+  },
+  {
+    "reason": "harvest_session_fit_not_lon_ny",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["hostile_or_off_hours", "ordinary", "sleeve_clean_hour"],
+    "complete_state_fields": ["clock.session_bucket", "session_fit", "clock.is_friday"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Existing session_fitness Score. Forbid Lon+NY promote cage. Off_hours FS → trim/cap not FULL. Worst sessions on tape: Asia/London/overlap/NY."
+  },
+  {
+    "reason": "harvest_conf_honesty",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["CONF_GATE_KEEP", "CONF_GATE_REVIEW", "CONF_GATE_STRICT", "CONF_GATE_EVENT", "CONF_GATE_SESSION", "UNSURE"],
+    "complete_state_fields": ["conf_band"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "conf_gate SHADOW never APPLY. Harvest labels conf honesty so KEEP-family FS residual is REVIEW/cap not silent FULL."
+  },
+  {
+    "reason": "harvest_flow_stance",
+    "class_now": "JEV_JUDGED",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["with_flow", "against_flow", "no_clear_flow"],
+    "complete_state_fields": ["timeframes.h4.trend", "identity.side", "sleeve_features.htf_slope_norm"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Existing fan-out. Harvest include on entry-legal state. Local fluid_local fallback when Jev dark."
+  },
+  {
+    "reason": "harvest_admit_choice_on_close_state",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["admit", "abstain", "hard_refuse"],
+    "complete_state_fields": ["completeness.state_sufficient_for_live", "identity.family_class", "cost.spread_r_of_stop"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "Existing admit Choice. Harvest asks on ENTRY-legal twin only. Preserve 7 ok_wins (false_abstain track). House hard-off is code not this answer."
+  },
+  {
+    "reason": "harvest_mfe_shape",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["no_named_excursion", "ordinary", "clean_runner"],
+    "complete_state_fields": ["mfe_r", "mae_r", "as_of_clock"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "EXPOST only. hold_from_tape.mfe_mae_r needs landed M15. Abstain if tape dark — do not invent."
+  },
+  {
+    "reason": "harvest_runner_r",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["no_runner", "ordinary", "clean_runner"],
+    "complete_state_fields": ["R_Challenge_book", "exit_class", "as_of_clock"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "LABEL. Do not flatten from harvest."
+  },
+  {
+    "reason": "harvest_occupancy_ok",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "named occupancy clear enough", "false": "crowded or unknown"},
+    "complete_state_fields": ["occupancy"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "UNTRAINABLE on learning_scoreboard_60 (n_feature_missing=60). Stamp STATE_MISSING; Jev near 0.5. Do not invent concurrent=0."
+  },
+  {
+    "reason": "harvest_corr_hold",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "named correlation argues HOLD draft", "false": "no named correlation HOLD"},
+    "complete_state_fields": ["corr_cluster", "aplus.chair_fields.corr"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "UNTRAINABLE — corr_cluster unknown on tape. STATE_MISSING. Do not invent DXY/CIP/corr."
+  },
+  {
+    "reason": "harvest_lens_honest",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "row lens matches R column and blotter", "false": "merged or mis-tagged R"},
+    "complete_state_fields": ["lens", "R_Challenge_book", "R_Module_ATR", "R_Dig_3R", "R_Edge_ATR"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "as_judge scenario module_vs_dig_merged_bad → REVISE. Harvest Noul fail-closed: refuse emit if R filled in two lenses."
+  },
+  {
+    "reason": "harvest_geometry_alone_neq_strike",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "geometry print is not a strike without full-state voters", "false": "voters green and geometry aligned"},
+    "complete_state_fields": ["full_state_dark", "alive_sleeves", "regime_tag", "conf_band", "session_fit", "geometry"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "STRIKE_WHEN_RIGHT doctrine. Module_ATR year_proxy cards are full_state_dark=True — valid year != live strike."
+  },
+  {
+    "reason": "harvest_module_atr_year_proxy",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["A_STAND_DOWN", "D_FULL", "C_SIZE_TRIM"],
+    "complete_state_fields": ["lens", "year", "R_Module_ATR", "full_state_dark", "affinity"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "B/C packs: Module_ATR year twins from blotters. ≤0 year → A_STAND_DOWN trap if full_state_dark. >0 year → D_FULL geometry-when-voters-green. Never copy Module sumR into Challenge_book R."
+  },
+  {
+    "reason": "harvest_realized_r_source",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["broker_exit", "geometry_implied_orig_sl", "geometry_implied_orig_tp", "sit_backstop", "module_atr_blotter", "unassembled"],
+    "complete_state_fields": ["r_source", "R_Challenge_book", "geometry_R"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "learn_loop already tracks r_source. Wire Choice so Jev cannot treat sit_backstop approx as tick-true. Unassembled stays unassembled."
+  },
+  {
+    "reason": "harvest_miss_false_structure",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["A_STAND_DOWN", "B_SIZE_HALF", "E_KEEP_CAP"],
+    "complete_state_fields": ["miss_type", "identity.keep_surface", "identity.family_class"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "50/60 FS. EXPOST oracle. Train labels: non-KEEP → STAND; KEEP residual → E_KEEP_CAP; XAU DSP often B_SIZE_HALF. Live path uses entry proxies not miss_type."
+  },
+  {
+    "reason": "harvest_miss_event_gap",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "named HIGH in window (stamps)", "false": "no named HIGH or spine empty"},
+    "complete_state_fields": ["miss_type", "news_join", "news.high_in_f5_window"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "n=3 event_gap. prove existing event_proximity / size_tilt. Do not invent NEWS_PROTOCOL. Chair tickets 293611741 seeded."
+  },
+  {
+    "reason": "harvest_miss_ok_win",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["D_FULL", "E_KEEP_CAP", "admit"],
+    "complete_state_fields": ["miss_type", "exit_class", "R_Challenge_book", "identity.keep_surface"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "n=7 ok_wins sumR=+15.921. Preserve. false_abstain track. Split FX vs XAU R books. Tickets 291816474 / 293540988 / 291794419."
+  },
+  {
+    "reason": "harvest_keep_signature_bit",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "spring|vss_fxcross|sub_mid keep signature", "false": "not keep surface"},
+    "complete_state_fields": ["identity.sleeve", "identity.sleeve_family", "identity.keep_surface"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "family.keep_family + jev_shadow_bit_evaluator.is_keep_signature. Integer family_class remains envelope; Noul is LABEL of the bit for train."
+  },
+  {
+    "reason": "harvest_asset_class_split",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["admit", "abstain", "hard_refuse"],
+    "complete_state_fields": ["identity.asset_class", "identity.symbol"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "learn_loop.prove_asset_class_split. INDEX n=16 0-wins prove abstain/keep hard-off (not panic cage). CRYPTO n=3 UNDERPOWERED. FX vs XAU never one R book. apply=false."
+  },
+  {
+    "reason": "harvest_protection_still_earns",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["wall_cutting_Aplus", "ordinary", "wall_eating_house_toxic"],
+    "complete_state_fields": ["harvest.protection"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "PROPOSED_QUESTIONS in harvest_patterns. LABEL only. Integer walls still block."
+  },
+  {
+    "reason": "harvest_would_be_nth_stop",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "would be nth orig stop same sleeve UTC day", "false": "not same sleeve/day or unknown"},
+    "complete_state_fields": ["occupancy.same_sleeve_orig_stops_utc_day"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "LABEL only — integer 2-stop stays the counter. ignore_if not same sleeve/UTC day."
+  },
+  {
+    "reason": "harvest_paper_live_parity",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["shadow_fill_diverges", "ordinary", "shadow_approx_challenge_fill"],
+    "complete_state_fields": ["harvest.fill", "R_Challenge_book", "r_source"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "PROPOSED_QUESTIONS. ignore_if no pair. Module_ATR geometry proxy vs Challenge fill is divergence — Score 0, do not merge R."
+  },
+  {
+    "reason": "harvest_wall_pressure",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Score",
+    "choice_labels_or_score": ["far_from_wall", "near_wall", "at_prop_wall"],
+    "complete_state_fields": ["account.equity_r", "account.dd_wall_r", "account.soft_daily_stop"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "LABEL only. ignore_if envelope unassembled. Cannot lift DD wall."
+  },
+  {
+    "reason": "harvest_instrument_known",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "spec present for this symbol", "false": "unknown instrument"},
+    "complete_state_fields": ["identity.symbol", "harvest.route_class"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "PROPOSED_QUESTIONS. Unknown route_class stays unknown."
+  },
+  {
+    "reason": "harvest_typesafe_evaluate_on_row",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["POST_OK", "SKIP_NO_KEY", "SKIP_BUDGET", "SKIP_CALL_OFF", "HTTP_FAIL"],
+    "complete_state_fields": ["complete_state", "questions"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1; GTOS_JEV_MAX_CALLS=500000; GTOS_JEV_A1_CALL!=0",
+    "notes": "challenge_shadow.score_position already POSTs evaluate() per position. Harvest pipeline must POST once per harvested close with harvest questions added. Feed TypeSafe and future Mac sidecar JSONL. Never place."
+  },
+  {
+    "reason": "harvest_jev_dark_fail_closed",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Noul",
+    "choice_labels_or_score": {"true": "Jev answers present", "false": "Jev dark — do not invent labels / do not APPLY"},
+    "complete_state_fields": ["jev.ok", "jev.skipped", "jev.error"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_CALL=1",
+    "notes": "If evaluate skipped/error: stamp jev_dark; keep envelope integers; use fluid_local only as labeled fallback source; harvest APPLY stays 0; do not invent Choice. Fail-closed."
+  },
+  {
+    "reason": "harvest_sidecar_write",
+    "class_now": "STATIC_CODE",
+    "proposed": "JEV_WIRE",
+    "wire_type": "none",
+    "choice_labels_or_score": null,
+    "complete_state_fields": ["schema", "pair", "answers", "complete_state"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_PATH",
+    "notes": "Append-only JSONL schema gtos.jev.train_row_harvest.row.v1. New file — do not mutate mixed jev_train_rows.jsonl. Sidecar for TypeSafe + future MLX. apply=false place=false."
+  },
+  {
+    "reason": "harvest_place_would_have_label",
+    "class_now": "SHADOW_ONLY",
+    "proposed": "JEV_WIRE",
+    "wire_type": "Choice",
+    "choice_labels_or_score": ["PLACE", "STAND", "DELAY"],
+    "complete_state_fields": ["place_context", "identity", "completeness"],
+    "env_flag_draft": "GTOS_JEV_TRAIN_HARVEST_SHADOW=1",
+    "notes": "Owner override: DELETE eternal Jev never places. Harvest LABELS retrospective place Choice on close rows. apply=false this session. Hist-prove + Chair APPLY lives in sessions 01/14. Never order_send here."
+  }
+]

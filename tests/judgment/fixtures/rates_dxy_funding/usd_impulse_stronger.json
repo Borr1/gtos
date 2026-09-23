@@ -1,0 +1,33 @@
+{
+  "id": "usd_impulse_stronger",
+  "as_of_utc": "2026-09-17T11:00:00Z",
+  "focus": {"symbol": "XAUUSD", "side": "short"},
+  "expect": {
+    "usd_impulse": true,
+    "rates_impulse": null,
+    "funding_stress": null,
+    "risk_on_off": null,
+    "challenge_true": false,
+    "usd_stance": "stronger"
+  },
+  "cross_books": {
+    "EURUSD": {
+      "d1": {
+        "n": 20,
+        "start": "2026-09-01T00:00:00Z",
+        "step_hours": 24,
+        "start_close": 1.20,
+        "step_close": -0.01
+      }
+    },
+    "USDJPY": {
+      "d1": {
+        "n": 20,
+        "start": "2026-09-01T00:00:00Z",
+        "step_hours": 24,
+        "start_close": 140.0,
+        "step_close": 0.8
+      }
+    }
+  }
+}
