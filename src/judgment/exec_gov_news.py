@@ -44,9 +44,6 @@ ACTION_ALTERNATIVES = ("hold_corr", "size_down", "allow", "abstain")
 SEATS = ("exec", "governor", "cluster", "news", "f5_fire")
 BRANCHES = ("place", "modify", "close", "observe", "derisk", "cycle")
 NO_FEED = "no feed"
-NEVER_FLATTEN_TICKETS = frozenset(
-    {294092360, 294088097, 293332188, 294069721, 294215389}
-)
 _TRUTHY_OFF = frozenset({"0", "false", "no", "off"})
 _TRUTHY_ON = frozenset({"1", "true", "yes", "on"})
 _BANNED = ("floor", "baseline", "90k", "110k", "90000", "110000")
@@ -246,8 +243,10 @@ def attach_feed(news: Mapping[str, Any] | None = None, *, now: datetime | None =
         "invented": False,
         "NEWS_PROTOCOL_APPLIED": bool(incoming.get("NEWS_PROTOCOL_APPLIED", False)),
         "as_of_utc": as_of.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "open_gold_left_open": sorted(NEVER_FLATTEN_TICKETS),
     }
+    from src.components.ultimate_book.open_tickets import open_ticket_card, writer_terminal
+
+    base["open_tickets"] = open_ticket_card(writer_terminal())["open_tickets"]
     found = _read_live_spine()
     if found is None:
         base.update(
@@ -1180,7 +1179,7 @@ def compose_exec_gov_news(
     base["spine_empty"] = news.get("spine_empty")
     base["nearest"] = news.get("nearest")
     base["next_future"] = news.get("next_future")
-    base["open_gold_left_open"] = list(news.get("open_gold_left_open") or [])
+    base["open_tickets"] = news.get("open_tickets", "unread")
     facts = dict(state_map.get("facts") or {})
     if integer_cap_mult is not None:
         facts["integer_cap_mult"] = integer_cap_mult
@@ -1422,7 +1421,6 @@ def maybe_run_news_skip(
     st["identity"] = identity
     decision = compose_news(st, None, environ=environ, timeout_s=timeout_s)
     row = decision.as_dict()
-    row["never_flatten_tickets"] = sorted(NEVER_FLATTEN_TICKETS)
     row["flatten"] = False
     row["place"] = False
     row["mill_url"] = None

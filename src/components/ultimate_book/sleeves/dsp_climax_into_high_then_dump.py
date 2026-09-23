@@ -125,13 +125,11 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
         "atr_is_a_scale": atr_scale is not None,
         "stay_timing": timing_fact,
         "index": int(i) if n else None,
-        "open_ticket": 294215389,
         "flatten": False,
     }
     facts["session_mask"] = session_mask
     facts["session_mask_name"] = "mask_us_cash_hour"
     pattern_side = "climax_into_high_then_dump"
-    hold = "Do not close ticket 294215389."
     spots = [
         {
             "id": "named_surface",
@@ -139,7 +137,7 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
             "other": "off_surface_or_no_bars",
             "emit_text": "This symbol is one of the named names and bars exist.",
             "other_text": "This symbol is off the named surface or there are no bars.",
-            "instructions": "on_named_surface is the measured fact for this sleeve's named names and bars. Which side is this bar? " + hold,
+            "instructions": "on_named_surface is the measured fact for this sleeve's named names and bars. Which side is this bar?",
         },
         {
             "id": "warmup",
@@ -147,7 +145,7 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
             "other": "bars_short_of_200",
             "emit_text": "The bar count covers this sleeve's 200-bar warmup.",
             "other_text": "The bar count is short of this sleeve's 200-bar warmup.",
-            "instructions": "bar_count and warmup are the measured facts. Which side is this bar? " + hold,
+            "instructions": "bar_count and warmup are the measured facts. Which side is this bar?",
         },
         {
             "id": "signal_shape",
@@ -155,7 +153,7 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
             "other": "signal_shape_mismatch",
             "emit_text": "The predicate array lines up with the closes.",
             "other_text": "The predicate array does not line up with the closes.",
-            "instructions": "signal_shape_matches is the measured fact. Which side is this bar? " + hold,
+            "instructions": "signal_shape_matches is the measured fact. Which side is this bar?",
         },
         {
             "id": "pattern",
@@ -163,7 +161,7 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
             "other": "pattern_absent",
             "emit_text": "This sleeve's predicate printed on the closed bar.",
             "other_text": "This sleeve's predicate did not print on the closed bar.",
-            "instructions": "pattern_printed is the measured predicate for " + pattern_side + ". Which side is this bar? " + hold,
+            "instructions": "pattern_printed is the measured predicate for " + pattern_side + ". Which side is this bar?",
         },
         {
             "id": "atr_scale",
@@ -171,7 +169,7 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
             "other": "atr_not_a_scale",
             "emit_text": "ATR is a positive finite scale for the stop and the target.",
             "other_text": "ATR cannot scale the stop and the target.",
-            "instructions": "atr_is_a_scale and atr are the measured scale. Which side is this bar? " + hold,
+            "instructions": "atr_is_a_scale and atr are the measured scale. Which side is this bar?",
         },
         {
             "id": "stay_timing",
@@ -179,7 +177,7 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
             "other": "still_timing",
             "emit_text": "The pattern is the intent. Timing does not withhold this bar.",
             "other_text": "Timing still withholds this bar.",
-            "instructions": "stay_timing is the measured second check after the predicate. Which side is this bar? " + hold,
+            "instructions": "stay_timing is the measured second check after the predicate. Which side is this bar?",
         },
         {
             "id": "session_mask",
@@ -187,7 +185,7 @@ def generate(symbol: str, bars, decision_day: str, *, bar_time=None, bar_times=N
             "other": "session_mask_absent",
             "emit_text": "The named session mask holds on this bar.",
             "other_text": "The named session mask does not hold on this bar.",
-            "instructions": "session_mask_name and session_mask are the measured clock mask. Which side is this bar? " + hold,
+            "instructions": "session_mask_name and session_mask are the measured clock mask. Which side is this bar?",
         },
     ]
     cache_key = "|".join([

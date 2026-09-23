@@ -31,6 +31,7 @@ from .runtime_learning_packet import (
     build_runtime_learning_packet,
     stable_hash,
 )
+from .open_tickets import question_with_open_tickets
 from .packet_economics import (
     LEGACY_MODELLED_COST_COMPONENTS,
     LEGACY_MODELLED_COST_EXCLUDES,
@@ -659,12 +660,11 @@ def _spot_choice(question, state, criteria, withhold, cache_key, instructions):
     """
     del cache_key
     text = str(instructions or "")
-    if "294215389" not in text:
+    if "unique highest" not in text:
         text = (
             text
             + " The unique highest probability is the decision."
             + " An empty answer or a tie does not restore a constant."
-            + " Do not close ticket 294215389."
         )
     choice = _ask_jev(
         str(question),
@@ -5269,7 +5269,6 @@ class UltimateBookOwner:
                                 "The two sides of an unsized unit that is not the gross-cap exception."
                                 " The unique highest probability is the decision."
                                 " An empty answer does not place."
-                                " Do not close ticket 294215389."
                             ),
                             criteria={
                                 "skip_unsized_unit": "This unit is not sized. Skip it.",
@@ -5367,7 +5366,7 @@ class UltimateBookOwner:
                                     },
                                     "weekend_embargo",
                                     f"weekend_entry|{intent.sleeve}|{intent.symbol}|{weekend_block}",
-                                    "A weekend entry rule produced a reason not to send. Is this candidate still the fire, or does that window withhold it? Do not close ticket 294215389.",
+                                    "A weekend entry rule produced a reason not to send. Is this candidate still the fire, or does that window withhold it?",
                                 ))
                             except Exception:
                                 _block_weekend = False
@@ -5842,24 +5841,26 @@ class UltimateBookOwner:
                         _block_open = str(self._namespace) != "operator"
                         if str(self._namespace) == "operator":
                             try:
-                                _tickets = []
-                                for _pos in list(same_symbol_exposures)[:8]:
-                                    _tickets.append(getattr(_pos, "ticket", None))
+                                _open_text, _open_card = question_with_open_tickets(
+                                    "A position is already open on this symbol. "
+                                    "Keep it, or is this candidate a second thesis on the same symbol?",
+                                    getattr(self._mt5, "_mt5", None),
+                                )
                                 _block_open = bool(_spot_choice(
                                     "same_broker_symbol_open_position_lifecycle_guard",
                                     {
                                         "symbol": intent.symbol,
                                         "sleeve": intent.sleeve,
-                                        "open_tickets": _tickets,
                                         "namespace": "operator",
+                                        **_open_card,
                                     },
                                     {
-                                        "keep_open_ticket": "Keep the open ticket. Do not send this candidate. Do not close the open ticket.",
-                                        "second_thesis_on_this_symbol": "This candidate is a second thesis on this symbol. Leave the open ticket alone.",
+                                        "keep_open_ticket": "Keep the open position. Do not send this candidate. Do not close it.",
+                                        "second_thesis_on_this_symbol": "This candidate is a second thesis on this symbol. Leave the open position alone.",
                                     },
                                     "keep_open_ticket",
-                                    f"open_ticket|{intent.symbol}|{intent.sleeve}|{_tickets}",
-                                    "A position is already open on this symbol. Keep that ticket, or is this candidate a second thesis on the same symbol? Keeping does not flatten ticket 294215389.",
+                                    f"open_ticket|{intent.symbol}|{intent.sleeve}|{_open_card.get('open_tickets')}",
+                                    _open_text,
                                 ))
                             except Exception:
                                 _block_open = False
@@ -6181,7 +6182,6 @@ class UltimateBookOwner:
                                         "The two sides of a running-conviction route that is not sized."
                                         " The unique highest probability is the decision."
                                         " An empty answer does not place."
-                                        " Do not close ticket 294215389."
                                     ),
                                     criteria={
                                         "unsized_route_skips": "This conviction route is not sized. Do not send.",
@@ -7435,7 +7435,6 @@ class UltimateBookOwner:
                 "sleeve": "*",
                 "action": f"{action}_observed_not_flat",
                 "flatten": False,
-                "open_ticket": "294215389",
             })
             return
         if not self._live_broker_authority():
@@ -7501,7 +7500,6 @@ class UltimateBookOwner:
                     "sleeve": "*",
                     "action": "operator_flatten_observed_not_flat",
                     "flatten": False,
-                    "open_ticket": "294215389",
                 })
                 return
             self._breach_block = True
@@ -7550,26 +7548,27 @@ class UltimateBookOwner:
         ):
             return   # other books keep the confirm count; Challenge does not wait on it
         if str(getattr(self, "_namespace", "") or "") == "operator":
+            _close_text, _close_card = question_with_open_tickets(
+                "The two sides of closing the book after daily-loss or the risk floor. "
+                "Close only when close is the unique highest. "
+                "An empty answer or a tie does not close and does not restore a flatten boolean.",
+                getattr(self._mt5, "_mt5", None),
+            )
             close_now = _spot_choice(
                 "breach_close",
                 {
                     "flatten": True,
                     "reason": (verdict or {}).get("reason"),
                     "namespace": "operator",
-                    "open_gold": 294215389,
+                    **_close_card,
                 },
                 {
                     "close": "Close the open book. Close is legal when it is the unique highest.",
                     "leave_open": "Leave the open book.",
                 },
                 "close",
-                f"breach_close|{(verdict or {}).get('reason')}",
-                (
-                    "The two sides of closing the book after daily-loss or the risk floor. "
-                    "Close only when close is the unique highest. "
-                    "An empty answer or a tie does not close and does not restore a flatten boolean. "
-                    "Do not flatten open gold 294215389 as a gesture."
-                ),
+                f"breach_close|{(verdict or {}).get('reason')}|{_close_card.get('open_tickets')}",
+                _close_text,
             )
             if not close_now:
                 summary.setdefault("managed", []).append({
@@ -7581,23 +7580,26 @@ class UltimateBookOwner:
                 })
                 self._f5_on_notional_breach(verdict)
                 return
+            _withhold_text, _withhold_card = question_with_open_tickets(
+                "The two sides of standing the book down after a close won. "
+                "Withhold only when withhold is the unique highest. "
+                "An empty answer or a tie does not stand the book down and does not restore a block.",
+                getattr(self._mt5, "_mt5", None),
+            )
             stand_down = _spot_choice(
                 "breach_withhold",
                 {
                     "reason": (verdict or {}).get("reason"),
                     "namespace": "operator",
-                    "open_gold": 294215389,
+                    **_withhold_card,
                 },
                 {
                     "withhold": "Stop new entries on this book.",
                     "continue": "New entries still ask. Do not stand the book down.",
                 },
                 "withhold",
-                f"breach_withhold|{(verdict or {}).get('reason')}",
-                "The two sides of standing the book down after a close won. "
-                "Withhold only when withhold is the unique highest. "
-                "An empty answer or a tie does not stand the book down and does not restore a block. "
-                "Do not close ticket 294215389 from this question.",
+                f"breach_withhold|{(verdict or {}).get('reason')}|{_withhold_card.get('open_tickets')}",
+                _withhold_text,
             )
             if stand_down:
                 self._breach_block = True
@@ -7800,8 +7802,7 @@ class UltimateBookOwner:
         if _noul_withholds(
             "risk_floor",
             state,
-            "Is real equity at a static risk that flattens this book? "
-            "Do not flatten open gold 294215389 as a gesture.",
+            "Is real equity at a static risk that flattens this book?",
             {
                 "withhold": "Real equity is at a static risk that flattens.",
                 "allow": "The equity reading does not by itself close the book.",
@@ -7819,8 +7820,7 @@ class UltimateBookOwner:
             f"daily_loss|{equity:.2f}|{realized}",
             "The two sides of this real day. "
             "An empty answer or a tie does not flatten. "
-            "A floor dollar and a baseline dollar are not a limit. "
-            "Do not flatten open gold 294215389 as a gesture.",
+            "A floor dollar and a baseline dollar are not a limit.",
         ):
             reasons.append("returned daily loss")
         return {
@@ -8146,10 +8146,9 @@ class UltimateBookOwner:
                 },
                 "close",
                 f"f5_weekend_flat|{sym}|{sleeve}|{ticket}|{now.strftime('%Y%m%d%H')}",
-                "The two sides of weekend carry on this open ticket. "
+                "The two sides of weekend carry on this position. "
                 "An empty answer or a tie does not close. "
-                "A floor dollar and a baseline dollar are not a limit. "
-                "Do not flatten open gold 294215389 as a gesture.",
+                "A floor dollar and a baseline dollar are not a limit.",
             ):
                 return None
             closed = False
@@ -12010,18 +12009,35 @@ class UltimateBookOwner:
                 open_positions_snapshot=open_positions_snapshot,
             )
             same_symbol_exposures = self._f5_cross_tf_filter(same_symbol_exposures, intent.sleeve)
+            if same_symbol_exposures:
+                _frozen_state = {
+                    "symbol": intent.symbol,
+                    "sleeve": intent.sleeve,
+                    "frozen": True,
+                }
+                _frozen_text = (
+                    "A position is already open on this symbol. "
+                    "An empty answer or a tie does not withhold. Do not close the open position."
+                )
+                if str(self._namespace) == "operator":
+                    _frozen_text, _frozen_card = question_with_open_tickets(
+                        _frozen_text,
+                        getattr(self._mt5, "_mt5", None),
+                    )
+                    _frozen_state.update(_frozen_card)
+                else:
+                    _frozen_card = {}
             if same_symbol_exposures and _challenge_withholds(
                 self._namespace,
                 "same_broker_symbol_open_position_lifecycle_guard",
-                {"symbol": intent.symbol, "sleeve": intent.sleeve, "frozen": True},
+                _frozen_state,
                 {
-                    "keep_open_ticket": "Keep the open ticket. Do not send this candidate.",
+                    "keep_open_ticket": "Keep the open position. Do not send this candidate.",
                     "second_thesis_on_this_symbol": "This candidate is a second thesis on this symbol.",
                 },
                 "keep_open_ticket",
-                f"frozen_open_ticket|{intent.sleeve}|{intent.symbol}|{dbar}",
-                "A position is already open on this symbol. "
-                "An empty answer or a tie does not withhold. Do not close the open ticket.",
+                f"frozen_open_ticket|{intent.sleeve}|{intent.symbol}|{dbar}|{_frozen_card.get('open_tickets')}",
+                _frozen_text,
             ):
                 position_reason = "same_broker_symbol_open_position_lifecycle_guard"
 

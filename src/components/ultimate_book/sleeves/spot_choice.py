@@ -1773,7 +1773,6 @@ def ask(*, sleeve: str, symbol: str, bar_id: str, spots: Mapping[str, Mapping[st
         "measured": {name: bool(spec.get("measured")) for name, spec in spots.items()},
         "flatten": False,
         "order_send": False,
-        "do_not_close_ticket": 294215389,
     }
     sides = _post(state, spots)
     if sides and all(v in _SIDES for v in sides.values()):
