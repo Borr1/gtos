@@ -19,7 +19,7 @@ from __future__ import annotations
 import json
 import sys
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
@@ -459,6 +459,428 @@ def _open_across_reset(
     return False
 
 
+def _in_reset_minute(now: datetime, reset: datetime) -> bool:
+    """True while the reset minute is still the current minute."""
+
+    return reset <= now < reset + timedelta(minutes=1)
+
+
+def _live_equity(mt5: Any) -> float | None:
+    fn = getattr(mt5, "get_account_equity", None)
+    if not callable(fn):
+        return None
+    try:
+        return _float_or_none(fn())
+    except Exception:
+        return None
+
+
+def _position_id(row: Any) -> int | None:
+    raw = _attr(row, "position_id", "identifier", "ticket")
+    try:
+        pid = int(raw)
+    except (TypeError, ValueError):
+        return None
+    if pid <= 0:
+        return None
+    return pid
+
+
+def _deal_entry(deal: Any) -> int | None:
+    try:
+        return int(_attr(deal, "entry"))
+    except (TypeError, ValueError):
+        return None
+
+
+def _position_deals(raw: Any, pid: int) -> list[Any] | None:
+    fn = getattr(raw, "history_deals_get", None)
+    if not callable(fn):
+        return None
+    try:
+        found = fn(position=pid)
+    except TypeError:
+        return None
+    except Exception:
+        return None
+    if found is None:
+        return None
+    try:
+        return list(found)
+    except TypeError:
+        return None
+
+
+def _state_at_reset(
+    deals: list[Any],
+    reset: datetime,
+    offset_seconds: int | None,
+) -> dict[str, Any] | None:
+    """Volume, side, entry and open time of one position as the reset arrived.
+
+    None means the deals cannot be read. An empty volume means it was flat.
+    """
+
+    ordered = []
+    for deal in deals:
+        when = _deal_time(deal, offset_seconds)
+        if when is None:
+            return None
+        ordered.append((when, deal))
+    ordered.sort(key=lambda item: item[0])
+    volume = 0.0
+    cost = 0.0
+    side = None
+    opened = None
+    symbol = None
+    for when, deal in ordered:
+        if when >= reset:
+            break
+        entry = _deal_entry(deal)
+        if entry is None:
+            return None
+        try:
+            piece = float(_attr(deal, "volume"))
+            price = float(_attr(deal, "price"))
+        except (TypeError, ValueError):
+            return None
+        if piece != piece or price != price or piece < 0 or price <= 0:
+            return None
+        if entry == 0:
+            if volume <= 0:
+                opened = when
+                side = _attr(deal, "type")
+                symbol = _attr(deal, "symbol")
+                volume = 0.0
+                cost = 0.0
+            volume += piece
+            cost += price * piece
+        elif entry in (1, 3):
+            if volume <= 0 or piece > volume + 1e-9:
+                return None
+            left = volume - piece
+            if left <= 1e-9:
+                volume = 0.0
+                cost = 0.0
+                opened = None
+                side = None
+            else:
+                cost *= left / volume
+                volume = left
+        else:
+            return None
+        if symbol is None:
+            symbol = _attr(deal, "symbol")
+    if volume <= 1e-9:
+        return {"volume": 0.0}
+    if side is None or not symbol or opened is None or cost <= 0:
+        return None
+    return {
+        "volume": volume,
+        "price_open": cost / volume,
+        "side": side,
+        "symbol": symbol,
+        "opened": opened,
+    }
+
+
+def _ids_open_across(
+    deals: list[Any],
+    positions: list[Any],
+    reset: datetime,
+    offset_seconds: int | None,
+) -> set[int] | None:
+    ids: set[int] = set()
+    for deal in deals:
+        pid = _position_id(deal)
+        if pid is not None:
+            ids.add(pid)
+    for pos in positions:
+        when = _position_time_utc(pos, offset_seconds)
+        if when is None:
+            return None
+        if when >= reset:
+            continue
+        pid = _position_id(pos)
+        if pid is None:
+            return None
+        ids.add(pid)
+    return ids
+
+
+def _rates_before_reset(
+    raw: Any,
+    symbol: str,
+    opened: datetime,
+    reset: datetime,
+    offset_seconds: int,
+) -> list[Any] | None:
+    fn = getattr(raw, "copy_rates_range", None)
+    timeframe = getattr(raw, "TIMEFRAME_M1", None)
+    if not callable(fn) or timeframe is None:
+        return None
+    query_from = opened + timedelta(seconds=offset_seconds)
+    query_to = reset + timedelta(seconds=offset_seconds) + timedelta(minutes=1)
+    try:
+        found = fn(symbol, timeframe, query_from, query_to)
+    except Exception:
+        return None
+    if found is None:
+        return None
+    try:
+        return list(found)
+    except TypeError:
+        return None
+
+
+def _bar_in_force(bars: list[Any], reset: datetime, offset_seconds: int) -> Any | None:
+    """The reset minute's bar, or the last bar still in force when that minute did not print."""
+
+    reset_epoch = int(reset.timestamp()) + int(offset_seconds)
+    chosen = None
+    chosen_time = None
+    exact = None
+    for bar in bars:
+        try:
+            stamp = int(bar["time"])
+        except (TypeError, ValueError, KeyError, IndexError):
+            return None
+        if stamp > reset_epoch:
+            continue
+        if stamp == reset_epoch:
+            exact = bar
+        if chosen_time is None or stamp >= chosen_time:
+            chosen = bar
+            chosen_time = stamp
+    return exact if exact is not None else chosen
+
+
+def _bar_price(bar: Any, name: str) -> float | None:
+    try:
+        number = float(bar[name])
+    except (TypeError, ValueError, KeyError, IndexError):
+        return None
+    if number != number or number <= 0:
+        return None
+    return number
+
+
+def _favorable_price(raw: Any, bar: Any, side: Any, point: float | None) -> float | None:
+    """The side's quote at the bound that makes equity higher."""
+
+    buy = getattr(raw, "ORDER_TYPE_BUY", 0)
+    sell = getattr(raw, "ORDER_TYPE_SELL", 1)
+    try:
+        side_n = int(side)
+    except (TypeError, ValueError):
+        return None
+    if side_n == int(buy):
+        return _bar_price(bar, "high")
+    if side_n != int(sell):
+        return None
+    low = _bar_price(bar, "low")
+    if low is None or point is None:
+        return None
+    try:
+        spread_points = float(bar["spread"])
+    except (TypeError, ValueError, KeyError, IndexError):
+        return None
+    if spread_points != spread_points or spread_points < 0:
+        return None
+    return low + spread_points * point
+
+
+def _rollover_charges(
+    opened: datetime,
+    reset: datetime,
+    offset_seconds: int,
+    triple_day: Any,
+) -> int | None:
+    """Swap charges from the server midnights at which this position was open."""
+
+    try:
+        triple = int(triple_day)
+    except (TypeError, ValueError):
+        return None
+    wall_open = (opened + timedelta(seconds=offset_seconds)).replace(tzinfo=None)
+    wall_reset = (reset + timedelta(seconds=offset_seconds)).replace(tzinfo=None)
+    cursor = datetime.combine(wall_open.date(), time.min)
+    if cursor < wall_open:
+        cursor += timedelta(days=1)
+    charges = 0
+    while cursor <= wall_reset:
+        broker_day = (cursor.weekday() + 1) % 7
+        charges += 3 if broker_day == triple else 1
+        cursor += timedelta(days=1)
+    return charges
+
+
+def _swap_money(
+    raw: Any,
+    symbol: str,
+    side: Any,
+    volume: float,
+    opened: datetime,
+    reset: datetime,
+    offset_seconds: int,
+) -> float | None:
+    info_fn = getattr(raw, "symbol_info", None)
+    if not callable(info_fn):
+        return None
+    try:
+        info = info_fn(symbol)
+    except Exception:
+        return None
+    if info is None:
+        return None
+    buy = getattr(raw, "ORDER_TYPE_BUY", 0)
+    sell = getattr(raw, "ORDER_TYPE_SELL", 1)
+    try:
+        side_n = int(side)
+    except (TypeError, ValueError):
+        return None
+    if side_n == int(buy):
+        rate = getattr(info, "swap_long", None)
+    elif side_n == int(sell):
+        rate = getattr(info, "swap_short", None)
+    else:
+        return None
+    try:
+        rate_n = float(rate)
+    except (TypeError, ValueError):
+        return None
+    if rate_n == 0:
+        return 0.0
+    charges = _rollover_charges(
+        opened,
+        reset,
+        offset_seconds,
+        getattr(info, "swap_rollover3days", None),
+    )
+    if charges is None:
+        return None
+    if charges == 0:
+        return 0.0
+    points_mode = getattr(raw, "SYMBOL_SWAP_MODE_POINTS", None)
+    try:
+        mode = int(getattr(info, "swap_mode"))
+    except (TypeError, ValueError):
+        return None
+    if points_mode is None or mode != int(points_mode):
+        return None
+    try:
+        point = float(getattr(info, "point"))
+        contract = float(getattr(info, "trade_contract_size"))
+    except (TypeError, ValueError):
+        return None
+    if point <= 0 or contract <= 0:
+        return None
+    return charges * rate_n * point * contract * volume
+
+
+def _profit_at_price(
+    raw: Any,
+    side: Any,
+    symbol: str,
+    volume: float,
+    price_open: float,
+    price: float,
+) -> float | None:
+    calc = getattr(raw, "order_calc_profit", None)
+    if not callable(calc):
+        return None
+    buy = getattr(raw, "ORDER_TYPE_BUY", 0)
+    sell = getattr(raw, "ORDER_TYPE_SELL", 1)
+    try:
+        side_n = int(side)
+    except (TypeError, ValueError):
+        return None
+    if side_n == int(buy):
+        order_type = buy
+    elif side_n == int(sell):
+        order_type = sell
+    else:
+        return None
+    try:
+        pnl = float(calc(order_type, symbol, volume, price_open, price))
+    except Exception:
+        return None
+    if pnl != pnl or pnl in (float("inf"), float("-inf")):
+        return None
+    return pnl
+
+
+def _equity_held_across(
+    raw: Any,
+    ids: set[int],
+    reset: datetime,
+    balance: float,
+    offset_seconds: int | None,
+) -> float | None:
+    if offset_seconds is None or raw is None:
+        return None
+    floating = 0.0
+    held = 0
+    for pid in ids:
+        deals = _position_deals(raw, pid)
+        if deals is None:
+            return None
+        state = _state_at_reset(deals, reset, offset_seconds)
+        if state is None:
+            return None
+        if state.get("volume", 0) <= 0:
+            continue
+        held += 1
+        symbol = state["symbol"]
+        info_fn = getattr(raw, "symbol_info", None)
+        point = None
+        if callable(info_fn):
+            try:
+                info = info_fn(symbol)
+            except Exception:
+                info = None
+            if info is not None:
+                try:
+                    point = float(getattr(info, "point"))
+                except (TypeError, ValueError):
+                    point = None
+        bars = _rates_before_reset(raw, symbol, state["opened"], reset, offset_seconds)
+        if bars is None:
+            return None
+        bar = _bar_in_force(bars, reset, offset_seconds)
+        if bar is None:
+            return None
+        price = _favorable_price(raw, bar, state["side"], point)
+        if price is None:
+            return None
+        pnl = _profit_at_price(
+            raw,
+            state["side"],
+            symbol,
+            state["volume"],
+            state["price_open"],
+            price,
+        )
+        swap = _swap_money(
+            raw,
+            symbol,
+            state["side"],
+            state["volume"],
+            state["opened"],
+            reset,
+            offset_seconds,
+        )
+        if pnl is None or swap is None:
+            return None
+        floating += pnl + swap
+    if held == 0:
+        return None
+    equity = balance + floating
+    if equity != equity or equity <= 0:
+        return None
+    return equity
+
+
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp")
@@ -495,8 +917,7 @@ def _stored_today(reset: datetime | None, login: Any) -> dict[str, Any] | None:
             equity = _float_or_none(side.get("equity"))
             equity_source = str(side.get("source") or "recorded_at_reset")
     if equity is None:
-        out["day_start_equity_source"] = "unset"
-        return out
+        return None
     out["day_start_equity"] = equity
     out["day_start_equity_source"] = equity_source
     return out
@@ -542,9 +963,26 @@ def _derive_day_start(
     out = _unset_day(reset, "derived")
     out["day_start_balance"] = start_balance
     out["day_start_source"] = "derived"
+    if _in_reset_minute(now, reset):
+        live = _live_equity(mt5)
+        if live is not None and live > 0:
+            out["day_start_equity"] = live
+            out["day_start_equity_source"] = "awake_at_reset"
+            return out
     if crossed is False:
         out["day_start_equity"] = start_balance
         out["day_start_equity_source"] = "flat_across_reset"
+        return out
+    if crossed is not True or positions is None or offset is None:
+        return out
+    ids = _ids_open_across(kept, positions, reset, offset)
+    if not ids:
+        return out
+    equity = _equity_held_across(_raw_module(mt5), ids, reset, start_balance, offset)
+    if equity is None:
+        return out
+    out["day_start_equity"] = equity
+    out["day_start_equity_source"] = "reset_bar"
     return out
 
 
