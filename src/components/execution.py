@@ -3319,6 +3319,154 @@ class ExecutionEngine:
 
     # === ORDER PLACEMENT ===
 
+    def _cfg_fact(self, *names):
+        cfg = self.config if isinstance(getattr(self, "config", None), dict) else {}
+        runtime = cfg.get("gtos_vnext_runtime")
+        runtime = runtime if isinstance(runtime, dict) else {}
+        rules = cfg.get("ftmo_rules")
+        rules = rules if isinstance(rules, dict) else {}
+        for blob in (runtime, cfg, rules):
+            for name in names:
+                if blob.get(name) not in (None, ""):
+                    return blob.get(name)
+        return None
+
+    def _account_attr(self, info, name):
+        if info is None:
+            return None
+        if isinstance(info, dict):
+            return info.get(name)
+        return getattr(info, name, None)
+
+    def _positive_fact(self, value):
+        if isinstance(value, bool) or value is None:
+            return None
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+        if number != number or number in (float("inf"), float("-inf")) or number <= 0:
+            return None
+        return number
+
+    def _raw_mt5(self):
+        """The raw MetaTrader5 module behind the adapter (``self.mt5._mt5``)."""
+        adapter = getattr(self, "mt5", None)
+        raw = getattr(adapter, "_mt5", None)
+        return raw if raw is not None else adapter
+
+    def _open_stop_risk_usd(self, positions) -> "float | None":
+        """USD lost if every open position on the account hits its stop.
+
+        Every position on the account counts, whatever its magic. A position
+        with no stop has no bounded loss, so the total stays unset. A stop
+        already in profit adds nothing.
+        """
+        raw = self._raw_mt5()
+        calc = getattr(raw, "order_calc_profit", None)
+        if not callable(calc):
+            return None
+        buy = getattr(raw, "ORDER_TYPE_BUY", 0)
+        sell = getattr(raw, "ORDER_TYPE_SELL", 1)
+        total = 0.0
+        for pos in positions:
+            symbol = self._account_attr(pos, "symbol")
+            volume_n = self._positive_fact(self._account_attr(pos, "volume"))
+            price_n = self._positive_fact(self._account_attr(pos, "price_open"))
+            stop_n = self._positive_fact(self._account_attr(pos, "sl"))
+            side = self._account_attr(pos, "type")
+            if not symbol or volume_n is None or price_n is None or stop_n is None:
+                return None
+            order_type = buy if side in (0, buy, "BUY", "LONG", "buy") else sell
+            try:
+                pnl = float(calc(order_type, symbol, volume_n, price_n, stop_n))
+            except Exception:
+                return None
+            if pnl != pnl or pnl in (float("inf"), float("-inf")):
+                return None
+            if pnl < 0:
+                total += -pnl
+        return total
+
+    def _size_room_facts(self, account_balance: float) -> dict:
+        """Floor, daily, and open-risk facts from this process's account.
+
+        Reads go through the adapter's own methods and the raw module behind
+        it, so they take the terminal lock like every other call.
+        """
+        adapter = getattr(self, "mt5", None)
+        raw = self._raw_mt5()
+        equity = None
+        balance = None
+        if adapter is not None:
+            for name, target in (("get_account_equity", "equity"), ("get_account_balance", "balance")):
+                fn = getattr(adapter, name, None)
+                if not callable(fn):
+                    continue
+                try:
+                    value = self._positive_fact(fn())
+                except Exception:
+                    value = None
+                if target == "equity":
+                    equity = value
+                else:
+                    balance = value
+        positions = None
+        open_risk = None
+        get_pos = getattr(raw, "positions_get", None)
+        if callable(get_pos):
+            try:
+                found = get_pos()
+            except Exception:
+                found = None
+            if found is not None:
+                try:
+                    listed = list(found)
+                except TypeError:
+                    listed = None
+                if listed is not None:
+                    positions = len(listed)
+                    open_risk = 0.0 if not listed else self._open_stop_risk_usd(listed)
+        day: dict = {}
+        if self._challenge_book():
+            try:
+                from src.judgment.equity_frame import read_chair_day_start
+
+                got = read_chair_day_start()
+                if isinstance(got, dict):
+                    day = got
+            except Exception:
+                day = {}
+        facts = {
+            "equity": equity,
+            "balance": balance,
+            "positions_total": positions,
+            "initial_balance": self._cfg_fact(
+                "prop_safe_selector_initial_balance",
+                "account_balance_initial_inferred_usd",
+            ),
+            "overall_loss_pct": self._cfg_fact(
+                "prop_safe_selector_external_overall_max_loss_pct",
+                "maximum_loss_pct",
+            ),
+            "daily_percent_external": self._cfg_fact(
+                "prop_safe_selector_external_daily_loss_limit_pct",
+                "maximum_daily_loss_pct",
+            ),
+            "day_start_balance": day.get("day_start_balance"),
+            "day_start_equity": day.get("day_start_equity"),
+        }
+        if open_risk is not None:
+            facts["open_risk_usd"] = open_risk
+        return facts
+
+    def _stamp_size_room_facts(self, trade_params: dict, account_balance: float) -> None:
+        if not isinstance(trade_params, dict):
+            return
+        for key, value in self._size_room_facts(account_balance).items():
+            if key not in trade_params or trade_params.get(key) in (None, ""):
+                trade_params[key] = value
+
     def _challenge_keeps_return(self, reason: str, facts: dict | None = None) -> bool:
         """Other books keep the return. Challenge asks before it returns.
 
@@ -3713,7 +3861,30 @@ class ExecutionEngine:
         # would differ, and Execution Manager V4's blocks would differ. Do not move it.
         f5_nominal_risk_amount = risk_amount
         if self._f5_scaler is not None:
+            self._stamp_size_room_facts(trade_params, account_balance)
             risk_amount = self._f5_scaler.scaled_risk_amount(risk_amount, trade_params)
+            _room_last = getattr(self._f5_scaler, "last", None) or {}
+            if risk_amount is not None and _room_last.get("binding_room_usd") is not None:
+                _room_equity = trade_params.get("equity")
+                try:
+                    _room_pct = 100.0 * float(risk_amount) / float(_room_equity)
+                except (TypeError, ValueError, ZeroDivisionError):
+                    _room_pct = None
+                if _room_pct is None:
+                    logger.info(
+                        "Position sizing: size hop cash %.2f USD inside binding room %.2f USD",
+                        float(risk_amount),
+                        float(_room_last["binding_room_usd"]),
+                    )
+                else:
+                    logger.info(
+                        "Position sizing: size hop cash %.2f USD (%.4f%% of equity %.2f) "
+                        "inside binding room %.2f USD",
+                        float(risk_amount),
+                        _room_pct,
+                        float(_room_equity),
+                        float(_room_last["binding_room_usd"]),
+                    )
             refuse = (getattr(self._f5_scaler, "last", None) or {}).get("f5_refuse_reason")
             if refuse:
                 if self._stop_or_mark(str(refuse)):
