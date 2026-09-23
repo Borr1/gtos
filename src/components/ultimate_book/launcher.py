@@ -50,9 +50,24 @@ DEFAULT_REF_SYMBOL = {16388: ["XAUUSD", "BTCUSD"], 15: "USDJPY", 1: "USDJPY",
                       16385: "XAUUSD", 16408: ["XAUUSD", "BTCUSD"]}   # 16385 = forward-defensive
 
 
+def _positive_seconds(value: object) -> Optional[float]:
+    """A passed wait. Empty, zero, and a value that is not a number stay empty."""
+
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        number = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    if number <= 0:
+        return None
+    return number
+
+
 class BookLauncher:
     def __init__(self, owner, mt5, broker_symbol: Callable[[str], str], *,
-                 repo_root: str = ".", tags: Optional[Sequence[str]] = None, poll_seconds: float = 60.0,
+                 repo_root: str = ".", tags: Optional[Sequence[str]] = None,
+                 poll_seconds: Optional[float] = None,
                  kill_flag: Optional[str] = None, halt_flags: Optional[Sequence[str]] = None,
                  ref_symbol_by_tf: Optional[dict] = None,
                  log_path: str = "shadow_logs/ultimate_book_launcher.jsonl"):
@@ -63,7 +78,7 @@ class BookLauncher:
         # without this the FTMO and FN entries are indistinguishable (an operator/investigator can't
         # tell which account a cycle/manage/error row belongs to).
         self._namespace = getattr(owner, "_namespace", None)
-        self.poll_seconds = float(poll_seconds)
+        self.poll_seconds = _positive_seconds(poll_seconds)
         self._repo = Path(repo_root)
         self._kill = self._repo / (kill_flag or DEFAULT_KILL_FLAG)
         self._halts = [self._repo / h for h in (halt_flags or DEFAULT_HALT_FLAGS)]
@@ -312,6 +327,43 @@ class BookLauncher:
             return None
         return number
 
+    def wait_seconds(self) -> Optional[float]:
+        """Seconds before the next tick.
+
+        A friend book honors a poll that was passed in, or written from a
+        returned score, when that number is positive. An empty poll uses
+        the next print, the same wait the Challenge branch uses. It does
+        not sleep 60 and it does not sleep 0.
+        """
+
+        if not self._challenge_book():
+            explicit = _positive_seconds(self.poll_seconds)
+            if explicit is not None:
+                return explicit
+        return self._next_print_wait()
+
+    def _next_print_wait(self) -> Optional[float]:
+        """The Challenge wait. A missing bar does not become 60 or 0.
+
+        ``_seconds_until_print`` is the wait the Challenge branch already
+        uses: the soonest stored bar, then the cycle_wait already returned.
+        When that is empty, the print is still the watched timeframe on
+        the clock. Zero is that boundary; sleeping it would spin.
+        """
+
+        wait = _positive_seconds(self._seconds_until_print())
+        if wait is not None:
+            return wait
+        try:
+            from src.components.ultimate_book.launcher_facts import (
+                seconds_until_fastest_print,
+            )
+
+            clock = seconds_until_fastest_print(self)
+        except Exception:
+            return None
+        return _positive_seconds(clock)
+
     # ---- cheap per-TF bar-close detection ----
     def _latest_closed_bar_iso(self, tf: int, now: Optional[datetime] = None) -> Optional[str]:
         refs = self._ref.get(tf)
@@ -492,17 +544,16 @@ class BookLauncher:
 
     # ---- the loop ----
     def run_forever(self, max_ticks: Optional[int] = None) -> None:
-        log.info("BookLauncher starting: tfs=%s poll=%.0fs kill=%s halts=%s",
-                 list(self._tf_tags), self.poll_seconds, self._kill, [str(h) for h in self._halts])
+        log.info("BookLauncher starting: tfs=%s poll=%s kill=%s halts=%s",
+                 list(self._tf_tags),
+                 "unset" if self.poll_seconds is None else self.poll_seconds,
+                 self._kill, [str(h) for h in self._halts])
         n = 0
         while max_ticks is None or n < max_ticks:
             self.tick()
             n += 1
             if max_ticks is not None and n >= max_ticks:
                 break
-            if self._challenge_book():
-                wait = self._seconds_until_print()
-                if wait is not None:
-                    time.sleep(wait)
-            else:
-                time.sleep(self.poll_seconds)
+            wait = self.wait_seconds()
+            if wait is not None and wait > 0:
+                time.sleep(wait)

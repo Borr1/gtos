@@ -1,4 +1,9 @@
-"""Gold entry geometries as a hierarchical TypeSafe question tree.
+"""Metal entry geometries as a hierarchical TypeSafe question tree.
+
+Gold, silver, platinum, and every other metal on the card use this same
+geometry. The entry is a limit order. Cost and spread are not a reason to
+skip a metal. An empty answer, a tie, a missing score, or an error leaves
+that field unset and does not restore a distance. This module does not send.
 
 One piece. One ``jev_client.evaluate`` for this state: model ``jev-1.13.0``,
 POST https://api.typesafe.ai/v1/systemone, ``merge_sleeve=False``. Questions
@@ -408,7 +413,7 @@ def used_chunks(family: str) -> tuple[str, ...]:
 
 def directional_snippet(family: str) -> str:
     """Two-layer catalog: a short line so a model can *suggest* the family exists."""
-    return _SNIPPETS.get(_norm(family), "named gold entry geometry")
+    return _SNIPPETS.get(_norm(family), "this symbol's entry geometry")
 
 
 def emitters_for(family: str) -> tuple[str, ...]:
@@ -433,7 +438,10 @@ def hierarchical_labels(state: Mapping[str, Any]) -> dict[str, str]:
         framework=framework,
         family=str(ident.get("entry_family") or ""),
     )
-    symbol = str(ident.get("symbol") or "XAUUSD")
+    raw_symbol = ident.get("symbol")
+    if raw_symbol is None or str(raw_symbol).strip() == "":
+        raw_symbol = state.get("symbol")
+    symbol = "" if raw_symbol is None else str(raw_symbol).strip()
     side = str(ident.get("side") or "")
     as_of = ""
     clock = state.get("clock")
@@ -815,7 +823,9 @@ def entry_subtree_questions(
             instructions=(
                 f"The score you return is the {noun} parameter for this {named} geometry. "
                 "It may sit between the levels on this state. "
-                "An empty score leaves it unset. Do not send an order."
+                "An empty score leaves it unset. Do not send an order. "
+                "Gold, silver, platinum, and every other metal on this card use this same geometry. "
+                "The entry is a limit order. Cost and spread are not a reason to leave it unset."
             ),
             criteria=levels,
         ))
@@ -825,7 +835,9 @@ def entry_subtree_questions(
         instructions=(
             f"Given the facts on this {named} card, is this a fire? "
             "The choice you return is that answer. "
-            "An empty answer or a tie leaves it unset. Do not send an order."
+            "An empty answer or a tie leaves it unset. Do not send an order. "
+            "Gold, silver, platinum, and every other metal on this card use this same geometry. "
+            "The entry is a limit order. Cost and spread are not a reason to leave it unset."
         ),
         criteria={
             "fire": "The facts on this card support a fire.",
@@ -1016,6 +1028,25 @@ def _miss(block: Any, value: Any, order: tuple[str, ...], receipt_error: str | N
     return "empty"
 
 
+def _symbol_of(state: Mapping[str, Any]) -> str:
+    ident = _identity(state)
+    raw = ident.get("symbol")
+    if raw is None or str(raw).strip() == "":
+        raw = state.get("symbol")
+    return "" if raw is None else str(raw).strip()
+
+
+def _stamp_entry(card: dict[str, Any], state: Mapping[str, Any]) -> dict[str, Any]:
+    """The symbol on the card stays. A missing symbol stays blank. This hop does not send."""
+
+    card["symbol"] = _symbol_of(state)
+    card["order_kind"] = "limit"
+    card["order_send"] = False
+    card["agent_order_send"] = False
+    card["send"] = False
+    return card
+
+
 def _blank(family: str, error: str | None) -> dict[str, Any]:
     known = family in ENTRY_FAMILIES
     return {
@@ -1169,9 +1200,9 @@ def evaluate_gold_entry(
             if _question_ok(spec)
         }
     except Exception as exc:  # noqa: BLE001 — a failed pack stays unset
-        return _blank(routed, type(exc).__name__)
+        return _stamp_entry(_blank(routed, type(exc).__name__), src)
     if not questions:
-        return _blank(routed, "empty")
+        return _stamp_entry(_blank(routed, "empty"), src)
     payload = _scrub_state(src)
     payload["model"] = MODEL
     try:
@@ -1189,11 +1220,11 @@ def evaluate_gold_entry(
     try:
         answers, error, receipt = _post(payload, questions, evaluate_fn)
     except Exception as exc:  # noqa: BLE001 — a miss stays unset
-        card = _blank(routed, type(exc).__name__)
+        card = _stamp_entry(_blank(routed, type(exc).__name__), src)
         _remember(payload, _fill(card, questions, {}, type(exc).__name__, routed))
         card["questions"] = list(questions)
         return card
-    card = _blank(routed, error if not answers else None)
+    card = _stamp_entry(_blank(routed, error if not answers else None), src)
     rows = _fill(card, questions, answers, error, routed)
     _remember(payload, rows)
     card["model"] = receipt.get("model") or MODEL
